@@ -1,0 +1,17 @@
+build/
+.cache/
+.cmake/
+CMakeFiles/
+CMakeCache.txt
+Testing/
+compile_commands.json
+
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
