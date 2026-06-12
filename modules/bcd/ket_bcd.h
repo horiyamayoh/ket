@@ -105,6 +105,10 @@ namespace ket
 	 * @pre なし。
 	 * @post 引数と外部状態の変更なし。
 	 * @note 整数変換のため、先頭ゼロは保持なし。
+	 * @code
+	 * auto const value = ket::ParseBcd(static_cast<std::uint8_t>(0x42U));
+	 * // value == std::optional<int>(42)
+	 * @endcode
 	 */
 	constexpr std::optional<int> ParseBcd(std::uint8_t value) noexcept
 	{
@@ -119,6 +123,10 @@ namespace ket
 	 * @pre なし。
 	 * @post 引数と外部状態の変更なし。
 	 * @note 整数変換のため、先頭ゼロは保持なし。
+	 * @code
+	 * auto const value = ket::ParseBcd(static_cast<std::uint16_t>(0x1234U));
+	 * // value == std::optional<int>(1234)
+	 * @endcode
 	 */
 	constexpr std::optional<int> ParseBcd(std::uint16_t value) noexcept
 	{
@@ -133,6 +141,10 @@ namespace ket
 	 * @pre なし。
 	 * @post 引数と外部状態の変更なし。
 	 * @note 整数変換のため、先頭ゼロは保持なし。
+	 * @code
+	 * auto const value = ket::ParseBcd(static_cast<std::uint32_t>(0x20260613U));
+	 * // value == std::optional<int>(20260613)
+	 * @endcode
 	 */
 	constexpr std::optional<int> ParseBcd(std::uint32_t value) noexcept
 	{
@@ -145,10 +157,15 @@ namespace ket
 	 * @param[in] size `data`のバイト数。
 	 * @retval value 変換後の10進文字列。
 	 * @retval std::nullopt `nullptr`、空入力、または不正nibble。
-	 * @pre なし。
+	 * @pre なし。`nullptr` と空入力は失敗値として扱う。
 	 * @post 引数と外部状態の変更なし。
-	 * @note 先頭ゼロを保持。
+	 * @note 入力BCDの桁数を保ち、先頭の0も文字'0'として出力。
 	 * @note std::stringの確保があるためnoexceptなし。
+	 * @code
+	 * std::uint8_t const data[] = {0x00U, 0x42U};
+	 * auto const value = ket::BcdToDecimalString(data, 2U);
+	 * // value == std::optional<std::string>("0042")
+	 * @endcode
 	 */
 	std::optional<std::string> BcdToDecimalString(std::uint8_t const* data, std::size_t size);
 

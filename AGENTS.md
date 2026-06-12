@@ -37,6 +37,8 @@ modules/<name>/ket_<name>_test.cpp
 - C++コメントでは `namespace` などC++ネイティブな語を和訳しないでください。
 - C++コメントは「です」「ます」「ください」を避け、体言止めや簡潔な常体で書いてください。
 - 関数Doxygenコメントは宣言側に書き、`@brief`、`@param[in/out]`、`@retval`、`@pre`、`@post` を必ず含めてください。実装定義側に同じDoxygenを重複させないでください。
+- `@code` は必須ではありませんが、自明なgetterや単純な判定以外では強く推奨します。入力例と戻り値の形が一目で分かる短い例にしてください。
+- `@note`、`@pre`、`@post` は定型句だけで済ませず、制約、保持する性質、副作用の有無が分かる文章にしてください。
 - module testの各 `TEST` にはDoxygen形式の試験仕様を書き、`@test`、`@brief`、`@details`、`@pre`、`@post` を必ず含めてください。
 - namespace終端コメントは `// namespace ket` のように書き、その直前に空行を1行入れてください。
 - `if`、`while`、`EXPECT_FALSE` などの条件式でAPI呼び出しを直接行わず、直前の一時変数へ退避してください。gdbで値を追いやすくするためです。
