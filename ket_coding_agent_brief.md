@@ -424,6 +424,9 @@ ket::         -> project_util::
 
 `KET_NAMESPACE` マクロによる可変名前空間も可能だが、`.h` と `.cpp` の一致管理が難しくなるため、最初から採用する必要はない。
 
+namespaceなどC++ネイティブな語はコメント内でも和訳しない。namespace終端コメントは
+`// namespace ket` の形にし、その直前に空行を1行入れる。
+
 ### 6.4 関数命名
 
 会話中の例に合わせ、公開APIは原則として UpperCamelCase を使う。
@@ -457,7 +460,7 @@ constexpr std::uint32_t kMaxPort = 65535U;
 ### 6.5 noexcept / constexpr
 
 - 純粋な変換・判定・ビット操作はできるだけ `constexpr` にする
-- 失敗しない小関数はできるだけ `noexcept` にする
+- 例外で失敗を表現しない小関数はできるだけ `noexcept` にする
 - ただし、文字列生成やメモリ確保を伴うものは無理に `noexcept` にしない
 
 例:
@@ -465,6 +468,36 @@ constexpr std::uint32_t kMaxPort = 65535U;
 ```cpp
 constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept;
 constexpr bool IsPowerOfTwo(std::uint32_t value) noexcept;
+```
+
+### 6.5.1 コメント文体とDoxygen
+
+C++コメントは「です」「ます」「ください」を使わず、体言止めまたは簡潔な常体にする。
+
+関数の契約は宣言側にDoxygen形式で書き、次を必須にする。
+実装定義側に同じDoxygenコメントを重複させない。
+ヘッダ内のinline関数やconstexpr関数は宣言兼定義として扱い、ヘッダ側にDoxygenコメントを書く。
+`.cpp`内だけで使うhelperは実装詳細なのでDoxygenコメントを書かない。
+
+- `@brief`
+- `@param[in]` または `@param[out]`
+- `@retval`
+- `@pre`
+- `@post`
+
+必要な場合だけ `@note`、`@remark` を追加する。
+
+### 6.5.2 制御構文の条件式
+
+`if`、`while`、テストmacroの条件式では、API呼び出しやメソッド呼び出しを直接行わない。
+直前の一時変数に退避し、gdbで値を確認しやすくする。
+
+```cpp
+auto const header_is_valid = IsValidHeader(header);
+if (!header_is_valid)
+{
+	return false;
+}
 ```
 
 ### 6.6 失敗表現
@@ -1863,6 +1896,20 @@ StoreLe16(0x1234) -> {0x34, 0x12}
 
 C++の小さい処理は、実装を見ると簡単に見える。  
 しかし、境界条件が曖昧なままだと再利用できない。
+
+GoogleTestの各 `TEST` にはDoxygen形式の試験仕様コメントを書く。
+通常の関数引数を持たないmacroなので、関数用の `@param` と `@retval` は要求しない。
+
+必須タグ:
+
+- `@test`
+- `@brief`
+- `@details`
+- `@pre`
+- `@post`
+
+`@brief` は試験目的、`@details` は入力条件と期待結果を1から2文で書く。
+テスト本文の全入力値をコメントへ重複列挙しすぎない。
 
 テストは「このmoduleの仕様書」でもある。
 

@@ -14,5 +14,4 @@ Statusは次の値を使います。
 
 | Module | Category | Status | C++ Min | Tests | Format | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-
-現在、実装済みmoduleはありません。
+| bcd | numeric / binary | verified | C++17 | GoogleTest | checked | packed BCDを整数または10進文字列へ変換 |

@@ -8,7 +8,7 @@ drop-in utility catalog です。
 
 ## 現在の状態
 
-- 実moduleはまだありません。
+- 実moduleとして `modules/bcd/` があります。
 - 候補APIは [catalog.md](catalog.md) に蓄積します。
 - 実装状況は [progress.md](progress.md) で追跡します。
 - `modules/` 配下のフォルダは、実際にmoduleを作るタイミングで追加します。

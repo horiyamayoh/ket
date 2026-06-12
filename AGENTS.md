@@ -34,6 +34,12 @@ modules/<name>/ket_<name>_test.cpp
 - ヘッダのinclude guardには `#pragma once` を使ってください。
 - 公開ヘッダは include what you use を守り、自分が必要な標準ヘッダを自分でincludeしてください。
 - `.cpp` 内helperは無名namespace、header内helperは `ket::detail` に置いてください。
+- C++コメントでは `namespace` などC++ネイティブな語を和訳しないでください。
+- C++コメントは「です」「ます」「ください」を避け、体言止めや簡潔な常体で書いてください。
+- 関数Doxygenコメントは宣言側に書き、`@brief`、`@param[in/out]`、`@retval`、`@pre`、`@post` を必ず含めてください。実装定義側に同じDoxygenを重複させないでください。
+- module testの各 `TEST` にはDoxygen形式の試験仕様を書き、`@test`、`@brief`、`@details`、`@pre`、`@post` を必ず含めてください。
+- namespace終端コメントは `// namespace ket` のように書き、その直前に空行を1行入れてください。
+- `if`、`while`、`EXPECT_FALSE` などの条件式でAPI呼び出しを直接行わず、直前の一時変数へ退避してください。gdbで値を追いやすくするためです。
 
 ## Build, test, format
 

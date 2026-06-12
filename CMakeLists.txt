@@ -50,4 +50,11 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			tests/ket_repository_smoke_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_bcd_test
+		SOURCES
+			modules/bcd/ket_bcd.cpp
+			modules/bcd/ket_bcd_test.cpp
+	)
 endif()
