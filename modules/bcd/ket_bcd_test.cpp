@@ -48,7 +48,7 @@ namespace
 				  "uint8_t BCD is constexpr");
 	static_assert(OptionalEquals(ket::ParseBcd(static_cast<std::uint16_t>(0x1234U)), 1234),
 				  "uint16_t BCD is constexpr");
-	static_assert(OptionalEquals(ket::ParseBcd(static_cast<std::uint32_t>(0x20260613U)), 20260613),
+	static_assert(OptionalEquals(ket::ParseBcd(std::uint32_t{0x20260613U}), 20260613),
 				  "uint32_t BCD is constexpr");
 	static_assert(OptionalIsEmpty(ket::ParseBcd(static_cast<std::uint8_t>(0x0AU))),
 				  "invalid BCD is constexpr");
@@ -56,7 +56,7 @@ namespace
 				  "uint8_t BCD output is constexpr");
 	static_assert(OptionalEquals(ket::ToBcd16(1234), static_cast<std::uint16_t>(0x1234U)),
 				  "uint16_t BCD output is constexpr");
-	static_assert(OptionalEquals(ket::ToBcd32(20260613), static_cast<std::uint32_t>(0x20260613U)),
+	static_assert(OptionalEquals(ket::ToBcd32(20260613), std::uint32_t{0x20260613U}),
 				  "uint32_t BCD output is constexpr");
 	static_assert(OptionalIsEmpty(ket::ToBcd8(100)), "out-of-range BCD output is constexpr");
 
@@ -107,7 +107,7 @@ TEST(KetBcdTest, ParsesUint16Bcd)
  */
 TEST(KetBcdTest, ParsesUint32Bcd)
 {
-	const auto date = ket::ParseBcd(static_cast<std::uint32_t>(0x20260613U));
+	const auto date = ket::ParseBcd(std::uint32_t{0x20260613U});
 
 	EXPECT_EQ(date, std::optional<int>(20260613));
 }
@@ -140,7 +140,7 @@ TEST(KetBcdTest, RejectsInvalidUint8Bcd)
 TEST(KetBcdTest, RejectsInvalidWideBcd)
 {
 	const auto invalid_uint16 = ket::ParseBcd(static_cast<std::uint16_t>(0x12A4U));
-	const auto invalid_uint32 = ket::ParseBcd(static_cast<std::uint32_t>(0x20260A13U));
+	const auto invalid_uint32 = ket::ParseBcd(std::uint32_t{0x20260A13U});
 
 	EXPECT_EQ(invalid_uint16, std::nullopt);
 	EXPECT_EQ(invalid_uint32, std::nullopt);

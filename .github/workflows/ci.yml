@@ -15,7 +15,15 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build clang-format-18 g++ python3
+          sudo apt-get install -y cmake ninja-build clang-format-18 clang-tidy-18 cppcheck iwyu g++ python3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Check format
         env:
@@ -28,5 +36,16 @@ jobs:
       - name: Build
         run: cmake --build --preset dev
 
+      - name: Check static analysis
+        env:
+          CLANG_TIDY: clang-tidy-18
+        run: cmake --build --preset dev --target check-static
+
+      - name: Check conventions
+        run: cmake --build --preset dev --target check-conventions
+
       - name: Test
         run: ctest --preset dev
+
+      - name: Check diff whitespace
+        run: git diff --check

@@ -48,10 +48,14 @@ modules/<name>/ket_<name>_test.cpp
 主環境はWSL/Linuxです。
 
 ```sh
+npm ci
+python3 tools/check_format.py
 cmake --preset dev
 cmake --build --preset dev
+cmake --build --preset dev --target check-static
+cmake --build --preset dev --target check-conventions
 ctest --preset dev
-python3 tools/check_format.py
+git diff --check
 ```
 
 整形を適用する場合:
@@ -61,7 +65,9 @@ python3 tools/format.py
 ```
 
 - C++コードは `.clang-format` に従ってください。
+- Markdown、YAML、JSONはPrettierに従ってください。
 - formatterはAllman brace、tab indentation、表示幅4を前提にしています。
+- 静的解析は `clang-tidy-18`、`cppcheck`、`iwyu` を使います。
 - C++コメント規約は `docs/style.md` に従ってください。物理操作ではなく、論理的な意味、背景、目的を書きます。
 - functional testはGoogleTestで書きます。
 - GoogleTestは `v1.17.0` 固定で、functional testはC++17以上です。
@@ -74,6 +80,8 @@ python3 tools/format.py
 - `python3 tools/check_format.py`
 - `cmake --preset dev`
 - `cmake --build --preset dev`
+- `cmake --build --preset dev --target check-static`
+- `cmake --build --preset dev --target check-conventions`
 - `ctest --preset dev`
 - `git diff --check`
 

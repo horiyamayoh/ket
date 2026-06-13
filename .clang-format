@@ -29,10 +29,23 @@ AlignOperands: DontAlign
 AlignTrailingComments: true
 
 AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
 AllowShortLoopsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: MultiLine
+BreakBeforeConceptDeclarations: Always
+BreakConstructorInitializers: BeforeColon
+CompactNamespaces: false
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+KeepEmptyLinesAtEOF: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+SeparateDefinitionBlocks: Leave
+SortUsingDeclarations: LexicographicNumeric
 
 BinPackArguments: false
 BinPackParameters: false
@@ -54,5 +67,9 @@ IncludeCategories:
   - Regex: '.*'
     Priority: 4
     SortPriority: 4
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
 SpaceBeforeParens: ControlStatements
 SpacesInAngles: Never
+SpacesInParens: Never
+SpacesInSquareBrackets: false

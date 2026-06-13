@@ -1,0 +1,8 @@
+.cache/
+.git/
+.idea/
+.vscode/
+build/
+CMakeFiles/
+node_modules/
+_deps/

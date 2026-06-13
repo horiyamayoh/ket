@@ -13,8 +13,11 @@
       "binaryDir": "${sourceDir}/build/dev",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "KET_BUILD_TESTS": "ON",
-        "KET_ENABLE_FORMAT_TARGETS": "ON"
+        "KET_ENABLE_FORMAT_TARGETS": "ON",
+        "KET_ENABLE_STRICT_WARNINGS": "ON",
+        "KET_WARNINGS_AS_ERRORS": "ON"
       }
     }
   ],

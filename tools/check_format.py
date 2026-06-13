@@ -3,58 +3,33 @@
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 import sys
-from pathlib import Path
+
+import ket_tooling
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SOURCE_SUFFIXES = {
-	".c",
-	".cc",
-	".cpp",
-	".cxx",
-	".h",
-	".hh",
-	".hpp",
-	".hxx",
-}
-SKIP_DIRS = {
-	".cache",
-	".git",
-	".github",
-	".idea",
-	".vscode",
-	"build",
-	"CMakeFiles",
-	"_deps",
-}
+ROOT = ket_tooling.ROOT
 
 
 def find_clang_format() -> str:
-	configured = os.environ.get("CLANG_FORMAT")
+	return ket_tooling.find_tool(
+		"CLANG_FORMAT",
+		("clang-format-18", "clang-format"),
+		"Set CLANG_FORMAT or install clang-format-18.",
+	)
+
+
+def find_prettier() -> str:
+	configured = os.environ.get("PRETTIER")
 	if configured:
 		return configured
 
-	for candidate in ("clang-format-18", "clang-format"):
-		path = shutil.which(candidate)
-		if path:
-			return path
+	local_prettier = ROOT / "node_modules" / ".bin" / "prettier"
+	if local_prettier.exists():
+		return str(local_prettier)
 
-	raise RuntimeError("clang-format was not found. Set CLANG_FORMAT or install clang-format.")
-
-
-def iter_source_files() -> list[Path]:
-	files: list[Path] = []
-
-	for path in ROOT.rglob("*"):
-		if any(part in SKIP_DIRS for part in path.parts):
-			continue
-		if path.is_file() and path.suffix in SOURCE_SUFFIXES:
-			files.append(path)
-
-	return sorted(files)
+	raise RuntimeError("Prettier was not found. Run npm ci or set PRETTIER.")
 
 
 def main() -> int:
@@ -64,18 +39,34 @@ def main() -> int:
 		print(error, file=sys.stderr)
 		return 1
 
-	files = iter_source_files()
-	if not files:
+	try:
+		prettier = find_prettier()
+	except RuntimeError as error:
+		print(error, file=sys.stderr)
+		return 1
+
+	cpp_files = ket_tooling.iter_cpp_source_files()
+	if not cpp_files:
 		print("No C++ source files found.")
-		return 0
+	else:
+		command = [clang_format, "--dry-run", "--Werror", *[str(path) for path in cpp_files]]
+		result = subprocess.run(command, cwd=ROOT)
+		if result.returncode != 0:
+			print("Formatting check failed. Run python3 tools/format.py.", file=sys.stderr)
+			return result.returncode
 
-	command = [clang_format, "--dry-run", "--Werror", *[str(path) for path in files]]
-	result = subprocess.run(command, cwd=ROOT)
-	if result.returncode != 0:
-		print("Formatting check failed. Run python3 tools/format.py.", file=sys.stderr)
-		return result.returncode
+	prettier_files = ket_tooling.iter_prettier_files()
+	if not prettier_files:
+		print("No Prettier-managed files found.")
+	else:
+		command = [prettier, "--check", *[str(path) for path in prettier_files]]
+		result = subprocess.run(command, cwd=ROOT)
+		if result.returncode != 0:
+			print("Prettier check failed. Run python3 tools/format.py.", file=sys.stderr)
+			return result.returncode
 
-	print(f"Format check passed for {len(files)} file(s).")
+	print(f"Format check passed for {len(cpp_files)} C++ file(s).")
+	print(f"Prettier check passed for {len(prettier_files)} file(s).")
 	return 0
 
 

@@ -35,6 +35,8 @@ TEST(KetBcdTest, ParsesUint8Bcd)
 ```sh
 cmake --preset dev
 cmake --build --preset dev
+cmake --build --preset dev --target check-static
+cmake --build --preset dev --target check-conventions
 ctest --preset dev
 ```
 
