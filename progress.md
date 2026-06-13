@@ -12,7 +12,6 @@ Statusは次の値を使います。
 - `verified`: format、build、test、必要なcompile-only checkが通っている
 - `deprecated`: 残しているが新規利用を推奨しない
 
-| Module | Category | Status | C++ Min | Tests | Format | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-
-現在、実装済みmoduleはありません。
+| Module | Category         | Status   | C++ Min | Tests      | Format  | Notes                                  |
+| ------ | ---------------- | -------- | ------- | ---------- | ------- | -------------------------------------- |
+| bcd    | numeric / binary | verified | C++17   | GoogleTest | checked | packed BCDと10進整数・文字列を相互変換 |

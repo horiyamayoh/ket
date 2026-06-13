@@ -7,6 +7,9 @@ include(FetchContent)
 
 option(KET_BUILD_TESTS "Build ket tests." ON)
 option(KET_ENABLE_FORMAT_TARGETS "Enable format and check-format targets." ON)
+option(KET_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
+option(KET_ENABLE_STRICT_WARNINGS "Enable strict warning options for ket targets." ON)
+option(KET_WARNINGS_AS_ERRORS "Treat ket target warnings as errors." ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -18,14 +21,47 @@ if(KET_ENABLE_FORMAT_TARGETS)
 			format
 			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/format.py"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-			COMMENT "Formatting C++ files with clang-format"
+			COMMENT "Formatting files with clang-format and Prettier"
 		)
 
 		add_custom_target(
 			check-format
 			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_format.py"
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-			COMMENT "Checking C++ format with clang-format"
+			COMMENT "Checking format with clang-format and Prettier"
+		)
+
+		add_custom_target(
+			check-tidy
+			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_tidy.py"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Running clang-tidy for ket sources"
+		)
+
+		add_custom_target(
+			check-cppcheck
+			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_cppcheck.py"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Running cppcheck for ket sources"
+		)
+
+		add_custom_target(
+			check-iwyu
+			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_iwyu.py"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Running include-what-you-use for ket sources"
+		)
+
+		add_custom_target(
+			check-static
+			DEPENDS check-tidy check-cppcheck check-iwyu
+		)
+
+		add_custom_target(
+			check-conventions
+			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_conventions.py"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Checking ket source conventions"
 		)
 	endif()
 endif()
@@ -49,5 +85,12 @@ if(KET_BUILD_TESTS)
 		ket_repository_smoke_test
 		SOURCES
 			tests/ket_repository_smoke_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_bcd_test
+		SOURCES
+			modules/bcd/ket_bcd.cpp
+			modules/bcd/ket_bcd_test.cpp
 	)
 endif()

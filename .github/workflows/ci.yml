@@ -4,9 +4,34 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: gcc-gate
+            cc: gcc
+            cxx: g++
+          - name: clang-gate
+            cc: clang-18
+            cxx: clang++-18
+
+    env:
+      CLANG_FORMAT: clang-format-18
+      CLANG_TIDY: clang-tidy-18
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
 
     steps:
       - name: Checkout
@@ -15,18 +40,24 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build clang-format-18 g++ python3
+          sudo apt-get install -y cmake ninja-build clang-18 clang-format-18 clang-tidy-18 cppcheck iwyu g++ python3
 
-      - name: Check format
-        env:
-          CLANG_FORMAT: clang-format-18
-        run: python3 tools/check_format.py
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-      - name: Configure
-        run: cmake --preset dev
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/dev/_deps
+            build/sanitize/_deps
+          key: ${{ runner.os }}-${{ matrix.name }}-cmake-${{ hashFiles('CMakeLists.txt', 'CMakePresets.json', 'cmake/**/*.cmake') }}
 
-      - name: Build
-        run: cmake --build --preset dev
+      - name: Install npm dependencies
+        run: npm ci
 
-      - name: Test
-        run: ctest --preset dev
+      - name: Run repository gate
+        run: python3 tools/check_repository.py
