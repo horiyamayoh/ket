@@ -49,16 +49,16 @@ namespace ket
 		 */
 		constexpr std::optional<int> AppendBcdDigit(int value, std::uint32_t digit) noexcept
 		{
-			auto const digit_is_bcd = IsBcdNibble(digit);
+			const auto digit_is_bcd = IsBcdNibble(digit);
 			if (!digit_is_bcd)
 			{
 				return std::nullopt;
 			}
 
-			auto const digit_value = static_cast<int>(digit);
-			auto const max_int = std::numeric_limits<int>::max();
-			auto const max_value_before_append = (max_int - digit_value) / 10;
-			auto const value_overflows = value > max_value_before_append;
+			const auto digit_value = static_cast<int>(digit);
+			const auto max_int = std::numeric_limits<int>::max();
+			const auto max_value_before_append = (max_int - digit_value) / 10;
+			const auto value_overflows = value > max_value_before_append;
 			if (value_overflows)
 			{
 				return std::nullopt;
@@ -82,9 +82,9 @@ namespace ket
 
 			for (int index = nibble_count - 1; index >= 0; --index)
 			{
-				auto const digit = (value >> (index * 4)) & 0x0FU;
-				auto const next = AppendBcdDigit(result, digit);
-				auto const next_has_value = next.has_value();
+				const auto digit = (value >> (index * 4)) & 0x0FU;
+				const auto next = AppendBcdDigit(result, digit);
+				const auto next_has_value = next.has_value();
 				if (!next_has_value)
 				{
 					// BCDではないnibble、またはintへ収まらない値だった
@@ -127,14 +127,14 @@ namespace ket
 		 */
 		constexpr std::optional<std::uint32_t> ToBcdNibbles(int value, int nibble_count) noexcept
 		{
-			auto const value_is_negative = value < 0;
+			const auto value_is_negative = value < 0;
 			if (value_is_negative)
 			{
 				return std::nullopt;
 			}
 
-			auto const decimal_limit = DecimalLimitForBcdNibbles(nibble_count);
-			auto const value_too_large = value >= decimal_limit;
+			const auto decimal_limit = DecimalLimitForBcdNibbles(nibble_count);
+			const auto value_too_large = value >= decimal_limit;
 			if (value_too_large)
 			{
 				return std::nullopt;
@@ -145,8 +145,8 @@ namespace ket
 
 			for (int index = 0; index < nibble_count; ++index)
 			{
-				auto const digit = static_cast<std::uint32_t>(remaining % 10);
-				auto const shift = static_cast<std::uint32_t>(index * 4);
+				const auto digit = static_cast<std::uint32_t>(remaining % 10);
+				const auto shift = static_cast<std::uint32_t>(index * 4);
 				result |= digit << shift;
 				remaining /= 10;
 			}
@@ -165,7 +165,7 @@ namespace ket
 	 * @post 引数と外部状態の変更なし。
 	 * @note 整数変換のため、先頭ゼロは保持なし。
 	 * @code
-	 * auto const value = ket::ParseBcd(static_cast<std::uint8_t>(0x42U));
+	 * const auto value = ket::ParseBcd(static_cast<std::uint8_t>(0x42U));
 	 * // value == std::optional<int>(42)
 	 * @endcode
 	 */
@@ -183,7 +183,7 @@ namespace ket
 	 * @post 引数と外部状態の変更なし。
 	 * @note 整数変換のため、先頭ゼロは保持なし。
 	 * @code
-	 * auto const value = ket::ParseBcd(static_cast<std::uint16_t>(0x1234U));
+	 * const auto value = ket::ParseBcd(static_cast<std::uint16_t>(0x1234U));
 	 * // value == std::optional<int>(1234)
 	 * @endcode
 	 */
@@ -201,7 +201,7 @@ namespace ket
 	 * @post 引数と外部状態の変更なし。
 	 * @note 整数変換のため、先頭ゼロは保持なし。
 	 * @code
-	 * auto const value = ket::ParseBcd(static_cast<std::uint32_t>(0x20260613U));
+	 * const auto value = ket::ParseBcd(static_cast<std::uint32_t>(0x20260613U));
 	 * // value == std::optional<int>(20260613)
 	 * @endcode
 	 */
@@ -219,14 +219,14 @@ namespace ket
 	 * @post 引数と外部状態の変更なし。
 	 * @note 2桁固定幅のため、1桁値は上位nibbleを0として表現。
 	 * @code
-	 * auto const value = ket::ToBcd8(42);
+	 * const auto value = ket::ToBcd8(42);
 	 * // value == std::optional<std::uint8_t>(0x42)
 	 * @endcode
 	 */
 	constexpr std::optional<std::uint8_t> ToBcd8(int value) noexcept
 	{
-		auto const result = detail::ToBcdNibbles(value, 2);
-		auto const result_has_value = result.has_value();
+		const auto result = detail::ToBcdNibbles(value, 2);
+		const auto result_has_value = result.has_value();
 		if (!result_has_value)
 		{
 			return std::nullopt;
@@ -244,14 +244,14 @@ namespace ket
 	 * @post 引数と外部状態の変更なし。
 	 * @note 4桁固定幅のため、短い値は上位nibbleを0として表現。
 	 * @code
-	 * auto const value = ket::ToBcd16(42);
+	 * const auto value = ket::ToBcd16(42);
 	 * // value == std::optional<std::uint16_t>(0x0042)
 	 * @endcode
 	 */
 	constexpr std::optional<std::uint16_t> ToBcd16(int value) noexcept
 	{
-		auto const result = detail::ToBcdNibbles(value, 4);
-		auto const result_has_value = result.has_value();
+		const auto result = detail::ToBcdNibbles(value, 4);
+		const auto result_has_value = result.has_value();
 		if (!result_has_value)
 		{
 			return std::nullopt;
@@ -269,7 +269,7 @@ namespace ket
 	 * @post 引数と外部状態の変更なし。
 	 * @note 8桁固定幅のため、短い値は上位nibbleを0として表現。
 	 * @code
-	 * auto const value = ket::ToBcd32(20260613);
+	 * const auto value = ket::ToBcd32(20260613);
 	 * // value == std::optional<std::uint32_t>(0x20260613)
 	 * @endcode
 	 */
@@ -284,17 +284,17 @@ namespace ket
 	 * @param[in] size `data`のバイト数。
 	 * @retval value 変換後の10進文字列。
 	 * @retval std::nullopt `nullptr`、空入力、または不正nibble。
-	 * @pre なし。`nullptr` と空入力は失敗値として扱う。
+	 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`nullptr` と空入力は失敗値として扱う。
 	 * @post 引数と外部状態の変更なし。
 	 * @note 入力BCDの桁数を保ち、先頭の0も文字'0'として出力。
 	 * @note std::stringの確保があるためnoexceptなし。
 	 * @code
-	 * std::uint8_t const data[] = {0x00U, 0x42U};
-	 * auto const value = ket::BcdToDecimalString(data, 2U);
+	 * const std::uint8_t data[] = {0x00U, 0x42U};
+	 * const auto value = ket::BcdToDecimalString(data, 2U);
 	 * // value == std::optional<std::string>("0042")
 	 * @endcode
 	 */
-	std::optional<std::string> BcdToDecimalString(std::uint8_t const* data, std::size_t size);
+	std::optional<std::string> BcdToDecimalString(const std::uint8_t* data, std::size_t size);
 
 	/**
 	 * @brief 10進文字列の任意バイト長パックBCD変換。
@@ -306,7 +306,7 @@ namespace ket
 	 * @note 偶数桁は2桁ずつpacked BCDへ変換し、奇数桁は先頭に0を補って変換。
 	 * @note std::vectorの確保があるためnoexceptなし。
 	 * @code
-	 * auto const value = ket::DecimalStringToBcd("123");
+	 * const auto value = ket::DecimalStringToBcd("123");
 	 * // value == std::optional<std::vector<std::uint8_t>>({0x01, 0x23})
 	 * @endcode
 	 */

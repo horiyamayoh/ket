@@ -18,6 +18,7 @@ IndentCaseBlocks: false
 PointerAlignment: Left
 ReferenceAlignment: Left
 DerivePointerAlignment: false
+QualifierAlignment: Left
 
 AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: None
