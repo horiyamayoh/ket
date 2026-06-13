@@ -93,4 +93,10 @@ if(KET_BUILD_TESTS)
 			modules/bcd/ket_bcd.cpp
 			modules/bcd/ket_bcd_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_string_test
+		SOURCES
+			modules/string/ket_string_test.cpp
+	)
 endif()

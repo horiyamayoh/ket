@@ -29,7 +29,7 @@ class CheckLayoutTest(unittest.TestCase):
 			encoding="utf-8",
 		)
 		(root / "modules" / "bcd" / "ket_bcd.cpp").write_text(
-			'#include "ket_bcd.h"\n',
+			'#include "ket_bcd.h"\n\nint KetBcdAnchor()\n{\n\treturn 0;\n}\n',
 			encoding="utf-8",
 		)
 		(root / "modules" / "bcd" / "ket_bcd_test.cpp").write_text(
@@ -64,6 +64,28 @@ class CheckLayoutTest(unittest.TestCase):
 
 			self.assertEqual(errors, [])
 
+	def test_header_only_module_layout_has_no_errors(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			(root / "modules" / "bcd" / "ket_bcd.cpp").unlink()
+			(root / "CMakeLists.txt").write_text(
+				"\n".join(
+					(
+						"ket_add_module_test(",
+						"    ket_bcd_test",
+						"    SOURCES",
+						"        modules/bcd/ket_bcd_test.cpp",
+						")",
+						"",
+					)
+				),
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertEqual(errors, [])
+
 	def test_missing_standard_file_is_reported(self) -> None:
 		with self.make_repo() as root_name:
 			root = Path(root_name)
@@ -72,6 +94,51 @@ class CheckLayoutTest(unittest.TestCase):
 			errors = check_layout.collect_layout_errors(root)
 
 			self.assertIn("modules/bcd/ket_bcd_test.cpp: required module file is missing.", errors)
+
+	def test_placeholder_source_file_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			(root / "modules" / "bcd" / "ket_bcd.cpp").write_text(
+				'#include "ket_bcd.h"\n\n// 実装なし\n',
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.cpp: header-only module must omit placeholder source file.",
+				errors,
+			)
+
+	def test_include_only_source_file_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			(root / "modules" / "bcd" / "ket_bcd.cpp").write_text(
+				'#include "ket_bcd.h"\n#include <string>\n',
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.cpp: header-only module must omit placeholder source file.",
+				errors,
+			)
+
+	def test_block_comment_only_source_file_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			(root / "modules" / "bcd" / "ket_bcd.cpp").write_text(
+				'#include "ket_bcd.h"\n\n/*\n * 実装なし\n */\n',
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.cpp: header-only module must omit placeholder source file.",
+				errors,
+			)
 
 	def test_cross_module_include_is_reported(self) -> None:
 		with self.make_repo() as root_name:

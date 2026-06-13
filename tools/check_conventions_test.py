@@ -81,8 +81,109 @@ class CheckConventionsTest(unittest.TestCase):
 		)
 
 		self.assertTrue(
-			any("function Doxygen comment requires @param[in] or @param[out]." in error for error in errors)
+			any(
+				"function Doxygen comment requires @param[in], @param[out], or @param[in,out]." in error
+				for error in errors
+			)
 		)
+
+	def test_inout_parameter_comment_is_accepted(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"/**",
+					" * @brief Value update.",
+					" * @param[in,out] value Updated value.",
+					" * @retval void Return value none.",
+					" * @pre Caller provides a valid reference.",
+					" * @post Value may be changed.",
+					" */",
+					"void Update(int& value);",
+					"",
+				)
+			),
+		)
+
+		self.assertEqual(errors, [])
+
+	def test_legacy_inout_parameter_comment_is_reported(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"/**",
+					" * @brief Value update.",
+					" * @param[in/out] value Updated value.",
+					" * @retval void Return value none.",
+					" * @pre Caller provides a valid reference.",
+					" * @post Value may be changed.",
+					" */",
+					"void Update(int& value);",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(
+			any(
+				"function Doxygen comment requires @param[in], @param[out], or @param[in,out]." in error
+				for error in errors
+			)
+		)
+
+	def test_header_type_comment_is_accepted(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"/**",
+					" * @brief Value trait.",
+					" * @tparam T Checked type.",
+					" */",
+					"template <typename T>",
+					"struct IsValue",
+					"{",
+					"};",
+					"",
+				)
+			),
+		)
+
+		self.assertEqual(errors, [])
+
+	def test_missing_header_type_comment_is_reported(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"struct Value",
+					"{",
+					"};",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(any("type declaration requires a Doxygen comment." in error for error in errors))
+
+	def test_header_type_comment_requires_brief(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"/**",
+					" * @note Internal type.",
+					" */",
+					"struct Value",
+					"{",
+					"};",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(any("type Doxygen comment requires @brief." in error for error in errors))
 
 	def test_test_comment_requires_details_tag(self) -> None:
 		errors = self.check_text(
@@ -135,6 +236,30 @@ class CheckConventionsTest(unittest.TestCase):
 					"	if (sizeof(int) > 0)",
 					"	{",
 					"	}",
+					"}",
+					"",
+				)
+			),
+		)
+
+		self.assertEqual(errors, [])
+
+	def test_throw_expression_is_not_treated_as_function(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"#include <stdexcept>",
+					"",
+					"/**",
+					" * @brief Error raise.",
+					" * @retval void Return value none.",
+					" * @pre Error path selected.",
+					" * @post Always throws std::runtime_error.",
+					" */",
+					"inline void Raise()",
+					"{",
+					'	throw std::runtime_error("sample");',
 					"}",
 					"",
 				)

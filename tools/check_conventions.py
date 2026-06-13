@@ -12,9 +12,13 @@ import ket_tooling
 POLITE_WORDS = ("です", "ます", "ください")
 TEST_TAGS = ("@test", "@brief", "@details", "@pre", "@post")
 FUNCTION_TAGS = ("@brief", "@retval", "@pre", "@post")
+TYPE_TAGS = ("@brief",)
 ALLOWED_CONDITION_CALLS = {"alignof", "sizeof"}
-CONTROL_PREFIXES = ("if ", "while ", "for ", "switch ", "return ", "static_assert")
+CONTROL_PREFIXES = ("if ", "while ", "for ", "switch ", "return ", "throw ", "static_assert")
 MACRO_PREFIXES = ("TEST", "EXPECT_", "ASSERT_")
+TYPE_DECLARATION_PATTERN = re.compile(
+	r"^(?:template\s*<[^>]+>\s*)?(?:(?:struct|class)\s+[A-Za-z_][A-Za-z0-9_]*|enum(?:\s+class)?\s+[A-Za-z_][A-Za-z0-9_]*)\b"
+)
 
 
 def read_lines(path: Path) -> list[str]:
@@ -162,7 +166,7 @@ def doxygen_tag_has_text(comment: str, tag: str) -> bool:
 
 
 def doxygen_has_documented_param(comment: str) -> bool:
-	pattern = re.compile(r"@param\[(?:in|out|in,out|in/out)\]\s+\S+\s+\S+")
+	pattern = re.compile(r"@param\[(?:in|out|in,out)\]\s+\S+\s+\S+")
 	return any(pattern.search(line) for line in comment.splitlines())
 
 
@@ -185,9 +189,66 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 				add_error(errors, path, index + 1, f"function Doxygen comment requires {tag}.")
 
 		if function_has_parameters(signature[0]) and not doxygen_has_documented_param(comment):
-			add_error(errors, path, index + 1, "function Doxygen comment requires @param[in] or @param[out].")
+			add_error(
+				errors,
+				path,
+				index + 1,
+				"function Doxygen comment requires @param[in], @param[out], or @param[in,out].",
+			)
 
 		index = signature[1] + 1
+
+
+def type_declaration_at(lines: list[str], index: int) -> tuple[str, int] | None:
+	stripped = lines[index].strip()
+	if not stripped:
+		return None
+	if stripped.startswith(("#", "*", "//")):
+		return None
+
+	signature_lines: list[str] = []
+	cursor = index
+
+	while cursor < len(lines):
+		current = lines[cursor].strip()
+		if not current:
+			cursor += 1
+			continue
+		if current.startswith(("#", "*", "//")):
+			break
+
+		signature_lines.append(current)
+		signature = normalize_signature(signature_lines)
+		if TYPE_DECLARATION_PATTERN.match(signature):
+			return signature, cursor
+
+		if cursor == index and not current.startswith("template "):
+			return None
+
+		cursor += 1
+
+	return None
+
+
+def check_header_type_comments(path: Path, lines: list[str], errors: list[str]) -> None:
+	index = 0
+	while index < len(lines):
+		declaration = type_declaration_at(lines, index)
+		if declaration is None:
+			index += 1
+			continue
+
+		comment = previous_doxygen(lines, index)
+		if comment is None:
+			add_error(errors, path, index + 1, "type declaration requires a Doxygen comment.")
+			index = declaration[1] + 1
+			continue
+
+		for tag in TYPE_TAGS:
+			if not doxygen_tag_has_text(comment, tag):
+				add_error(errors, path, index + 1, f"type Doxygen comment requires {tag}.")
+
+		index = declaration[1] + 1
 
 
 def check_comment_wording(path: Path, lines: list[str], errors: list[str]) -> None:
@@ -276,6 +337,7 @@ def check_file(path: Path) -> list[str]:
 
 	if path.suffix in {".h", ".hh", ".hpp", ".hxx"}:
 		check_header_function_comments(path, lines, errors)
+		check_header_type_comments(path, lines, errors)
 	if path.name.endswith("_test.cpp") or path.parts[-2] == "tests":
 		check_test_comments(path, lines, errors)
 

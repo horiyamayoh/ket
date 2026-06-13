@@ -105,3 +105,47 @@ Tests:
 - DecimalStringToBcd("0042") == {0x00, 0x42}
 - DecimalStringToBcd("123") == {0x01, 0x23}
 - DecimalStringToBcd("12A4") == std::nullopt
+
+## Idea: String
+
+Category: string
+
+Pain:
+
+- `std::string::append` を複数行に分けて書くと、業務意図より連結手順が目立つ
+- `operator+` 連鎖では一時文字列や型の違いを意識しやすい
+- 文字列片の連結と既存文字列への追記を、formatではない小さな意図として名前にしたい
+
+Candidate API:
+
+```cpp
+ket::StrCat(...)
+ket::StrAppend(dst, ...)
+```
+
+C++ versions:
+
+- C++17 or later
+
+Failure / edge cases:
+
+- empty argument list
+- `char` as one-character part
+- embedded NUL in length-aware `std::string_view`
+- raw C string must be non-null and null-terminated
+- destination reference for `StrAppend` must refer to a valid `std::string`
+- self-reference such as `StrAppend(dst, dst, std::string_view(dst))`
+
+Dependencies:
+
+- Standard library only
+- No ket dependencies
+
+Tests:
+
+- StrCat() == ""
+- StrCat("a", std::string("b"), std::string_view("c"), 'd') == "abcd"
+- StrCat(std::string_view("a\\0b", 3)) preserves 3 bytes
+- StrAppend(dst, ...) appends to existing text
+- StrAppend(dst) keeps dst unchanged
+- StrAppend(dst, dst, ":", std::string_view(dst)) uses pre-append content
