@@ -19,18 +19,38 @@
         "KET_ENABLE_STRICT_WARNINGS": "ON",
         "KET_WARNINGS_AS_ERRORS": "ON"
       }
+    },
+    {
+      "name": "sanitize",
+      "displayName": "Sanitizer",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/sanitize",
+      "cacheVariables": {
+        "KET_ENABLE_SANITIZERS": "ON"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "dev",
       "configurePreset": "dev"
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize"
     }
   ],
   "testPresets": [
     {
       "name": "dev",
       "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize",
       "output": {
         "outputOnFailure": true
       }

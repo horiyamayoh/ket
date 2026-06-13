@@ -49,13 +49,7 @@ modules/<name>/ket_<name>_test.cpp
 
 ```sh
 npm ci
-python3 tools/check_format.py
-cmake --preset dev
-cmake --build --preset dev
-cmake --build --preset dev --target check-static
-cmake --build --preset dev --target check-conventions
-ctest --preset dev
-git diff --check
+python3 tools/check_repository.py
 ```
 
 整形を適用する場合:
@@ -77,12 +71,18 @@ python3 tools/format.py
 
 変更を終える前に次を確認してください。
 
+- `python3 tools/check_repository.py`
+- `python3 tools/check_python.py`
+- `python3 tools/check_layout.py`
 - `python3 tools/check_format.py`
 - `cmake --preset dev`
 - `cmake --build --preset dev`
 - `cmake --build --preset dev --target check-static`
 - `cmake --build --preset dev --target check-conventions`
 - `ctest --preset dev`
+- `cmake --preset sanitize`
+- `cmake --build --preset sanitize`
+- `ctest --preset sanitize`
 - `git diff --check`
 
 moduleを追加または変更した場合は、必要に応じて次も更新してください。

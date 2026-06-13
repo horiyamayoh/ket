@@ -33,11 +33,24 @@ TEST(KetBcdTest, ParsesUint8Bcd)
 ## コマンド
 
 ```sh
+python3 tools/check_repository.py
+```
+
+個別の確認を分けて実行する場合:
+
+```sh
+python3 tools/check_python.py
+python3 tools/check_layout.py
+python3 tools/check_format.py
 cmake --preset dev
 cmake --build --preset dev
 cmake --build --preset dev --target check-static
 cmake --build --preset dev --target check-conventions
 ctest --preset dev
+cmake --preset sanitize
+cmake --build --preset sanitize
+ctest --preset sanitize
+git diff --check
 ```
 
 ## CMake helper

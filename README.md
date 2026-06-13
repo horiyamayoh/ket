@@ -19,13 +19,7 @@ WSL/Linux環境を主対象にします。
 
 ```sh
 npm ci
-python3 tools/check_format.py
-cmake --preset dev
-cmake --build --preset dev
-cmake --build --preset dev --target check-static
-cmake --build --preset dev --target check-conventions
-ctest --preset dev
-git diff --check
+python3 tools/check_repository.py
 ```
 
 整形を適用する場合:
@@ -45,6 +39,23 @@ CLANG_FORMAT=clang-format-18 python3 tools/check_format.py
 
 ```sh
 sudo apt-get install -y clang-tidy-18 cppcheck iwyu
+```
+
+個別の確認を分けて実行する場合:
+
+```sh
+python3 tools/check_python.py
+python3 tools/check_layout.py
+python3 tools/check_format.py
+cmake --preset dev
+cmake --build --preset dev
+cmake --build --preset dev --target check-static
+cmake --build --preset dev --target check-conventions
+ctest --preset dev
+cmake --preset sanitize
+cmake --build --preset sanitize
+ctest --preset sanitize
+git diff --check
 ```
 
 ## module追加の基本形

@@ -55,9 +55,9 @@ def main() -> int:
 	except RuntimeError as error:
 		return ket_tooling.fail(error)
 
-	files = ket_tooling.iter_module_implementation_files()
+	files = ket_tooling.iter_analysis_files()
 	if not files:
-		print("No module implementation files found.")
+		print("No C++ analysis files found.")
 		return 0
 
 	header_filter = r".*/modules/.*"

@@ -7,6 +7,7 @@ include(FetchContent)
 
 option(KET_BUILD_TESTS "Build ket tests." ON)
 option(KET_ENABLE_FORMAT_TARGETS "Enable format and check-format targets." ON)
+option(KET_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers." OFF)
 option(KET_ENABLE_STRICT_WARNINGS "Enable strict warning options for ket targets." ON)
 option(KET_WARNINGS_AS_ERRORS "Treat ket target warnings as errors." ON)
 

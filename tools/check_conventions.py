@@ -13,6 +13,8 @@ POLITE_WORDS = ("です", "ます", "ください")
 TEST_TAGS = ("@test", "@brief", "@details", "@pre", "@post")
 FUNCTION_TAGS = ("@brief", "@retval", "@pre", "@post")
 ALLOWED_CONDITION_CALLS = {"alignof", "sizeof"}
+CONTROL_PREFIXES = ("if ", "while ", "for ", "switch ", "return ", "static_assert")
+MACRO_PREFIXES = ("TEST", "EXPECT_", "ASSERT_")
 
 
 def read_lines(path: Path) -> list[str]:
@@ -58,20 +60,24 @@ def check_test_comments(path: Path, lines: list[str], errors: list[str]) -> None
 				add_error(errors, path, index + 1, f"TEST Doxygen comment requires {tag}.")
 
 
-def line_looks_like_function_signature(line: str) -> bool:
-	stripped = line.strip()
+def normalize_signature(lines: list[str]) -> str:
+	return " ".join(line.strip() for line in lines if line.strip())
+
+
+def line_looks_like_function_signature(signature: str) -> bool:
+	stripped = signature.strip()
 	if "(" not in stripped or ")" not in stripped:
 		return False
-	if stripped.startswith(("if ", "while ", "for ", "switch ", "return ", "static_assert")):
+	if stripped.startswith(CONTROL_PREFIXES):
 		return False
-	if stripped.startswith(("TEST", "EXPECT_", "ASSERT_")):
+	if stripped.startswith(MACRO_PREFIXES):
 		return False
 	if stripped.startswith(("#", "*", "//")):
 		return False
 
 	return bool(
 		re.match(
-			r"^(?:template\s*<[^>]+>\s*)?(?:[\w:<>~*&,\s]+\s+)+[A-Za-z_][A-Za-z0-9_:]*\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?(?:;)?\s*$",
+			r"^(?:template\s*<[^>]+>\s*)?(?:\[\[[^\]]+\]\]\s*)?(?:[\w:<>~*&,\[\],\s]+\s+)+[A-Za-z_][A-Za-z0-9_:]*\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept(?:\([^)]*\))?\s*)?(?:;)?\s*$",
 			stripped,
 		)
 	)
@@ -88,8 +94,8 @@ def next_significant_line(lines: list[str], index: int) -> str:
 	return lines[cursor].strip()
 
 
-def function_has_parameters(line: str) -> bool:
-	match = re.search(r"\((.*)\)", line)
+def function_has_parameters(signature: str) -> bool:
+	match = re.search(r"\(([^()]*)\)", signature)
 	if not match:
 		return False
 
@@ -97,29 +103,91 @@ def function_has_parameters(line: str) -> bool:
 	return parameters not in ("", "void")
 
 
-def check_header_function_comments(path: Path, lines: list[str], errors: list[str]) -> None:
-	for index, line in enumerate(lines):
-		if not line_looks_like_function_signature(line):
+def function_signature_at(lines: list[str], index: int) -> tuple[str, int] | None:
+	stripped = lines[index].strip()
+	if not stripped:
+		return None
+	if stripped.startswith(("#", "*", "//")):
+		return None
+	if stripped.startswith(CONTROL_PREFIXES) or stripped.startswith(MACRO_PREFIXES):
+		return None
+
+	signature_lines: list[str] = []
+	paren_depth = 0
+	saw_paren = False
+	cursor = index
+
+	while cursor < len(lines):
+		current = lines[cursor].strip()
+		if not current:
+			cursor += 1
+			continue
+		if current.startswith(("#", "*", "//")):
+			break
+
+		signature_lines.append(current)
+		paren_depth += current.count("(")
+		paren_depth -= current.count(")")
+		saw_paren = saw_paren or "(" in current
+
+		signature = normalize_signature(signature_lines)
+		ends_declaration = current.endswith(";")
+		opens_definition = current.endswith("{")
+		next_line = next_significant_line(lines, cursor)
+		ends_before_definition = saw_paren and paren_depth == 0 and next_line == "{"
+
+		if ends_declaration or opens_definition or ends_before_definition:
+			if line_looks_like_function_signature(signature):
+				return signature, cursor
+			return None
+
+		if saw_paren and paren_depth == 0 and not line_looks_like_function_signature(signature):
+			return None
+
+		cursor += 1
+
+	return None
+
+
+def doxygen_tag_has_text(comment: str, tag: str) -> bool:
+	for line in comment.splitlines():
+		if tag not in line:
 			continue
 
-		stripped = line.strip()
-		next_line = next_significant_line(lines, index)
-		is_definition = next_line == "{"
-		is_declaration = stripped.endswith(";")
-		if not is_definition and not is_declaration:
+		text = line.split(tag, 1)[1].strip()
+		if text:
+			return True
+
+	return False
+
+
+def doxygen_has_documented_param(comment: str) -> bool:
+	pattern = re.compile(r"@param\[(?:in|out|in,out|in/out)\]\s+\S+\s+\S+")
+	return any(pattern.search(line) for line in comment.splitlines())
+
+
+def check_header_function_comments(path: Path, lines: list[str], errors: list[str]) -> None:
+	index = 0
+	while index < len(lines):
+		signature = function_signature_at(lines, index)
+		if signature is None:
+			index += 1
 			continue
 
 		comment = previous_doxygen(lines, index)
 		if comment is None:
 			add_error(errors, path, index + 1, "function declaration requires a Doxygen comment.")
+			index = signature[1] + 1
 			continue
 
 		for tag in FUNCTION_TAGS:
-			if tag not in comment:
+			if not doxygen_tag_has_text(comment, tag):
 				add_error(errors, path, index + 1, f"function Doxygen comment requires {tag}.")
 
-		if function_has_parameters(stripped) and "@param[in]" not in comment and "@param[out]" not in comment:
+		if function_has_parameters(signature[0]) and not doxygen_has_documented_param(comment):
 			add_error(errors, path, index + 1, "function Doxygen comment requires @param[in] or @param[out].")
+
+		index = signature[1] + 1
 
 
 def check_comment_wording(path: Path, lines: list[str], errors: list[str]) -> None:
