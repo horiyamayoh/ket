@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -18,7 +19,7 @@ namespace
 	 * @pre なし。
 	 * @post 引数と外部状態の変更なし。
 	 */
-	constexpr bool OptionalEquals(std::optional<int> value, int expected) noexcept
+	template <typename T> constexpr bool OptionalEquals(std::optional<T> value, T expected) noexcept
 	{
 		auto const value_has_value = value.has_value();
 		if (!value_has_value)
@@ -37,7 +38,7 @@ namespace
 	 * @pre なし。
 	 * @post 引数と外部状態の変更なし。
 	 */
-	constexpr bool OptionalIsEmpty(std::optional<int> value) noexcept
+	template <typename T> constexpr bool OptionalIsEmpty(std::optional<T> value) noexcept
 	{
 		auto const value_has_value = value.has_value();
 		return !value_has_value;
@@ -51,6 +52,13 @@ namespace
 				  "uint32_t BCD is constexpr");
 	static_assert(OptionalIsEmpty(ket::ParseBcd(static_cast<std::uint8_t>(0x0AU))),
 				  "invalid BCD is constexpr");
+	static_assert(OptionalEquals(ket::ToBcd8(42), static_cast<std::uint8_t>(0x42U)),
+				  "uint8_t BCD output is constexpr");
+	static_assert(OptionalEquals(ket::ToBcd16(1234), static_cast<std::uint16_t>(0x1234U)),
+				  "uint16_t BCD output is constexpr");
+	static_assert(OptionalEquals(ket::ToBcd32(20260613), static_cast<std::uint32_t>(0x20260613U)),
+				  "uint32_t BCD output is constexpr");
+	static_assert(OptionalIsEmpty(ket::ToBcd8(100)), "out-of-range BCD output is constexpr");
 
 } // namespace
 
@@ -140,6 +148,84 @@ TEST(KetBcdTest, RejectsInvalidWideBcd)
 
 /**
  * @test
+ * @brief 2桁固定幅パックBCDへの10進整数変換確認。
+ * @details 代表値と境界値を入力し、2桁packed BCDへ変換されることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ConvertsIntToUint8Bcd)
+{
+	auto const zero = ket::ToBcd8(0);
+	auto const nine = ket::ToBcd8(9);
+	auto const forty_two = ket::ToBcd8(42);
+	auto const ninety_nine = ket::ToBcd8(99);
+
+	EXPECT_EQ(zero, std::optional<std::uint8_t>(0x00U));
+	EXPECT_EQ(nine, std::optional<std::uint8_t>(0x09U));
+	EXPECT_EQ(forty_two, std::optional<std::uint8_t>(0x42U));
+	EXPECT_EQ(ninety_nine, std::optional<std::uint8_t>(0x99U));
+}
+
+/**
+ * @test
+ * @brief 4桁固定幅パックBCDへの10進整数変換確認。
+ * @details 先頭ゼロ表現と最大値を含む値を入力し、4桁packed BCDへ変換されることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ConvertsIntToUint16Bcd)
+{
+	auto const leading_zero = ket::ToBcd16(42);
+	auto const normal = ket::ToBcd16(1234);
+	auto const maximum = ket::ToBcd16(9999);
+
+	EXPECT_EQ(leading_zero, std::optional<std::uint16_t>(0x0042U));
+	EXPECT_EQ(normal, std::optional<std::uint16_t>(0x1234U));
+	EXPECT_EQ(maximum, std::optional<std::uint16_t>(0x9999U));
+}
+
+/**
+ * @test
+ * @brief 8桁固定幅パックBCDへの10進整数変換確認。
+ * @details 日付形式に見える値と最大値を入力し、8桁packed BCDへ変換されることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ConvertsIntToUint32Bcd)
+{
+	auto const date = ket::ToBcd32(20260613);
+	auto const maximum = ket::ToBcd32(99999999);
+
+	EXPECT_EQ(date, std::optional<std::uint32_t>(0x20260613U));
+	EXPECT_EQ(maximum, std::optional<std::uint32_t>(0x99999999U));
+}
+
+/**
+ * @test
+ * @brief 固定幅パックBCDへの10進整数変換の範囲外拒否確認。
+ * @details 負数と各固定幅の桁数を超える値を入力し、std::nulloptを返すことを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, RejectsOutOfRangeIntToBcd)
+{
+	auto const negative_uint8 = ket::ToBcd8(-1);
+	auto const too_large_uint8 = ket::ToBcd8(100);
+	auto const negative_uint16 = ket::ToBcd16(-1);
+	auto const too_large_uint16 = ket::ToBcd16(10000);
+	auto const negative_uint32 = ket::ToBcd32(-1);
+	auto const too_large_uint32 = ket::ToBcd32(100000000);
+
+	EXPECT_EQ(negative_uint8, std::nullopt);
+	EXPECT_EQ(too_large_uint8, std::nullopt);
+	EXPECT_EQ(negative_uint16, std::nullopt);
+	EXPECT_EQ(too_large_uint16, std::nullopt);
+	EXPECT_EQ(negative_uint32, std::nullopt);
+	EXPECT_EQ(too_large_uint32, std::nullopt);
+}
+
+/**
+ * @test
  * @brief 任意バイト長パックBCDの10進文字列変換確認。
  * @details 複数バイト値と先頭ゼロを含む値を入力し、桁を保持した文字列へ変換されることを確認。
  * @pre C++17以降。
@@ -159,6 +245,55 @@ TEST(KetBcdTest, ConvertsBcdBytesToDecimalString)
 	EXPECT_EQ(four_digits_text, std::optional<std::string>("1234"));
 	EXPECT_EQ(leading_zero_text, std::optional<std::string>("0042"));
 	EXPECT_EQ(date_text, std::optional<std::string>("20260613"));
+}
+
+/**
+ * @test
+ * @brief 10進文字列の任意バイト長パックBCD変換確認。
+ * @details 偶数桁、奇数桁、先頭ゼロを含む文字列を入力し、packed BCD列へ変換されることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ConvertsDecimalStringToBcdBytes)
+{
+	auto const even_digits = ket::DecimalStringToBcd("1234");
+	auto const leading_zero = ket::DecimalStringToBcd("0042");
+	auto const odd_digits = ket::DecimalStringToBcd("123");
+	auto const single_digit = ket::DecimalStringToBcd("7");
+
+	auto const expected_even_digits = std::optional<std::vector<std::uint8_t>>(
+		std::vector<std::uint8_t>{std::uint8_t{0x12U}, std::uint8_t{0x34U}});
+	auto const expected_leading_zero = std::optional<std::vector<std::uint8_t>>(
+		std::vector<std::uint8_t>{std::uint8_t{0x00U}, std::uint8_t{0x42U}});
+	auto const expected_odd_digits = std::optional<std::vector<std::uint8_t>>(
+		std::vector<std::uint8_t>{std::uint8_t{0x01U}, std::uint8_t{0x23U}});
+	auto const expected_single_digit =
+		std::optional<std::vector<std::uint8_t>>(std::vector<std::uint8_t>{std::uint8_t{0x07U}});
+
+	EXPECT_EQ(even_digits, expected_even_digits);
+	EXPECT_EQ(leading_zero, expected_leading_zero);
+	EXPECT_EQ(odd_digits, expected_odd_digits);
+	EXPECT_EQ(single_digit, expected_single_digit);
+}
+
+/**
+ * @test
+ * @brief 10進文字列の任意バイト長パックBCD変換の不正入力拒否確認。
+ * @details 空文字と10進数字以外を含む文字列を入力し、std::nulloptを返すことを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, RejectsInvalidDecimalStringToBcd)
+{
+	auto const empty = ket::DecimalStringToBcd("");
+	auto const alphabet = ket::DecimalStringToBcd("12A4");
+	auto const sign = ket::DecimalStringToBcd("-1");
+	auto const space = ket::DecimalStringToBcd("12 4");
+
+	EXPECT_EQ(empty, std::nullopt);
+	EXPECT_EQ(alphabet, std::nullopt);
+	EXPECT_EQ(sign, std::nullopt);
+	EXPECT_EQ(space, std::nullopt);
 }
 
 /**

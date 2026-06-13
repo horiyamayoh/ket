@@ -16,6 +16,8 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace ket
 {
@@ -95,6 +97,63 @@ namespace ket
 			return result;
 		}
 
+		/**
+		 * @brief 固定nibble数に収まる10進整数上限の取得。
+		 * @param[in] nibble_count 変換対象nibble数。
+		 * @retval value `10 ^ nibble_count`。
+		 * @pre `0 <= nibble_count <= 8`。
+		 * @post 引数と外部状態の変更なし。
+		 */
+		constexpr int DecimalLimitForBcdNibbles(int nibble_count) noexcept
+		{
+			int limit = 1;
+
+			for (int index = 0; index < nibble_count; ++index)
+			{
+				limit *= 10;
+			}
+
+			return limit;
+		}
+
+		/**
+		 * @brief 固定nibble数パックBCDへの10進整数変換。
+		 * @param[in] value 変換対象の10進整数。
+		 * @param[in] nibble_count 出力BCDのnibble数。
+		 * @retval value 変換後のパックBCD値。
+		 * @retval std::nullopt 負数、または指定nibble数の桁数超過。
+		 * @pre `0 <= nibble_count <= 8`。
+		 * @post 引数と外部状態の変更なし。
+		 */
+		constexpr std::optional<std::uint32_t> ToBcdNibbles(int value, int nibble_count) noexcept
+		{
+			auto const value_is_negative = value < 0;
+			if (value_is_negative)
+			{
+				return std::nullopt;
+			}
+
+			auto const decimal_limit = DecimalLimitForBcdNibbles(nibble_count);
+			auto const value_too_large = value >= decimal_limit;
+			if (value_too_large)
+			{
+				return std::nullopt;
+			}
+
+			std::uint32_t result = 0;
+			auto remaining = value;
+
+			for (int index = 0; index < nibble_count; ++index)
+			{
+				auto const digit = static_cast<std::uint32_t>(remaining % 10);
+				auto const shift = static_cast<std::uint32_t>(index * 4);
+				result |= digit << shift;
+				remaining /= 10;
+			}
+
+			return result;
+		}
+
 	} // namespace detail
 
 	/**
@@ -152,6 +211,74 @@ namespace ket
 	}
 
 	/**
+	 * @brief 2桁固定幅パックBCDへの10進整数変換。
+	 * @param[in] value 変換対象の10進整数。
+	 * @retval value 変換後のパックBCD値。
+	 * @retval std::nullopt 負数、または2桁を超える値。
+	 * @pre なし。負数と桁数超過は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 2桁固定幅のため、1桁値は上位nibbleを0として表現。
+	 * @code
+	 * auto const value = ket::ToBcd8(42);
+	 * // value == std::optional<std::uint8_t>(0x42)
+	 * @endcode
+	 */
+	constexpr std::optional<std::uint8_t> ToBcd8(int value) noexcept
+	{
+		auto const result = detail::ToBcdNibbles(value, 2);
+		auto const result_has_value = result.has_value();
+		if (!result_has_value)
+		{
+			return std::nullopt;
+		}
+
+		return static_cast<std::uint8_t>(*result);
+	}
+
+	/**
+	 * @brief 4桁固定幅パックBCDへの10進整数変換。
+	 * @param[in] value 変換対象の10進整数。
+	 * @retval value 変換後のパックBCD値。
+	 * @retval std::nullopt 負数、または4桁を超える値。
+	 * @pre なし。負数と桁数超過は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 4桁固定幅のため、短い値は上位nibbleを0として表現。
+	 * @code
+	 * auto const value = ket::ToBcd16(42);
+	 * // value == std::optional<std::uint16_t>(0x0042)
+	 * @endcode
+	 */
+	constexpr std::optional<std::uint16_t> ToBcd16(int value) noexcept
+	{
+		auto const result = detail::ToBcdNibbles(value, 4);
+		auto const result_has_value = result.has_value();
+		if (!result_has_value)
+		{
+			return std::nullopt;
+		}
+
+		return static_cast<std::uint16_t>(*result);
+	}
+
+	/**
+	 * @brief 8桁固定幅パックBCDへの10進整数変換。
+	 * @param[in] value 変換対象の10進整数。
+	 * @retval value 変換後のパックBCD値。
+	 * @retval std::nullopt 負数、または8桁を超える値。
+	 * @pre なし。負数と桁数超過は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 8桁固定幅のため、短い値は上位nibbleを0として表現。
+	 * @code
+	 * auto const value = ket::ToBcd32(20260613);
+	 * // value == std::optional<std::uint32_t>(0x20260613)
+	 * @endcode
+	 */
+	constexpr std::optional<std::uint32_t> ToBcd32(int value) noexcept
+	{
+		return detail::ToBcdNibbles(value, 8);
+	}
+
+	/**
 	 * @brief 任意バイト長パックBCDの10進文字列変換。
 	 * @param[in] data 変換対象のパックBCD列。
 	 * @param[in] size `data`のバイト数。
@@ -168,5 +295,21 @@ namespace ket
 	 * @endcode
 	 */
 	std::optional<std::string> BcdToDecimalString(std::uint8_t const* data, std::size_t size);
+
+	/**
+	 * @brief 10進文字列の任意バイト長パックBCD変換。
+	 * @param[in] text 変換対象の10進文字列。
+	 * @retval value 変換後のパックBCD列。
+	 * @retval std::nullopt 空入力、または10進数字以外を含む入力。
+	 * @pre なし。空入力と10進数字以外は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 偶数桁は2桁ずつpacked BCDへ変換し、奇数桁は先頭に0を補って変換。
+	 * @note std::vectorの確保があるためnoexceptなし。
+	 * @code
+	 * auto const value = ket::DecimalStringToBcd("123");
+	 * // value == std::optional<std::vector<std::uint8_t>>({0x01, 0x23})
+	 * @endcode
+	 */
+	std::optional<std::vector<std::uint8_t>> DecimalStringToBcd(std::string_view text);
 
 } // namespace ket
