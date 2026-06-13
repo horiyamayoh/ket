@@ -2016,7 +2016,6 @@ Tests:
 独自vector型
 独自スマートポインタ体系
 業務固有ロジック
-過度なtemplate magic
 内部依存が深いmodule
 ビルドシステム前提の部品
 ```
