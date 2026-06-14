@@ -1,9 +1,34 @@
 #include "ket_string.h"
 
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
 #include <gtest/gtest.h>
+
+namespace
+{
+	class ThrowOnSecondStringView
+	{
+	  public:
+		operator std::string_view() const
+		{
+			++conversion_count_;
+			const auto should_throw = conversion_count_ == 2;
+			if (should_throw)
+			{
+				throw std::runtime_error("second string_view conversion");
+			}
+
+			return value_;
+		}
+
+	  private:
+		mutable int conversion_count_ = 0;
+		std::string value_ = "suffix";
+	};
+
+} // namespace
 
 /**
  * @test
@@ -147,4 +172,21 @@ TEST(KetStringTest, AppendsSubstringViewAndCStringSelfReferences)
 	ket::StrAppend(destination, ":", part_view, ":", part_c_string);
 
 	EXPECT_EQ(destination, expected);
+}
+
+/**
+ * @test
+ * @brief std::string_view変換例外の伝播確認。
+ * @details
+ * 2回目のstd::string_view変換で例外を送出する文字列片を渡し、StrAppendから同じ例外が伝播することを確認。
+ * @pre C++17以降。
+ * @post destinationは入力時の文字列を保持。destination以外の外部状態の変更なし。
+ */
+TEST(KetStringTest, PropagatesStringViewConversionExceptionDuringAppend)
+{
+	std::string destination = "prefix";
+	const auto part = ThrowOnSecondStringView{};
+
+	EXPECT_THROW(ket::StrAppend(destination, part), std::runtime_error);
+	EXPECT_EQ(destination, std::string("prefix"));
 }

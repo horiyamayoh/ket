@@ -328,8 +328,7 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 */
 		template <typename... Parts>
-		bool AnyPartAliasesDestination(const std::string& destination,
-									   const Parts&... parts) noexcept
+		bool AnyPartAliasesDestination(const std::string& destination, const Parts&... parts)
 		{
 			return (false || ... || PartAliasesDestination(destination, parts));
 		}
