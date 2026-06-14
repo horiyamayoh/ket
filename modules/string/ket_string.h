@@ -21,6 +21,52 @@
 
 namespace ket
 {
+	// -----------------------------------------------------------------------------
+	// Public API declarations
+	// -----------------------------------------------------------------------------
+
+	/**
+	 * @brief 複数文字列片の連結。
+	 * @param[in] parts 連結対象の文字列片。
+	 * @retval value 連結後の文字列。
+	 * @pre 各要素はstd::string_viewに変換可能な文字列片、またはchar。raw C
+	 * stringは非nullかつnull終端。
+	 * @post 引数と外部状態の変更なし。出力文字列は入力順と入力内容を保持。
+	 * @note 数値、enum、任意stream変換は対象外。必要な変換は呼び出し側で明示。
+	 * @note 合計長がstd::string::max_size()を超える場合はstd::length_error送出。
+	 * @note std::stringのreserveとappendがallocationを伴うためnoexceptなし。
+	 * @code
+	 * const auto text = ket::StrCat("id=", id_text, ", mode=", mode_text);
+	 * // text == "id=42, mode=run"
+	 * @endcode
+	 */
+	template <typename... Parts>
+	std::string StrCat(const Parts&... parts);
+
+	/**
+	 * @brief 複数文字列片の末尾追記。
+	 * @param[in,out] destination 追記先の文字列。
+	 * @param[in] parts 追記対象の文字列片。
+	 * @retval void 戻り値なし。
+	 * @pre destinationは有効なstd::string。各要素はstd::string_viewへ変換可能、またはchar。
+	 * raw C stringは非nullかつnull終端。
+	 * @post `destination`の既存内容を保持し、末尾に`parts`の連結結果を追加。
+	 * @note `destination`自身やそのviewをpartsに含む場合は、suffixを生成してから追記。
+	 * @note 合計長がstd::string::max_size()を超える場合はstd::length_error送出。
+	 * @note std::stringのreserve、生成、appendがallocationを伴うためnoexceptなし。
+	 * @code
+	 * std::string text = "id=";
+	 * ket::StrAppend(text, id_text, ", mode=", mode_text);
+	 * // text == "id=42, mode=run"
+	 * @endcode
+	 */
+	template <typename... Parts>
+	void StrAppend(std::string& destination, const Parts&... parts);
+
+	// -----------------------------------------------------------------------------
+	// Internal implementation details
+	// -----------------------------------------------------------------------------
+
 	namespace detail
 	{
 		/**
@@ -275,21 +321,10 @@ namespace ket
 
 	} // namespace detail
 
-	/**
-	 * @brief 複数文字列片の連結。
-	 * @param[in] parts 連結対象の文字列片。
-	 * @retval value 連結後の文字列。
-	 * @pre 各要素はstd::string_viewに変換可能な文字列片、またはchar。raw C
-	 * stringは非nullかつnull終端。
-	 * @post 引数と外部状態の変更なし。出力文字列は入力順と入力内容を保持。
-	 * @note 数値、enum、任意stream変換は対象外。必要な変換は呼び出し側で明示。
-	 * @note 合計長がstd::string::max_size()を超える場合はstd::length_error送出。
-	 * @note std::stringのreserveとappendがallocationを伴うためnoexceptなし。
-	 * @code
-	 * const auto text = ket::StrCat("id=", id_text, ", mode=", mode_text);
-	 * // text == "id=42, mode=run"
-	 * @endcode
-	 */
+	// -----------------------------------------------------------------------------
+	// Public API definitions
+	// -----------------------------------------------------------------------------
+
 	template <typename... Parts>
 	std::string StrCat(const Parts&... parts)
 	{
@@ -306,23 +341,6 @@ namespace ket
 		return result;
 	}
 
-	/**
-	 * @brief 複数文字列片の末尾追記。
-	 * @param[in,out] destination 追記先の文字列。
-	 * @param[in] parts 追記対象の文字列片。
-	 * @retval void 戻り値なし。
-	 * @pre destinationは有効なstd::string。各要素はstd::string_viewへ変換可能、またはchar。
-	 * raw C stringは非nullかつnull終端。
-	 * @post `destination`の既存内容を保持し、末尾に`parts`の連結結果を追加。
-	 * @note `destination`自身やそのviewをpartsに含む場合は、suffixを生成してから追記。
-	 * @note 合計長がstd::string::max_size()を超える場合はstd::length_error送出。
-	 * @note std::stringのreserve、生成、appendがallocationを伴うためnoexceptなし。
-	 * @code
-	 * std::string text = "id=";
-	 * ket::StrAppend(text, id_text, ", mode=", mode_text);
-	 * // text == "id=42, mode=run"
-	 * @endcode
-	 */
 	template <typename... Parts>
 	void StrAppend(std::string& destination, const Parts&... parts)
 	{

@@ -14,6 +14,12 @@ TEST_TAGS = ("@test", "@brief", "@details", "@pre", "@post")
 FUNCTION_TAGS = ("@brief", "@retval", "@pre", "@post")
 TYPE_TAGS = ("@brief",)
 ALLOWED_CONDITION_CALLS = {"alignof", "sizeof"}
+SECTION_BANNER_LINE = "\t// -----------------------------------------------------------------------------"
+HEADER_SECTIONS = (
+	"Public API declarations",
+	"Internal implementation details",
+	"Public API definitions",
+)
 CONTROL_PREFIXES = ("if ", "while ", "for ", "switch ", "return ", "throw ", "static_assert")
 MACRO_PREFIXES = ("TEST", "EXPECT_", "ASSERT_")
 TYPE_DECLARATION_PATTERN = re.compile(
@@ -47,6 +53,24 @@ def add_error(errors: list[str], path: Path, line_number: int, message: str) -> 
 	errors.append(f"{ket_tooling.relative(path)}:{line_number}: {message}")
 
 
+def is_module_public_header(path: Path) -> bool:
+	parts = path.parts
+	for index, part in enumerate(parts[:-2]):
+		if part != "modules":
+			continue
+
+		module_name = parts[index + 1]
+		header_name = parts[index + 2]
+		if header_name == f"ket_{module_name}.h":
+			return True
+
+	return False
+
+
+def has_namespace_ket(lines: list[str]) -> bool:
+	return any(line.strip() == "namespace ket" for line in lines)
+
+
 def check_test_comments(path: Path, lines: list[str], errors: list[str]) -> None:
 	test_pattern = re.compile(r"^\s*TEST(?:_F|_P)?\s*\(")
 
@@ -66,6 +90,11 @@ def check_test_comments(path: Path, lines: list[str], errors: list[str]) -> None
 
 def normalize_signature(lines: list[str]) -> str:
 	return " ".join(line.strip() for line in lines if line.strip())
+
+
+def canonical_function_signature(signature: str) -> str:
+	stripped = re.sub(r"\s+", " ", signature.strip())
+	return stripped.rstrip("{;").strip()
 
 
 def line_looks_like_function_signature(signature: str) -> bool:
@@ -105,6 +134,14 @@ def function_has_parameters(signature: str) -> bool:
 
 	parameters = match.group(1).strip()
 	return parameters not in ("", "void")
+
+
+def function_signature_is_definition(lines: list[str], signature_end: int) -> bool:
+	stripped = lines[signature_end].strip()
+	if stripped.endswith("{"):
+		return True
+
+	return next_significant_line(lines, signature_end) == "{"
 
 
 def function_signature_at(lines: list[str], index: int) -> tuple[str, int] | None:
@@ -172,15 +209,33 @@ def doxygen_has_documented_param(comment: str) -> bool:
 
 def check_header_function_comments(path: Path, lines: list[str], errors: list[str]) -> None:
 	index = 0
+	documented_signatures: set[str] = set()
 	while index < len(lines):
 		signature = function_signature_at(lines, index)
 		if signature is None:
 			index += 1
 			continue
 
+		signature_text = signature[0]
+		signature_key = canonical_function_signature(signature_text)
+		is_definition = function_signature_is_definition(lines, signature[1])
 		comment = previous_doxygen(lines, index)
 		if comment is None:
+			if is_definition and signature_key in documented_signatures:
+				index = signature[1] + 1
+				continue
+
 			add_error(errors, path, index + 1, "function declaration requires a Doxygen comment.")
+			index = signature[1] + 1
+			continue
+
+		if is_definition and signature_key in documented_signatures:
+			add_error(
+				errors,
+				path,
+				index + 1,
+				"function definition must not duplicate Doxygen comment from its declaration.",
+			)
 			index = signature[1] + 1
 			continue
 
@@ -188,7 +243,7 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 			if not doxygen_tag_has_text(comment, tag):
 				add_error(errors, path, index + 1, f"function Doxygen comment requires {tag}.")
 
-		if function_has_parameters(signature[0]) and not doxygen_has_documented_param(comment):
+		if function_has_parameters(signature_text) and not doxygen_has_documented_param(comment):
 			add_error(
 				errors,
 				path,
@@ -196,7 +251,98 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 				"function Doxygen comment requires @param[in], @param[out], or @param[in,out].",
 			)
 
+		documented_signatures.add(signature_key)
 		index = signature[1] + 1
+
+
+def header_has_detail_namespace(lines: list[str]) -> bool:
+	return any(line.strip() == "namespace detail" for line in lines)
+
+
+def detail_namespace_end_index(lines: list[str]) -> int | None:
+	for index, line in enumerate(lines):
+		if line.strip() == "} // namespace detail":
+			return index
+
+	return None
+
+
+def header_has_public_api_definitions(lines: list[str]) -> bool:
+	detail_end = detail_namespace_end_index(lines)
+	index = 0 if detail_end is None else detail_end + 1
+	while index < len(lines):
+		signature = function_signature_at(lines, index)
+		if signature is None:
+			index += 1
+			continue
+
+		if function_signature_is_definition(lines, signature[1]):
+			return True
+
+		index = signature[1] + 1
+
+	return False
+
+
+def required_header_sections(lines: list[str]) -> tuple[str, ...]:
+	sections = ["Public API declarations"]
+
+	if header_has_detail_namespace(lines):
+		sections.append("Internal implementation details")
+
+	if header_has_public_api_definitions(lines):
+		sections.append("Public API definitions")
+
+	return tuple(sections)
+
+
+def section_title_indices(lines: list[str], title: str) -> list[int]:
+	title_line = f"// {title}"
+	return [index for index, line in enumerate(lines) if line.strip() == title_line]
+
+
+def section_banner_uses_exact_format(lines: list[str], title_index: int, title: str) -> bool:
+	if title_index == 0 or title_index + 1 >= len(lines):
+		return False
+
+	return (
+		lines[title_index - 1] == SECTION_BANNER_LINE
+		and lines[title_index] == f"\t// {title}"
+		and lines[title_index + 1] == SECTION_BANNER_LINE
+	)
+
+
+def check_header_section_banners(path: Path, lines: list[str], errors: list[str]) -> None:
+	if not is_module_public_header(path):
+		return
+	if not has_namespace_ket(lines):
+		return
+
+	required_sections = required_header_sections(lines)
+	found_indices: dict[str, int] = {}
+
+	for title in HEADER_SECTIONS:
+		indices = section_title_indices(lines, title)
+		if not indices:
+			continue
+
+		found_indices[title] = indices[0]
+		if len(indices) > 1:
+			add_error(errors, path, indices[1] + 1, f"section banner appears more than once: {title}.")
+
+		for index in indices:
+			if not section_banner_uses_exact_format(lines, index, title):
+				add_error(errors, path, index + 1, f"section banner must use exact format: {title}.")
+
+	for title in required_sections:
+		if title not in found_indices:
+			add_error(errors, path, 1, f"module header requires section banner: {title}.")
+
+	ordered_found = [title for title in HEADER_SECTIONS if title in found_indices]
+	found_in_file_order = sorted(ordered_found, key=lambda title: found_indices[title])
+	if ordered_found != found_in_file_order:
+		first_found_index = min(found_indices.values())
+		add_error(errors, path, first_found_index + 1, "section banners must follow standard order.")
 
 
 def type_declaration_at(lines: list[str], index: int) -> tuple[str, int] | None:
@@ -336,6 +482,7 @@ def check_file(path: Path) -> list[str]:
 	check_condition_calls(path, lines, errors)
 
 	if path.suffix in {".h", ".hh", ".hpp", ".hxx"}:
+		check_header_section_banners(path, lines, errors)
 		check_header_function_comments(path, lines, errors)
 		check_header_type_comments(path, lines, errors)
 	if path.name.endswith("_test.cpp") or path.parts[-2] == "tests":
