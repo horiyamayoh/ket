@@ -33,13 +33,13 @@ namespace
 /**
  * @test
  * @brief 空引数の文字列連結確認。
- * @details 引数なしでStrCatを呼び出し、空文字列を返すことを確認。
+ * @details 引数なしでCatを呼び出し、空文字列を返すことを確認。
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
 TEST(KetStringTest, ConcatenatesNoParts)
 {
-	const auto result = ket::StrCat();
+	const auto result = ket::string::Cat();
 
 	EXPECT_EQ(result, std::string());
 }
@@ -57,7 +57,7 @@ TEST(KetStringTest, ConcatenatesStringLikePartsAndChar)
 	const auto middle = std::string("b");
 	const auto suffix = std::string_view("c");
 
-	const auto result = ket::StrCat("a", middle, suffix, 'd');
+	const auto result = ket::string::Cat("a", middle, suffix, 'd');
 
 	EXPECT_EQ(result, std::string("abcd"));
 }
@@ -74,7 +74,7 @@ TEST(KetStringTest, PreservesEmbeddedNullInStringView)
 	const auto part = std::string_view("a\0b", 3U);
 	const auto expected = std::string("a\0b", 3U);
 
-	const auto result = ket::StrCat(part);
+	const auto result = ket::string::Cat(part);
 	const auto result_size = result.size();
 
 	EXPECT_EQ(result, expected);
@@ -94,7 +94,7 @@ TEST(KetStringTest, AppendsNonAliasedPartsToExistingString)
 	const auto id_text = std::string("42");
 	const auto mode_text = std::string_view("run");
 
-	ket::StrAppend(destination, id_text, ", mode=", mode_text, '!');
+	ket::string::Append(destination, id_text, ", mode=", mode_text, '!');
 
 	EXPECT_EQ(destination, std::string("id=42, mode=run!"));
 }
@@ -112,7 +112,7 @@ TEST(KetStringTest, AppendsEmbeddedNullInStringView)
 	const auto part = std::string_view("b\0c", 3U);
 	const auto expected = std::string("ab\0cd", 5U);
 
-	ket::StrAppend(destination, part, 'd');
+	ket::string::Append(destination, part, 'd');
 	const auto destination_size = destination.size();
 
 	EXPECT_EQ(destination, expected);
@@ -122,7 +122,7 @@ TEST(KetStringTest, AppendsEmbeddedNullInStringView)
 /**
  * @test
  * @brief 空引数の末尾追記確認。
- * @details 引数なしでStrAppendを呼び出し、追記先の内容が変化しないことを確認。
+ * @details 引数なしでAppendを呼び出し、追記先の内容が変化しないことを確認。
  * @pre C++17以降。
  * @post destinationは入力時の文字列を保持。destination以外の外部状態の変更なし。
  */
@@ -130,7 +130,7 @@ TEST(KetStringTest, AppendsNoPartsAsNoOp)
 {
 	std::string destination = "unchanged";
 
-	ket::StrAppend(destination);
+	ket::string::Append(destination);
 
 	EXPECT_EQ(destination, std::string("unchanged"));
 }
@@ -147,7 +147,7 @@ TEST(KetStringTest, AppendsSelfReferencesAfterMaterializingSuffix)
 	std::string destination = "ab";
 	const auto destination_view = std::string_view(destination);
 
-	ket::StrAppend(destination, destination, ":", destination_view);
+	ket::string::Append(destination, destination, ":", destination_view);
 
 	EXPECT_EQ(destination, std::string("abab:ab"));
 }
@@ -169,7 +169,7 @@ TEST(KetStringTest, AppendsSubstringViewAndCStringSelfReferences)
 	const auto expected = std::string(
 		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:klmno:0123456789");
 
-	ket::StrAppend(destination, ":", part_view, ":", part_c_string);
+	ket::string::Append(destination, ":", part_view, ":", part_c_string);
 
 	EXPECT_EQ(destination, expected);
 }
@@ -178,7 +178,7 @@ TEST(KetStringTest, AppendsSubstringViewAndCStringSelfReferences)
  * @test
  * @brief std::string_view変換例外の伝播確認。
  * @details
- * 2回目のstd::string_view変換で例外を送出する文字列片を渡し、StrAppendから同じ例外が伝播することを確認。
+ * 2回目のstd::string_view変換で例外を送出する文字列片を渡し、Appendから同じ例外が伝播することを確認。
  * @pre C++17以降。
  * @post destinationは入力時の文字列を保持。destination以外の外部状態の変更なし。
  */
@@ -187,6 +187,6 @@ TEST(KetStringTest, PropagatesStringViewConversionExceptionDuringAppend)
 	std::string destination = "prefix";
 	const auto part = ThrowOnSecondStringView{};
 
-	EXPECT_THROW(ket::StrAppend(destination, part), std::runtime_error);
+	EXPECT_THROW(ket::string::Append(destination, part), std::runtime_error);
 	EXPECT_EQ(destination, std::string("prefix"));
 }

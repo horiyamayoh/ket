@@ -20,7 +20,7 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::AlignUp(value, alignment)
+ket::numeric::AlignUp(value, alignment)
 ```
 
 C++バージョン要件:
@@ -67,12 +67,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ParseBcd(value)
-ket::ToBcd8(value)
-ket::ToBcd16(value)
-ket::ToBcd32(value)
-ket::BcdToDecimalString(data, size)
-ket::DecimalStringToBcd(text)
+ket::bcd::ToInt(value)
+ket::bcd::FromInt8(value)
+ket::bcd::FromInt16(value)
+ket::bcd::FromInt32(value)
+ket::bcd::ToDecimalString(data, size)
+ket::bcd::FromDecimalString(text)
 ```
 
 C++バージョン要件:
@@ -102,19 +102,19 @@ Failure / edge cases:
 
 Tests:
 
-- ParseBcd(0x00) == 0
-- ParseBcd(0x09) == 9
-- ParseBcd(0x10) == 10
-- ParseBcd(0x99) == 99
-- ParseBcd(0x0A) == std::nullopt
-- ToBcd8(42) == 0x42
-- ToBcd8(100) == std::nullopt
-- ToBcd16(1234) == 0x1234
-- ToBcd32(20260613) == 0x20260613
-- BcdToDecimalString({0x00, 0x42}) == "0042"
-- DecimalStringToBcd("0042") == {0x00, 0x42}
-- DecimalStringToBcd("123") == {0x01, 0x23}
-- DecimalStringToBcd("12A4") == std::nullopt
+- ToInt(0x00) == 0
+- ToInt(0x09) == 9
+- ToInt(0x10) == 10
+- ToInt(0x99) == 99
+- ToInt(0x0A) == std::nullopt
+- FromInt8(42) == 0x42
+- FromInt8(100) == std::nullopt
+- FromInt16(1234) == 0x1234
+- FromInt32(20260613) == 0x20260613
+- ToDecimalString({0x00, 0x42}) == "0042"
+- FromDecimalString("0042") == {0x00, 0x42}
+- FromDecimalString("123") == {0x01, 0x23}
+- FromDecimalString("12A4") == std::nullopt
 
 ## Idea: String
 
@@ -129,8 +129,8 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::StrCat(...)
-ket::StrAppend(dst, ...)
+ket::string::Cat(...)
+ket::string::Append(dst, ...)
 ```
 
 C++バージョン要件:
@@ -158,12 +158,12 @@ Failure / edge cases:
 
 Tests:
 
-- StrCat() == ""
-- StrCat("a", std::string("b"), std::string_view("c"), 'd') == "abcd"
-- StrCat(std::string_view("a\\0b", 3)) preserves 3 bytes
-- StrAppend(dst, ...) appends to existing text
-- StrAppend(dst) keeps dst unchanged
-- StrAppend(dst, dst, ":", std::string_view(dst)) uses pre-append content
+- Cat() == ""
+- Cat("a", std::string("b"), std::string_view("c"), 'd') == "abcd"
+- Cat(std::string_view("a\\0b", 3)) preserves 3 bytes
+- Append(dst, ...) appends to existing text
+- Append(dst) keeps dst unchanged
+- Append(dst, dst, ":", std::string_view(dst)) uses pre-append content
 
 ## Idea: Port
 
@@ -179,10 +179,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Port
-ket::TryMakePort(value, out)
-ket::ParsePort(text)
-ket::FormatPort(port)
+ket::port::Port
+ket::port::TryMake(value, out)
+ket::port::Parse(text)
+ket::port::Format(port)
 ```
 
 C++バージョン要件:
@@ -211,16 +211,16 @@ Failure / edge cases:
 
 Tests:
 
-- TryMakePort(0) succeeds
-- TryMakePort(65535) succeeds
-- TryMakePort(65536) fails
-- ParsePort("0") succeeds
-- ParsePort("65535") succeeds
-- ParsePort("65536") fails
-- ParsePort(" 80") fails
-- ParsePort("+80") fails
-- ParsePort("080") fails
-- FormatPort(Port{80}) == "80"
+- TryMake(0) succeeds
+- TryMake(65535) succeeds
+- TryMake(65536) fails
+- Parse("0") succeeds
+- Parse("65535") succeeds
+- Parse("65536") fails
+- Parse(" 80") fails
+- Parse("+80") fails
+- Parse("080") fails
+- Format(Port{80}) == "80"
 
 ## Idea: Bits
 
@@ -235,12 +235,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::HighNibble(value)
-ket::LowNibble(value)
-ket::HasBit(value, bit_index)
-ket::TryMask(width, out)
-ket::Rotl(value, count)
-ket::PopCount(value)
+ket::bits::HighNibble(value)
+ket::bits::LowNibble(value)
+ket::bits::HasBit(value, bit_index)
+ket::bits::TryMask(width, out)
+ket::bits::Rotl(value, count)
+ket::bits::PopCount(value)
 ```
 
 C++バージョン要件:
@@ -286,14 +286,14 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::InRange<To>(value)
-ket::Clamp(value, min_value, max_value)
-ket::AbsDiff(a, b)
-ket::TryDivideRoundUp(value, divisor, out)
-ket::TryAlignUp(value, alignment, out)
-ket::TryCheckedAdd(a, b, out)
-ket::TryCheckedCast<To>(value, out)
-ket::SaturatingAdd(a, b)
+ket::numeric::InRange<To>(value)
+ket::numeric::Clamp(value, min_value, max_value)
+ket::numeric::AbsDiff(a, b)
+ket::numeric::TryDivideRoundUp(value, divisor, out)
+ket::numeric::TryAlignUp(value, alignment, out)
+ket::numeric::TryCheckedAdd(a, b, out)
+ket::numeric::TryCheckedCast<To>(value, out)
+ket::numeric::SaturatingAdd(a, b)
 ```
 
 C++バージョン要件:
@@ -343,12 +343,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ByteSwap32(value)
-ket::LoadBe32(data)
-ket::LoadLe32(data)
-ket::StoreBe16(data, value)
-ket::TryLoadBe32(data, size, out)
-ket::TryStoreLe64(data, size, value)
+ket::endian::ByteSwap32(value)
+ket::endian::LoadBe32(data)
+ket::endian::LoadLe32(data)
+ket::endian::StoreBe16(data, value)
+ket::endian::TryLoadBe32(data, size, out)
+ket::endian::TryStoreLe64(data, size, value)
 ```
 
 C++バージョン要件:
@@ -394,10 +394,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::BytesToHex(data, size, options)
-ket::HexToBytes(text)
-ket::HexDump(data, size, options)
-ket::ToHexString(value, width)
+ket::hex::Encode(data, size, options)
+ket::hex::Decode(text)
+ket::hex::Dump(data, size, options)
+ket::hex::EncodeU64(value, width)
 ```
 
 C++バージョン要件:
@@ -428,9 +428,9 @@ Tests:
 - empty bytes
 - upper/lower hex output
 - separator あり/なし
-- HexToBytes odd length fails
+- Decode odd length fails
 - invalid character fails
-- HexDump golden output
+- Dump golden output
 
 ## Idea: ParseNumeric
 
@@ -445,11 +445,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::TryParseUInt<T>(text, out)
-ket::ParseUInt<T>(text)
-ket::ParseInt<T>(text)
-ket::ParseBool(text)
-ket::ParseHex<T>(text)
+ket::parse::TryUInt<T>(text, out)
+ket::parse::UInt<T>(text)
+ket::parse::Int<T>(text)
+ket::parse::Bool(text)
+ket::parse::Hex<T>(text)
 ```
 
 C++バージョン要件:
@@ -482,7 +482,7 @@ Tests:
 - " 1" and "1 " fail
 - "1x" fails
 - hex prefix acceptance policy
-- ParseBool("true") / "false" / uppercase rejection
+- Bool("true") / "false" / uppercase rejection
 
 ## Idea: EnumTable
 
@@ -497,11 +497,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::EnumEntry<Mode>
-ket::EnumName(value, table)
-ket::ParseEnum<Mode>(text, table)
-ket::ToUnderlying(value)
-ket::HasFlag(value, flag)
+ket::enums::Entry<Mode>
+ket::enums::Name(value, table)
+ket::enums::Parse<Mode>(text, table)
+ket::enums::ToUnderlying(value)
+ket::enums::HasFlag(value, flag)
 ```
 
 C++バージョン要件:
@@ -530,7 +530,7 @@ Tests:
 
 - known value name
 - unknown value
-- ParseEnum known / unknown
+- Parse known / unknown
 - duplicate table first wins
 - HasFlag true / false
 
@@ -547,12 +547,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Contains(range, value)
-ket::ContainsKey(map, key)
-ket::AtOrNull(map, key)
-ket::GetOrDefault(map, key, fallback)
-ket::GetOrCreate(map, key, factory)
-ket::EraseIf(container, predicate)
+ket::container::Contains(range, value)
+ket::container::ContainsKey(map, key)
+ket::container::AtOrNull(map, key)
+ket::container::AtOr(map, key, fallback)
+ket::container::AtOrCreate(map, key, factory)
+ket::container::EraseIf(container, predicate)
 ```
 
 C++バージョン要件:
@@ -582,8 +582,8 @@ Tests:
 - Contains true / false
 - ContainsKey true / false
 - AtOrNull found / missing
-- GetOrDefault fallback
-- GetOrCreate factory count
+- AtOr fallback
+- AtOrCreate factory count
 - EraseIf removed count
 
 ## Idea: StringAscii
@@ -599,12 +599,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::TrimAscii(text)
-ket::SplitView(text, delimiter, options)
-ket::ToLowerAscii(text)
-ket::ReplaceAll(text, from, to)
-ket::StartsWith(text, prefix)
-ket::EndsWith(text, suffix)
+ket::ascii::Trim(text)
+ket::ascii::SplitView(text, delimiter, options)
+ket::ascii::ToLower(text)
+ket::ascii::ReplaceAll(text, from, to)
+ket::ascii::StartsWith(text, prefix)
+ket::ascii::EndsWith(text, suffix)
 ```
 
 C++バージョン要件:
@@ -632,9 +632,9 @@ Failure / edge cases:
 
 Tests:
 
-- TrimAscii empty / whitespace / normal
+- Trim empty / whitespace / normal
 - SplitView keeps or drops empty fields
-- ToLowerAscii leaves non-ASCII bytes unchanged
+- ToLower leaves non-ASCII bytes unchanged
 - ReplaceAll no match / repeated match
 - StartsWith / EndsWith boundaries
 
@@ -651,9 +651,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ScopeExit
-ket::MakeScopeExit(cleanup)
-ket::RestoreOnExit<T>
+ket::scope::Exit
+ket::scope::MakeExit(cleanup)
+ket::scope::Restore<T>
 ```
 
 C++バージョン要件:
@@ -684,7 +684,7 @@ Tests:
 - dismiss skips cleanup
 - move transfers cleanup
 - callable throwing in destructor terminates
-- RestoreOnExit restores original value
+- Restore restores original value
 
 ## Idea: ByteReader
 
@@ -699,7 +699,7 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ByteReader
+ket::byte_reader::Reader
 reader.ReadU8(out)
 reader.ReadBe16(out)
 reader.ReadLe32(out)
@@ -752,7 +752,7 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ByteWriter
+ket::byte_writer::Writer
 writer.WriteU8(value)
 writer.WriteBe16(value)
 writer.WriteLe32(value)
@@ -804,12 +804,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::BytesBuilder
+ket::bytes_builder::Builder
 builder.AppendU8(value)
 builder.AppendBe16(value)
 builder.AppendBytes(data, size)
 builder.Build()
-ket::MakeBytesBuilder()
+ket::bytes_builder::MakeBuilder()
 ```
 
 C++バージョン要件:
@@ -855,10 +855,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::IsLeapYear(year)
-ket::TryDaysInMonth(year, month, out)
-ket::IsValidDate(year, month, day)
-ket::IsValidTime(hour, minute, second)
+ket::date::IsLeapYear(year)
+ket::date::TryDaysInMonth(year, month, out)
+ket::date::IsValidDate(year, month, day)
+ket::date::IsValidTime(hour, minute, second)
 ```
 
 C++バージョン要件:
@@ -907,9 +907,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Stopwatch
-ket::Deadline
-ket::MakeDeadline(timeout)
+ket::deadline::Stopwatch
+ket::deadline::Deadline
+ket::deadline::MakeDeadline(timeout)
 ```
 
 C++バージョン要件:
@@ -955,11 +955,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ArgvView
-ket::HasOption(args, "--help")
-ket::GetOption(args, "--id")
-ket::GetOptionOr(args, "--mode", "default")
-ket::Positional(args)
+ket::cli::ArgvView
+ket::cli::HasOption(args, "--help")
+ket::cli::OptionValue(args, "--id")
+ket::cli::OptionValueOr(args, "--mode", "default")
+ket::cli::Positional(args)
 ```
 
 C++バージョン要件:
@@ -1007,9 +1007,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ByteView
-ket::MutableByteView
-ket::MakeByteView(data, size)
+ket::byte_view::View
+ket::byte_view::MutableView
+ket::byte_view::MakeView(data, size)
 view.TryAt(index, out)
 view.TrySubView(offset, count, out)
 ```
@@ -1058,10 +1058,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ValidateUtf8(text)
-ket::IsUtf8(text)
-ket::Utf8Length(text)
-ket::IsAscii(text)
+ket::utf8::Validate(text)
+ket::utf8::IsValid(text)
+ket::utf8::Length(text)
+ket::utf8::IsAscii(text)
 ```
 
 C++バージョン要件:
@@ -1110,11 +1110,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::TryReadAllText(path, out, error)
-ket::TryReadAllBytes(path, out, error)
-ket::WriteAllText(path, text, error)
-ket::WriteAllBytes(path, data, size, error)
-ket::FileSize(path)
+ket::file::TryReadAllText(path, out, error)
+ket::file::TryReadAllBytes(path, out, error)
+ket::file::TryWriteAllText(path, text, error)
+ket::file::TryWriteAllBytes(path, data, size, error)
+ket::file::Size(path)
 ```
 
 C++バージョン要件:
@@ -1162,10 +1162,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ReadExactly(stream, data, size)
-ket::WriteAll(stream, data, size)
-ket::StreamStateSaver
-ket::ReadLineTrimAscii(stream, out)
+ket::io_stream::TryReadExactly(stream, data, size)
+ket::io_stream::TryWriteAll(stream, data, size)
+ket::io_stream::StateSaver
+ket::io_stream::TryReadLineTrimmed(stream, out)
 ```
 
 C++バージョン要件:
@@ -1213,10 +1213,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::FormatBool(value)
-ket::FormatBinary(value, min_width)
-ket::FormatByteCount(bytes)
-ket::FormatDuration(duration)
+ket::format::Bool(value)
+ket::format::Binary(value, min_width)
+ket::format::ByteCount(bytes)
+ket::format::Duration(duration)
 ```
 
 C++バージョン要件:
@@ -1244,10 +1244,10 @@ Failure / edge cases:
 
 Tests:
 
-- FormatBool true / false
-- FormatBinary zero / width / overflow width
-- FormatByteCount 0 / 1024 / 1536
-- FormatDuration ns / us / negative / hour
+- Bool true / false
+- Binary zero / width / overflow width
+- ByteCount 0 / 1024 / 1536
+- Duration ns / us / negative / hour
 - max values
 
 ## Idea: AlgorithmRange
@@ -1263,8 +1263,8 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ForEachIndex(range, f)
-ket::FindIndexIf(range, predicate, out)
+ket::ranges::ForEachIndex(range, f)
+ket::ranges::FindIndexIf(range, predicate, out)
 ```
 
 C++バージョン要件:
@@ -1311,12 +1311,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::IsAligned(ptr, alignment)
-ket::TryAlignUpPtr(ptr, alignment, out)
-ket::ZeroMemory(ptr, size)
-ket::SecureZeroMemory(ptr, size)
-ket::ObjectBytes(object)
-ket::ObjectByteSize(object)
+ket::memory::IsAligned(ptr, alignment)
+ket::memory::TryAlignUp(ptr, alignment, out)
+ket::memory::Zero(ptr, size)
+ket::memory::SecureZero(ptr, size)
+ket::memory::ObjectBytes(object)
+ket::memory::ObjectByteSize(object)
 ```
 
 C++バージョン要件:
@@ -1364,9 +1364,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::NotNull<T>
-ket::LockWeak(weak)
-ket::AddressOf(value)
+ket::pointer::NotNull<T>
+ket::pointer::LockWeak(weak)
+ket::pointer::AddressOf(value)
 ```
 
 C++バージョン要件:
@@ -1458,10 +1458,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::SemanticVersion
-ket::ParseSemanticVersion(text)
-ket::CompareSemanticVersion(a, b)
-ket::FormatSemanticVersion(value)
+ket::semver::Version
+ket::semver::Parse(text)
+ket::semver::Compare(a, b)
+ket::semver::Format(value)
 ```
 
 C++バージョン要件:
@@ -1508,9 +1508,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Ipv4Address
-ket::ParseIpv4Address(text)
-ket::FormatIpv4Address(address)
+ket::ipv4::Address
+ket::ipv4::Parse(text)
+ket::ipv4::Format(address)
 ```
 
 C++バージョン要件:
@@ -1558,9 +1558,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::MacAddress
-ket::ParseMacAddress(text)
-ket::FormatMacAddress(address)
+ket::mac::Address
+ket::mac::Parse(text)
+ket::mac::Format(address)
 ```
 
 C++バージョン要件:
@@ -1607,9 +1607,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Overload
-ket::MakeOverload(...)
-ket::Noop
+ket::function::Overload
+ket::function::MakeOverload(...)
+ket::function::Noop
 ```
 
 C++バージョン要件:
@@ -1654,7 +1654,7 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Match(variant, handlers...)
+ket::variant::Match(variant, handlers...)
 ```
 
 C++バージョン要件:
@@ -1701,9 +1701,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::MapOptional(opt, mapper)
-ket::AndThen(opt, mapper)
-ket::ValueOrEval(opt, fallback_factory)
+ket::optional::Map(opt, mapper)
+ket::optional::AndThen(opt, mapper)
+ket::optional::ValueOrEval(opt, fallback_factory)
 ```
 
 C++バージョン要件:
@@ -1755,7 +1755,7 @@ KET_EXPECTS(condition)
 KET_ENSURES(condition)
 KET_ASSERT_INVARIANT(condition)
 KET_REQUIRE_NON_NULL(ptr)
-ket::CheckBounds(index, size)
+ket::contract::CheckBounds(index, size)
 ```
 
 C++バージョン要件:
@@ -1803,10 +1803,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ErrnoGuard
-ket::CopyToCBuffer(dst, dst_size, src, src_size)
-ket::CopyBytesToCBuffer(dst, dst_size, src, src_size)
-ket::UniqueHandle<Handle, Deleter>
+ket::interop::ErrnoGuard
+ket::interop::CopyToBuffer(dst, dst_size, src, src_size)
+ket::interop::CopyBytesToBuffer(dst, dst_size, src, src_size)
+ket::interop::UniqueHandle<Handle, Deleter>
 ```
 
 C++バージョン要件:
@@ -1855,11 +1855,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ErrnoMessage(error_number)
-ket::EnvironmentVariable(name)
+ket::platform::ErrnoMessage(error_number)
+ket::platform::EnvironmentVariable(name)
 #ifdef _WIN32
-ket::GetLastErrorCode()
-ket::WindowsErrorMessage(code)
+ket::platform::GetLastErrorCode()
+ket::platform::WindowsErrorMessage(code)
 #endif
 ```
 
@@ -1909,9 +1909,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Transition<State, Event>
-ket::IsValidTransition(state, event, table)
-ket::NextState(state, event, table)
+ket::state::Transition<State, Event>
+ket::state::IsValidTransition(state, event, table)
+ket::state::NextState(state, event, table)
 ```
 
 C++バージョン要件:
@@ -1957,7 +1957,7 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Lazy<T>
+ket::cache::Lazy<T>
 lazy.HasValue()
 lazy.GetOrCreate(factory)
 lazy.Reset()
@@ -2008,11 +2008,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::EncodeTlv(type, value, value_size)
-ket::AppendTlv(dst, type, value, value_size)
-ket::TryDecodeTlv(data, size, out)
-ket::TlvView
-ket::TlvDecodeResult
+ket::tlv::Encode(type, value, value_size)
+ket::tlv::Append(dst, type, value, value_size)
+ket::tlv::TryDecode(data, size, out)
+ket::tlv::View
+ket::tlv::DecodeResult
 ```
 
 C++バージョン要件:
@@ -2062,8 +2062,8 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::TupleForEach(tuple, f)
-ket::TupleTransform(tuple, f)
+ket::tuple::ForEach(tuple, f)
+ket::tuple::Transform(tuple, f)
 ```
 
 C++バージョン要件:
@@ -2167,12 +2167,12 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Lerp(a, b, t)
-ket::DegreesToRadians(degrees)
-ket::RadiansToDegrees(radians)
-ket::NearlyEqual(a, b, epsilon)
-ket::TryKiBToBytes(kib, out)
-ket::BytesToKiB(bytes)
+ket::math::Lerp(a, b, t)
+ket::math::DegreesToRadians(degrees)
+ket::math::RadiansToDegrees(radians)
+ket::math::NearlyEqual(a, b, epsilon)
+ket::math::TryKiBToBytes(kib, out)
+ket::math::BytesToKiB(bytes)
 ```
 
 C++バージョン要件:
@@ -2221,9 +2221,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::IgnoreUnused(args...)
-ket::ArraySize(array)
-ket::AsConst(value)
+ket::lang::IgnoreUnused(args...)
+ket::lang::ArraySize(array)
+ket::lang::AsConst(value)
 ```
 
 C++バージョン要件:
@@ -2267,10 +2267,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::NonCopyable
-ket::NonMovable
-ket::MovableOnly
-ket::ResetOnMove<T>
+ket::object::NonCopyable
+ket::object::NonMovable
+ket::object::MovableOnly
+ket::object::ResetOnMove<T>
 ```
 
 C++バージョン要件:
@@ -2317,10 +2317,10 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::RemoveCvref<T>
-ket::TypeIdentity<T>
-ket::AlwaysFalse<Ts...>
-ket::VoidT<Ts...>
+ket::meta::RemoveCvref<T>
+ket::meta::TypeIdentity<T>
+ket::meta::AlwaysFalse<Ts...>
+ket::meta::VoidT<Ts...>
 ```
 
 C++バージョン要件:
@@ -2364,8 +2364,8 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::JoiningThread
-ket::FutureReady(future)
+ket::concurrency::JoiningThread
+ket::concurrency::FutureReady(future)
 ```
 
 C++バージョン要件:
@@ -2413,9 +2413,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Uuid
-ket::ParseUuid(text)
-ket::FormatUuid(uuid)
+ket::uuid::Uuid
+ket::uuid::Parse(text)
+ket::uuid::Format(uuid)
 ```
 
 C++バージョン要件:
@@ -2464,9 +2464,9 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ColorRgb
-ket::TryParseColorRgb(text, out)
-ket::FormatColorRgbHex(color, with_hash)
+ket::color::Rgb
+ket::color::TryParse(text, out)
+ket::color::FormatHex(color, with_hash)
 ```
 
 C++バージョン要件:
@@ -2514,11 +2514,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::Percent
-ket::TryMakePercentFromBasisPoints(value, out)
-ket::TryFromRatio(numerator, denominator, out)
-ket::ClampPercent(value)
-ket::FormatPercent(value)
+ket::percent::Percent
+ket::percent::TryFromBasisPoints(value, out)
+ket::percent::TryFromRatio(numerator, denominator, out)
+ket::percent::Clamp(value)
+ket::percent::Format(value)
 ```
 
 C++バージョン要件:
@@ -2606,7 +2606,7 @@ Category: recipe / CLI
 
 Pain:
 
-- CLI、parse_numeric、enum_table を組み合わせる小さい例がほしい
+- CLI、parse、enums を組み合わせる小さい例がほしい
 - CLI framework を作らず、option 取得と parse 失敗の扱いだけを示したい
 - duplicate や missing option の扱いを example で確認したい
 
@@ -2651,7 +2651,7 @@ Category: recipe / interop
 
 Pain:
 
-- `c_interop` と `scope` を使った C API 境界 RAII 化例がほしい
+- `interop` と `scope` を使った C API 境界 RAII 化例がほしい
 - fake C API で open/copy/cleanup/errno restore の失敗経路を見たい
 - OS固有大規模 wrapper や新規 module API にはしたくない
 

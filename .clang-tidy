@@ -12,7 +12,8 @@ Checks: >
   -readability-identifier-length,
   -readability-function-cognitive-complexity,
   -modernize-use-trailing-return-type,
-  -modernize-avoid-c-arrays
+  -modernize-avoid-c-arrays,
+  -modernize-concat-nested-namespaces
 WarningsAsErrors: "*"
 HeaderFilterRegex: ".*/modules/.*"
 FormatStyle: file

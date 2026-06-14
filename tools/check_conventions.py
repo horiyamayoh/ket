@@ -14,7 +14,8 @@ TEST_TAGS = ("@test", "@brief", "@details", "@pre", "@post")
 FUNCTION_TAGS = ("@brief", "@retval", "@pre", "@post")
 TYPE_TAGS = ("@brief",)
 ALLOWED_CONDITION_CALLS = {"alignof", "sizeof"}
-SECTION_BANNER_LINE = "\t// -----------------------------------------------------------------------------"
+SECTION_BANNER_BODY = "// -----------------------------------------------------------------------------"
+SECTION_BANNER_LINE = "\t" + SECTION_BANNER_BODY
 HEADER_SECTIONS = (
 	"Public API declarations",
 	"Internal implementation details",
@@ -191,12 +192,30 @@ def function_signature_at(lines: list[str], index: int) -> tuple[str, int] | Non
 
 
 def doxygen_tag_has_text(comment: str, tag: str) -> bool:
-	for line in comment.splitlines():
+	lines = comment.splitlines()
+	for index, line in enumerate(lines):
 		if tag not in line:
 			continue
 
-		text = line.split(tag, 1)[1].strip()
-		if text:
+		# 同一行のtag直後にtextがあれば充足
+		same_line_text = line.split(tag, 1)[1].strip()
+		if same_line_text:
+			return True
+
+		# clang-formatのreflowでtagが行末に残る場合、後続の継続行にあるtextを確認
+		for follow in lines[index + 1 :]:
+			follow_text = follow.strip()
+			if follow_text in ("", "*", "*/"):
+				if follow_text == "*/":
+					break
+				continue
+
+			body = follow_text.lstrip("*").strip()
+			if body == "":
+				continue
+			if body.startswith("@"):
+				break
+
 			return True
 
 	return False
@@ -305,10 +324,11 @@ def section_banner_uses_exact_format(lines: list[str], title_index: int, title: 
 	if title_index == 0 or title_index + 1 >= len(lines):
 		return False
 
+	# 入れ子namespaceでbannerのtab数が変わるため、indentationはclang-formatに委ね、banner構造のみ確認
 	return (
-		lines[title_index - 1] == SECTION_BANNER_LINE
-		and lines[title_index] == f"\t// {title}"
-		and lines[title_index + 1] == SECTION_BANNER_LINE
+		lines[title_index - 1].strip() == SECTION_BANNER_BODY
+		and lines[title_index].strip() == f"// {title}"
+		and lines[title_index + 1].strip() == SECTION_BANNER_BODY
 	)
 
 

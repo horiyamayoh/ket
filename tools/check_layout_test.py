@@ -36,8 +36,8 @@ class CheckLayoutTest(unittest.TestCase):
 				" * 他のket moduleへの依存なし。",
 				" *",
 				" * @par namespace",
-				" * 公開API：ket",
-				" * 内部実装：ket::detail",
+				" * 公開API：ket::bcd",
+				" * 内部実装：ket::bcd::detail",
 				" */",
 				"",
 			)
@@ -326,7 +326,7 @@ class CheckLayoutTest(unittest.TestCase):
 	def test_missing_namespace_name_is_reported(self) -> None:
 		with self.make_repo() as root_name:
 			root = Path(root_name)
-			header = self.header_preamble().replace(" * 公開API：ket\n", "")
+			header = self.header_preamble().replace(" * 公開API：ket::bcd\n", "")
 			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
 
 			errors = check_layout.collect_layout_errors(root)
@@ -339,7 +339,7 @@ class CheckLayoutTest(unittest.TestCase):
 	def test_missing_detail_namespace_name_is_reported(self) -> None:
 		with self.make_repo() as root_name:
 			root = Path(root_name)
-			header = self.header_preamble().replace(" * 内部実装：ket::detail\n", "")
+			header = self.header_preamble().replace(" * 内部実装：ket::bcd::detail\n", "")
 			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
 
 			errors = check_layout.collect_layout_errors(root)

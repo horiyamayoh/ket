@@ -32,8 +32,6 @@ HEADER_PREAMBLE_MARKERS = (
 	("非推奨理由：", "header preamble must describe non-recommended C++ standards reason."),
 	("@par 他のライブラリへの依存", "header preamble must describe dependencies."),
 	("@par namespace", "header preamble must describe namespace."),
-	("公開API：ket", "header preamble must describe namespace ket public API."),
-	("内部実装：ket::detail", "header preamble must describe namespace ket detail implementation."),
 )
 
 
@@ -213,6 +211,15 @@ def check_header_preamble(root: Path, layout: ModuleLayout, errors: list[str]) -
 	for marker, message in HEADER_PREAMBLE_MARKERS:
 		if marker not in preamble:
 			add_error(errors, root, layout.header, message)
+
+	# 公開APIと内部実装のnamespaceはmodule毎の入れ子namespace (ket::<module>) を要求
+	public_namespace = f"公開API：ket::{layout.name}"
+	if public_namespace not in preamble:
+		add_error(errors, root, layout.header, "header preamble must describe namespace ket public API.")
+
+	detail_namespace = f"内部実装：ket::{layout.name}::detail"
+	if detail_namespace not in preamble:
+		add_error(errors, root, layout.header, "header preamble must describe namespace ket detail implementation.")
 
 
 def collect_layout_errors(root: Path = ket_tooling.ROOT) -> list[str]:
