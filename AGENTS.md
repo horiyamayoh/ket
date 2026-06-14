@@ -35,7 +35,9 @@ modules/<name>/ket_<name>_test.cpp
 - 非optionalの出力引数と入出力引数は参照型で受けてください。`nullptr` が意味を持つoptional出力やC API境界だけポインタ型を使い、その理由をDoxygenに書いてください。
 - 各moduleは原則として他のket moduleに依存しないでください。
 - 小さい内部処理の重複は許容します。drop-in性を優先します。
-- ヘッダ先頭にC++標準要求、依存、drop-in条件を書いてください。
+- ヘッダ先頭にDoxygen `@file`コメントを書き、`@brief`、`@details`、`@par プロジェクトへの適用方法`、`@par C++バージョン要件`、`@par 他のライブラリへの依存`、`@par namespace` を含めてください。
+- `@par C++バージョン要件` には `最小要件：`、`本ライブラリの適用を推奨する C++ バージョン：`、`推奨理由：`、`本ライブラリの適用を推奨しない C++ バージョン：`、`非推奨理由：` を書いてください。非推奨がない場合は `本ライブラリの適用を推奨しない C++ バージョン：なし。` と `非推奨理由：なし。` を書いてください。
+- `@par namespace` には `公開API：ket` と `内部実装：ket::detail` を書いてください。
 - ヘッダのinclude guardには `#pragma once` を使ってください。
 - 公開ヘッダは include what you use を守り、自分が必要な標準ヘッダを自分でincludeしてください。
 - `.cpp` 内helperは無名namespace、header内helperは `ket::detail` に置いてください。
@@ -69,7 +71,7 @@ python3 tools/format.py
 - Markdown、YAML、JSONはPrettierに従ってください。
 - formatterはAllman brace、tab indentation、表示幅4を前提にしています。
 - 静的解析は `clang-tidy-18`、`cppcheck`、`iwyu` を使います。
-- C++コメント規約は `docs/style.md` に従ってください。物理操作ではなく、論理的な意味、背景、目的を書きます。
+- C++コメント規約は `docs/style.md` に従ってください。物理操作ではなく、論理的な意味、背景、目的、drop-in時の要件を書きます。
 - functional testはGoogleTestで書きます。
 - GoogleTestは `v1.17.0` 固定で、functional testはC++17以上です。
 - C++11/14対応moduleは、GoogleTestとは別にcompile-only checkを追加してください。

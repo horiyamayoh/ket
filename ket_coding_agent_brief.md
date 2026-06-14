@@ -132,16 +132,18 @@ ket_string.h だけで使える
 やむを得ず依存する場合は、ファイル先頭に明記する。
 
 ```cpp
-// Drop-in files:
-//   required: ket_bytes.h, ket_bytes.cpp
-//   optional: none
-//
-// Dependencies:
-//   C++17 or later
-//   Standard library only
+/**
+ * @par プロジェクトへの適用方法
+ * 必須: `ket_bytes.h`, `ket_bytes.cpp`。
+ * 任意: なし。
+ *
+ * @par 他のライブラリへの依存
+ * C++17以降。
+ * 標準ライブラリのみ。
+ */
 ```
 
-ただし、最初の設計原則としては **Standard library only** を目指す。
+ただし、最初の設計原則としては **標準ライブラリのみ** を目指す。
 
 小さい内部処理は、重複してもよい。  
 たとえば `ket_bcd.cpp` の中で `HighNibble` 相当の処理が必要でも、`ket_bits` に依存させず、内部無名名前空間に小さく書いてよい。
@@ -376,25 +378,40 @@ modules/<name>/ket_<name>_test.cpp
 header-onlyで十分なmoduleでは `.cpp` を置かず、READMEまたはファイル先頭に
 `header-only` と明記する。空に近い `.cpp` を置き、`#include "ket_<name>.h"` だけ書く形は採らない。
 
-### 6.2 ヘッダ先頭コメント
+### 6.2 ヘッダ先頭Doxygenコメント
 
-各ヘッダには、drop-in条件を明記する。
+各ヘッダには、Doxygen `@file`コメントとしてmoduleの概略、drop-in条件、C++バージョン要件、依存、namespaceを明記する。
+Doxygenタグ以外のsection名と説明本文は日本語を基本にし、既存コメントと同じく簡潔な常体にする。
 
 ```cpp
 #pragma once
 
-// ket_bcd.h
-//
-// Drop-in module:
-//   Copy ket_bcd.h and ket_bcd.cpp into your project.
-//
-// Dependencies:
-//   C++11 or later
-//   Standard library only
-//   No other ket modules required
-//
-// Namespace:
-//   ket
+/**
+ * @file ket_bcd.h
+ * @brief packed BCDと10進表現の変換API。
+ *
+ * @details 固定幅packed BCDと任意バイト長packed BCDを、整数または10進文字列へ相互変換する。
+ * drop-in時は宣言と実装を同じ単位で持ち出す。標準ライブラリにpacked BCDの直接APIがないため、
+ * BCD固有のnibble検証と桁保持をmodule内で扱う。
+ *
+ * @par プロジェクトへの適用方法
+ * `ket_bcd.h` と `ket_bcd.cpp` を対象プロジェクトへコピー。
+ *
+ * @par C++バージョン要件
+ * 最小要件：C++17。
+ * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
+ * 推奨理由：packed BCDの直接代替が標準ライブラリになく、`std::optional`で失敗値を明確に扱える。
+ * 本ライブラリの適用を推奨しない C++ バージョン：なし。
+ * 非推奨理由：なし。
+ *
+ * @par 他のライブラリへの依存
+ * 標準ライブラリのみ。
+ * 他のket moduleへの依存なし。
+ *
+ * @par namespace
+ * 公開API：ket
+ * 内部実装：ket::detail
+ */
 
 #include <cstdint>
 
@@ -403,6 +420,9 @@ namespace ket
     // ...
 }
 ```
+
+`本ライブラリの適用を推奨しない C++ バージョン` が `なし` 以外の場合は、`非推奨理由` に理由を書く。理由は原則として、対象C++標準では標準ライブラリで容易かつ明確に代替可能であることを示す。
+module全体を非推奨にする意図ではないため、C++バージョン単位の非推奨表現にDoxygen `@deprecated` は使わない。
 
 ### 6.3 名前空間
 
@@ -1978,9 +1998,14 @@ ket::AlignUp(value, alignment)
 ```
 ````
 
-C++ versions:
+C++バージョン要件:
 
-- C++11 or later
+- 最小要件：C++11
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：標準ライブラリだけでは意図が読み取りにくい小さな定型処理を名前付きで扱える
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：なし
 
 Failure / edge cases:
 
@@ -1988,10 +2013,10 @@ Failure / edge cases:
 - overflow
 - signed / unsigned
 
-Dependencies:
+他のライブラリへの依存:
 
-- Standard library only
-- No ket dependencies
+- 標準ライブラリのみ
+- ket依存なし
 
 Tests:
 

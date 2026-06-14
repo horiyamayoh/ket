@@ -1,15 +1,31 @@
 #pragma once
 
-// 持ち出し条件:
-//   ket_bcd.h と ket_bcd.cpp を対象プロジェクトへコピー。
-//
-// 依存:
-//   C++17以降
-//   標準ライブラリのみ
-//   他のket moduleへの依存なし
-//
-// Namespace:
-//   ket
+/**
+ * @file ket_bcd.h
+ * @brief packed BCDと10進表現の変換API。
+ *
+ * @details 固定幅packed BCDと任意バイト長packed BCDを、整数または10進文字列へ相互変換する。
+ * drop-in時は宣言と実装を同じ単位で持ち出す。標準ライブラリにpacked BCDの直接APIがないため、
+ * BCD固有のnibble検証と桁保持をmodule内で扱う。
+ *
+ * @par プロジェクトへの適用方法
+ * `ket_bcd.h` と `ket_bcd.cpp` を対象プロジェクトへコピー。
+ *
+ * @par C++バージョン要件
+ * 最小要件：C++17。
+ * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
+ * 推奨理由：packed BCDの直接代替が標準ライブラリになく、`std::optional`で失敗値を明確に扱える。
+ * 本ライブラリの適用を推奨しない C++ バージョン：なし。
+ * 非推奨理由：なし。
+ *
+ * @par 他のライブラリへの依存
+ * 標準ライブラリのみ。
+ * 他のket moduleへの依存なし。
+ *
+ * @par namespace
+ * 公開API：ket
+ * 内部実装：ket::detail
+ */
 
 #include <cstddef>
 #include <cstdint>

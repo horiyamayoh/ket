@@ -10,22 +10,45 @@ import check_layout
 
 
 class CheckLayoutTest(unittest.TestCase):
+	def header_preamble(self) -> str:
+		return "\n".join(
+			(
+				"#pragma once",
+				"",
+				"/**",
+				" * @file ket_bcd.h",
+				" * @brief BCD変換module。",
+				" *",
+				" * @details layout check用の試験module。",
+				" *",
+				" * @par プロジェクトへの適用方法",
+				" * `ket_bcd.h` と `ket_bcd.cpp` を対象プロジェクトへコピー。",
+				" *",
+				" * @par C++バージョン要件",
+				" * 最小要件：C++17。",
+				" * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。",
+				" * 推奨理由：試験用の理由。",
+				" * 本ライブラリの適用を推奨しない C++ バージョン：なし。",
+				" * 非推奨理由：なし。",
+				" *",
+				" * @par 他のライブラリへの依存",
+				" * 標準ライブラリのみ。",
+				" * 他のket moduleへの依存なし。",
+				" *",
+				" * @par namespace",
+				" * 公開API：ket",
+				" * 内部実装：ket::detail",
+				" */",
+				"",
+			)
+		)
+
 	def make_repo(self) -> tempfile.TemporaryDirectory[str]:
 		repository = tempfile.TemporaryDirectory()
 		root = Path(repository.name)
 		(root / "modules" / "bcd").mkdir(parents=True)
 		(root / "modules" / "bcd" / "ket_bcd.h").write_text(
-			"\n".join(
-				(
-					"#pragma once",
-					"",
-					"// Drop-in module:",
-					"// Dependencies:",
-					"// Namespace:",
-					"//   ket",
-					"",
-				)
-			),
+			self.header_preamble(),
 			encoding="utf-8",
 		)
 		(root / "modules" / "bcd" / "ket_bcd.cpp").write_text(
@@ -196,9 +219,135 @@ class CheckLayoutTest(unittest.TestCase):
 
 			errors = check_layout.collect_layout_errors(root)
 
-			self.assertIn("modules/bcd/ket_bcd.h: header preamble must describe drop-in conditions.", errors)
+			self.assertIn("modules/bcd/ket_bcd.h: header preamble must use Doxygen @file.", errors)
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe project application method.",
+				errors,
+			)
 			self.assertIn("modules/bcd/ket_bcd.h: header preamble must describe dependencies.", errors)
-			self.assertIn("modules/bcd/ket_bcd.h: header preamble must describe namespace ket.", errors)
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket public API.",
+				errors,
+			)
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket detail implementation.",
+				errors,
+			)
+
+	def test_missing_file_tag_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace(" * @file ket_bcd.h\n", "")
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn("modules/bcd/ket_bcd.h: header preamble must use Doxygen @file.", errors)
+
+	def test_missing_cpp_version_requirements_section_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace(" * @par C++バージョン要件\n", "")
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe C++ version requirements.",
+				errors,
+			)
+
+	def test_missing_recommended_standard_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace(
+				"本ライブラリの適用を推奨する C++ バージョン：", "推奨："
+			)
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe recommended C++ standard.",
+				errors,
+			)
+
+	def test_missing_recommended_reason_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace("推奨理由：", "理由：")
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe recommended C++ standard reason.",
+				errors,
+			)
+
+	def test_missing_not_recommended_standard_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace(
+				"本ライブラリの適用を推奨しない C++ バージョン：", "非推奨："
+			)
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe non-recommended C++ standards.",
+				errors,
+			)
+
+	def test_missing_not_recommended_reason_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace("非推奨理由：", "理由：")
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe non-recommended C++ standards reason.",
+				errors,
+			)
+
+	def test_missing_namespace_section_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace(" * @par namespace\n", "")
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn("modules/bcd/ket_bcd.h: header preamble must describe namespace.", errors)
+
+	def test_missing_namespace_name_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace(" * 公開API：ket\n", "")
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket public API.",
+				errors,
+			)
+
+	def test_missing_detail_namespace_name_is_reported(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_preamble().replace(" * 内部実装：ket::detail\n", "")
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket detail implementation.",
+				errors,
+			)
 
 
 if __name__ == "__main__":

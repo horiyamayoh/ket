@@ -1,16 +1,31 @@
 #pragma once
 
-// 持ち出し条件:
-//   ket_string.h を対象プロジェクトへコピー。
-//   header-only module。
-//
-// 依存:
-//   C++17以降
-//   標準ライブラリのみ
-//   他のket moduleへの依存なし
-//
-// Namespace:
-//   ket
+/**
+ * @file ket_string.h
+ * @brief 複数文字列片の連結と追記API。
+ *
+ * @details formatではない文字列片の連結と既存文字列への追記を短いAPIへ集約する。
+ * ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。標準ライブラリのstring append処理を
+ * 薄く包み、入力順、NUL保持、自己参照時の安全性を明示する。
+ *
+ * @par プロジェクトへの適用方法
+ * `ket_string.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
+ *
+ * @par C++バージョン要件
+ * 最小要件：C++17。
+ * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
+ * 推奨理由：`std::string_view`を利用でき、文字列片連結を標準ライブラリのみで安全に薄く包める。
+ * 本ライブラリの適用を推奨しない C++ バージョン：C++20以降。
+ * 非推奨理由：書式付き文字列生成が目的の場合は、標準ライブラリの`std::format`で容易かつ明確に代替可能。
+ *
+ * @par 他のライブラリへの依存
+ * 標準ライブラリのみ。
+ * 他のket moduleへの依存なし。
+ *
+ * @par namespace
+ * 公開API：ket
+ * 内部実装：ket::detail
+ */
 
 #include <cstddef>
 #include <functional>

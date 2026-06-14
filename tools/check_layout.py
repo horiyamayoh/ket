@@ -12,6 +12,29 @@ import ket_tooling
 
 MODULE_NAME_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 INCLUDE_PATTERN = re.compile(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]')
+HEADER_PREAMBLE_LINE_LIMIT = 80
+HEADER_PREAMBLE_MARKERS = (
+	("@file", "header preamble must use Doxygen @file."),
+	("@brief", "header preamble must describe module summary with @brief."),
+	("@details", "header preamble must describe module details with @details."),
+	("@par プロジェクトへの適用方法", "header preamble must describe project application method."),
+	("@par C++バージョン要件", "header preamble must describe C++ version requirements."),
+	("最小要件：", "header preamble must describe minimum C++ standard."),
+	(
+		"本ライブラリの適用を推奨する C++ バージョン：",
+		"header preamble must describe recommended C++ standard.",
+	),
+	("推奨理由：", "header preamble must describe recommended C++ standard reason."),
+	(
+		"本ライブラリの適用を推奨しない C++ バージョン：",
+		"header preamble must describe non-recommended C++ standards.",
+	),
+	("非推奨理由：", "header preamble must describe non-recommended C++ standards reason."),
+	("@par 他のライブラリへの依存", "header preamble must describe dependencies."),
+	("@par namespace", "header preamble must describe namespace."),
+	("公開API：ket", "header preamble must describe namespace ket public API."),
+	("内部実装：ket::detail", "header preamble must describe namespace ket detail implementation."),
+)
 
 
 @dataclass(frozen=True)
@@ -160,25 +183,36 @@ def check_progress_registration(root: Path, layout: ModuleLayout, errors: list[s
 		add_error(errors, root, root / "progress.md", f"module '{layout.name}' is not listed.")
 
 
+def first_doxygen_block(lines: list[str]) -> str:
+	for index, line in enumerate(lines[:HEADER_PREAMBLE_LINE_LIMIT]):
+		if line.strip() != "/**":
+			continue
+
+		block_lines: list[str] = []
+		for block_line in lines[index:HEADER_PREAMBLE_LINE_LIMIT]:
+			block_lines.append(block_line)
+			if block_line.strip() == "*/":
+				break
+
+		return "\n".join(block_lines)
+
+	return ""
+
+
 def check_header_preamble(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
 	if not layout.header.exists():
 		return
 
 	lines = layout.header.read_text(encoding="utf-8").splitlines()
-	preamble = "\n".join(lines[:40])
+	preamble = first_doxygen_block(lines)
 	first_non_empty = next((line.strip() for line in lines if line.strip()), "")
 
 	if first_non_empty != "#pragma once":
 		add_error(errors, root, layout.header, "header must start with #pragma once.")
 
-	if "Drop-in" not in preamble and "持ち出し条件" not in preamble:
-		add_error(errors, root, layout.header, "header preamble must describe drop-in conditions.")
-
-	if "Dependencies" not in preamble and "依存" not in preamble:
-		add_error(errors, root, layout.header, "header preamble must describe dependencies.")
-
-	if "Namespace" not in preamble or "ket" not in preamble:
-		add_error(errors, root, layout.header, "header preamble must describe namespace ket.")
+	for marker, message in HEADER_PREAMBLE_MARKERS:
+		if marker not in preamble:
+			add_error(errors, root, layout.header, message)
 
 
 def collect_layout_errors(root: Path = ket_tooling.ROOT) -> list[str]:
