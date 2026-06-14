@@ -11,8 +11,13 @@
 この文書は `catalog.md` の置き換えではない。`catalog.md` は候補APIの保管場所、
 `progress.md` は実装状況、各 module header の Doxygen は実装済みAPIの詳細仕様を管理する。
 未実装 module の最終的な公開API、C++要件、失敗方針は、この文書の module別仕様カードを正とする。
+未実装候補をこの文書へ追加した場合も、候補APIとしての履歴と痛みは `catalog.md` に残す。
+製造前に `catalog.md` へ候補が反映されていない場合は、製造着手前に候補項目を追加する。
+この文書では `Manufacturing Status` は一覧表の列を正とし、module別仕様カードには同じ status を
+重複保持しない。status を変更する場合は、一覧表の `Manufacturing Status` と仕様カード本文の成熟度表現を
+同時に見直す。
 
-`Manufacturing Status` が `Ready` または `Existing` の module別仕様カードは、完全な公開signature、
+`Manufacturing Status` が `Ready` または `Existing` である module の仕様カードは、完全な公開signature、
 計算量・性能、失敗方針、境界条件、テスト観点を固定済みであり、追加の仕様分割なしで製造依頼できる。
 signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポインタ、戻り型は実装契約として扱う。
 製造時に逸脱する場合は、逸脱内容と理由を Doxygen と `progress.md` に明記する。
@@ -65,12 +70,93 @@ signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポイン
 | `Needs Spec Split` | 候補として有効だが、初回 API の切り方や失敗方針を別途小さく分割してから製造する。 |
 | `Recipe`           | module ではなく利用例。module 製造依頼ではなく recipe 作成依頼として扱う。        |
 
+#### Ready 判定基準
+
+`Ready` は優先度ではなく、追加の仕様判断なしで製造できる状態を表す。次の条件を満たせない module は、
+一覧表の `Manufacturing Status` を `Needs Spec Split` に戻し、仕様カードへ未確定の設計判断を列挙する。
+
+- 公開signatureの型、`const`、参照/ポインタ、`noexcept`、`constexpr`、macro 名と値域が固定済み。
+- 失敗を戻り値、precondition、例外、process termination のどれで扱うか固定済み。
+- 最小 C++ 要件、推奨版、非推奨版、標準代替または標準代替なしの理由が固定済み。
+- C++11/14 module では、最低標準の compile-only check が必要かどうか固定済み。
+- 他 ket module へ依存しない方針と、必要な標準ヘッダまたは platform API が固定済み。
+- null、empty、overflow、size不足、lifetime、encoding、endian、platform差など主要境界のテスト観点が固定済み。
+- `Do not implement` で初回製造時に広げない範囲が固定済み。
+
+`P0`、`P1`、`P2`、`P3` は実装優先度であり、仕様成熟度ではない。高優先度でも上記を満たさないものは
+`Needs Spec Split` とし、低優先度でも判断が固定済みなら `Ready` とする。
+proposal 段階で P1/P2/P3 に「仕様を小さく切る」「大きくなりやすい」注意があった module も、
+この文書の仕様カードで初回API、失敗方針、境界条件、テスト観点、広げない範囲を固定済みなら
+`Ready` として扱う。逆に、実装検討中に未固定判断が見つかった場合は priority に関係なく
+`Needs Spec Split` へ戻す。
+
 `Ready` と `Existing` の仕様カードは次の項目をこの順で固定する: `Purpose`、`C++ version`、
 `Drop-in files`、`Dependencies`、`Public API Signatures`、`Behavior`、`Failure/edge cases`、
 `Complexity/performance`、`Tests`、`Do not implement`。APIごとに標準代替の登場版や採用理由が
 異なる場合は、`Do not implement` の直前に任意項目 `API別標準代替` を置いてよい。`Needs Spec Split` の仕様カードは
 `Public API Signatures` の代わりに `Public API (候補)` と `未確定の設計判断` を持ち、製造前に確定すべき
 判断を箇条書きで列挙する。
+
+### catalog.md 対応
+
+`catalog.md` は候補APIの痛み、候補名、失敗条件、テスト観点を残す履歴であり、この文書は製造依頼時の
+署名・境界条件・禁止範囲を固定する正本である。`Ready` または `Recipe` を製造依頼に使う前に、次の
+Idea が `catalog.md` に存在することを確認する。
+
+| Module / Recipe     | catalog.md Idea             |
+| ------------------- | --------------------------- |
+| `bcd`               | `Idea: Bcd`                 |
+| `string`            | `Idea: String`              |
+| `bits`              | `Idea: Bits`                |
+| `numeric`           | `Idea: Numeric`             |
+| `endian`            | `Idea: Endian`              |
+| `hex`               | `Idea: Hex`                 |
+| `parse_numeric`     | `Idea: ParseNumeric`        |
+| `enum_table`        | `Idea: EnumTable`           |
+| `container`         | `Idea: Container`           |
+| `string_ascii`      | `Idea: StringAscii`         |
+| `scope`             | `Idea: Scope`               |
+| `byte_reader`       | `Idea: ByteReader`          |
+| `byte_writer`       | `Idea: ByteWriter`          |
+| `bytes_builder`     | `Idea: BytesBuilder`        |
+| `date`              | `Idea: Date`                |
+| `deadline`          | `Idea: Deadline`            |
+| `cli`               | `Idea: Cli`                 |
+| `byte_view`         | `Idea: ByteView`            |
+| `utf8`              | `Idea: Utf8`                |
+| `file`              | `Idea: File`                |
+| `io_stream`         | `Idea: IoStream`            |
+| `format_value`      | `Idea: FormatValue`         |
+| `algorithm_range`   | `Idea: AlgorithmRange`      |
+| `memory`            | `Idea: Memory`              |
+| `pointer`           | `Idea: Pointer`             |
+| `testing_bytes`     | `Idea: TestingBytes`        |
+| `semantic_version`  | `Idea: SemanticVersion`     |
+| `ipv4`              | `Idea: Ipv4`                |
+| `port`              | `Idea: Port`                |
+| `mac_address`       | `Idea: MacAddress`          |
+| `function`          | `Idea: Function`            |
+| `variant_match`     | `Idea: VariantMatch`        |
+| `optional_ext`      | `Idea: OptionalExt`         |
+| `contract`          | `Idea: Contract`            |
+| `c_interop`         | `Idea: CInterop`            |
+| `platform_error`    | `Idea: PlatformError`       |
+| `state_table`       | `Idea: StateTable`          |
+| `cache_once`        | `Idea: CacheOnce`           |
+| `serialization_tlv` | `Idea: SerializationTlv`    |
+| `tuple`             | `Idea: Tuple`               |
+| `build_config`      | `Idea: BuildConfig`         |
+| `math_small`        | `Idea: MathSmall`           |
+| `language`          | `Idea: Language`            |
+| `object`            | `Idea: Object`              |
+| `meta`              | `Idea: Meta`                |
+| `concurrency_small` | `Idea: ConcurrencySmall`    |
+| `uuid`              | `Idea: Uuid`                |
+| `color_rgb`         | `Idea: ColorRgb`            |
+| `percent`           | `Idea: Percent`             |
+| `binary_payload`    | `Idea: BinaryPayloadRecipe` |
+| `command_parser`    | `Idea: CommandParserRecipe` |
+| `c_api_wrapper`     | `Idea: CApiWrapperRecipe`   |
 
 ## 3. module/API 一覧表
 
@@ -152,7 +238,8 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### bcd Module
 
-- Purpose: packed BCD と10進整数・10進文字列の相互変換。
+- Purpose: packed BCD と10進整数・10進文字列の相互変換。Existing module のため、公開詳細は
+  header Doxygen と実装を正本とし、このカードは現状仕様と追加禁止範囲の要約。
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   packed BCDの直接代替が標準ライブラリになく、`std::optional`で失敗値を明確に扱える。
   非推奨版 なし。非推奨理由: なし。
@@ -181,7 +268,8 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### string Module
 
-- Purpose: format ではない文字列片の連結と既存文字列への追記。
+- Purpose: format ではない文字列片の連結と既存文字列への追記。Existing module のため、公開詳細は
+  header Doxygen と実装を正本とし、このカードは現状仕様と追加禁止範囲の要約。
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::string_view`を利用でき、文字列片連結を標準ライブラリのみで安全に薄く包める。
   非推奨版 なし。非推奨理由: なし。
@@ -258,16 +346,19 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   - `template <typename T> constexpr T SaturatingSub(T a, T b) noexcept`
   - `template <typename To, typename From> bool TryCheckedCast(From value, To& out) noexcept`
 - Behavior: arithmetic API は integral 型を対象にし、`bool` と character 型（`char`、`signed char`、
-  `unsigned char`、`wchar_t`、`char16_t`、`char32_t`）は対象外。alignment と divide-round-up は unsigned
-  integral のみ。checked arithmetic は signed overflow を発生させない実装にする。`AbsDiff` は signed/unsigned
-  の min/max 差を unsigned 結果で表し、`SaturatingAdd`/`SaturatingSub` は型の min/max へ飽和する。
+  `unsigned char`、`wchar_t`、`char16_t`、`char32_t`）は対象外。対象外型は `static_assert` または SFINAE で
+  compile error にする。alignment と divide-round-up は unsigned integral のみ。checked arithmetic は
+  `std::numeric_limits<T>` による事前比較で成否を判定し、signed overflow を起こす式を評価しない。
+  `AbsDiff` は signed 最小値を単純に符号反転せず、unsigned 変換と範囲比較で min/max 差を表す。
+  `SaturatingAdd`/`SaturatingSub` は signed/unsigned それぞれの min/max 境界で飽和し、wraparound を外部仕様にしない。
   出力引数を変更する `TryXxx` は C++11 では `noexcept` のみ、C++14 以降で `constexpr` 化してよい。
   `InRange`/`Clamp`/`AbsDiff`/`SaturatingXxx` は C++11 でも `constexpr`。
 - Failure/edge cases: `alignment == 0`、`divisor == 0`、overflow、cast範囲外は `false`。
   `Clamp` は `min_value <= max_value` を precondition。
 - Complexity/performance: 全API定数時間。`constexpr` query はコンパイル時評価可。allocation・例外なし。
 - Tests: align 0/1/exact/overflow、divide 0/1/exact、checked add/sub/mul の min/max、
-  cast 255/256、signed境界、`bool`/character型の不採用 compile-only。
+  `std::numeric_limits<T>::min()` を含む `AbsDiff`、saturating の上下限、cast 255/256、signed境界、
+  `bool`/character型の不採用 compile-only。
 - Do not implement: arbitrary precision、numeric framework、C++17 optional convenience の初回追加。
 
 ### endian Module
@@ -861,7 +952,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### format_value Module
 
-- Purpose: 診断用の短い文字列化候補。
+- Purpose: 診断用の短い固定表記API。
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   診断用の固定表記を標準ライブラリのみで小さく提供できる。
   非推奨版 なし。非推奨理由: `std::format` は書式化部品であり、ketの固定診断表記の直接代替ではない。
@@ -923,7 +1014,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### memory Module
 
-- Purpose: alignment と object representation 読み取りを小さく扱う候補。
+- Purpose: alignment と object representation 読み取りを小さく扱う補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   pointer alignment と object representation の意図を小さいAPIへ分離できる。
   非推奨版 なし。非推奨理由: secure zero と pointer alignment の直接代替は標準だけでは不足する。
@@ -951,7 +1042,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### pointer Module
 
-- Purpose: null と ownership 誤解を減らす候補。
+- Purpose: null と ownership 誤解を減らす補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   null許容性と所有権の有無を型名や関数名で明示できる。
   非推奨版 なし。非推奨理由: なし。
@@ -1104,7 +1195,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### variant_match Module
 
-- Purpose: `std::variant` visitor 補助候補。
+- Purpose: `std::variant` visitor 補助。
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::variant` と visitor補助を標準ライブラリのみで薄く包める。
   非推奨版 なし。非推奨理由: なし。
@@ -1160,12 +1251,14 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   type に限定し、戻り値は `std::decay_t` で保持する。参照を保持したい場合は mapper が
   `std::reference_wrapper<T>` を明示的に返す。`AndThen` の mapper は `std::optional<U>` を返すことを要求し、
   その optional 値そのものを返す。rvalue overload は保持値を mapper または戻り値へ move できる。
-  `ValueOrEval` は empty のときだけ `fallback_factory()` を評価する。
+  `ValueOrEval` は empty のときだけ `fallback_factory()` を評価する。`AndThen` は戻り型を unwrap せず、
+  mapper が返した optional 型をそのまま返す。
 - Failure/edge cases: mapper 例外は伝播。`MapOptional` の mapper が `void` または reference を直接返す場合は
   compile error。`ValueOrEval(const optional<T>&)` は `T` が copy constructible、rvalue overload は move
-  constructible であることを要求する。
+  constructible であることを要求する。`AndThen` の mapper が optional 以外を返す場合は compile error。
 - Complexity/performance: 各APIは1回の分岐と高々1回の mapper/factory 呼び出し。追加 allocation なし。
-- Tests: value/empty、mapper呼び出し回数、factory遅延、戻り型。
+- Tests: value/empty、mapper呼び出し回数、factory遅延、戻り型、rvalue move、reference_wrapper保持、
+  mapper例外伝播、非optional mapper の compile-fail 相当確認。
 - API別標準代替:
   - `MapOptional`: C++23 `std::optional::transform`。
   - `AndThen`: C++23 `std::optional::and_then`。
@@ -1208,21 +1301,23 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   ```
 
 - Behavior: `KET_EXPECTS`、`KET_ENSURES`、`KET_ASSERT_INVARIANT` は対応する backend function へ
-  condition、文字列化した式、`__FILE__`、`__LINE__` を渡す。`KET_REQUIRE_NON_NULL(ptr)` は ptr 式を1回だけ
-  評価し、non-null なら同じ pointer を返す。違反時は `ContractViolation` が `std::terminate` を呼び、
-  戻らない。debug/release とも常時評価し、`NDEBUG` では消さない。`CheckBounds` は `index < size` の純粋判定。
+  condition、文字列化した式、`__FILE__`、`__LINE__` を渡す。statement として使う macro で、戻り値は持たない。
+  `KET_REQUIRE_NON_NULL(ptr)` は ptr 式を1回だけ評価し、non-null なら同じ pointer 型の値を返す。
+  違反時は `ContractViolation` が `std::terminate` を呼び、戻らない。debug/release とも常時評価し、
+  `NDEBUG` では消さない。`CheckBounds` は `index < size` の純粋判定。
 - Failure/edge cases: 契約違反は例外ではなく process termination。差し替え可能 handler は持たない。
   macro は condition または ptr 式を1回だけ評価する。`expression`/`file` が null の場合でも terminate 方針は変えず、
   診断文字列生成に依存しない。
 - Complexity/performance: 成功時は O(1) の分岐のみ。違反時は O(1) で terminate。allocation なし。
 - Tests: valid path、`KET_EXPECTS`/`KET_ENSURES`/`KET_ASSERT_INVARIANT` death test、`KET_REQUIRE_NON_NULL` 成功/失敗、
-  expression 1回評価、`CheckBounds` 境界、`NDEBUG` compile でも評価されること。
+  expression 1回評価、戻り値 pointer の型保持、`CheckBounds` 境界、`NDEBUG` compile でも評価されること。
+  death test は終了することを主に固定し、診断messageの完全一致には依存しない。
 - Do not implement: release で消える契約、throw 方針、差し替え可能 handler、macro 大量追加、exception hierarchy、
   debug logging framework、`RequireInRange`。
 
 ### c_interop Module
 
-- Purpose: C API 境界の errno、C buffer、handle cleanup 事故を減らす候補。
+- Purpose: C API 境界の errno、C buffer、handle cleanup 事故を減らす補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   errno保存、C buffer copy、handle cleanup の事故をC API境界に閉じ込められる。
   非推奨版 なし。非推奨理由: なし。
@@ -1258,10 +1353,12 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 - Behavior: `ErrnoGuard` は構築時 errno を保存し destructor で復元する。`CopyToCBuffer` は null終端を保証し、
   `src_size + 1 <= dst_size` のときだけ成功する。`src == nullptr && src_size == 0` は空文字列コピーとして扱い、
-  `dst[0] = '\0'` を書ける場合だけ成功。`UniqueHandle` は `Handle` と `Deleter` を値として保持し、
+  `dst[0] = '\0'` を書ける場合だけ成功。`CopyBytesToCBuffer` は `src == nullptr && src_size == 0` を no-op 成功、
+  `dst == nullptr && dst_size == 0` を失敗として扱う。`UniqueHandle` は `Handle` と `Deleter` を値として保持し、
   sentinel値ではなく engaged flag で所有を表す。default constructor は default-constructed deleter と
-  disengaged state を作る。copy は禁止、move は所有権と deleter を移し、move元を disengaged にする。
-  self-move assignment は no-op。engaged のときだけ destructor/`Reset()`/`Reset(handle)` が deleter を呼ぶ。
+  disengaged state を作り、`Deleter` が default constructible の場合だけ overload resolution に参加する。
+  copy は禁止、move は所有権と deleter を移し、move元を disengaged にする。self-move assignment は no-op。
+  engaged のときだけ destructor/`Reset()`/`Reset(handle)` が deleter を呼ぶ。
   `Release()` は engaged が precondition で、handle を返して disengaged にする。`Reset(handle)` は既存 handle
   を閉じてから新しい handle を engaged として保持する。
 - Failure/edge cases: `dst_size == 0`、null pointer、src truncation、deleter noexcept、`Release` 後は非所有。
@@ -1269,7 +1366,8 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   `std::terminate`。`UniqueHandle()` は `Deleter` が default constructible の場合だけ使用できる。
 - Complexity/performance: copy は `src_size` に対し O(n) memcpy。`ErrnoGuard`/`UniqueHandle` は O(1)、
   allocation なし。
-- Tests: errno復元、copy成功/不足、bytes copy、UniqueHandle reset/release/move/self-move、deleter例外時 terminate。
+- Tests: errno復元、copy成功/不足、失敗時 buffer 不変、bytes copy、UniqueHandle default constructor 制約、
+  reset/release/move/self-move、deleter例外時 terminate。
 - Do not implement: OS handle 専用 wrapper、C API framework、ownership annotation体系。
 
 ### platform_error Module
@@ -1299,13 +1397,17 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   ASCII fallback を返す。`EnvironmentVariable` は process environment から値を取得し、存在しなければ
   `std::nullopt`。name は非空かつ NUL を含まないことを要求し、違反時は `std::nullopt`。Windows では
   environment と error message の wide API を使い、戻り値は UTF-8 narrow string。Windows 専用 API は
-  `#ifdef _WIN32` で宣言ごと隠す。
+  `#ifdef _WIN32` で宣言ごと隠す。POSIX では利用可能な thread-safe strerror 系 API を使い、GNU/POSIX の
+  signature 差は `.cpp` 内 helper に閉じ込め、公開APIの戻り値や例外方針に差を出さない。
 - Failure/edge cases: unknown errno、missing env、empty name、NUL を含む name、Windows wide/narrow 変換失敗。
-  environment を他 thread が同時変更する場合の一貫性は platform API の規約に従う。
+  environment を他 thread が同時変更する場合の一貫性は platform API の規約に従う。Windows UTF-8 変換に失敗した
+  場合は空文字列ではなく ASCII fallback を返す。
 - Complexity/performance: error message と environment value の長さ O(n) で string を1回確保する。
   Windows UTF-8 変換も出力長 O(n)。
 - Tests: known errno が非空、unknown errno fallback、missing env、present env、empty name、NUL name、
-  non-Windows で Windows API が宣言されない conditional compile、Windows 環境では known `GetLastError` message。
+  non-Windows で Windows API が宣言されない conditional compile、POSIX/GNU strerror差の compile、
+  Windows 環境では known `GetLastError` message。environment test は一意な `KET_` prefix の変数名を使い、
+  test 前の値を保存して終了時に復元する。
 - Do not implement: cross-platform error framework、logging、localization、error category wrapper、environment 設定/削除。
 
 ### state_table Module
@@ -1329,7 +1431,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### cache_once Module
 
-- Purpose: once/lazy value の候補。
+- Purpose: once/lazy value の補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   lazy value の thread-safety と例外後状態を局所的に固定できる。
   非推奨版 なし。非推奨理由: なし。
@@ -1357,16 +1459,19 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   };
   ```
 
-- Behavior: non-thread-safe。C++11 で `std::aligned_storage` による手動 storage を使い、heap allocation と
-  `std::optional` は使わない。`GetOrCreate` は値が無い場合だけ placement new で構築し、以後は同じ値への
+- Behavior: non-thread-safe。C++11 で `std::aligned_storage<sizeof(T), alignof(T)>` による手動 storage を使い、
+  heap allocation と `std::optional` は使わない。保持値への pointer は placement new 成功後だけ生成し、
+  lifetime 外の object として読み書きしない。`GetOrCreate` は値が無い場合だけ placement new で構築し、以後は同じ値への
   参照を返す。`Reset` と destructor は保持値がある場合だけ破棄して empty に戻す。factory が例外を投げた場合は
-  empty のまま。
+  empty のまま。`Lazy<T>` の object address は `Reset` しない限り保持値の lifetime 中に変わらない。
 - Failure/edge cases: factory例外後は empty、Reset後は再生成、move-only value、再入は precondition 違反。
   `Lazy` 自体は copy/move とも禁止し、保持値の address stability を保つ。`T` の destructor は例外を投げないことを
-  要求し、破棄中の例外は `std::terminate`。
+  要求し、破棄中の例外は `std::terminate`。`GetOrCreate` 中に同じ `Lazy` の `GetOrCreate`/`Reset` を呼ぶ再入は
+  未対応で、Doxygen の precondition に明記する。
 - Complexity/performance: `HasValue`/`Reset` と生成後の `GetOrCreate` は O(1)。factory は高々1回。
   storage は object 内に置くため追加 allocation なし。
-- Tests: factory呼び出し回数、Reset、例外後状態、move-only value。
+- Tests: factory呼び出し回数、Reset、例外後状態、move-only value、保持値 address stability、
+  copy/move 禁止 compile-only、destructor 例外時 terminate。
 - Do not implement: thread-safe cache、global registry、memoization framework、
   単一値専用の `OnceValue`。
 
@@ -1390,6 +1495,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   header は常に6 bytes。`EncodeTlv` は1 record の vector を返し、`AppendTlv` は既存 vector 末尾へ1 record を追加する。
   `TryDecodeTlv` は入力先頭の1 record だけ decode し、`out.consumed` に header + value length を入れる。
   `TlvView::value` は入力bufferへの non-owning pointer で、decode 後も入力buffer lifetime に依存する。
+  `TlvView::value_size` は wire 上の `uint32` length をそのまま保持する。
 - Failure/edge cases: `value == nullptr && value_size == 0` は空 value。`value == nullptr && value_size > 0` は
   encode 側 precondition 違反。`TryDecodeTlv(nullptr, 0, out)` は `false` で `out` 不変。
   `TryDecodeTlv(nullptr, size > 0, out)` は precondition 違反。入力が6 bytes未満、declared length が残り size を
@@ -1397,7 +1503,8 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Complexity/performance: encode/append は value_size O(n) で vector へ byte copy。decode は value を copy せず
   header を読むだけの O(1)。allocation は encode/append の vector 成長のみ。
 - Tests: empty value、1 byte value、roundtrip、複数record先頭decode、short header、short value、null+0、
-  null+非0 precondition Doxygen、length過大、big-endian golden bytes、decode失敗時 out 不変。
+  null+非0 precondition Doxygen、length過大、big-endian golden bytes、max `uint32` length header、
+  decode失敗時 out 不変、view lifetime は呼び出し側責任であることの Doxygen。
 - Do not implement: struct丸ごとbytes化、schema language、protocol framework、nested TLV、multiple-record iterator、
   endian選択 option、`EncodeLengthPrefixed`/`TryDecodeLengthPrefixed`。
 
@@ -1444,19 +1551,30 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Behavior: 全 macro は `KET_` prefix とし、feature/compiler/OS 判定 macro の値は必ず `0` または `1`。
   `KET_CXX_VERSION` は有効な C++ 標準値を `201103L`、`201402L`、`201703L`、`202002L`、`202302L` 形式で表す。
   MSVC では利用可能なら `_MSVC_LANG` を優先し、それ以外は `__cplusplus`。`KET_CXX_AT_LEAST(value)` は
-  `KET_CXX_VERSION >= value` の定数式。standard library feature は対応標準以上で、かつ header/feature macro が
-  利用可能な場合だけ 1。unknown compiler/OS は対応する既知 macro がすべて 0 でもよい。
+  `KET_CXX_VERSION >= value` の定数式。compiler 判定は clang を `__clang__`、GCC を `__GNUC__ && !__clang__`、
+  MSVC を `_MSC_VER` で判定し、clang-cl では `KET_COMPILER_CLANG == 1` とし `KET_COMPILER_MSVC == 0`。
+  OS 判定は Windows を `_WIN32`、Linux を `__linux__`、macOS を `__APPLE__ && __MACH__` で判定し、unknown OS は
+  3 macro すべて 0 とする。macOS macro は proposal/brief の `KET_OS_MAC` ではなく `KET_OS_MACOS` を採用し、
+  Classic Mac OS ではなく現在の macOS 判定であることを名前に出す。standard library feature は対象標準以上、
+  `__has_include` で対象 header を確認可能、かつ `<version>` または対象 header include 後に `__cpp_lib_*`
+  feature-test macro が定義される場合だけ 1。`__has_include` が使えない場合は header 存在を未知として扱い、
+  `__cpp_lib_*` が確認できる場合だけ 1。header が存在しても feature-test macro が無い場合は 0。
+  各 macro は C++11 compile-only でも定義済みであり、feature macro は利用不能な標準では 0 に倒す。
 - Failure/edge cases: `__has_include` が無い compiler、MSVC の `__cplusplus` 未更新、libstdc++/libc++/MSVC STL の
-  feature macro 差、unknown OS。include 順に依存せず、他 header より先に include しても後に include しても同じ値。
+  feature macro 差、unknown OS、clang-cl の compiler macro 重複。include 順に依存せず、他 header より先に include
+  しても後に include しても同じ値。feature 判定のために標準 header を include する場合は、この header 自身が
+  必要最小限を include し、利用者の include 順に依存しない。
 - Complexity/performance: preprocessor と compile-time 定数のみ。runtime cost、allocation、link symbol なし。
 - Tests: C++11 compile-only、macro が全て定義済み、0/1 値、`KET_CXX_AT_LEAST` 境界、compiler/OS macro の条件、
-  optional/string_view/span/format header availability に応じた値。
+  clang/GCC/MSVC の相互排他条件、unknown OS が全0でも成立すること、optional/string_view/span/format header
+  availability と feature-test macro に応じた値、単独 include と標準 header include 後の include 順確認。
 - Do not implement: config framework、global behavior switch、module間の必須依存化、project policy macro、
-  version string 生成。
+  version string 生成、brief 候補の `KET_HAS_CPP17`、`KET_HAS_CPP20`、`KET_HAS_STD_EXPECTED`、proposal/brief 名の
+  `KET_OS_MAC` alias。
 
 ### math_small Module
 
-- Purpose: 補間、角度、byte単位変換など小さい数学候補。
+- Purpose: 補間、角度、byte単位変換など小さい数学補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   小さい数学処理の丸め、overflow、単位名をAPIで固定できる。
   非推奨版 なし。非推奨理由: なし。
@@ -1484,7 +1602,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### language Module
 
-- Purpose: C++言語の小さい儀式（未使用無視、配列長、const化）を名前付き API にする候補。
+- Purpose: C++言語の小さい儀式（未使用無視、配列長、const化）を名前付き API にする補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   C++11/14の欠落や冗長な言語儀式を小さいAPIで名前付けできる。
   非推奨版 API別。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
@@ -1511,7 +1629,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### object Module
 
 - Purpose: copy/move/regular 型の儀式（コピー禁止、move 専用、move 後リセット）を mixin と
-  helper で明示する候補。
+  helper で明示する補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   copy/move意図を型定義の近くへ集約できる。非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/object/ket_object.h`,
@@ -1536,7 +1654,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### meta Module
 
-- Purpose: C++11/14 欠落 type traits の小補助候補。
+- Purpose: C++11/14 欠落 type traits の小補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   C++11/14で不足する小さいtraitsを局所的に補える。
   非推奨版 API別。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
@@ -1561,7 +1679,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### concurrency_small Module
 
-- Purpose: join 忘れと future timeout 確認程度の局所補助候補。
+- Purpose: join 忘れと future timeout 確認程度の局所補助。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   thread join と future ready 判定の小さい儀式を局所化できる。
   非推奨版 API別。非推奨理由: APIごとに標準代替の有無が異なるため、module単位では非推奨にしない。
@@ -1591,12 +1709,15 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 - Behavior: `JoiningThread` は所有する `std::thread` を destructor で joinable なら join する。move 代入は
   旧 thread を join してから所有を移す。copy は禁止。`FutureReady` は `wait_for(0)` の結果で ready 判定し、
-  `std::future_status::deferred` は ready ではないため `false`。self-move assignment は no-op。
+  `std::future_status::deferred` は ready ではないため `false`。self-move assignment は no-op。`Get()` は内部
+  `std::thread` への参照を返し、直接操作した場合の joinable 状態は利用者責任。
 - Failure/edge cases: self-join は precondition 違反。destructor や move代入中に join できない状況、または
   join が例外を投げる状況では `std::terminate`。move代入時の既存threadは新しい thread を所有する前に join。
-  `FutureReady` は `future.valid()` を precondition とし、invalid future は呼び出さない。
+  `FutureReady` は `future.valid()` を precondition とし、invalid future は呼び出さない。compile-only check では
+  `std::future` と `std::shared_future` の両方で `wait_for(0)` が使えることを確認する。
 - Complexity/performance: `Joinable`/`Get`/`FutureReady` は O(1)。destructor と move 代入は join 完了まで blocking。
-- Tests: default、joinable、move/self-move、ready/not ready、deferred、`future.valid()` precondition の Doxygen 明記。
+- Tests: default、joinable、move/self-move、move代入時の旧thread join、ready/not ready、deferred、
+  invalid future precondition の Doxygen 明記、C++11 compile-only。
 - API別標準代替:
   - `JoiningThread`: C++20 `std::jthread`。
   - `FutureReady`: 直接代替なし。`future.wait_for(0)` の結果判定を名前にする場合のみ採用。
@@ -1624,7 +1745,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### color_rgb Module
 
-- Purpose: RGB小値型候補。
+- Purpose: RGB小値型。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   RGB小値型の許容表記と不正hexを小さいAPIで固定できる。
   非推奨版 なし。非推奨理由: なし。
@@ -1751,6 +1872,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 [ ] null / empty / overflow / size不足 / invalid input のテストがある
 [ ] 各 TEST に @test / @brief / @details / @pre / @post がある
 [ ] C++11/14 module は compile-only check を追加した
+[ ] 未実装候補として catalog.md に痛み、候補API、失敗条件、テスト観点が記録済みである
 [ ] progress.md を実moduleとして更新した
 [ ] python3 tools/check_repository.py を実行した
 [ ] python3 tools/check_python.py を実行した
