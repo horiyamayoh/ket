@@ -4,6 +4,7 @@ module単位の実装状況を追跡します。
 
 候補APIは `catalog.md` に置きます。この表には、実際にmoduleとして作り始めたものだけを
 追加します。空の予定表にしないことで、1つずつ育てる方針を保ちます。
+C++バージョン要件の詳細は、各moduleヘッダ先頭のDoxygen `@file`コメントを正とします。
 
 Statusは次の値を使います。
 
@@ -15,3 +16,4 @@ Statusは次の値を使います。
 | Module | Category         | Status   | C++ Min | Tests      | Format  | Notes                                  |
 | ------ | ---------------- | -------- | ------- | ---------- | ------- | -------------------------------------- |
 | bcd    | numeric / binary | verified | C++17   | GoogleTest | checked | packed BCDと10進整数・文字列を相互変換 |
+| string | string           | verified | C++17   | GoogleTest | checked | 複数文字列片の連結と既存文字列への追記 |

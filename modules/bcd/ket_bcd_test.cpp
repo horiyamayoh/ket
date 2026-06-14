@@ -19,7 +19,8 @@ namespace
 	 * @pre なし。
 	 * @post 引数と外部状態の変更なし。
 	 */
-	template <typename T> constexpr bool OptionalEquals(std::optional<T> value, T expected) noexcept
+	template <typename T>
+	constexpr bool OptionalEquals(std::optional<T> value, T expected) noexcept
 	{
 		const auto value_has_value = value.has_value();
 		if (!value_has_value)
@@ -38,7 +39,8 @@ namespace
 	 * @pre なし。
 	 * @post 引数と外部状態の変更なし。
 	 */
-	template <typename T> constexpr bool OptionalIsEmpty(std::optional<T> value) noexcept
+	template <typename T>
+	constexpr bool OptionalIsEmpty(std::optional<T> value) noexcept
 	{
 		const auto value_has_value = value.has_value();
 		return !value_has_value;

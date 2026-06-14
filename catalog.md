@@ -23,9 +23,14 @@ Candidate API:
 ket::AlignUp(value, alignment)
 ```
 
-C++ versions:
+C++バージョン要件:
 
-- C++11 or later
+- 最小要件：C++11
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：標準ライブラリだけでは意図が読み取りにくい小さな定型処理を名前付きで扱える
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：なし
 
 Failure / edge cases:
 
@@ -33,10 +38,10 @@ Failure / edge cases:
 - overflow
 - signed / unsigned
 
-Dependencies:
+他のライブラリへの依存:
 
-- Standard library only
-- No ket dependencies
+- 標準ライブラリのみ
+- ket依存なし
 
 Tests:
 
@@ -70,9 +75,14 @@ ket::BcdToDecimalString(data, size)
 ket::DecimalStringToBcd(text)
 ```
 
-C++ versions:
+C++バージョン要件:
 
-- C++17 or later
+- 最小要件：C++17
+- 本ライブラリの適用を推奨する C++ バージョン：C++17以降
+- 推奨理由：packed BCDの直接代替が標準ライブラリになく、`std::optional`で失敗値を明確に扱える
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：なし。標準ライブラリにpacked BCD変換の直接APIなし。
 
 Failure / edge cases:
 
@@ -85,10 +95,10 @@ Failure / edge cases:
 - negative decimal value
 - fixed-width BCD digit overflow
 
-Dependencies:
+他のライブラリへの依存:
 
-- Standard library only
-- No ket dependencies
+- 標準ライブラリのみ
+- ket依存なし
 
 Tests:
 
@@ -105,3 +115,52 @@ Tests:
 - DecimalStringToBcd("0042") == {0x00, 0x42}
 - DecimalStringToBcd("123") == {0x01, 0x23}
 - DecimalStringToBcd("12A4") == std::nullopt
+
+## Idea: String
+
+Category: string
+
+Pain:
+
+- `std::string::append` を複数行に分けて書くと、業務意図より連結手順が目立つ
+- `operator+` 連鎖では一時文字列や型の違いを意識しやすい
+- 文字列片の連結と既存文字列への追記を、formatではない小さな意図として名前にしたい
+
+Candidate API:
+
+```cpp
+ket::StrCat(...)
+ket::StrAppend(dst, ...)
+```
+
+C++バージョン要件:
+
+- 最小要件：C++17
+- 本ライブラリの適用を推奨する C++ バージョン：C++17以降
+- 推奨理由：`std::string_view`を利用でき、文字列片連結を標準ライブラリのみで安全に薄く包める
+- 本ライブラリの適用を推奨しない C++ バージョン：C++20以降
+- 非推奨理由：書式付き文字列生成が目的の場合は、`std::format`で容易かつ明確に代替可能
+- 標準代替：書式付き文字列生成ではC++20 `std::format`。
+
+Failure / edge cases:
+
+- empty argument list
+- `char` as one-character part
+- embedded NUL in length-aware `std::string_view`
+- raw C string must be non-null and null-terminated
+- destination reference for `StrAppend` must refer to a valid `std::string`
+- self-reference such as `StrAppend(dst, dst, std::string_view(dst))`
+
+他のライブラリへの依存:
+
+- 標準ライブラリのみ
+- ket依存なし
+
+Tests:
+
+- StrCat() == ""
+- StrCat("a", std::string("b"), std::string_view("c"), 'd') == "abcd"
+- StrCat(std::string_view("a\\0b", 3)) preserves 3 bytes
+- StrAppend(dst, ...) appends to existing text
+- StrAppend(dst) keeps dst unchanged
+- StrAppend(dst, dst, ":", std::string_view(dst)) uses pre-append content

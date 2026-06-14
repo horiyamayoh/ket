@@ -1,15 +1,31 @@
 #pragma once
 
-// 持ち出し条件:
-//   ket_bcd.h と ket_bcd.cpp を対象プロジェクトへコピー。
-//
-// 依存:
-//   C++17以降
-//   標準ライブラリのみ
-//   他のket moduleへの依存なし
-//
-// Namespace:
-//   ket
+/**
+ * @file ket_bcd.h
+ * @brief packed BCDと10進表現の変換API。
+ *
+ * @details 固定幅packed BCDと任意バイト長packed BCDを、整数または10進文字列へ相互変換する。
+ * drop-in時は宣言と実装を同じ単位で持ち出す。標準ライブラリにpacked BCDの直接APIがないため、
+ * BCD固有のnibble検証と桁保持をmodule内で扱う。
+ *
+ * @par プロジェクトへの適用方法
+ * `ket_bcd.h` と `ket_bcd.cpp` を対象プロジェクトへコピー。
+ *
+ * @par C++バージョン要件
+ * 最小要件：C++17。
+ * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
+ * 推奨理由：packed BCDの直接代替が標準ライブラリになく、`std::optional`で失敗値を明確に扱える。
+ * 本ライブラリの適用を推奨しない C++ バージョン：なし。
+ * 非推奨理由：なし。
+ *
+ * @par 他のライブラリへの依存
+ * 標準ライブラリのみ。
+ * 他のket moduleへの依存なし。
+ *
+ * @par namespace
+ * 公開API：ket
+ * 内部実装：ket::detail
+ */
 
 #include <cstddef>
 #include <cstdint>
@@ -21,6 +37,138 @@
 
 namespace ket
 {
+	// -----------------------------------------------------------------------------
+	// Public API declarations
+	// -----------------------------------------------------------------------------
+
+	/**
+	 * @brief 2桁固定幅パックBCDの10進整数変換。
+	 * @param[in] value 変換対象のパックBCD値。
+	 * @retval value 変換後の10進整数。
+	 * @retval std::nullopt 不正nibble、またはint範囲外。
+	 * @pre なし。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 整数変換のため、先頭ゼロは保持なし。
+	 * @code
+	 * const auto value = ket::ParseBcd(static_cast<std::uint8_t>(0x42U));
+	 * // value == std::optional<int>(42)
+	 * @endcode
+	 */
+	constexpr std::optional<int> ParseBcd(std::uint8_t value) noexcept;
+
+	/**
+	 * @brief 4桁固定幅パックBCDの10進整数変換。
+	 * @param[in] value 変換対象のパックBCD値。
+	 * @retval value 変換後の10進整数。
+	 * @retval std::nullopt 不正nibble、またはint範囲外。
+	 * @pre なし。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 整数変換のため、先頭ゼロは保持なし。
+	 * @code
+	 * const auto value = ket::ParseBcd(static_cast<std::uint16_t>(0x1234U));
+	 * // value == std::optional<int>(1234)
+	 * @endcode
+	 */
+	constexpr std::optional<int> ParseBcd(std::uint16_t value) noexcept;
+
+	/**
+	 * @brief 8桁固定幅パックBCDの10進整数変換。
+	 * @param[in] value 変換対象のパックBCD値。
+	 * @retval value 変換後の10進整数。
+	 * @retval std::nullopt 不正nibble、またはint範囲外。
+	 * @pre なし。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 整数変換のため、先頭ゼロは保持なし。
+	 * @code
+	 * const auto value = ket::ParseBcd(static_cast<std::uint32_t>(0x20260613U));
+	 * // value == std::optional<int>(20260613)
+	 * @endcode
+	 */
+	constexpr std::optional<int> ParseBcd(std::uint32_t value) noexcept;
+
+	/**
+	 * @brief 2桁固定幅パックBCDへの10進整数変換。
+	 * @param[in] value 変換対象の10進整数。
+	 * @retval value 変換後のパックBCD値。
+	 * @retval std::nullopt 負数、または2桁を超える値。
+	 * @pre なし。負数と桁数超過は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 2桁固定幅のため、1桁値は上位nibbleを0として表現。
+	 * @code
+	 * const auto value = ket::ToBcd8(42);
+	 * // value == std::optional<std::uint8_t>(0x42)
+	 * @endcode
+	 */
+	constexpr std::optional<std::uint8_t> ToBcd8(int value) noexcept;
+
+	/**
+	 * @brief 4桁固定幅パックBCDへの10進整数変換。
+	 * @param[in] value 変換対象の10進整数。
+	 * @retval value 変換後のパックBCD値。
+	 * @retval std::nullopt 負数、または4桁を超える値。
+	 * @pre なし。負数と桁数超過は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 4桁固定幅のため、短い値は上位nibbleを0として表現。
+	 * @code
+	 * const auto value = ket::ToBcd16(42);
+	 * // value == std::optional<std::uint16_t>(0x0042)
+	 * @endcode
+	 */
+	constexpr std::optional<std::uint16_t> ToBcd16(int value) noexcept;
+
+	/**
+	 * @brief 8桁固定幅パックBCDへの10進整数変換。
+	 * @param[in] value 変換対象の10進整数。
+	 * @retval value 変換後のパックBCD値。
+	 * @retval std::nullopt 負数、または8桁を超える値。
+	 * @pre なし。負数と桁数超過は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 8桁固定幅のため、短い値は上位nibbleを0として表現。
+	 * @code
+	 * const auto value = ket::ToBcd32(20260613);
+	 * // value == std::optional<std::uint32_t>(0x20260613)
+	 * @endcode
+	 */
+	constexpr std::optional<std::uint32_t> ToBcd32(int value) noexcept;
+
+	/**
+	 * @brief 任意バイト長パックBCDの10進文字列変換。
+	 * @param[in] data 変換対象のパックBCD列。
+	 * @param[in] size `data`のバイト数。
+	 * @retval value 変換後の10進文字列。
+	 * @retval std::nullopt `nullptr`、空入力、または不正nibble。
+	 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`nullptr` と空入力は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 入力BCDの桁数を保ち、先頭の0も文字'0'として出力。
+	 * @note std::stringの確保があるためnoexceptなし。
+	 * @code
+	 * const std::uint8_t data[] = {0x00U, 0x42U};
+	 * const auto value = ket::BcdToDecimalString(data, 2U);
+	 * // value == std::optional<std::string>("0042")
+	 * @endcode
+	 */
+	std::optional<std::string> BcdToDecimalString(const std::uint8_t* data, std::size_t size);
+
+	/**
+	 * @brief 10進文字列の任意バイト長パックBCD変換。
+	 * @param[in] text 変換対象の10進文字列。
+	 * @retval value 変換後のパックBCD列。
+	 * @retval std::nullopt 空入力、または10進数字以外を含む入力。
+	 * @pre なし。空入力と10進数字以外は失敗値として扱う。
+	 * @post 引数と外部状態の変更なし。
+	 * @note 偶数桁は2桁ずつpacked BCDへ変換し、奇数桁は先頭に0を補って変換。
+	 * @note std::vectorの確保があるためnoexceptなし。
+	 * @code
+	 * const auto value = ket::DecimalStringToBcd("123");
+	 * // value == std::optional<std::vector<std::uint8_t>>({0x01, 0x23})
+	 * @endcode
+	 */
+	std::optional<std::vector<std::uint8_t>> DecimalStringToBcd(std::string_view text);
+
+	// -----------------------------------------------------------------------------
+	// Internal implementation details
+	// -----------------------------------------------------------------------------
+
 	namespace detail
 	{
 		/**
@@ -156,73 +304,25 @@ namespace ket
 
 	} // namespace detail
 
-	/**
-	 * @brief 2桁固定幅パックBCDの10進整数変換。
-	 * @param[in] value 変換対象のパックBCD値。
-	 * @retval value 変換後の10進整数。
-	 * @retval std::nullopt 不正nibble、またはint範囲外。
-	 * @pre なし。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 整数変換のため、先頭ゼロは保持なし。
-	 * @code
-	 * const auto value = ket::ParseBcd(static_cast<std::uint8_t>(0x42U));
-	 * // value == std::optional<int>(42)
-	 * @endcode
-	 */
+	// -----------------------------------------------------------------------------
+	// Public API definitions
+	// -----------------------------------------------------------------------------
+
 	constexpr std::optional<int> ParseBcd(std::uint8_t value) noexcept
 	{
 		return detail::ParseBcdNibbles(value, 2);
 	}
 
-	/**
-	 * @brief 4桁固定幅パックBCDの10進整数変換。
-	 * @param[in] value 変換対象のパックBCD値。
-	 * @retval value 変換後の10進整数。
-	 * @retval std::nullopt 不正nibble、またはint範囲外。
-	 * @pre なし。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 整数変換のため、先頭ゼロは保持なし。
-	 * @code
-	 * const auto value = ket::ParseBcd(static_cast<std::uint16_t>(0x1234U));
-	 * // value == std::optional<int>(1234)
-	 * @endcode
-	 */
 	constexpr std::optional<int> ParseBcd(std::uint16_t value) noexcept
 	{
 		return detail::ParseBcdNibbles(value, 4);
 	}
 
-	/**
-	 * @brief 8桁固定幅パックBCDの10進整数変換。
-	 * @param[in] value 変換対象のパックBCD値。
-	 * @retval value 変換後の10進整数。
-	 * @retval std::nullopt 不正nibble、またはint範囲外。
-	 * @pre なし。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 整数変換のため、先頭ゼロは保持なし。
-	 * @code
-	 * const auto value = ket::ParseBcd(static_cast<std::uint32_t>(0x20260613U));
-	 * // value == std::optional<int>(20260613)
-	 * @endcode
-	 */
 	constexpr std::optional<int> ParseBcd(std::uint32_t value) noexcept
 	{
 		return detail::ParseBcdNibbles(value, 8);
 	}
 
-	/**
-	 * @brief 2桁固定幅パックBCDへの10進整数変換。
-	 * @param[in] value 変換対象の10進整数。
-	 * @retval value 変換後のパックBCD値。
-	 * @retval std::nullopt 負数、または2桁を超える値。
-	 * @pre なし。負数と桁数超過は失敗値として扱う。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 2桁固定幅のため、1桁値は上位nibbleを0として表現。
-	 * @code
-	 * const auto value = ket::ToBcd8(42);
-	 * // value == std::optional<std::uint8_t>(0x42)
-	 * @endcode
-	 */
 	constexpr std::optional<std::uint8_t> ToBcd8(int value) noexcept
 	{
 		const auto result = detail::ToBcdNibbles(value, 2);
@@ -235,19 +335,6 @@ namespace ket
 		return static_cast<std::uint8_t>(*result);
 	}
 
-	/**
-	 * @brief 4桁固定幅パックBCDへの10進整数変換。
-	 * @param[in] value 変換対象の10進整数。
-	 * @retval value 変換後のパックBCD値。
-	 * @retval std::nullopt 負数、または4桁を超える値。
-	 * @pre なし。負数と桁数超過は失敗値として扱う。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 4桁固定幅のため、短い値は上位nibbleを0として表現。
-	 * @code
-	 * const auto value = ket::ToBcd16(42);
-	 * // value == std::optional<std::uint16_t>(0x0042)
-	 * @endcode
-	 */
 	constexpr std::optional<std::uint16_t> ToBcd16(int value) noexcept
 	{
 		const auto result = detail::ToBcdNibbles(value, 4);
@@ -260,56 +347,9 @@ namespace ket
 		return static_cast<std::uint16_t>(*result);
 	}
 
-	/**
-	 * @brief 8桁固定幅パックBCDへの10進整数変換。
-	 * @param[in] value 変換対象の10進整数。
-	 * @retval value 変換後のパックBCD値。
-	 * @retval std::nullopt 負数、または8桁を超える値。
-	 * @pre なし。負数と桁数超過は失敗値として扱う。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 8桁固定幅のため、短い値は上位nibbleを0として表現。
-	 * @code
-	 * const auto value = ket::ToBcd32(20260613);
-	 * // value == std::optional<std::uint32_t>(0x20260613)
-	 * @endcode
-	 */
 	constexpr std::optional<std::uint32_t> ToBcd32(int value) noexcept
 	{
 		return detail::ToBcdNibbles(value, 8);
 	}
-
-	/**
-	 * @brief 任意バイト長パックBCDの10進文字列変換。
-	 * @param[in] data 変換対象のパックBCD列。
-	 * @param[in] size `data`のバイト数。
-	 * @retval value 変換後の10進文字列。
-	 * @retval std::nullopt `nullptr`、空入力、または不正nibble。
-	 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`nullptr` と空入力は失敗値として扱う。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 入力BCDの桁数を保ち、先頭の0も文字'0'として出力。
-	 * @note std::stringの確保があるためnoexceptなし。
-	 * @code
-	 * const std::uint8_t data[] = {0x00U, 0x42U};
-	 * const auto value = ket::BcdToDecimalString(data, 2U);
-	 * // value == std::optional<std::string>("0042")
-	 * @endcode
-	 */
-	std::optional<std::string> BcdToDecimalString(const std::uint8_t* data, std::size_t size);
-
-	/**
-	 * @brief 10進文字列の任意バイト長パックBCD変換。
-	 * @param[in] text 変換対象の10進文字列。
-	 * @retval value 変換後のパックBCD列。
-	 * @retval std::nullopt 空入力、または10進数字以外を含む入力。
-	 * @pre なし。空入力と10進数字以外は失敗値として扱う。
-	 * @post 引数と外部状態の変更なし。
-	 * @note 偶数桁は2桁ずつpacked BCDへ変換し、奇数桁は先頭に0を補って変換。
-	 * @note std::vectorの確保があるためnoexceptなし。
-	 * @code
-	 * const auto value = ket::DecimalStringToBcd("123");
-	 * // value == std::optional<std::vector<std::uint8_t>>({0x01, 0x23})
-	 * @endcode
-	 */
-	std::optional<std::vector<std::uint8_t>> DecimalStringToBcd(std::string_view text);
 
 } // namespace ket
