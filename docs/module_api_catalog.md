@@ -10,6 +10,7 @@
 
 この文書は `catalog.md` の置き換えではない。`catalog.md` は候補APIの保管場所、
 `progress.md` は実装状況、各 module header の Doxygen は実装済みAPIの詳細仕様を管理する。
+未実装 module の最終的な公開API、C++要件、失敗方針は、この文書の module別仕様カードを正とする。
 
 製造依頼では、対象 module の仕様カードだけでなく、この文書の共通ルールと
 `AGENTS.md`、`README.md`、`docs/module_lifecycle.md`、`docs/style.md`、
@@ -42,7 +43,7 @@
 | Status             | 意味                                                                              |
 | ------------------ | --------------------------------------------------------------------------------- |
 | `Existing`         | 実装済み。正本には現状仕様と追加禁止範囲を記録する。                              |
-| `Ready`            | この正本だけで製造依頼できる。未決定事項はこの文書で既定値を固定済み。            |
+| `Ready`            | この正本だけで製造依頼できる。署名、失敗方針、境界条件、テスト観点を固定済み。    |
 | `Needs Spec Split` | 候補として有効だが、初回 API の切り方や失敗方針を別途小さく分割してから製造する。 |
 | `Recipe`           | module ではなく利用例。module 製造依頼ではなく recipe 作成依頼として扱う。        |
 
@@ -51,55 +52,57 @@
 `C++ Min` は最小要件、`C++ 推奨` は適用を推奨する版、`C++ 非推奨` は標準ライブラリで
 容易かつ明確に代替できるため適用を推奨しない版を表す。3列は各 module header の Doxygen
 `@par C++バージョン要件` と一致させる。`C++ 非推奨` の `なし` は、対象範囲の標準ではこの
-module の中核 API に同等の標準代替がないことを意味する。
+module の中核 API に同等の標準代替がないことを意味する。`Representative API` は一覧用の代表名であり、
+完全な公開APIは module別仕様カードを正とする。
 
-| Module              | Priority | Manufacturing Status | C++ Min | C++ 推奨  | C++ 非推奨 | Files                     | Kind        | Purpose                             | Public API                                                   | Failure/Boundary Policy                           | Tests                                      | Notes                               |
+| Module              | Priority | Manufacturing Status | C++ Min | C++ 推奨  | C++ 非推奨 | Files                     | Kind        | Purpose                             | Representative API                                           | Failure/Boundary Policy                           | Tests                                      | Notes                               |
 | ------------------- | -------- | -------------------- | ------- | --------- | ---------- | ------------------------- | ----------- | ----------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- | ------------------------------------------ | ----------------------------------- |
-| `bcd`               | done     | `Existing`           | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | binary      | packed BCD 変換                     | `ParseBcd`, `ToBcd8`, `ToBcd16`, `ToBcd32`                   | 不正nibble、空入力、overflow は失敗値             | 実装済み境界値テスト                       | 追加は BCD 妥当性判定まで           |
-| `string`            | done     | `Existing`           | C++17   | C++17     | C++20以降  | header-only + test        | string      | 文字列片の連結と追記                | `StrCat`, `StrAppend`                                        | raw C string は非null、allocation例外あり         | 実装済み境界値テスト                       | C++20以降は `std::format` を優先    |
+| `bcd`               | done     | `Existing`           | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | binary      | packed BCD 変換                     | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`                   | 不正nibble、空入力、overflow は失敗値             | 実装済み境界値テスト                       | 追加は BCD 妥当性判定まで           |
+| `string`            | done     | `Existing`           | C++17   | C++17以降 | なし       | header-only + test        | string      | 文字列片の連結と追記                | `StrCat`, `StrAppend`                                        | raw C string は非null、allocation例外あり         | 実装済み境界値テスト                       | format API ではない                 |
 | `bits`              | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | numeric     | bit/nibble/mask の事故防止          | `HighNibble`, `LowNibble`, `HasBit`, `TryMask`               | unsigned integral 限定、範囲外 bit は失敗/false   | nibble、bit幅、mask境界                    | C++20 `<bit>` は一部のみ重複        |
 | `numeric`           | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | numeric     | overflow、align、cast の小さい正解  | `TryAlignUp`, `TryCheckedAdd`, `TryCheckedCast`              | 0除算、alignment 0、overflow は失敗               | min/max、overflow、signed/unsigned         | optional convenience は初回なし     |
 | `endian`            | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | unaligned/endian 読み書き           | `LoadBe32`, `LoadLe32`, `StoreBe16`, `TryLoadBe32`           | plain load/store は precondition、Try は失敗値    | BE/LE、null、size不足                      | reinterpret cast 禁止               |
 | `hex`               | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | diagnostic  | bytes と16進文字列/hex dump         | `BytesToHex`, `HexToBytes`, `HexDump`, `ToHexString`         | null+非0 size は precondition、奇数桁は失敗       | 空入力、separator、不正文字                | dump形式は固定                      |
 | `parse_numeric`     | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | parsing     | `from_chars` 周りの儀式除去         | `TryParseUInt`, `ParseUInt`, `ParseBool`, `ParseHex`         | 完全消費、whitespaceなし、overflow失敗            | 空、最大値、overflow、prefix               | bool は case-sensitive              |
 | `enum_table`        | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | enum        | enum class と文字列変換             | `EnumEntry`, `EnumName`, `ParseEnum`, `HasFlag`              | table完全一致、重複は先勝ち                       | known/unknown、duplicate、flags            | reflection はしない                 |
-| `container`         | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | container   | map/vector の小さい儀式             | `ContainsKey`, `AtOrNull`, `GetOrDefault`, `EraseIf`         | 見つからない場合は null/default/0                 | key有無、factory呼び出し、削除件数         | C++17 optional API は初回なし       |
+| `container`         | P0       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | container   | map/vector の小さい儀式             | `ContainsKey`, `AtOrNull`, `GetOrDefault`, `EraseIf`         | 見つからない場合は null/default/0                 | key有無、factory呼び出し、削除件数         | `Contains` 方針を固定必要           |
 | `string_ascii`      | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | string      | ASCII 前提の文字列処理              | `TrimAscii`, `SplitView`, `ToLowerAscii`, `ReplaceAll`       | ASCII whitespaceのみ、view lifetime明記           | 空要素、UTF-8 byte保持、case変換           | Unicode処理ではない                 |
 | `scope`             | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | RAII        | cleanup と復元漏れ防止              | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`                | destructor 例外は terminate、move後 inactive      | dismiss、move、二重実行なし                | `Finally` は作らない                |
 | `byte_reader`       | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | byte列の安全な逐次読み取り          | `ByteReader`, `ReadU8`, `ReadBe16`, `ReadBytes`              | 成功時だけ offset 更新、invalid reader は失敗     | 空、ぴったり、size不足、offset保持         | endian module 非依存                |
 | `byte_writer`       | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | fixed buffer への安全な逐次書き込み | `ByteWriter`, `WriteU8`, `WriteLe32`, `WriteBytes`           | 成功時だけ offset と buffer 更新                  | 空、ぴったり、size不足、buffer不変         | endian module 非依存                |
-| `bytes_builder`     | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | binary      | owning payload builder              | `BytesBuilder`, `AppendU8`, `AppendBe16`, `Build`            | allocation例外あり、null+非0 size は precondition | BE/LE、reserve、Build後move                | builder framework 化しない          |
-| `date`              | P0       | `Ready`              | C++11   | C++11〜17 | C++20以降  | header-only + test        | date        | 日付・時刻の妥当性                  | `IsLeapYear`, `IsValidDate`, `TryDaysInMonth`                | Gregorian、year >= 1、leap secondなし             | 2000/1900、2/29、month 0/13                | C++20以降は `std::chrono` calendar  |
+| `bytes_builder`     | P0       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | binary      | owning payload builder              | `BytesBuilder`, `AppendU8`, `AppendBe16`, `Build`            | allocation例外あり、null+非0 size は precondition | BE/LE、reserve、Build後move                | fluent/free API 境界を固定必要      |
+| `date`              | P0       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | 未製造                    | date        | 日付・時刻の妥当性                  | `IsLeapYear`, `IsValidDate`, `TryDaysInMonth`                | Gregorian、year >= 1、leap secondなし             | 2000/1900、2/29、month 0/13                | C++20 `std::chrono` 境界を固定必要  |
 | `deadline`          | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | time        | timeout と elapsed time             | `Stopwatch`, `Deadline`                                      | `steady_clock`のみ、負timeoutは期限切れ           | zero/future/remaining/restart              | system_clock と混ぜない             |
-| `cli`               | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | CLI         | 小さい CLI option 取得              | `ArgvView`, `HasOption`, `GetOption`, `Positional`           | `--key value`/`--key=value`、重複は先勝ち         | flag、missing value、positional            | subcommand framework なし           |
-| `byte_view`         | P1       | `Ready`              | C++11   | C++11〜17 | C++20以降  | header-only + test        | view        | non-owning byte span                | `ByteView`, `MutableByteView`, `TrySubView`                  | `nullptr+0` は空、`nullptr+非0` は invalid        | lifetime、subview、bounds                  | C++20以降は `std::span` を優先      |
+| `cli`               | P0       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | CLI         | 小さい CLI option 取得              | `ArgvView`, `HasOption`, `GetOption`, `Positional`           | `--key value`/`--key=value`、重複は先勝ち         | flag、missing value、positional            | option値 parse 方針を固定必要       |
+| `byte_view`         | P1       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | 未製造                    | view        | non-owning byte span                | `ByteView`, `MutableByteView`, `TrySubView`                  | `nullptr+0` は空、`nullptr+非0` は invalid        | lifetime、subview、bounds                  | method/free function 境界を固定必要 |
 | `utf8`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | text        | UTF-8 検査の隔離                    | `ValidateUtf8`, `IsUtf8`, `Utf8Length`                       | normalizationなし、不正offsetを返す               | ASCII、多byte、不正sequence                | grapheme数ではない                  |
-| `file`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | filesystem  | ファイル全読み/全書き               | `TryReadAllText`, `WriteAllBytes`, `FileSize`                | `std::error_code*` は optional detail             | not found、空、binary、error_code          | encoding変換なし                    |
+| `file`              | P1       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | filesystem  | ファイル全読み/全書き               | `TryReadAllText`, `WriteAllBytes`, `FileSize`                | `std::error_code*` は optional detail             | not found、空、binary、error_code          | error detail API を固定必要         |
 | `io_stream`         | P1       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | stream      | stream の確実な読み書き             | `ReadExactly`, `WriteAll`, `StreamStateSaver`                | requested size を読み切った時だけ成功             | short read、state復元、line trim           | ASCII trim のみ                     |
-| `format_value`      | P1       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | diagnostic  | 診断用文字列化                      | `ToHexString`, `FormatBytes`, `FormatDuration`               | 表記形式を追加仕様で固定                          | 単位境界、負duration、幅指定               | `std::format` 再実装禁止            |
-| `algorithm_range`   | P1       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | header-only + test        | algorithm   | iterator pair の儀式除去            | `AllOf`, `FindIf`, `ForEachIndex`                            | `std::algorithm` 別名だけなら不採用               | empty、predicate副作用、iterator           | C++20以降は `std::ranges` を優先    |
-| `memory`            | P1       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | memory      | alignment/object bytes              | `IsAligned`, `SecureZeroMemory`, `ObjectBytes`               | secure zero の保証範囲を追加仕様で固定            | null、alignment 0、volatile消去            | object lifetime へ踏み込まない      |
-| `pointer`           | P1       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | header-only + test        | pointer     | null/ownership の明示               | `NotNull`, `LockWeak`, `AddressOf`                           | `NotNull(nullptr)` の失敗方針を固定必要           | nullptr、weak expired、operator            | ownership型は初回なし               |
+| `format_value`      | P1       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | diagnostic  | 診断用文字列化                      | `FormatByteCount`, `FormatDuration`, `FormatBool`            | 表記形式を追加仕様で固定                          | 単位境界、負duration、幅指定               | `ToHexString` は `hex` に集約       |
+| `algorithm_range`   | P1       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | 未製造                    | algorithm   | iterator pair の儀式除去            | `AllOf`, `FindIf`, `ForEachIndex`                            | `std::algorithm` 別名だけなら不採用               | empty、predicate副作用、iterator           | C++20以降は `std::ranges` を優先    |
+| `memory`            | P1       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | memory      | alignment/object bytes              | `IsAligned`, `SecureZeroMemory`, `ObjectBytes`               | secure zero の保証範囲を追加仕様で固定            | null、alignment 0、volatile消去            | object lifetime へ踏み込まない      |
+| `pointer`           | P1       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | pointer     | null/ownership の明示               | `NotNull`, `LockWeak`, `AddressOf`                           | `NotNull(nullptr)` の失敗方針を固定必要           | nullptr、weak expired、operator            | ownership型は初回なし               |
 | `testing_bytes`     | P1       | `Ready`              | C++17   | C++17以降 | なし       | test-helper header + test | testing     | bytes系テスト補助                   | `BytesEq`, `HexEq`                                           | GoogleTest 依存を明記、mismatch情報を返す         | offset差分、hex差分、不正hex               | library本体ではない                 |
 | `semantic_version`  | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | parsing     | semver-like 値の parse/compare      | `SemanticVersion`, `ParseSemanticVersion`, `Compare...`      | `major.minor.patch`のみ、leading zero失敗         | 0.0.0、compare、overflow                   | prerelease/buildなし                |
-| `ipv4`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | IPv4 parse/format                   | `IpV4`, `ParseIpV4`, `FormatIpV4`, `IpV4ToU32Be`             | dotted decimalのみ、leading zero失敗              | octet境界、個数不足/過多、format           | IPv6/CIDRなし                       |
+| `ipv4`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | IPv4 parse/format                   | `Ipv4Address`, `ParseIpv4Address`, `FormatIpv4Address`       | dotted decimalのみ、leading zero失敗              | octet境界、個数不足/過多、format           | IPv6/CIDRなし                       |
+| `port`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | TCP/UDP port parse/format           | `Port`, `TryMakePort`, `ParsePort`, `FormatPort`             | 0〜65535、空白・符号・leading zero失敗            | 0/65535、overflow、不正文字                | socket addressなし                  |
 | `mac_address`       | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | MAC address parse/format            | `MacAddress`, `ParseMacAddress`, `FormatMacAddress`          | `:` と `-` を許可、混在とCisco形式は失敗          | upper/lower、不正hex、区切り               | Cisco形式なし                       |
 | `function`          | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | callable    | callable/visitor の儀式除去         | `Overload`, `MakeOverload`, `Noop`                           | `Noop` は例外なし、`Overload` は所有              | visit、overload解決、copy/move             | `FunctionRef` は初回なし            |
-| `variant_match`     | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | header-only + test        | variant     | `std::variant` visitor 補助         | `Match`, `Holds`, `GetIf`                                    | `function` との重複整理が必要                     | value/ref、const、exception伝播            | `Overload` の配置を固定必要         |
-| `optional_ext`      | P2       | `Ready`              | C++17   | C++17〜20 | C++23以降  | header-only + test        | optional    | optional の小さい合成               | `MapOptional`, `AndThen`, `ValueOrEval`, `HasValueAll`       | factory は必要時だけ呼ぶ                          | empty/value、参照、factory回数             | C++23以降は optional monadic を優先 |
-| `contract`          | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | contract    | precondition 明示                   | `Expects`, `Ensures`, `RequireNonNull`                       | assert/abort/terminate 方針を固定必要             | debug/release、nullptr、bounds             | macro 過多にしない                  |
-| `c_interop`         | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | interop     | C API 境界の事故防止                | `ErrnoGuard`, `CopyToCBuffer`, `UniqueHandle`                | handle invalid 値と deleter 方針を固定必要        | errno復元、buffer不足、release             | OS handle専用化しない               |
-| `platform_error`    | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | platform    | errno/Windows error の文字列化      | `ErrnoMessage`, `WindowsErrorMessage`, `EnvironmentVariable` | OS差を隠しすぎない、`#ifdef` 条件明記             | known errno、missing env、Windows guard    | platform別仕様が必要                |
+| `variant_match`     | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | variant     | `std::variant` visitor 補助         | `Match`, `Holds`, `GetIf`                                    | `function` との重複整理が必要                     | value/ref、const、exception伝播            | `Overload` の配置を固定必要         |
+| `optional_ext`      | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | optional    | optional の小さい合成               | `MapOptional`, `AndThen`, `ValueOrEval`, `HasValueAll`       | factory は必要時だけ呼ぶ                          | empty/value、参照、factory回数             | API別標準代替を固定必要             |
+| `contract`          | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | contract    | precondition 明示                   | `Expects`, `Ensures`, `RequireNonNull`                       | assert/abort/terminate 方針を固定必要             | debug/release、nullptr、bounds             | macro 過多にしない                  |
+| `c_interop`         | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | interop     | C API 境界の事故防止                | `ErrnoGuard`, `CopyToCBuffer`, `UniqueHandle`                | handle invalid 値と deleter 方針を固定必要        | errno復元、buffer不足、release             | OS handle専用化しない               |
+| `platform_error`    | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | platform    | errno/Windows error の文字列化      | `ErrnoMessage`, `WindowsErrorMessage`, `EnvironmentVariable` | OS差を隠しすぎない、`#ifdef` 条件明記             | known errno、missing env、Windows guard    | platform別仕様が必要                |
 | `state_table`       | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | state       | 小さい状態遷移表                    | `Transition`, `IsValidTransition`, `NextState`               | table先頭一致、未定義遷移は失敗                   | known/unknown、duplicate、enum             | FSM frameworkなし                   |
-| `cache_once`        | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | header-only + test        | cache       | once/lazy value                     | `Lazy`, `OnceValue`, `GetOrCreate`                           | thread-safe有無を名前か仕様で固定必要             | factory回数、reset、例外後状態             | 初回は non-thread-safe 推奨         |
-| `serialization_tlv` | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | binary      | length-prefix/TLV                   | `EncodeTlv`, `TryDecodeTlv`, `TlvView`                       | length幅、endian、最大長を固定必要                | 短い入力、length超過、roundtrip            | struct丸ごとbytes化禁止             |
+| `cache_once`        | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | cache       | once/lazy value                     | `Lazy`, `OnceValue`, `GetOrCreate`                           | thread-safe有無を名前か仕様で固定必要             | factory回数、reset、例外後状態             | 初回は non-thread-safe 推奨         |
+| `serialization_tlv` | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | binary      | length-prefix/TLV                   | `EncodeTlv`, `TryDecodeTlv`, `TlvView`                       | length幅、endian、最大長を固定必要                | 短い入力、length超過、roundtrip            | struct丸ごとbytes化禁止             |
 | `tuple`             | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | tuple       | tuple/pair の小さい補助             | `TupleForEach`, `TupleTransform`                             | evaluation order と戻り型を固定                   | empty、heterogeneous、const                | structured binding 競合は避ける     |
-| `build_config`      | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | header-only + test        | config      | feature detection                   | `KET_HAS_STD_OPTIONAL`, `KET_OS_LINUX`                       | macro汚染の範囲を固定必要                         | compiler/OS 条件、include順                | 必要になるまで保留                  |
-| `math_small`        | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | header-only + test        | math        | 補間・角度・単位変換                | `Lerp`, `NearlyEqual`, `KiBToBytes`                          | 精度、overflow、型制約を固定必要                  | endpoints、epsilon、large values           | units frameworkなし                 |
-| `language`          | P2       | `Needs Spec Split`   | C++11   | C++11〜14 | C++17以降  | header-only + test        | language    | C++言語の小さい儀式                 | `IgnoreUnused`, `Unreachable`, `ArraySize`, `AsConst`        | 標準代替の登場版を仕様で固定必要                  | unused無視、配列長、const化、C++11 compile | C++17以降は標準代替を優先           |
-| `object`            | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | header-only + test        | object      | copy/move/regular型の儀式           | `NonCopyable`, `NonMovable`, `MovableOnly`, `ResetOnMove`    | defaulted comparison と衝突しない範囲を固定必要   | copy禁止、move、reset、swap                | =deleteで足りる範囲は入れない       |
-| `meta`              | P3       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | header-only + test        | meta        | type traits 補助                    | `RemoveCvref`, `TypeIdentity`, `VoidT`                       | C++標準別の標準代替を整理必要                     | alias、SFINAE、C++11 compile               | C++20以降は標準 traits を優先       |
-| `concurrency_small` | P3       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | header-only + test        | concurrency | join/lock/timeout の局所補助        | `JoiningThread`, `FutureReady`                               | destructor join/terminate 方針を固定必要          | move、joinable、ready timeout              | C++20以降は `std::jthread` を優先   |
+| `build_config`      | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | config      | feature detection                   | `KET_HAS_STD_OPTIONAL`, `KET_OS_LINUX`                       | macro汚染の範囲を固定必要                         | compiler/OS 条件、include順                | 必要になるまで保留                  |
+| `math_small`        | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | math        | 補間・角度・単位変換                | `Lerp`, `NearlyEqual`, `KiBToBytes`                          | 精度、overflow、型制約を固定必要                  | endpoints、epsilon、large values           | units frameworkなし                 |
+| `language`          | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | language    | C++言語の小さい儀式                 | `IgnoreUnused`, `Unreachable`, `ArraySize`, `AsConst`        | 標準代替の登場版をAPI別に固定必要                 | unused無視、配列長、const化、C++11 compile | module単位では非推奨にしない        |
+| `object`            | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | object      | copy/move/regular型の儀式           | `NonCopyable`, `NonMovable`, `MovableOnly`, `ResetOnMove`    | defaulted comparison と衝突しない範囲を固定必要   | copy禁止、move、reset、swap                | =deleteで足りる範囲は入れない       |
+| `meta`              | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | meta        | type traits 補助                    | `RemoveCvref`, `TypeIdentity`, `VoidT`                       | C++標準別の標準代替をAPI別に整理必要              | alias、SFINAE、C++11 compile               | module単位では非推奨にしない        |
+| `concurrency_small` | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | concurrency | join/lock/timeout の局所補助        | `JoiningThread`, `FutureReady`                               | destructor join/terminate 方針を固定必要          | move、joinable、ready timeout              | module単位では非推奨にしない        |
 | `uuid`              | P3       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | parsing     | UUID parse/format                   | `Uuid`, `ParseUuid`, `FormatUuid`                            | canonical hyphen形式のみ、generationなし          | upper/lower、不正長、不正hex               | 乱数/OS APIなし                     |
 | `color_rgb`         | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未定                      | value       | RGB小値型                           | `ParseColorRgb`, `FormatColorRgbHex`                         | 許容表記と alpha有無を固定必要                    | hex長、不正文字、format                    | proposalに詳細仕様なし              |
 | `percent`           | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未定                      | value       | percent小値型                       | `Percent::FromRatio`, `ClampPercent`                         | 範囲、丸め、NaN方針を固定必要                     | 0/100、負値、>100、ratio                   | proposalに詳細仕様なし              |
@@ -124,7 +127,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### bcd Module
 
 - Purpose: packed BCD と10進整数・10進文字列の相互変換。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  packed BCDの直接代替が標準ライブラリになく、`std::optional`で失敗値を明確に扱える。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/bcd/ket_bcd.h`、`modules/bcd/ket_bcd.cpp`、
   `modules/bcd/ket_bcd_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -141,7 +146,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### string Module
 
 - Purpose: format ではない文字列片の連結と既存文字列への追記。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view`を利用でき、文字列片連結を標準ライブラリのみで安全に薄く包める。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/string/ket_string.h`、`modules/string/ket_string_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: `StrCat(...)`, `StrAppend(std::string&, ...)`。
@@ -156,7 +163,10 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### bits Module
 
 - Purpose: bit、nibble、mask、rotate の危険な小処理を安全に名前付き API 化。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  unsigned integral の小さいbit処理を標準ライブラリだけで安全に名前付けできる。
+  非推奨版 なし。非推奨理由: C++20 `<bit>` と一部重なるが、nibble、mask失敗値、
+  bit index境界処理の直接代替ではない。
 - Drop-in files: `modules/bits/ket_bits.h`、`modules/bits/ket_bits_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API:
@@ -183,7 +193,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### numeric Module
 
 - Purpose: alignment、rounding、overflow、narrowing cast の小さい正解を提供。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  overflow と範囲外を戻り値で固定し、手書き算術の未定義動作を避けられる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/numeric/ket_numeric.h`、`modules/numeric/ket_numeric_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API:
@@ -210,7 +222,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### endian Module
 
 - Purpose: byte order の読み書きを unaligned access や strict aliasing に頼らず安全に行う。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  endian と unaligned access の意図を名前に出し、strict aliasing 依存を避けられる。
+  非推奨版 なし。非推奨理由: C++20 `std::endian` は判定であり、byte列読み書きの直接代替ではない。
 - Drop-in files: `modules/endian/ket_endian.h`、`modules/endian/ket_endian.cpp`、
   `modules/endian/ket_endian_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -228,7 +242,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### hex Module
 
 - Purpose: byte列、数値、診断用 hexdump を安全に文字列化する。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と `std::optional` で失敗と入力範囲を明確に扱える。
+  非推奨版 なし。非推奨理由: 標準ライブラリに byte列 hex parse/dump の直接APIなし。
 - Drop-in files: `modules/hex/ket_hex.h`、`modules/hex/ket_hex.cpp`、
   `modules/hex/ket_hex_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -245,7 +261,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### parse_numeric Module
 
 - Purpose: `std::from_chars` 周辺の境界条件を固定し、数値 parse を短く安全にする。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::from_chars` の完全消費、空白、overflow処理を小さいAPIで固定できる。
+  非推奨版 なし。非推奨理由: `std::from_chars` は部品であり、ketの境界方針の直接代替ではない。
 - Drop-in files: `modules/parse_numeric/ket_parse_numeric.h`、
   `modules/parse_numeric/ket_parse_numeric_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -262,7 +280,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### enum_table Module
 
 - Purpose: `enum class` と文字列・整数・flags の変換を table-based で明示する。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と class template argument deduction を使い、table-based変換を短く書ける。
+  非推奨版 なし。非推奨理由: 標準ライブラリに enum reflection や文字列変換の直接APIなし。
 - Drop-in files: `modules/enum_table/ket_enum_table.h`、
   `modules/enum_table/ket_enum_table_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -277,25 +297,31 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### container Module
 
 - Purpose: `find`、`end`、erase-remove、default値取得など標準コンテナ利用時の儀式を短くする。
-- C++ version: 最小 C++11。C++17 optional convenience は初回なし。
-- Drop-in files: `modules/container/ket_container.h`、`modules/container/ket_container_test.cpp`。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  map/vector の反復的な lookup と erase-remove 手順を標準ライブラリのみで薄く包める。
+  非推奨版 なし。非推奨理由: C++20以降の `contains` や `std::erase_if` と一部重なるが、
+  module候補全体の直接代替ではない。
+- Drop-in files: 未製造。`Contains` の対象範囲、`Append` の self append、C++17 optional
+  convenience を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Contains`, `ContainsKey`, `AtOrNull`, `GetOrDefault`, `GetOrCreate`, `IndexOf`,
-  `EraseIf`, `SortUnique`, `Append`。
+- Public API: 候補は `Contains`, `ContainsKey`, `AtOrNull`, `GetOrDefault`, `GetOrCreate`,
+  `IndexOf`, `EraseIf`, `SortUnique`, `Append`。
 - Behavior: `AtOrNull` は copy を避ける pointer API。`GetOrDefault` は値を返す。
   `GetOrCreate` は key が無い場合だけ factory を呼ぶ。`EraseIf` は削除件数を返す。
-- Failure/edge cases: keyなし、空container、factory例外、重複値、self append は仕様化しない。
+- Failure/edge cases: keyなし、空container、factory例外、重複値、self append 方針を製造前に固定する。
 - Tests: keyあり/なし、factory呼び出し回数、EraseIf削除件数、SortUnique、Append。
 - Do not implement: 独自container、range framework、`std::erase_if` 完全互換の追求。
 
 ### string_ascii Module
 
 - Purpose: ASCII 前提の小さい文字列処理を、Unicode と誤解されない名前で提供する。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` で non-owning な文字列処理を短く扱える。
+  非推奨版 なし。非推奨理由: 標準ライブラリに ASCII 限定の trim/case/split 方針を固定した直接APIなし。
 - Drop-in files: `modules/string_ascii/ket_string_ascii.h`、
   `modules/string_ascii/ket_string_ascii.cpp`、`modules/string_ascii/ket_string_ascii_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `StartsWith`, `EndsWith`, `Contains`, `TrimAscii`, `TrimLeftAscii`,
+- Public API: `StartsWith`, `EndsWith`, `ContainsSubstring`, `TrimAscii`, `TrimLeftAscii`,
   `TrimRightAscii`, `RemovePrefix`, `RemoveSuffix`, `SplitView`, `Split`, `Join`,
   `ReplaceAll`, `ToLowerAscii`, `ToUpperAscii`, `EqualsIgnoreCaseAscii`。
 - Behavior: trim は ASCII whitespace のみ。`SplitView` は空要素を保持し、戻り値は元文字列を参照する。
@@ -308,7 +334,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### scope Module
 
 - Purpose: cleanup 漏れ、早期 return 時の復元漏れを防ぐ。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  RAII cleanup を小さい header-only API として持ち出せる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/scope/ket_scope.h`、`modules/scope/ket_scope_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: `ScopeExit<F>`, `MakeScopeExit`, `RestoreOnExit<T>`, `MakeRestoreOnExit`。
@@ -322,7 +350,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### byte_reader Module
 
 - Purpose: 固定 buffer からの逐次読み取りを、offset/remaining を明示しながら安全に行う。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  buffer lifetime と offset 更新条件を明示し、size不足時の状態不変を固定できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/byte_reader/ket_byte_reader.h`、
   `modules/byte_reader/ket_byte_reader.cpp`、`modules/byte_reader/ket_byte_reader_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -337,7 +367,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### byte_writer Module
 
 - Purpose: fixed buffer への逐次書き込みを overflow なしで行う。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  fixed buffer 書き込みのsize確認とoffset更新条件を小さいAPIで固定できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/byte_writer/ket_byte_writer.h`、
   `modules/byte_writer/ket_byte_writer.cpp`、`modules/byte_writer/ket_byte_writer_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -352,12 +384,13 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### bytes_builder Module
 
 - Purpose: 可変長 payload を `std::vector<std::uint8_t>` へ読みやすく組み立てる。
-- C++ version: 最小 C++17。
-- Drop-in files: `modules/bytes_builder/ket_bytes_builder.h`,
-  `modules/bytes_builder/ket_bytes_builder.cpp`, `modules/bytes_builder/ket_bytes_builder_test.cpp`。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::vector<std::uint8_t>` を所有するpayload構築を、標準ライブラリのみで薄く包める。
+  非推奨版 なし。非推奨理由: なし。
+- Drop-in files: 未製造。fluent member API と free function API の採用範囲を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `BytesBuilder`, `BytesBuilder::U8`, `Be16`, `Be32`, `Le16`, `Le32`, `Bytes`,
-  `StringAscii`, `View`, `Build`, `Clear`, `AppendU8`, `AppendBe16`, `AppendBe32`,
+- Public API: 候補は `BytesBuilder`, `BytesBuilder::U8`, `Be16`, `Be32`, `Le16`, `Le32`,
+  `Bytes`, `StringAscii`, `View`, `Build`, `Clear`, `AppendU8`, `AppendBe16`, `AppendBe32`,
   `AppendLe16`, `AppendLe32`, `AppendBytes`。
 - Behavior: fluent API は `*this` を返す。free function は既存 vector へ追加する。`Build() &&` は
   内部 vector を move して返す。
@@ -369,8 +402,11 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### date Module
 
 - Purpose: 日付・時刻の小さい妥当性判定を calendar framework なしで提供する。
-- C++ version: 最小 C++11。
-- Drop-in files: `modules/date/ket_date.h`、`modules/date/ket_date_test.cpp`。
+- C++ version: 最小要件 C++11。推奨版 C++11〜17。推奨理由:
+  C++17以前では標準calendar APIがなく、Gregorian妥当性判定を小さく持ち出せる。
+  非推奨版 C++20以降。非推奨理由: C++20 `std::chrono` calendar を使える環境では、
+  日付表現と妥当性判定を標準型へ寄せられる。
+- Drop-in files: 未製造。C++20 `std::chrono` calendar との境界と time API の切り方を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: `IsLeapYear`, `IsValidMonth`, `TryDaysInMonth`, `IsValidDate`, `IsValidTime`,
   `IsValidTimeMillis`。
@@ -382,7 +418,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### deadline Module
 
 - Purpose: `steady_clock` ベースの timeout と elapsed time 計算を読みやすくする。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  `steady_clock` と timeout の扱いを明示し、`system_clock` 混在を避けられる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/deadline/ket_deadline.h`、`modules/deadline/ket_deadline.cpp`、
   `modules/deadline/ket_deadline_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -397,12 +435,13 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### cli Module
 
 - Purpose: 小さい社内 CLI で `argc/argv` の option 取得を短くする。
-- C++ version: 最小 C++17。
-- Drop-in files: `modules/cli/ket_cli.h`、`modules/cli/ket_cli.cpp`、
-  `modules/cli/ket_cli_test.cpp`。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` で `argv` lifetime に依存する値を明示しながら扱える。
+  非推奨版 なし。非推奨理由: なし。
+- Drop-in files: 未製造。option値 parse API と他 module 非依存の実装方針を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ArgvView`, `ArgvView::Size`, `At`, `ProgramName`, `HasOption`, `GetOption`,
-  `GetOptionOr`, `OptionUInt<T>`, `Positional`。
+- Public API: 候補は `ArgvView`, `ArgvView::Size`, `At`, `ProgramName`, `HasOption`,
+  `GetOption`, `GetOptionOr`, `OptionUInt<T>`, `Positional`。
 - Behavior: `--key value` と `--key=value` を両方許す。`--flag` は `HasOption`。
   duplicated option は最初を返す。戻り値の `std::string_view` は `argv` lifetime に依存する。
 - Failure/edge cases: `GetOption(args, "--id")` で次要素が別 option なら失敗。shell quote 展開なし。
@@ -412,10 +451,12 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### byte_view Module
 
 - Purpose: C++11〜17 向けの薄い non-owning byte span。
-- C++ version: 最小 C++11。
-- Drop-in files: `modules/byte_view/ket_byte_view.h`、`modules/byte_view/ket_byte_view_test.cpp`。
+- C++ version: 最小要件 C++11。推奨版 C++11〜17。推奨理由:
+  C++17以前で non-owning byte span の寿命と境界確認を小さく表現できる。
+  非推奨版 C++20以降。非推奨理由: C++20以降は `std::span` を優先できる。
+- Drop-in files: 未製造。method/free function 境界、invalid view の表現、mutable API を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ByteView`, `MutableByteView`, `MakeByteView`, `MakeMutableByteView`。
+- Public API: 候補は `ByteView`, `MutableByteView`, `MakeByteView`, `MakeMutableByteView`。
 - Behavior: `Data`, `Size`, `Empty`, `TryAt`, `TrySubView` を提供する。view は所有権を持たず、
   元buffer lifetime に依存する。
 - Failure/edge cases: `nullptr+0` は空 view。`nullptr+非0` は invalid view とし、access は失敗。
@@ -426,7 +467,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### utf8 Module
 
 - Purpose: UTF-8 検査を小さく隔離する。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と `std::optional` で UTF-8 検査結果と失敗位置を小さく扱える。
+  非推奨版 なし。非推奨理由: 標準ライブラリに UTF-8 byte列検証の直接APIなし。
 - Drop-in files: `modules/utf8/ket_utf8.h`、`modules/utf8/ket_utf8.cpp`、
   `modules/utf8/ket_utf8_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -440,11 +483,12 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### file Module
 
 - Purpose: ファイル全読み/全書きの小さい定型処理を安全にまとめる。
-- C++ version: 最小 C++17。
-- Drop-in files: `modules/file/ket_file.h`、`modules/file/ket_file.cpp`、
-  `modules/file/ket_file_test.cpp`。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::filesystem` と `std::string_view` を使い、path と bytes/text の扱いを標準型へ寄せられる。
+  非推奨版 なし。非推奨理由: 標準ライブラリだけでは全読み/全書きの失敗方針が長くなりやすい。
+- Drop-in files: 未製造。`std::error_code*` の optional detail 形、例外有無、短い write の扱いを固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `TryReadAllText`, `TryReadAllBytes`, `WriteAllText`, `WriteAllBytes`,
+- Public API: 候補は `TryReadAllText`, `TryReadAllBytes`, `WriteAllText`, `WriteAllBytes`,
   `FileExists`, `DirectoryExists`, `FileSize`。
 - Behavior: `std::filesystem::path` を受ける。text encoding は変換せず、bytes をそのまま
   `std::string` に読む。optional detail として `std::error_code*` を受ける。
@@ -455,7 +499,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### io_stream Module
 
 - Purpose: stream の確実な読み書きと stream state 保存を小さく提供する。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  iostream の short read/write と state復元を小さいAPIで固定できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/io_stream/ket_io_stream.h`、`modules/io_stream/ket_io_stream.cpp`、
   `modules/io_stream/ket_io_stream_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -469,20 +515,24 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### format_value Module
 
 - Purpose: 診断用の短い文字列化候補。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  診断用の固定表記を標準ライブラリのみで小さく提供できる。
+  非推奨版 なし。非推奨理由: `std::format` は書式化部品であり、ketの固定診断表記の直接代替ではない。
 - Drop-in files: 未製造。仕様分割後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `ToString(bool)`, `ToString(std::int64_t)`, `ToString(std::uint64_t)`,
-  `ToHexString`, `ToBinaryString`, `FormatBytes`, `FormatDuration`。
-- Behavior: 製造前に byte 単位表記、duration 単位、hex prefix、幅、符号の扱いを固定する。
+- Public API: 候補は `FormatBool`, `FormatSignedDecimal`, `FormatUnsignedDecimal`,
+  `ToBinaryString`, `FormatByteCount`, `FormatDuration`。
+- Behavior: 製造前に byte 単位表記、duration 単位、binary prefix、幅、符号の扱いを固定する。
 - Failure/edge cases: allocation 例外あり。duration の負値、極小/極大値、丸めを仕様化する。
 - Tests: 単位境界、min_width、負duration、0、最大値。
-- Do not implement: `std::format` 再実装、logging framework、locale対応。
+- Do not implement: `std::format` 再実装、logging framework、locale対応、`ToHexString`。
 
 ### algorithm_range Module
 
 - Purpose: iterator pair を毎回書く煩わしさを減らす候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11〜17。推奨理由:
+  C++17以前で range object から standard algorithm を呼ぶ儀式を短くできる。
+  非推奨版 C++20以降。非推奨理由: C++20以降は `std::ranges` を優先できる。
 - Drop-in files: 未製造。採用 API を絞ってから決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `AllOf`, `AnyOf`, `NoneOf`, `CountIf`, `FindIf`, `ForEachIndex`。
@@ -494,7 +544,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### memory Module
 
 - Purpose: alignment と object representation 読み取りを小さく扱う候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  pointer alignment と object representation の意図を小さいAPIへ分離できる。
+  非推奨版 なし。非推奨理由: secure zero と pointer alignment の直接代替は標準だけでは不足する。
 - Drop-in files: 未製造。`SecureZeroMemory` の保証範囲を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `IsAligned`, `TryAlignUpPtr`, `TryAlignDownPtr`, `ZeroMemory`,
@@ -507,7 +559,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### pointer Module
 
 - Purpose: null と ownership 誤解を減らす候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  null許容性と所有権の有無を型名や関数名で明示できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未製造。`NotNull` の失敗方針を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `NotNull<Ptr>`, `LockWeak`, `GetOrNull`, `AddressOf`。
@@ -520,7 +574,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### testing_bytes Module
 
 - Purpose: byte列比較の GoogleTest failure message を読みやすくする。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  GoogleTest v1.17.0 のC++17要件に合わせ、byte列差分を読みやすく表示できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/testing_bytes/ket_testing_bytes.h`、
   `modules/testing_bytes/ket_testing_bytes.cpp`、
   `modules/testing_bytes/ket_testing_bytes_test.cpp`。
@@ -534,7 +590,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### semantic_version Module
 
 - Purpose: semver-like な `major.minor.patch` 値の parse/format/compare。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と `std::optional` で parse失敗と比較を小さく固定できる。
+  非推奨版 なし。非推奨理由: 標準ライブラリに semantic version の直接APIなし。
 - Drop-in files: `modules/semantic_version/ket_semantic_version.h`,
   `modules/semantic_version/ket_semantic_version.cpp`,
   `modules/semantic_version/ket_semantic_version_test.cpp`。
@@ -550,20 +608,43 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### ipv4 Module
 
 - Purpose: IPv4 dotted decimal の parse/format と BE 32bit 変換。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と `std::optional` で dotted decimal の失敗条件を明確に扱える。
+  非推奨版 なし。非推奨理由: 標準ライブラリに IPv4 dotted decimal parse/format の直接APIなし。
 - Drop-in files: `modules/ipv4/ket_ipv4.h`、`modules/ipv4/ket_ipv4.cpp`、
   `modules/ipv4/ket_ipv4_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `IpV4`, `ParseIpV4`, `FormatIpV4`, `IpV4ToU32Be`, `U32BeToIpV4`。
-- Behavior: dotted decimal のみ。leading zero は失敗。`IpV4ToU32Be` は network byte order の整数表現。
+- Public API: `Ipv4Address`, `ParseIpv4Address`, `FormatIpv4Address`, `Ipv4AddressToU32Be`,
+  `U32BeToIpv4Address`。
+- Behavior: dotted decimal のみ。leading zero は失敗。`Ipv4AddressToU32Be` は network byte order の整数表現。
 - Failure/edge cases: octet > 255、負値、空要素、要素不足/過多、空白、leading zero。
 - Tests: `0.0.0.0`、`255.255.255.255`、format、u32 roundtrip、不正入力。
 - Do not implement: IPv6、CIDR、DNS、port、socket address。
 
+### port Module
+
+- Purpose: TCP/UDP port番号の小さい値型、parse、format。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と `std::optional` で範囲外や不正文字を明確に扱える。
+  非推奨版 なし。非推奨理由: 標準ライブラリに port番号の値型や parse/format の直接APIなし。
+- Drop-in files: `modules/port/ket_port.h`、`modules/port/ket_port.cpp`、
+  `modules/port/ket_port_test.cpp`。
+- Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
+- Public API: `Port`, `TryMakePort`, `ParsePort`, `FormatPort`。
+- Behavior: port値は0〜65535を許可する。0は OS による自動割り当て用途を表せる有効値とし、
+  呼び出し側が必要なら別途禁止する。`ParsePort` は10進表記のみを完全消費し、format は leading
+  zero なしの10進文字列を返す。
+- Failure/edge cases: 空文字列、leading/trailing whitespace、`+`/`-`、不正文字、65535超過、
+  複数桁の leading zero は失敗。
+- Tests: 0、1、65535、65536、空、空白、符号、不正文字、leading zero、format。
+- Do not implement: socket address、service name 解決、protocol別port型、ephemeral port 採番。
+
 ### mac_address Module
 
 - Purpose: MAC address の parse/format。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と `std::optional` で区切り文字とhex byteの失敗条件を固定できる。
+  非推奨版 なし。非推奨理由: 標準ライブラリに MAC address parse/format の直接APIなし。
 - Drop-in files: `modules/mac_address/ket_mac_address.h`,
   `modules/mac_address/ket_mac_address.cpp`, `modules/mac_address/ket_mac_address_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -576,7 +657,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### function Module
 
 - Purpose: callable/visitor の小さい儀式を減らす。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  variadic using declaration で visitor overload set を小さく表現できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/function/ket_function.h`、`modules/function/ket_function_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: `Overload<Fs...>`, `MakeOverload`, `Noop`。
@@ -589,7 +672,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### variant_match Module
 
 - Purpose: `std::variant` visitor 補助候補。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::variant` と visitor補助を標準ライブラリのみで薄く包める。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未製造。`function` module との重複方針を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `Match`, `Holds`, `GetIf`。
@@ -601,21 +686,29 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### optional_ext Module
 
 - Purpose: `std::optional` の小さい合成。
-- C++ version: 最小 C++17。
-- Drop-in files: `modules/optional_ext/ket_optional_ext.h`,
-  `modules/optional_ext/ket_optional_ext_test.cpp`。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::optional` の小さい合成を、標準の値保持制約に従って扱える。
+  非推奨版 なし。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
+- Drop-in files: 未製造。C++23 monadic API との重複、optional-like 戻り型、参照保持方針を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `MapOptional`, `AndThen`, `ValueOrEval`, `HasValueAll`。
+- Public API: 候補は `MapOptional`, `AndThen`, `ValueOrEval`, `HasValueAll`。
 - Behavior: empty の場合は mapper/factory を必要時以外呼ばない。`AndThen` の戻り型は mapper が返す
   optional-like 値そのもの。
 - Failure/edge cases: mapper 例外は伝播。reference wrapper など値保持型は標準 optional の制約に従う。
 - Tests: value/empty、mapper呼び出し回数、factory遅延、複数optional、戻り型。
+- API別標準代替:
+  - `MapOptional`: C++23 `std::optional::transform`。
+  - `AndThen`: C++23 `std::optional::and_then`。
+  - `ValueOrEval`: 直接代替なし。factory遅延評価を固定する場合のみ採用。
+  - `HasValueAll`: 直接代替なし。複数 optional の可読性改善が必要な場合のみ採用。
 - Do not implement: `Result`、`StatusOr`、monad framework、error accumulation。
 
 ### contract Module
 
 - Purpose: precondition、postcondition、invariant を名前で明示する候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  契約違反時のプロジェクト方針を小さいAPIへ閉じ込められる。
+  非推奨版 なし。非推奨理由: C++ contracts は標準化状況と利用可能性が安定していない。
 - Drop-in files: 未製造。違反時ポリシーを固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `Expects`, `Ensures`, `AssertInvariant`, `RequireNonNull`, `CheckBounds`,
@@ -628,7 +721,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### c_interop Module
 
 - Purpose: C API 境界の errno、C buffer、handle cleanup 事故を減らす候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  errno保存、C buffer copy、handle cleanup の事故をC API境界に閉じ込められる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未製造。`UniqueHandle` の invalid value 方針を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `ErrnoGuard`, `CopyToCBuffer`, `CopyBytesToCBuffer`, `UniqueHandle`。
@@ -641,7 +736,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### platform_error Module
 
 - Purpose: errno/Windows error/environment variable の小さい platform 補助候補。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  platform API の差分を隠しすぎず、標準文字列で結果を扱える。
+  非推奨版 なし。非推奨理由: 標準ライブラリだけでは errno/Windows error message の扱いが不十分。
 - Drop-in files: 未製造。platform別仕様と検証環境を固定後に決定。
 - Dependencies: 標準ライブラリと platform API。他の ket module への依存なし。
 - Public API: 候補は `ErrnoMessage`, `_WIN32` 限定 `WindowsErrorMessage`, `GetLastErrorCode`,
@@ -654,7 +751,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### state_table Module
 
 - Purpose: 小さい状態遷移表 lookup。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::optional` で未定義遷移を明確にし、table-driven lookup を小さく書ける。
+  非推奨版 なし。非推奨理由: 標準ライブラリに状態遷移表 lookup の直接APIなし。
 - Drop-in files: `modules/state_table/ket_state_table.h`,
   `modules/state_table/ket_state_table_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -667,7 +766,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### cache_once Module
 
 - Purpose: once/lazy value の候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  lazy value の thread-safety と例外後状態を局所的に固定できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未製造。thread-safety と例外後状態を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `Lazy<T>`, `OnceValue<T>`。
@@ -679,7 +780,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### serialization_tlv Module
 
 - Purpose: length-prefix/TLV の小さい serialize/parse 候補。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view`/`std::optional` 相当の失敗表現でwire format境界を固定できる。
+  非推奨版 なし。非推奨理由: 標準ライブラリに TLV encode/decode の直接APIなし。
 - Drop-in files: 未製造。wire format を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `TlvView`, `EncodeLengthPrefixed`, `TryDecodeLengthPrefixed`,
@@ -692,7 +795,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### tuple Module
 
 - Purpose: tuple の小さい反復・変換補助。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::apply` と fold expression を使い、tuple走査を小さく実装できる。
+  非推奨版 なし。非推奨理由: 標準ライブラリだけでは tuple要素ごとの副作用呼び出しが冗長。
 - Drop-in files: `modules/tuple/ket_tuple.h`、`modules/tuple/ket_tuple_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: `TupleForEach`, `TupleTransform`。
@@ -705,7 +810,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### build_config Module
 
 - Purpose: feature detection macro 候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  compiler/OS/feature macro の差分を小さい範囲へ閉じ込められる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未製造。macro 汚染と必要性を再確認後に決定。
 - Dependencies: 標準ライブラリと compiler predefined macros。他の ket module への依存なし。
 - Public API: 候補は `KET_CXX_VERSION`, `KET_HAS_STD_OPTIONAL`, `KET_HAS_STD_STRING_VIEW`,
@@ -718,7 +825,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### math_small Module
 
 - Purpose: 補間、角度、byte単位変換など小さい数学候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  小さい数学処理の丸め、overflow、単位名をAPIで固定できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未製造。型制約と丸め方を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `Lerp`, `DegreesToRadians`, `RadiansToDegrees`, `NearlyEqual`, `KiBToBytes`,
@@ -731,9 +840,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### language Module
 
 - Purpose: C++言語の小さい儀式（未使用無視、到達不能、配列長、const化）を名前付き API にする候補。
-- C++ version: 最小 C++11。推奨 C++11〜14。非推奨 C++17以降。
-  非推奨理由: `[[maybe_unused]]`、`std::as_const`、`std::size`、`std::unreachable` など標準代替が
-  C++17以降で順次提供される。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  C++11/14の欠落や冗長な言語儀式を小さいAPIで名前付けできる。
+  非推奨版 なし。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
 - Drop-in files: 未製造。採用 API と標準代替の登場版を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `IgnoreUnused`, `Unreachable`, `ArraySize`, `AsConst`, `Identity`。
@@ -741,13 +850,20 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   `std::exchange` のような既存標準と完全に重なる別名は採用しない。
 - Failure/edge cases: `Unreachable` 到達時の未定義動作、空配列、参照寿命を製造前に固定する。
 - Tests: unused 無視、配列長、const 化、C++11 compile-only、Unreachable death/assert。
+- API別標準代替:
+  - `IgnoreUnused`: C++17 `[[maybe_unused]]` と一部重複。式の明示破棄用途は製造前に要確認。
+  - `ArraySize`: C++17 `std::size`。
+  - `AsConst`: C++17 `std::as_const`。
+  - `Identity`: C++20 `std::type_identity` と一部重複。関数APIとして採用するか要確認。
+  - `Unreachable`: C++23 `std::unreachable`。
 - Do not implement: macro 大量追加、attribute framework、`std::xxx` の単なる別名。
 
 ### object Module
 
 - Purpose: copy/move/regular 型の儀式（コピー禁止、move 専用、move 後リセット）を mixin と
   helper で明示する候補。
-- C++ version: 最小 C++11。推奨 C++11以降。非推奨 なし。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  copy/move意図を型定義の近くへ集約できる。非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未製造。defaulted comparison との衝突回避方針を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `NonCopyable`, `NonMovable`, `MovableOnly`, `ResetOnMove<T>`, `SwapAndReset`。
@@ -761,19 +877,28 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### meta Module
 
 - Purpose: C++11/14 欠落 type traits の小補助候補。
-- C++ version: 最小 C++11。一部は C++17 で標準代替あり。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  C++11/14で不足する小さいtraitsを局所的に補える。
+  非推奨版 なし。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
 - Drop-in files: 未製造。標準代替との重複を整理後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `RemoveCvref`, `TypeIdentity`, `AlwaysFalse`, `VoidT`。
 - Behavior: template error を読みやすく保つ小さい alias/type に限定する。
 - Failure/edge cases: C++17 以降の標準代替、SFINAE 使用時の diagnostics。
 - Tests: alias型一致、C++11 compile-only、SFINAE。
+- API別標準代替:
+  - `VoidT`: C++17 `std::void_t`。
+  - `RemoveCvref`: C++20 `std::remove_cvref`。
+  - `TypeIdentity`: C++20 `std::type_identity`。
+  - `AlwaysFalse`: 直接代替なし。template diagnostics改善が必要な場合のみ採用。
 - Do not implement: meta programming framework、concepts 代替体系、難読化する traits。
 
 ### concurrency_small Module
 
 - Purpose: join 忘れと future timeout 確認程度の局所補助候補。
-- C++ version: 最小 C++11。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  thread join と future ready 判定の小さい儀式を局所化できる。
+  非推奨版 なし。非推奨理由: APIごとに標準代替の有無が異なるため、module単位では非推奨にしない。
 - Drop-in files: 未製造。destructor 方針とテスト方法を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `JoiningThread`, `FutureReady`。
@@ -781,12 +906,17 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   `FutureReady` は zero timeout wait で ready 判定する。
 - Failure/edge cases: self-join、move代入時の既存thread、join例外、deferred future。
 - Tests: default、joinable、move、ready/not ready、deferred。
+- API別標準代替:
+  - `JoiningThread`: C++20 `std::jthread`。
+  - `FutureReady`: 直接代替なし。`future.wait_for(0)` の結果判定を名前にする場合のみ採用。
 - Do not implement: thread pool、executor、lock framework、cancellation framework。
 
 ### uuid Module
 
 - Purpose: UUID の parse/format。generation は扱わない。
-- C++ version: 最小 C++17。
+- C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
+  `std::string_view` と `std::optional` で canonical UUID の失敗条件を固定できる。
+  非推奨版 なし。非推奨理由: 標準ライブラリに UUID parse/format の直接APIなし。
 - Drop-in files: `modules/uuid/ket_uuid.h`、`modules/uuid/ket_uuid.cpp`、
   `modules/uuid/ket_uuid_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -800,7 +930,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### color_rgb Module
 
 - Purpose: RGB小値型候補。
-- C++ version: 最小 C++11 候補。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  RGB小値型の許容表記と不正hexを小さいAPIで固定できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未定。仕様分割後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `ParseColorRgb`, `FormatColorRgbHex`。
@@ -812,7 +944,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 ### percent Module
 
 - Purpose: percent小値型候補。
-- C++ version: 最小 C++11 候補。
+- C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
+  percent小値型の範囲、丸め、NaN方針を局所的に固定できる。
+  非推奨版 なし。非推奨理由: なし。
 - Drop-in files: 未定。丸めと範囲を固定後に決定。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `Percent::FromRatio`, `ClampPercent`。

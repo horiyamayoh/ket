@@ -138,9 +138,9 @@ C++バージョン要件:
 - 最小要件：C++17
 - 本ライブラリの適用を推奨する C++ バージョン：C++17以降
 - 推奨理由：`std::string_view`を利用でき、文字列片連結を標準ライブラリのみで安全に薄く包める
-- 本ライブラリの適用を推奨しない C++ バージョン：C++20以降
-- 非推奨理由：書式付き文字列生成が目的の場合は、`std::format`で容易かつ明確に代替可能
-- 標準代替：書式付き文字列生成ではC++20 `std::format`。
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：書式付き文字列生成ではC++20 `std::format`。文字列片の単純連結と追記の直接代替ではない。
 
 Failure / edge cases:
 
@@ -164,3 +164,60 @@ Tests:
 - StrAppend(dst, ...) appends to existing text
 - StrAppend(dst) keeps dst unchanged
 - StrAppend(dst, dst, ":", std::string_view(dst)) uses pre-append content
+
+## Idea: Port
+
+Category: network / value
+
+Pain:
+
+- TCP/UDP port番号の範囲確認を毎回書きたくない
+- `int` や `uint16_t` の裸値だけだと、0や65535超過の扱いが呼び出し側ごとにぶれやすい
+- CLIや設定値から読むときの空白、符号、leading zero、overflowの扱いを固定したい
+- socket addressやservice name解決までは不要だが、値型として意図を読みたい
+
+Candidate API:
+
+```cpp
+ket::Port
+ket::TryMakePort(value, out)
+ket::ParsePort(text)
+ket::FormatPort(port)
+```
+
+C++バージョン要件:
+
+- 最小要件：C++17
+- 本ライブラリの適用を推奨する C++ バージョン：C++17以降
+- 推奨理由：`std::string_view`と`std::optional`で範囲外や不正文字を明確に扱える
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：なし。標準ライブラリにport番号の値型やparse/formatの直接APIなし。
+
+Failure / edge cases:
+
+- value > 65535
+- empty string
+- leading / trailing whitespace
+- `+` / `-`
+- non-digit character
+- integer overflow
+- multi-digit leading zero
+
+他のライブラリへの依存:
+
+- 標準ライブラリのみ
+- ket依存なし
+
+Tests:
+
+- TryMakePort(0) succeeds
+- TryMakePort(65535) succeeds
+- TryMakePort(65536) fails
+- ParsePort("0") succeeds
+- ParsePort("65535") succeeds
+- ParsePort("65536") fails
+- ParsePort(" 80") fails
+- ParsePort("+80") fails
+- ParsePort("080") fails
+- FormatPort(Port{80}) == "80"
