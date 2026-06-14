@@ -12,6 +12,11 @@
 `progress.md` は実装状況、各 module header の Doxygen は実装済みAPIの詳細仕様を管理する。
 未実装 module の最終的な公開API、C++要件、失敗方針は、この文書の module別仕様カードを正とする。
 
+`Manufacturing Status` が `Ready` または `Existing` の module別仕様カードは、完全な公開signature、
+計算量・性能、失敗方針、境界条件、テスト観点を固定済みであり、追加の仕様分割なしで製造依頼できる。
+signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポインタ、戻り型は実装契約として扱う。
+製造時に逸脱する場合は、逸脱内容と理由を Doxygen と `progress.md` に明記する。
+
 製造依頼では、対象 module の仕様カードだけでなく、この文書の共通ルールと
 `AGENTS.md`、`README.md`、`docs/module_lifecycle.md`、`docs/style.md`、
 `docs/testing.md` を同時に守る。
@@ -31,6 +36,19 @@
   出力や C API 境界だけポインタ型を使い、その理由を Doxygen に書く。
 - proposal に `T* out` と書かれていた非optional出力は、製造時に `T& out` へ正規化する。
 - C++11/14 対応 module では、GoogleTest とは別に最低標準の compile-only check を追加する。
+- `std::optional`、`std::string_view`、CTAD は C++17 以降の機能であり、最小要件が C++11/14 の
+  module の公開signatureには使わない。失敗は `TryXxx(..., T& out) -> bool`、欠落時の既定値は
+  `XxxOr`/`XxxOrDefault`、不在は `XxxOrNull`(pointer)で表現する。`std::optional` 便利版は
+  最小要件が C++17 以降の module でのみ採用する。
+- C++11 を最小要件にする module の `constexpr` は C++11 制約(単一 return、loop 不可、recursion 可、
+  定数評価中の mutation 不可)に収める。純粋な query/変換関数は C++11 でも `constexpr noexcept`、
+  出力引数を変更する `TryXxx` は C++11 では `constexpr` を付けず `noexcept` のみとし、C++14 以降で
+  `constexpr` 化できる場合はその旨を仕様カードに明記する。
+- 命名は `TryXxx`(失敗を bool+out)、`ParseXxx`(C++17は `std::optional`)、`FormatXxx`(`std::string`)、
+  `MakeXxx`、`GetXxx`、`AtXxx`、`ContainsXxx`、`XxxOr`/`XxxOrDefault`、`XxxOrNull` に揃える。
+  endian を含む読み書きは `LoadBe32`/`LoadLe32` のように byte order を名前へ必ず出す。
+- `Existing` module は header の Doxygen と実装が正本であり、この文書の記述が header と矛盾する場合は
+  header を優先する。仕様を変えるべき場合は破壊的変更提案として明示し、勝手に header を書き換えない。
 - `TryXxx` は失敗時に出力引数と対象 object の状態を変更しない。
 - 文字列生成、vector 生成、I/O など allocation や stream 例外の可能性がある API には無理に
   `noexcept` を付けない。
@@ -47,6 +65,12 @@
 | `Needs Spec Split` | 候補として有効だが、初回 API の切り方や失敗方針を別途小さく分割してから製造する。 |
 | `Recipe`           | module ではなく利用例。module 製造依頼ではなく recipe 作成依頼として扱う。        |
 
+`Ready` と `Existing` の仕様カードは次の項目をこの順で固定する: `Purpose`、`C++ version`、
+`Drop-in files`、`Dependencies`、`Public API Signatures`、`Behavior`、`Failure/edge cases`、
+`Complexity/performance`、`Tests`、`Do not implement`。`Needs Spec Split` の仕様カードは
+`Public API Signatures` の代わりに `Public API (候補)` と `未確定の設計判断` を持ち、製造前に確定すべき
+判断を箇条書きで列挙する。
+
 ## 3. module/API 一覧表
 
 `C++ Min` は最小要件、`C++ 推奨` は適用を推奨する版、`C++ 非推奨` は標準ライブラリで
@@ -55,60 +79,60 @@
 module の中核 API に同等の標準代替がないことを意味する。`Representative API` は一覧用の代表名であり、
 完全な公開APIは module別仕様カードを正とする。
 
-| Module              | Priority | Manufacturing Status | C++ Min | C++ 推奨  | C++ 非推奨 | Files                     | Kind        | Purpose                             | Representative API                                           | Failure/Boundary Policy                           | Tests                                      | Notes                               |
-| ------------------- | -------- | -------------------- | ------- | --------- | ---------- | ------------------------- | ----------- | ----------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- | ------------------------------------------ | ----------------------------------- |
-| `bcd`               | done     | `Existing`           | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | binary      | packed BCD 変換                     | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`                   | 不正nibble、空入力、overflow は失敗値             | 実装済み境界値テスト                       | 追加は BCD 妥当性判定まで           |
-| `string`            | done     | `Existing`           | C++17   | C++17以降 | なし       | header-only + test        | string      | 文字列片の連結と追記                | `StrCat`, `StrAppend`                                        | raw C string は非null、allocation例外あり         | 実装済み境界値テスト                       | format API ではない                 |
-| `bits`              | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | numeric     | bit/nibble/mask の事故防止          | `HighNibble`, `LowNibble`, `HasBit`, `TryMask`               | unsigned integral 限定、範囲外 bit は失敗/false   | nibble、bit幅、mask境界                    | C++20 `<bit>` は一部のみ重複        |
-| `numeric`           | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | numeric     | overflow、align、cast の小さい正解  | `TryAlignUp`, `TryCheckedAdd`, `TryCheckedCast`              | 0除算、alignment 0、overflow は失敗               | min/max、overflow、signed/unsigned         | optional convenience は初回なし     |
-| `endian`            | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | unaligned/endian 読み書き           | `LoadBe32`, `LoadLe32`, `StoreBe16`, `TryLoadBe32`           | plain load/store は precondition、Try は失敗値    | BE/LE、null、size不足                      | reinterpret cast 禁止               |
-| `hex`               | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | diagnostic  | bytes と16進文字列/hex dump         | `BytesToHex`, `HexToBytes`, `HexDump`, `ToHexString`         | null+非0 size は precondition、奇数桁は失敗       | 空入力、separator、不正文字                | dump形式は固定                      |
-| `parse_numeric`     | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | parsing     | `from_chars` 周りの儀式除去         | `TryParseUInt`, `ParseUInt`, `ParseBool`, `ParseHex`         | 完全消費、whitespaceなし、overflow失敗            | 空、最大値、overflow、prefix               | bool は case-sensitive              |
-| `enum_table`        | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | enum        | enum class と文字列変換             | `EnumEntry`, `EnumName`, `ParseEnum`, `HasFlag`              | table完全一致、重複は先勝ち                       | known/unknown、duplicate、flags            | reflection はしない                 |
-| `container`         | P0       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | container   | map/vector の小さい儀式             | `ContainsKey`, `AtOrNull`, `GetOrDefault`, `EraseIf`         | 見つからない場合は null/default/0                 | key有無、factory呼び出し、削除件数         | `Contains` 方針を固定必要           |
-| `string_ascii`      | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | string      | ASCII 前提の文字列処理              | `TrimAscii`, `SplitView`, `ToLowerAscii`, `ReplaceAll`       | ASCII whitespaceのみ、view lifetime明記           | 空要素、UTF-8 byte保持、case変換           | Unicode処理ではない                 |
-| `scope`             | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | RAII        | cleanup と復元漏れ防止              | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`                | destructor 例外は terminate、move後 inactive      | dismiss、move、二重実行なし                | `Finally` は作らない                |
-| `byte_reader`       | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | byte列の安全な逐次読み取り          | `ByteReader`, `ReadU8`, `ReadBe16`, `ReadBytes`              | 成功時だけ offset 更新、invalid reader は失敗     | 空、ぴったり、size不足、offset保持         | endian module 非依存                |
-| `byte_writer`       | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | fixed buffer への安全な逐次書き込み | `ByteWriter`, `WriteU8`, `WriteLe32`, `WriteBytes`           | 成功時だけ offset と buffer 更新                  | 空、ぴったり、size不足、buffer不変         | endian module 非依存                |
-| `bytes_builder`     | P0       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | binary      | owning payload builder              | `BytesBuilder`, `AppendU8`, `AppendBe16`, `Build`            | allocation例外あり、null+非0 size は precondition | BE/LE、reserve、Build後move                | fluent/free API 境界を固定必要      |
-| `date`              | P0       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | 未製造                    | date        | 日付・時刻の妥当性                  | `IsLeapYear`, `IsValidDate`, `TryDaysInMonth`                | Gregorian、year >= 1、leap secondなし             | 2000/1900、2/29、month 0/13                | C++20 `std::chrono` 境界を固定必要  |
-| `deadline`          | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | time        | timeout と elapsed time             | `Stopwatch`, `Deadline`                                      | `steady_clock`のみ、負timeoutは期限切れ           | zero/future/remaining/restart              | system_clock と混ぜない             |
-| `cli`               | P0       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | CLI         | 小さい CLI option 取得              | `ArgvView`, `HasOption`, `GetOption`, `Positional`           | `--key value`/`--key=value`、重複は先勝ち         | flag、missing value、positional            | option値 parse 方針を固定必要       |
-| `byte_view`         | P1       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | 未製造                    | view        | non-owning byte span                | `ByteView`, `MutableByteView`, `TrySubView`                  | `nullptr+0` は空、`nullptr+非0` は invalid        | lifetime、subview、bounds                  | method/free function 境界を固定必要 |
-| `utf8`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | text        | UTF-8 検査の隔離                    | `ValidateUtf8`, `IsUtf8`, `Utf8Length`                       | normalizationなし、不正offsetを返す               | ASCII、多byte、不正sequence                | grapheme数ではない                  |
-| `file`              | P1       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | filesystem  | ファイル全読み/全書き               | `TryReadAllText`, `WriteAllBytes`, `FileSize`                | `std::error_code*` は optional detail             | not found、空、binary、error_code          | error detail API を固定必要         |
-| `io_stream`         | P1       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | stream      | stream の確実な読み書き             | `ReadExactly`, `WriteAll`, `StreamStateSaver`                | requested size を読み切った時だけ成功             | short read、state復元、line trim           | ASCII trim のみ                     |
-| `format_value`      | P1       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | diagnostic  | 診断用文字列化                      | `FormatByteCount`, `FormatDuration`, `FormatBool`            | 表記形式を追加仕様で固定                          | 単位境界、負duration、幅指定               | `ToHexString` は `hex` に集約       |
-| `algorithm_range`   | P1       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | 未製造                    | algorithm   | iterator pair の儀式除去            | `AllOf`, `FindIf`, `ForEachIndex`                            | `std::algorithm` 別名だけなら不採用               | empty、predicate副作用、iterator           | C++20以降は `std::ranges` を優先    |
-| `memory`            | P1       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | memory      | alignment/object bytes              | `IsAligned`, `SecureZeroMemory`, `ObjectBytes`               | secure zero の保証範囲を追加仕様で固定            | null、alignment 0、volatile消去            | object lifetime へ踏み込まない      |
-| `pointer`           | P1       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | pointer     | null/ownership の明示               | `NotNull`, `LockWeak`, `AddressOf`                           | `NotNull(nullptr)` の失敗方針を固定必要           | nullptr、weak expired、operator            | ownership型は初回なし               |
-| `testing_bytes`     | P1       | `Ready`              | C++17   | C++17以降 | なし       | test-helper header + test | testing     | bytes系テスト補助                   | `BytesEq`, `HexEq`                                           | GoogleTest 依存を明記、mismatch情報を返す         | offset差分、hex差分、不正hex               | library本体ではない                 |
-| `semantic_version`  | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | parsing     | semver-like 値の parse/compare      | `SemanticVersion`, `ParseSemanticVersion`, `Compare...`      | `major.minor.patch`のみ、leading zero失敗         | 0.0.0、compare、overflow                   | prerelease/buildなし                |
-| `ipv4`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | IPv4 parse/format                   | `Ipv4Address`, `ParseIpv4Address`, `FormatIpv4Address`       | dotted decimalのみ、leading zero失敗              | octet境界、個数不足/過多、format           | IPv6/CIDRなし                       |
-| `port`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | TCP/UDP port parse/format           | `Port`, `TryMakePort`, `ParsePort`, `FormatPort`             | 0〜65535、空白・符号・leading zero失敗            | 0/65535、overflow、不正文字                | socket addressなし                  |
-| `mac_address`       | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | MAC address parse/format            | `MacAddress`, `ParseMacAddress`, `FormatMacAddress`          | `:` と `-` を許可、混在とCisco形式は失敗          | upper/lower、不正hex、区切り               | Cisco形式なし                       |
-| `function`          | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | callable    | callable/visitor の儀式除去         | `Overload`, `MakeOverload`, `Noop`                           | `Noop` は例外なし、`Overload` は所有              | visit、overload解決、copy/move             | `FunctionRef` は初回なし            |
-| `variant_match`     | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | variant     | `std::variant` visitor 補助         | `Match`, `Holds`, `GetIf`                                    | `function` との重複整理が必要                     | value/ref、const、exception伝播            | `Overload` の配置を固定必要         |
-| `optional_ext`      | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | optional    | optional の小さい合成               | `MapOptional`, `AndThen`, `ValueOrEval`, `HasValueAll`       | factory は必要時だけ呼ぶ                          | empty/value、参照、factory回数             | API別標準代替を固定必要             |
-| `contract`          | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | contract    | precondition 明示                   | `Expects`, `Ensures`, `RequireNonNull`                       | assert/abort/terminate 方針を固定必要             | debug/release、nullptr、bounds             | macro 過多にしない                  |
-| `c_interop`         | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | interop     | C API 境界の事故防止                | `ErrnoGuard`, `CopyToCBuffer`, `UniqueHandle`                | handle invalid 値と deleter 方針を固定必要        | errno復元、buffer不足、release             | OS handle専用化しない               |
-| `platform_error`    | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | platform    | errno/Windows error の文字列化      | `ErrnoMessage`, `WindowsErrorMessage`, `EnvironmentVariable` | OS差を隠しすぎない、`#ifdef` 条件明記             | known errno、missing env、Windows guard    | platform別仕様が必要                |
-| `state_table`       | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | state       | 小さい状態遷移表                    | `Transition`, `IsValidTransition`, `NextState`               | table先頭一致、未定義遷移は失敗                   | known/unknown、duplicate、enum             | FSM frameworkなし                   |
-| `cache_once`        | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | cache       | once/lazy value                     | `Lazy`, `OnceValue`, `GetOrCreate`                           | thread-safe有無を名前か仕様で固定必要             | factory回数、reset、例外後状態             | 初回は non-thread-safe 推奨         |
-| `serialization_tlv` | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | binary      | length-prefix/TLV                   | `EncodeTlv`, `TryDecodeTlv`, `TlvView`                       | length幅、endian、最大長を固定必要                | 短い入力、length超過、roundtrip            | struct丸ごとbytes化禁止             |
-| `tuple`             | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | tuple       | tuple/pair の小さい補助             | `TupleForEach`, `TupleTransform`                             | evaluation order と戻り型を固定                   | empty、heterogeneous、const                | structured binding 競合は避ける     |
-| `build_config`      | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | config      | feature detection                   | `KET_HAS_STD_OPTIONAL`, `KET_OS_LINUX`                       | macro汚染の範囲を固定必要                         | compiler/OS 条件、include順                | 必要になるまで保留                  |
-| `math_small`        | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | math        | 補間・角度・単位変換                | `Lerp`, `NearlyEqual`, `KiBToBytes`                          | 精度、overflow、型制約を固定必要                  | endpoints、epsilon、large values           | units frameworkなし                 |
-| `language`          | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | language    | C++言語の小さい儀式                 | `IgnoreUnused`, `Unreachable`, `ArraySize`, `AsConst`        | 標準代替の登場版をAPI別に固定必要                 | unused無視、配列長、const化、C++11 compile | module単位では非推奨にしない        |
-| `object`            | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | object      | copy/move/regular型の儀式           | `NonCopyable`, `NonMovable`, `MovableOnly`, `ResetOnMove`    | defaulted comparison と衝突しない範囲を固定必要   | copy禁止、move、reset、swap                | =deleteで足りる範囲は入れない       |
-| `meta`              | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | meta        | type traits 補助                    | `RemoveCvref`, `TypeIdentity`, `VoidT`                       | C++標準別の標準代替をAPI別に整理必要              | alias、SFINAE、C++11 compile               | module単位では非推奨にしない        |
-| `concurrency_small` | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | concurrency | join/lock/timeout の局所補助        | `JoiningThread`, `FutureReady`                               | destructor join/terminate 方針を固定必要          | move、joinable、ready timeout              | module単位では非推奨にしない        |
-| `uuid`              | P3       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | parsing     | UUID parse/format                   | `Uuid`, `ParseUuid`, `FormatUuid`                            | canonical hyphen形式のみ、generationなし          | upper/lower、不正長、不正hex               | 乱数/OS APIなし                     |
-| `color_rgb`         | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未定                      | value       | RGB小値型                           | `ParseColorRgb`, `FormatColorRgbHex`                         | 許容表記と alpha有無を固定必要                    | hex長、不正文字、format                    | proposalに詳細仕様なし              |
-| `percent`           | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未定                      | value       | percent小値型                       | `Percent::FromRatio`, `ClampPercent`                         | 範囲、丸め、NaN方針を固定必要                     | 0/100、負値、>100、ratio                   | proposalに詳細仕様なし              |
-| `binary_payload`    | P3       | `Recipe`             | mixed   | —         | —          | `recipes/...`             | recipe      | binary payload 構築例               | recipe code                                                  | module API は追加しない                           | example build/test                         | module製造依頼ではない              |
-| `command_parser`    | P3       | `Recipe`             | mixed   | —         | —          | `recipes/...`             | recipe      | CLI/parser/enum の組み合わせ例      | recipe code                                                  | module API は追加しない                           | example build/test                         | module製造依頼ではない              |
-| `c_api_wrapper`     | P3       | `Recipe`             | mixed   | —         | —          | `recipes/...`             | recipe      | C API 境界 RAII 化例                | recipe code                                                  | module API は追加しない                           | example build/test                         | module製造依頼ではない              |
+| Module              | Priority | Manufacturing Status | C++ Min | C++ 推奨  | C++ 非推奨 | Files                     | Kind        | Purpose                             | Representative API                                           | Failure/Boundary Policy                           | Tests                                      | Notes                            |
+| ------------------- | -------- | -------------------- | ------- | --------- | ---------- | ------------------------- | ----------- | ----------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- | ------------------------------------------ | -------------------------------- |
+| `bcd`               | done     | `Existing`           | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | binary      | packed BCD 変換                     | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`                   | 不正nibble、空入力、overflow は失敗値             | 実装済み境界値テスト                       | 追加は BCD 妥当性判定まで        |
+| `string`            | done     | `Existing`           | C++17   | C++17以降 | なし       | header-only + test        | string      | 文字列片の連結と追記                | `StrCat`, `StrAppend`                                        | raw C string は非null、allocation例外あり         | 実装済み境界値テスト                       | format API ではない              |
+| `bits`              | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | numeric     | bit/nibble/mask の事故防止          | `HighNibble`, `LowNibble`, `HasBit`, `TryMask`               | unsigned integral 限定、範囲外 bit は失敗/false   | nibble、bit幅、mask境界                    | C++20 `<bit>` は一部のみ重複     |
+| `numeric`           | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | numeric     | overflow、align、cast の小さい正解  | `TryAlignUp`, `TryCheckedAdd`, `TryCheckedCast`              | 0除算、alignment 0、overflow は失敗               | min/max、overflow、signed/unsigned         | optional convenience は初回なし  |
+| `endian`            | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | unaligned/endian 読み書き           | `LoadBe32`, `LoadLe32`, `StoreBe16`, `TryLoadBe32`           | plain load/store は precondition、Try は失敗値    | BE/LE、null、size不足                      | reinterpret cast 禁止            |
+| `hex`               | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | diagnostic  | bytes と16進文字列/hex dump         | `BytesToHex`, `HexToBytes`, `HexDump`, `ToHexString`         | null+非0 size は precondition、奇数桁は失敗       | 空入力、separator、不正文字                | dump形式は固定                   |
+| `parse_numeric`     | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | parsing     | `from_chars` 周りの儀式除去         | `TryParseUInt`, `ParseUInt`, `ParseBool`, `ParseHex`         | 完全消費、whitespaceなし、overflow失敗            | 空、最大値、overflow、prefix               | bool は case-sensitive           |
+| `enum_table`        | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | enum        | enum class と文字列変換             | `EnumEntry`, `EnumName`, `ParseEnum`, `HasFlag`              | table完全一致、重複は先勝ち                       | known/unknown、duplicate、flags            | reflection はしない              |
+| `container`         | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | container   | map/vector の小さい儀式             | `Contains`, `ContainsKey`, `AtOrNull`, `GetOrDefault`        | 見つからない場合は null/default/0                 | key有無、factory呼び出し、削除件数         | `IndexOf`/`Append` は初回外      |
+| `string_ascii`      | P0       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | string      | ASCII 前提の文字列処理              | `TrimAscii`, `SplitView`, `ToLowerAscii`, `ReplaceAll`       | ASCII whitespaceのみ、view lifetime明記           | 空要素、UTF-8 byte保持、case変換           | Unicode処理ではない              |
+| `scope`             | P0       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | RAII        | cleanup と復元漏れ防止              | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`                | destructor 例外は terminate、move後 inactive      | dismiss、move、二重実行なし                | `Finally` は作らない             |
+| `byte_reader`       | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | byte列の安全な逐次読み取り          | `ByteReader`, `ReadU8`, `ReadBe16`, `ReadBytes`              | 成功時だけ offset 更新、invalid reader は失敗     | 空、ぴったり、size不足、offset保持         | endian module 非依存             |
+| `byte_writer`       | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | binary      | fixed buffer への安全な逐次書き込み | `ByteWriter`, `WriteU8`, `WriteLe32`, `WriteBytes`           | 成功時だけ offset と buffer 更新                  | 空、ぴったり、size不足、buffer不変         | endian module 非依存             |
+| `bytes_builder`     | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | binary      | owning payload builder              | `BytesBuilder`, `AppendU8`, `AppendBe16`, `Build`            | allocation例外あり、null+非0 size は precondition | BE/LE、reserve、Build後move                | fluent と free を併用            |
+| `date`              | P0       | `Ready`              | C++11   | C++11〜17 | C++20以降  | header-only + test        | date        | 日付・時刻の妥当性                  | `IsLeapYear`, `IsValidDate`, `TryDaysInMonth`                | Gregorian、year >= 1、leap secondなし             | 2000/1900、2/29、month 0/13                | C++20以降は `std::chrono` を優先 |
+| `deadline`          | P0       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | time        | timeout と elapsed time             | `Stopwatch`, `Deadline`                                      | `steady_clock`のみ、負timeoutは期限切れ           | zero/future/remaining/restart              | system_clock と混ぜない          |
+| `cli`               | P0       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | CLI         | 小さい CLI option 取得              | `ArgvView`, `HasOption`, `GetOption`, `Positional`           | `--key value`/`--key=value`、重複は先勝ち         | flag、missing value、positional            | 値 parse は parse_numeric        |
+| `byte_view`         | P1       | `Ready`              | C++11   | C++11〜17 | C++20以降  | header-only + test        | view        | non-owning byte span                | `ByteView`, `MutableByteView`, `TrySubView`                  | `nullptr+0` は空、`nullptr+非0` は invalid        | lifetime、subview、bounds                  | method と free を併用            |
+| `utf8`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | text        | UTF-8 検査の隔離                    | `ValidateUtf8`, `IsUtf8`, `Utf8Length`                       | normalizationなし、不正offsetを返す               | ASCII、多byte、不正sequence                | grapheme数ではない               |
+| `file`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | filesystem  | ファイル全読み/全書き               | `TryReadAllText`, `WriteAllBytes`, `FileSize`                | `std::error_code*` は optional detail             | not found、空、binary、error_code          | error_code\* は optional 出力    |
+| `io_stream`         | P1       | `Ready`              | C++11   | C++11以降 | なし       | `.h` + `.cpp` + test      | stream      | stream の確実な読み書き             | `ReadExactly`, `WriteAll`, `StreamStateSaver`                | requested size を読み切った時だけ成功             | short read、state復元、line trim           | ASCII trim のみ                  |
+| `format_value`      | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | diagnostic  | 診断用文字列化                      | `FormatBool`, `FormatByteCount`, `FormatDuration`            | allocation例外あり、表記は固定                    | 単位境界、負duration、幅指定               | byte単位は IEC 1024 固定         |
+| `algorithm_range`   | P1       | `Needs Spec Split`   | C++11   | C++11〜17 | C++20以降  | 未製造                    | algorithm   | iterator pair の儀式除去            | `AllOf`, `FindIf`, `ForEachIndex`                            | `std::algorithm` 別名だけなら不採用               | empty、predicate副作用、iterator           | C++20以降は `std::ranges` を優先 |
+| `memory`            | P1       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | memory      | alignment/object bytes              | `IsAligned`, `SecureZeroMemory`, `ObjectBytes`               | secure zero は best-effort                        | null、alignment 0、volatile消去            | object lifetime へ踏み込まない   |
+| `pointer`           | P1       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | pointer     | null/ownership の明示               | `NotNull`, `LockWeak`, `AddressOf`                           | `NotNull(nullptr)` は `std::invalid_argument`     | nullptr、weak expired、operator            | ownership型は初回なし            |
+| `testing_bytes`     | P1       | `Ready`              | C++17   | C++17以降 | なし       | test-helper header + test | testing     | bytes系テスト補助                   | `BytesEq`, `HexEq`                                           | GoogleTest 依存を明記、mismatch情報を返す         | offset差分、hex差分、不正hex               | library本体ではない              |
+| `semantic_version`  | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | parsing     | semver-like 値の parse/compare      | `SemanticVersion`, `ParseSemanticVersion`, `Compare...`      | `major.minor.patch`のみ、leading zero失敗         | 0.0.0、compare、overflow                   | prerelease/buildなし             |
+| `ipv4`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | IPv4 parse/format                   | `Ipv4Address`, `ParseIpv4Address`, `FormatIpv4Address`       | dotted decimalのみ、leading zero失敗              | octet境界、個数不足/過多、format           | IPv6/CIDRなし                    |
+| `port`              | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | TCP/UDP port parse/format           | `Port`, `TryMakePort`, `ParsePort`, `FormatPort`             | 0〜65535、空白・符号・leading zero失敗            | 0/65535、overflow、不正文字                | socket addressなし               |
+| `mac_address`       | P1       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | network     | MAC address parse/format            | `MacAddress`, `ParseMacAddress`, `FormatMacAddress`          | `:` と `-` を許可、混在とCisco形式は失敗          | upper/lower、不正hex、区切り               | Cisco形式なし                    |
+| `function`          | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | callable    | callable/visitor の儀式除去         | `Overload`, `MakeOverload`, `Noop`                           | `Noop` は例外なし、`Overload` は所有              | visit、overload解決、copy/move             | `FunctionRef` は初回なし         |
+| `variant_match`     | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | variant     | `std::variant` visitor 補助         | `Match`                                                      | visitor 例外は伝播                                | value/ref、const、exception伝播            | overload は内部に持つ            |
+| `optional_ext`      | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | optional    | optional の小さい合成               | `MapOptional`, `AndThen`, `ValueOrEval`                      | factory は必要時だけ呼ぶ                          | empty/value、参照、factory回数             | transform/and_then は C++23      |
+| `contract`          | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | contract    | precondition 明示                   | `Expects`, `Ensures`, `RequireNonNull`                       | assert/abort/terminate 方針を固定必要             | debug/release、nullptr、bounds             | macro 過多にしない               |
+| `c_interop`         | P2       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | interop     | C API 境界の事故防止                | `ErrnoGuard`, `CopyToCBuffer`, `UniqueHandle`                | engaged flag で deleter 制御                      | errno復元、buffer不足、release             | OS handle専用化しない            |
+| `platform_error`    | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | platform    | errno/Windows error の文字列化      | `ErrnoMessage`, `WindowsErrorMessage`, `EnvironmentVariable` | OS差を隠しすぎない、`#ifdef` 条件明記             | known errno、missing env、Windows guard    | platform別仕様が必要             |
+| `state_table`       | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | state       | 小さい状態遷移表                    | `Transition`, `IsValidTransition`, `NextState`               | table先頭一致、未定義遷移は失敗                   | known/unknown、duplicate、enum             | FSM frameworkなし                |
+| `cache_once`        | P2       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | cache       | once/lazy value                     | `Lazy<T>`, `HasValue`, `GetOrCreate`                         | non-thread-safe、例外後は空                       | factory回数、reset、例外後状態             | thread-safe にしない             |
+| `serialization_tlv` | P2       | `Needs Spec Split`   | C++17   | C++17以降 | なし       | 未製造                    | binary      | length-prefix/TLV                   | `EncodeTlv`, `TryDecodeTlv`, `TlvView`                       | length幅、endian、最大長を固定必要                | 短い入力、length超過、roundtrip            | struct丸ごとbytes化禁止          |
+| `tuple`             | P2       | `Ready`              | C++17   | C++17以降 | なし       | header-only + test        | tuple       | tuple/pair の小さい補助             | `TupleForEach`, `TupleTransform`                             | evaluation order と戻り型を固定                   | empty、heterogeneous、const                | structured binding 競合は避ける  |
+| `build_config`      | P2       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未製造                    | config      | feature detection                   | `KET_HAS_STD_OPTIONAL`, `KET_OS_LINUX`                       | macro汚染の範囲を固定必要                         | compiler/OS 条件、include順                | 必要になるまで保留               |
+| `math_small`        | P2       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | math        | 補間・角度・単位変換                | `Lerp`, `NearlyEqual`, `KiBToBytes`                          | 浮動小数点演算は FP型限定                         | endpoints、epsilon、large values           | units frameworkなし              |
+| `language`          | P2       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | language    | C++言語の小さい儀式                 | `IgnoreUnused`, `Unreachable`, `ArraySize`, `AsConst`        | 標準代替の登場版をAPI別に明記                     | unused無視、配列長、const化、C++11 compile | module単位では非推奨にしない     |
+| `object`            | P2       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | object      | copy/move/regular型の儀式           | `NonCopyable`, `NonMovable`, `MovableOnly`, `ResetOnMove`    | mixin は比較演算を宣言しない                      | copy禁止、move、reset、空base              | =deleteで足りる範囲は入れない    |
+| `meta`              | P3       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | meta        | type traits 補助                    | `RemoveCvref`, `TypeIdentity`, `AlwaysFalse`, `VoidT`        | alias のみ、評価時動作なし                        | alias、SFINAE、C++11 compile               | module単位では非推奨にしない     |
+| `concurrency_small` | P3       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | concurrency | join/lock/timeout の局所補助        | `JoiningThread`, `FutureReady`                               | dtorでjoin、move代入で旧threadをjoin              | move、joinable、ready timeout              | module単位では非推奨にしない     |
+| `uuid`              | P3       | `Ready`              | C++17   | C++17以降 | なし       | `.h` + `.cpp` + test      | parsing     | UUID parse/format                   | `Uuid`, `ParseUuid`, `FormatUuid`                            | canonical hyphen形式のみ、generationなし          | upper/lower、不正長、不正hex               | 乱数/OS APIなし                  |
+| `color_rgb`         | P3       | `Ready`              | C++11   | C++11以降 | なし       | header-only + test        | value       | RGB小値型                           | `ColorRgb`, `TryParseColorRgb`, `FormatColorRgbHex`          | C++11なので Try-parse、alpha なし                 | hex長、不正文字、format                    | 6桁hex、先頭 # 任意              |
+| `percent`           | P3       | `Needs Spec Split`   | C++11   | C++11以降 | なし       | 未定                      | value       | percent小値型                       | `Percent::FromRatio`, `ClampPercent`                         | 範囲、丸め、NaN方針を固定必要                     | 0/100、負値、>100、ratio                   | proposalに詳細仕様なし           |
+| `binary_payload`    | P3       | `Recipe`             | mixed   | —         | —          | `recipes/...`             | recipe      | binary payload 構築例               | recipe code                                                  | module API は追加しない                           | example build/test                         | module製造依頼ではない           |
+| `command_parser`    | P3       | `Recipe`             | mixed   | —         | —          | `recipes/...`             | recipe      | CLI/parser/enum の組み合わせ例      | recipe code                                                  | module API は追加しない                           | example build/test                         | module製造依頼ではない           |
+| `c_api_wrapper`     | P3       | `Recipe`             | mixed   | —         | —          | `recipes/...`             | recipe      | C API 境界 RAII 化例                | recipe code                                                  | module API は追加しない                           | example build/test                         | module製造依頼ではない           |
 
 ## 4. 製造依頼プロンプト雛形
 
@@ -133,15 +157,25 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/bcd/ket_bcd.h`、`modules/bcd/ket_bcd.cpp`、
   `modules/bcd/ket_bcd_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ParseBcd(std::uint8_t)`, `ParseBcd(std::uint16_t)`,
-  `ParseBcd(std::uint32_t)`, `ToBcd8`, `ToBcd16`, `ToBcd32`,
-  `BcdToDecimalString`, `DecimalStringToBcd`。
+- Public API Signatures:
+  - `constexpr std::optional<int> ParseBcd(std::uint8_t value) noexcept`
+  - `constexpr std::optional<int> ParseBcd(std::uint16_t value) noexcept`
+  - `constexpr std::optional<int> ParseBcd(std::uint32_t value) noexcept`
+  - `constexpr std::optional<std::uint8_t> ToBcd8(int value) noexcept`
+  - `constexpr std::optional<std::uint16_t> ToBcd16(int value) noexcept`
+  - `constexpr std::optional<std::uint32_t> ToBcd32(int value) noexcept`
+  - `std::optional<std::string> BcdToDecimalString(const std::uint8_t* data, std::size_t size)`
+  - `std::optional<std::vector<std::uint8_t>> DecimalStringToBcd(std::string_view text)`
 - Behavior: 固定幅 packed BCD は整数へ変換し、任意バイト長 packed BCD は桁数と先頭ゼロを
   10進文字列として保持する。
 - Failure/edge cases: nibble > 9、`nullptr`、空入力、非10進数字、整数 overflow、負数、
-  固定幅桁数超過は失敗値。
+  固定幅桁数超過は失敗値。`BcdToDecimalString(nullptr, 0)` は空文字列、`nullptr` かつ非0 size は
+  precondition 違反。
+- Complexity/performance: 固定幅 `ParseBcd`/`ToBcd` は定数時間、`constexpr` でコンパイル時評価可。
+  `BcdToDecimalString`/`DecimalStringToBcd` は入力長 O(n)で、戻り値の生成に allocation 1回。
 - Tests: 0x00、0x09、0x10、0x99、不正nibble、先頭ゼロ保持、奇数桁文字列、非数字。
-- Do not implement: `BcdDate`、`BcdTime`、業務固有BCD解釈。nibble単体判定の公開API追加は避ける。
+- Do not implement: `BcdDate`、`BcdTime`、業務固有BCD解釈。妥当性判定を追加する場合も
+  `IsBcdByte`/`IsBcd16`/`IsBcd32` の byte/word 単位に留め、nibble単体判定の公開APIは追加しない。
 
 ### string Module
 
@@ -151,11 +185,15 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/string/ket_string.h`、`modules/string/ket_string_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `StrCat(...)`, `StrAppend(std::string&, ...)`。
+- Public API Signatures:
+  - `template <typename... Parts> std::string StrCat(const Parts&... parts)`
+  - `template <typename... Parts> void StrAppend(std::string& destination, const Parts&... parts)`
 - Behavior: `std::string_view` に変換可能な文字列片と `char` を入力順に連結する。embedded
   NUL は length-aware に保持する。
 - Failure/edge cases: raw C string は非nullかつ null 終端が precondition。合計長が
   `std::string::max_size()` を超える場合は `std::length_error`。
+- Complexity/performance: 全要素長の合計 O(n)。`StrCat` は合計長を先に求めて 1回 reserve し、
+  中間 allocation を避ける。`StrAppend` は destination の既存容量を再利用する。
 - Tests: empty argument、`char`、`std::string`、`std::string_view`、embedded NUL、
   self-reference append。
 - Do not implement: 数値・enum・stream 変換、format API、`std::format` の再実装。
@@ -169,24 +207,28 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   bit index境界処理の直接代替ではない。
 - Drop-in files: `modules/bits/ket_bits.h`、`modules/bits/ket_bits_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API:
+- Public API Signatures:
   - `constexpr bool IsNibble(std::uint8_t value) noexcept`
   - `constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept`
   - `constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept`
-  - `constexpr bool TryMakeByteFromNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept`
+  - `bool TryMakeByteFromNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept`
   - `template <typename T> constexpr unsigned BitWidth() noexcept`
   - `template <typename T> constexpr bool HasBit(T value, unsigned bit_index) noexcept`
-  - `template <typename T> constexpr bool TrySetBit(T value, unsigned bit_index, T& out) noexcept`
-  - `template <typename T> constexpr bool TryClearBit(T value, unsigned bit_index, T& out) noexcept`
-  - `template <typename T> constexpr bool TryToggleBit(T value, unsigned bit_index, T& out) noexcept`
-  - `template <typename T> constexpr bool TryMask(unsigned width, T& out) noexcept`
+  - `template <typename T> bool TrySetBit(T value, unsigned bit_index, T& out) noexcept`
+  - `template <typename T> bool TryClearBit(T value, unsigned bit_index, T& out) noexcept`
+  - `template <typename T> bool TryToggleBit(T value, unsigned bit_index, T& out) noexcept`
+  - `template <typename T> bool TryMask(unsigned width, T& out) noexcept`
   - `template <typename T> constexpr unsigned PopCount(T value) noexcept`
   - `template <typename T> constexpr bool IsPowerOfTwo(T value) noexcept`
   - `template <typename T> constexpr T Rotl(T value, unsigned count) noexcept`
   - `template <typename T> constexpr T Rotr(T value, unsigned count) noexcept`
-- Behavior: template API は unsigned integral 対象。rotate は count を bit幅で剰余化する。
+- Behavior: template API は unsigned integral 対象。rotate は count を bit幅で剰余化する。純粋な
+  query/変換は C++11 でも `constexpr`。出力引数を変更する `TryXxx` は C++11 では `noexcept` のみ、
+  C++14 以降で `constexpr` 化してよい。
 - Failure/edge cases: bit index 範囲外の `HasBit` は `false`。`TryXxx` は範囲外や不正nibbleで
   `false`、出力不変。`TryMask(0)` は 0、`TryMask(BitWidth<T>())` は全bit 1。
+- Complexity/performance: 各APIは語幅に対し定数〜O(bit幅)。`PopCount` は C++11 では recursion、
+  C++14 以降は loop で O(bit幅)。`constexpr` query はコンパイル時に評価できる。allocation・例外なし。
 - Tests: nibble境界、byte生成、bit 0/最上位/範囲外、mask 0/full/超過、rotate 0/幅以上。
 - Do not implement: signed integral 対応、bitset wrapper、BCD固有API。
 
@@ -198,23 +240,26 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/numeric/ket_numeric.h`、`modules/numeric/ket_numeric_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API:
+- Public API Signatures:
   - `template <typename To, typename From> constexpr bool InRange(From value) noexcept`
   - `template <typename T> constexpr T Clamp(T value, T min_value, T max_value) noexcept`
   - `template <typename T> constexpr typename std::make_unsigned<T>::type AbsDiff(T a, T b) noexcept`
-  - `template <typename T> constexpr bool TryDivideRoundUp(T value, T divisor, T& out) noexcept`
-  - `template <typename T> constexpr bool TryAlignUp(T value, T alignment, T& out) noexcept`
-  - `template <typename T> constexpr bool TryAlignDown(T value, T alignment, T& out) noexcept`
-  - `template <typename T> constexpr bool TryCheckedAdd(T a, T b, T& out) noexcept`
-  - `template <typename T> constexpr bool TryCheckedSub(T a, T b, T& out) noexcept`
-  - `template <typename T> constexpr bool TryCheckedMul(T a, T b, T& out) noexcept`
+  - `template <typename T> bool TryDivideRoundUp(T value, T divisor, T& out) noexcept`
+  - `template <typename T> bool TryAlignUp(T value, T alignment, T& out) noexcept`
+  - `template <typename T> bool TryAlignDown(T value, T alignment, T& out) noexcept`
+  - `template <typename T> bool TryCheckedAdd(T a, T b, T& out) noexcept`
+  - `template <typename T> bool TryCheckedSub(T a, T b, T& out) noexcept`
+  - `template <typename T> bool TryCheckedMul(T a, T b, T& out) noexcept`
   - `template <typename T> constexpr T SaturatingAdd(T a, T b) noexcept`
   - `template <typename T> constexpr T SaturatingSub(T a, T b) noexcept`
-  - `template <typename To, typename From> constexpr bool TryCheckedCast(From value, To& out) noexcept`
+  - `template <typename To, typename From> bool TryCheckedCast(From value, To& out) noexcept`
 - Behavior: alignment と divide-round-up は unsigned integral のみ。checked arithmetic は integral
-  型を対象にし、signed overflow を発生させない実装にする。
+  型を対象にし、signed overflow を発生させない実装にする。出力引数を変更する `TryXxx` は C++11 では
+  `noexcept` のみ、C++14 以降で `constexpr` 化してよい。`InRange`/`Clamp`/`AbsDiff`/`SaturatingXxx` は
+  C++11 でも `constexpr`。
 - Failure/edge cases: `alignment == 0`、`divisor == 0`、overflow、cast範囲外は `false`。
   `Clamp` は `min_value <= max_value` を precondition。
+- Complexity/performance: 全API定数時間。`constexpr` query はコンパイル時評価可。allocation・例外なし。
 - Tests: align 0/1/exact/overflow、divide 0/1/exact、checked add/sub/mul の min/max、
   cast 255/256、signed境界。
 - Do not implement: arbitrary precision、numeric framework、C++17 optional convenience の初回追加。
@@ -228,14 +273,20 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/endian/ket_endian.h`、`modules/endian/ket_endian.cpp`、
   `modules/endian/ket_endian_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ByteSwap16`, `ByteSwap32`, `ByteSwap64`, `LoadBe16`, `LoadBe32`,
-  `LoadBe64`, `LoadLe16`, `LoadLe32`, `LoadLe64`, `StoreBe16`, `StoreBe32`,
-  `StoreBe64`, `StoreLe16`, `StoreLe32`, `StoreLe64`, `TryLoadBe16`, `TryLoadBe32`,
-  `TryLoadBe64`, `TryLoadLe16`, `TryLoadLe32`, `TryLoadLe64`, `TryStoreBe16`,
-  `TryStoreBe32`, `TryStoreBe64`, `TryStoreLe16`, `TryStoreLe32`, `TryStoreLe64`。
+- Public API Signatures:
+  - `constexpr std::uint16_t ByteSwap16(std::uint16_t value) noexcept`
+  - `constexpr std::uint32_t ByteSwap32(std::uint32_t value) noexcept`
+  - `constexpr std::uint64_t ByteSwap64(std::uint64_t value) noexcept`
+  - `std::uint16_t LoadBe16(const std::uint8_t* data) noexcept`（`LoadBe32`/`LoadBe64`/`LoadLe16`/`LoadLe32`/`LoadLe64` も同形で戻り型のみ異なる）
+  - `void StoreBe16(std::uint8_t* data, std::uint16_t value) noexcept`（`StoreBe32`/`StoreBe64`/`StoreLe16`/`StoreLe32`/`StoreLe64` も同形）
+  - `bool TryLoadBe16(const std::uint8_t* data, std::size_t size, std::uint16_t& out) noexcept`（BE/LE × 16/32/64 を対称に用意）
+  - `bool TryStoreBe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept`（BE/LE × 16/32/64 を対称に用意）
 - Behavior: `LoadXxx`/`StoreXxx` は pointer が十分な長さの buffer を指すことを precondition。
   `TryXxx` は null、size不足を `false` で扱う。plain と `Try` は 16/32/64 すべてで対称に揃える。
+  実装は byte 単位の shift/or で組み立て、`reinterpret_cast` と unaligned access をしない。
 - Failure/edge cases: `TryLoadXxx` は失敗時に出力不変。`TryStoreXxx` は失敗時に buffer 不変。
+- Complexity/performance: 各 Load/Store は語幅分の定数 byte のみ触る O(1)。`ByteSwap` は `constexpr` で
+  コンパイル時評価可。allocation・例外なし。
 - Tests: BE/LE 16/32/64、byteswap、null、size不足、unaligned address 相当。
 - Do not implement: endian不明の `ReadU32`/`WriteU32`、`reinterpret_cast` による整数読み書き。
 
@@ -248,13 +299,21 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/hex/ket_hex.h`、`modules/hex/ket_hex.cpp`、
   `modules/hex/ket_hex_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `HexCase`, `HexFormatOptions`, `ToHexString`, `BytesToHex`, `HexToBytes`,
-  `HexDump(const std::uint8_t*, std::size_t)`, `HexDump(const void*, std::size_t)`。
+- Public API Signatures:
+  - `enum class HexCase { kLower, kUpper };`
+  - `struct HexFormatOptions { HexCase hex_case = HexCase::kUpper; char separator = '\0'; };`
+  - `std::string ToHexString(std::uint64_t value, unsigned min_width = 0, HexCase hex_case = HexCase::kUpper)`
+  - `std::string BytesToHex(const std::uint8_t* data, std::size_t size, HexFormatOptions options = {})`
+  - `std::optional<std::vector<std::uint8_t>> HexToBytes(std::string_view text)`
+  - `std::string HexDump(const std::uint8_t* data, std::size_t size)`
+  - `std::string HexDump(const void* data, std::size_t size)`
 - Behavior: `BytesToHex` は upper/lower と任意 separator を指定可能。`HexToBytes` は hex digit と
   ASCII whitespace を受け付け、完全な偶数桁だけ変換する。`HexDump` は offset、hex bytes、
   ASCII preview の固定形式。
 - Failure/edge cases: `BytesToHex(nullptr, 0)` は空文字列。`nullptr` かつ非0 size は precondition
   違反。`HexToBytes` の奇数桁、不正文字は `std::nullopt`。
+- Complexity/performance: `BytesToHex`/`HexDump` は入力長 O(n)で出力 string を 1回確保。`HexToBytes` は
+  O(n)で vector を 1回確保。`ToHexString` は桁数分の O(1)。
 - Tests: 空入力、lower/upper、separator、ASCII whitespace、不正文字、奇数桁、dump空入力。
 - Do not implement: Base64、binary viewer framework、任意 separator の parse 自動対応。
 
@@ -267,13 +326,22 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/parse_numeric/ket_parse_numeric.h`、
   `modules/parse_numeric/ket_parse_numeric_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `TryParseInt<T>`, `TryParseUInt<T>`, `TryParseHex<T>`, `TryParseBool`,
-  `ParseInt<T>`, `ParseUInt<T>`, `ParseHex<T>`, `ParseBool`, `ParseIntOr<T>`,
-  `ParseUIntOr<T>`。
+- Public API Signatures:
+  - `template <typename T> bool TryParseInt(std::string_view text, T& out) noexcept`
+  - `template <typename T> bool TryParseUInt(std::string_view text, T& out) noexcept`
+  - `template <typename T> bool TryParseHex(std::string_view text, T& out) noexcept`
+  - `bool TryParseBool(std::string_view text, bool& out) noexcept`
+  - `template <typename T> std::optional<T> ParseInt(std::string_view text) noexcept`
+  - `template <typename T> std::optional<T> ParseUInt(std::string_view text) noexcept`
+  - `template <typename T> std::optional<T> ParseHex(std::string_view text) noexcept`
+  - `std::optional<bool> ParseBool(std::string_view text) noexcept`
+  - `template <typename T> T ParseIntOr(std::string_view text, T fallback) noexcept`
+  - `template <typename T> T ParseUIntOr(std::string_view text, T fallback) noexcept`
 - Behavior: 成功条件は完全消費。`TryParseInt` は signed integral、`TryParseUInt` は unsigned
   integral。`TryParseHex` は `0x`/`0X` prefix あり/なし両方を許可する。
 - Failure/edge cases: 空文字列、leading/trailing whitespace、部分消費、overflow、`"-1"` の
   unsigned parse は失敗。bool は `true`、`false`、`1`、`0` のみで case-sensitive。
+- Complexity/performance: 入力長 O(n)。`std::from_chars` ベースで allocation・例外なし、`noexcept`。
 - Tests: 0、最大値、overflow、空、`" 1"`、`"1 "`、`"1x"`、hex prefix、bool全候補。
 - Do not implement: locale対応、trim込みparse、`yes/no/on/off`、浮動小数点 parse。
 
@@ -286,13 +354,29 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/enum_table/ket_enum_table.h`、
   `modules/enum_table/ket_enum_table_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ToUnderlying`, `EnumEntry<E>`, `TryEnumName`, `EnumName`, `TryParseEnum`,
-  `ParseEnum`, `IsValidEnumValue`, `HasFlag`, `SetFlag`, `ClearFlag`, `AnyFlag`, `AllFlags`。
+- Public API Signatures:
+  - `template <typename E> constexpr std::underlying_type_t<E> ToUnderlying(E value) noexcept`
+  - `template <typename E> struct EnumEntry { E value; std::string_view name; };`
+  - `template <typename E, std::size_t N> std::optional<std::string_view> EnumName(E value, const EnumEntry<E> (&table)[N]) noexcept`
+  - `template <typename E, std::size_t N> std::string_view EnumNameOr(E value, const EnumEntry<E> (&table)[N], std::string_view fallback) noexcept`
+  - `template <typename E, std::size_t N> std::optional<E> ParseEnum(std::string_view text, const EnumEntry<E> (&table)[N]) noexcept`
+  - `template <typename E, std::size_t N> bool IsValidEnumValue(E value, const EnumEntry<E> (&table)[N]) noexcept`
+  - `template <typename E> constexpr bool HasFlag(E flags, E flag) noexcept`
+  - `template <typename E> constexpr E SetFlag(E flags, E flag) noexcept`
+  - `template <typename E> constexpr E ClearFlag(E flags, E flag) noexcept`
+  - `template <typename E> constexpr bool AnyFlag(E flags, E mask) noexcept`
+  - `template <typename E> constexpr bool AllFlags(E flags, E mask) noexcept`
 - Behavior: table は利用者が明示する。name と parse は完全一致。重複 entry は先に出たものを返す。
+  C++17 では optional を返す `EnumName`/`ParseEnum` と fallback 版 `EnumNameOr` で足り、`TryXxx` の
+  bool+out 版は持たない。
 - Failure/edge cases: unknown enum value、unknown text は失敗。flags は underlying type へ変換して
   bit operation する。
-- Tests: known/unknown value、known/unknown text、duplicate table、flags set/clear/has/all/any。
-- Do not implement: reflection、case-insensitive parse、enum registration framework。
+- Complexity/performance: `EnumName`/`ParseEnum`/`IsValidEnumValue` は table 線形走査 O(N)。flags 操作と
+  `ToUnderlying` は `constexpr` の O(1)。allocation なし。
+- Tests: known/unknown value、known/unknown text、duplicate table、flags set/clear/has/all/any、
+  `EnumNameOr` の fallback。
+- Do not implement: reflection、case-insensitive parse、enum registration framework、bool+out の
+  `TryEnumName`/`TryParseEnum`（optional と `EnumNameOr` で代替）。
 
 ### container Module
 
@@ -301,16 +385,26 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   map/vector の反復的な lookup と erase-remove 手順を標準ライブラリのみで薄く包める。
   非推奨版 なし。非推奨理由: C++20以降の `contains` や `std::erase_if` と一部重なるが、
   module候補全体の直接代替ではない。
-- Drop-in files: 未製造。`Contains` の対象範囲、`Append` の self append、C++17 optional
-  convenience を固定後に決定。
+- Drop-in files: `modules/container/ket_container.h`、`modules/container/ket_container_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `Contains`, `ContainsKey`, `AtOrNull`, `GetOrDefault`, `GetOrCreate`,
-  `IndexOf`, `EraseIf`, `SortUnique`, `Append`。
-- Behavior: `AtOrNull` は copy を避ける pointer API。`GetOrDefault` は値を返す。
-  `GetOrCreate` は key が無い場合だけ factory を呼ぶ。`EraseIf` は削除件数を返す。
-- Failure/edge cases: keyなし、空container、factory例外、重複値、self append 方針を製造前に固定する。
-- Tests: keyあり/なし、factory呼び出し回数、EraseIf削除件数、SortUnique、Append。
-- Do not implement: 独自container、range framework、`std::erase_if` 完全互換の追求。
+- Public API Signatures:
+  - `template <typename Container, typename Value> bool Contains(const Container& container, const Value& value)`
+  - `template <typename Map, typename Key> bool ContainsKey(const Map& map, const Key& key)`
+  - `template <typename Map, typename Key> typename Map::mapped_type* AtOrNull(Map& map, const Key& key) noexcept`
+  - `template <typename Map, typename Key> const typename Map::mapped_type* AtOrNull(const Map& map, const Key& key) noexcept`
+  - `template <typename Map, typename Key> typename Map::mapped_type GetOrDefault(const Map& map, const Key& key, typename Map::mapped_type default_value)`
+  - `template <typename Map, typename Key, typename Factory> typename Map::mapped_type& GetOrCreate(Map& map, const Key& key, Factory factory)`
+  - `template <typename Sequence, typename Predicate> std::size_t EraseIf(Sequence& sequence, Predicate predicate)`
+  - `template <typename Vector> void SortUnique(Vector& values)`
+- Behavior: `AtOrNull` は copy を避ける pointer API で const/非const の 2 overload。`GetOrDefault` は値を返す。
+  `GetOrCreate` は key が無い場合だけ factory を呼ぶ。`EraseIf` は削除件数を返す。全 API は
+  `std::optional` を使わず C++11 で成立させる。
+- Failure/edge cases: keyなし、空container、factory例外、重複値。`AtOrNull` は無い key で nullptr。
+- Complexity/performance: `Contains` は sequence で O(n)、`ContainsKey`/`AtOrNull` は map 種別の lookup
+  コスト。`GetOrCreate` は挿入 amortized。`EraseIf` は O(n)、`SortUnique` は O(n log n)。
+- Tests: keyあり/なし、factory呼び出し回数、EraseIf削除件数、SortUnique、AtOrNull null。
+- Do not implement: 独自container、range framework、`std::erase_if`/`contains` 完全互換の追求、
+  `IndexOf`（optional で C++11 baseline を崩す）、`Append`（self append が footgun で `insert` と等価）。
 
 ### string_ascii Module
 
@@ -321,13 +415,29 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/string_ascii/ket_string_ascii.h`、
   `modules/string_ascii/ket_string_ascii.cpp`、`modules/string_ascii/ket_string_ascii_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `StartsWith`, `EndsWith`, `ContainsSubstring`, `TrimAscii`, `TrimLeftAscii`,
-  `TrimRightAscii`, `RemovePrefix`, `RemoveSuffix`, `SplitView`, `Split`, `Join`,
-  `ReplaceAll`, `ToLowerAscii`, `ToUpperAscii`, `EqualsIgnoreCaseAscii`。
+- Public API Signatures:
+  - `bool StartsWith(std::string_view text, std::string_view prefix) noexcept`
+  - `bool EndsWith(std::string_view text, std::string_view suffix) noexcept`
+  - `bool ContainsSubstring(std::string_view text, std::string_view needle) noexcept`
+  - `std::string_view TrimAscii(std::string_view text) noexcept`
+  - `std::string_view TrimLeftAscii(std::string_view text) noexcept`
+  - `std::string_view TrimRightAscii(std::string_view text) noexcept`
+  - `std::string_view RemovePrefix(std::string_view text, std::string_view prefix) noexcept`
+  - `std::string_view RemoveSuffix(std::string_view text, std::string_view suffix) noexcept`
+  - `std::vector<std::string_view> SplitView(std::string_view text, char delimiter)`
+  - `std::vector<std::string> Split(std::string_view text, char delimiter)`
+  - `std::string Join(const std::vector<std::string_view>& parts, std::string_view delimiter)`
+  - `std::string ReplaceAll(std::string_view text, std::string_view from, std::string_view to)`
+  - `std::string ToLowerAscii(std::string_view text)`
+  - `std::string ToUpperAscii(std::string_view text)`
+  - `bool EqualsIgnoreCaseAscii(std::string_view a, std::string_view b) noexcept`
 - Behavior: trim は ASCII whitespace のみ。`SplitView` は空要素を保持し、戻り値は元文字列を参照する。
   `RemovePrefix`/`RemoveSuffix` は一致しなければ元 view を返す。
 - Failure/edge cases: `ReplaceAll(text, "", to)` は precondition 違反。UTF-8 は byte列として保持し、
   ASCII case 変換対象外 byte は変更しない。
+- Complexity/performance: 判定・trim・case 変換は入力長 O(n)。`SplitView` は view を返し要素 string の複製を
+  避けるが結果 vector は確保する。`Split`/`Join`/`ReplaceAll`/`ToLowerAscii`/`ToUpperAscii` は string を
+  確保する O(n)。
 - Tests: empty、delimiterなし、leading/trailing delimiter、空要素、ASCII case、UTF-8 byte保持。
 - Do not implement: Unicode normalization、locale、regex、巨大 string utility 集。
 
@@ -339,11 +449,17 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/scope/ket_scope.h`、`modules/scope/ket_scope_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ScopeExit<F>`, `MakeScopeExit`, `RestoreOnExit<T>`, `MakeRestoreOnExit`。
+- Public API Signatures:
+  - `template <typename F> class ScopeExit`（`explicit ScopeExit(F f)`、move constructor、copy/copy-assign/move-assign は delete、`~ScopeExit() noexcept`、`void Dismiss() noexcept`、`bool Active() const noexcept`）
+  - `template <typename F> ScopeExit<F> MakeScopeExit(F f)`
+  - `template <typename T> class RestoreOnExit`（`explicit RestoreOnExit(T& target)`、`~RestoreOnExit() noexcept`、`void Dismiss() noexcept`）
+  - `template <typename T> RestoreOnExit<T> MakeRestoreOnExit(T& target)`
 - Behavior: `ScopeExit` は move-only。move 後 source は inactive。`Dismiss()` 後は callback を呼ばない。
   `RestoreOnExit` は構築時の値へ destructor で復元する。
 - Failure/edge cases: destructor から例外を外へ出さない。callback や復元代入が例外を投げた場合は
   `std::terminate`。
+- Complexity/performance: 生成・実行は callback 1回呼び出しの O(1)。callback `F` を value 保持し、追加
+  allocation をしない。
 - Tests: scope exit、dismiss、move、二重実行なし、restore、early return 相当。
 - Do not implement: `Finally` alias、scope success/failure 分岐、defer macro。
 
@@ -356,11 +472,18 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/byte_reader/ket_byte_reader.h`、
   `modules/byte_reader/ket_byte_reader.cpp`、`modules/byte_reader/ket_byte_reader_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ByteReader`, `Size`, `Offset`, `Remaining`, `Empty`, `Skip`, `ReadU8`,
-  `ReadBe16`, `ReadBe32`, `ReadLe16`, `ReadLe32`, `ReadBytes`。
+- Public API Signatures:
+  - `ByteReader(const std::uint8_t* data, std::size_t size) noexcept`
+  - `std::size_t Size() const noexcept` / `std::size_t Offset() const noexcept` / `std::size_t Remaining() const noexcept` / `bool Empty() const noexcept`
+  - `bool Skip(std::size_t size) noexcept`
+  - `bool ReadU8(std::uint8_t& out) noexcept`
+  - `bool ReadBe16(std::uint16_t& out) noexcept` / `bool ReadBe32(std::uint32_t& out) noexcept` / `bool ReadLe16(std::uint16_t& out) noexcept` / `bool ReadLe32(std::uint32_t& out) noexcept`
+  - `bool ReadBytes(const std::uint8_t*& out_data, std::size_t size) noexcept`
 - Behavior: `data == nullptr && size == 0` は有効な空 reader。`data == nullptr && size > 0` は
   invalid reader。成功時だけ offset を進める。`ReadBytes` は non-owning pointer を返す。
 - Failure/edge cases: 失敗時は offset と出力不変。元 buffer lifetime は利用者責任。
+- Complexity/performance: 各 Read/Skip は読み取る byte 数に比例する O(k)。reader は buffer を所有せず
+  allocation なし。
 - Tests: 空buffer、ぴったり読み切り、1 byte不足、失敗時offset不変、BE/LE値、invalid reader。
 - Do not implement: endian module 依存、owning buffer、protocol parser。
 
@@ -373,11 +496,18 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/byte_writer/ket_byte_writer.h`、
   `modules/byte_writer/ket_byte_writer.cpp`、`modules/byte_writer/ket_byte_writer_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ByteWriter`, `Size`, `Offset`, `Remaining`, `Full`, `Skip`, `WriteU8`,
-  `WriteBe16`, `WriteBe32`, `WriteLe16`, `WriteLe32`, `WriteBytes`。
+- Public API Signatures:
+  - `ByteWriter(std::uint8_t* data, std::size_t size) noexcept`
+  - `std::size_t Size() const noexcept` / `std::size_t Offset() const noexcept` / `std::size_t Remaining() const noexcept` / `bool Full() const noexcept`
+  - `bool Skip(std::size_t size) noexcept`
+  - `bool WriteU8(std::uint8_t value) noexcept`
+  - `bool WriteBe16(std::uint16_t value) noexcept` / `bool WriteBe32(std::uint32_t value) noexcept` / `bool WriteLe16(std::uint16_t value) noexcept` / `bool WriteLe32(std::uint32_t value) noexcept`
+  - `bool WriteBytes(const std::uint8_t* data, std::size_t size) noexcept`
 - Behavior: `data == nullptr && size == 0` は有効な空 writer。`data == nullptr && size > 0` は
   invalid writer。成功時だけ offset と buffer を更新する。
 - Failure/edge cases: 失敗時は offset と既存 buffer を変更しない。サイズ確認後に書き込む。
+- Complexity/performance: 各 Write/Skip は書き込む byte 数に比例する O(k)。writer は buffer を所有せず
+  allocation なし。
 - Tests: 空buffer書き込み失敗、ぴったり書き切り、1 byte不足、失敗時offset/buffer不変、BE/LE値。
 - Do not implement: endian module 依存、可変長 vector builder、stream writer。
 
@@ -387,15 +517,29 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::vector<std::uint8_t>` を所有するpayload構築を、標準ライブラリのみで薄く包める。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。fluent member API と free function API の採用範囲を固定後に決定。
+- Drop-in files: `modules/bytes_builder/ket_bytes_builder.h`、
+  `modules/bytes_builder/ket_bytes_builder_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `BytesBuilder`, `BytesBuilder::U8`, `Be16`, `Be32`, `Le16`, `Le32`,
-  `Bytes`, `StringAscii`, `View`, `Build`, `Clear`, `AppendU8`, `AppendBe16`, `AppendBe32`,
-  `AppendLe16`, `AppendLe32`, `AppendBytes`。
+- Public API Signatures:
+  - `class BytesBuilder`:
+    - `BytesBuilder() = default;`
+    - `explicit BytesBuilder(std::size_t reserve_size);`
+    - `BytesBuilder& U8(std::uint8_t value);`
+    - `BytesBuilder& Be16(std::uint16_t value);`（`Be32`/`Le16`/`Le32` も同形）
+    - `BytesBuilder& Bytes(const std::uint8_t* data, std::size_t size);`
+    - `BytesBuilder& StringAscii(std::string_view text);`
+    - `const std::vector<std::uint8_t>& View() const noexcept;`
+    - `std::vector<std::uint8_t> Build() &&;`
+    - `void Clear() noexcept;`
+  - `void AppendU8(std::vector<std::uint8_t>& dst, std::uint8_t value);`
+  - `void AppendBe16(std::vector<std::uint8_t>& dst, std::uint16_t value);`（`AppendBe32`/`AppendLe16`/`AppendLe32` も同形）
+  - `void AppendBytes(std::vector<std::uint8_t>& dst, const std::uint8_t* data, std::size_t size);`
 - Behavior: fluent API は `*this` を返す。free function は既存 vector へ追加する。`Build() &&` は
   内部 vector を move して返す。
 - Failure/edge cases: allocation があるため `noexcept` なし。`Bytes(nullptr, 0)` は no-op。
   `Bytes(nullptr, size > 0)` は precondition 違反。
+- Complexity/performance: 各 append は追加 byte 数に比例し、vector 再確保は amortized O(1)。
+  `reserve_size` で再確保を抑制。`Build() &&` は move で O(1)。
 - Tests: U8/BE/LE append、reserve constructor、Clear、View、Build move、null+0。
 - Do not implement: serializer framework、field schema、checksum、protocol固有処理。
 
@@ -406,13 +550,20 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   C++17以前では標準calendar APIがなく、Gregorian妥当性判定を小さく持ち出せる。
   非推奨版 C++20以降。非推奨理由: C++20 `std::chrono` calendar を使える環境では、
   日付表現と妥当性判定を標準型へ寄せられる。
-- Drop-in files: 未製造。C++20 `std::chrono` calendar との境界と time API の切り方を固定後に決定。
+- Drop-in files: `modules/date/ket_date.h`、`modules/date/ket_date_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `IsLeapYear`, `IsValidMonth`, `TryDaysInMonth`, `IsValidDate`, `IsValidTime`,
-  `IsValidTimeMillis`。
-- Behavior: Gregorian calendar、`year >= 1`。timezone と leap second は扱わない。
+- Public API Signatures:
+  - `constexpr bool IsLeapYear(int year) noexcept`
+  - `constexpr bool IsValidMonth(unsigned month) noexcept`
+  - `bool TryDaysInMonth(int year, unsigned month, unsigned& out) noexcept`（out へ当月日数。C++11 では mutating Try を constexpr 化できないため noexcept のみ。C++14 以降で constexpr 化してよい）
+  - `constexpr bool IsValidDate(int year, unsigned month, unsigned day) noexcept`
+  - `constexpr bool IsValidTime(unsigned hour, unsigned minute, unsigned second) noexcept`
+  - `constexpr bool IsValidTimeMillis(unsigned hour, unsigned minute, unsigned second, unsigned millisecond) noexcept`
+- Behavior: Gregorian calendar、`year >= 1`。timezone と leap second は扱わない。`IsValidDate` は
+  内部 constexpr helper で当月日数を求め、`TryDaysInMonth` に依存せず constexpr を保つ。
 - Failure/edge cases: month 0/13、day 0、月末超過、`second >= 60`、`millisecond >= 1000`。
-- Tests: 2000 leap、1900 not leap、2024-02-29、2023-02-29、month境界、hour 24。
+- Complexity/performance: 全関数 O(1) の算術判定。allocation・例外なし。
+- Tests: 2000 leap、1900 not leap、2024-02-29、2023-02-29、month境界、hour 24、C++11/14 compile-only check。
 - Do not implement: timezone、calendar conversion、date arithmetic、BCD date。
 
 ### deadline Module
@@ -424,11 +575,21 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/deadline/ket_deadline.h`、`modules/deadline/ket_deadline.cpp`、
   `modules/deadline/ket_deadline_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Stopwatch::StartNew`, `Stopwatch::Restart`, `Stopwatch::Elapsed`,
-  `Stopwatch::ElapsedMillis`, `Deadline::After`, `Deadline::At`, `Deadline::Expired`,
-  `Deadline::Remaining`, `Deadline::TimePoint`。
+- Public API Signatures:
+  - `class Stopwatch`:
+    - `static Stopwatch StartNew() noexcept;`
+    - `void Restart() noexcept;`
+    - `std::chrono::steady_clock::duration Elapsed() const noexcept;`
+    - `std::chrono::milliseconds ElapsedMillis() const noexcept;`
+  - `class Deadline`:
+    - `static Deadline After(std::chrono::steady_clock::duration timeout) noexcept;`
+    - `static Deadline At(std::chrono::steady_clock::time_point time_point) noexcept;`
+    - `bool Expired() const noexcept;`
+    - `std::chrono::steady_clock::duration Remaining() const noexcept;`
+    - `std::chrono::steady_clock::time_point TimePoint() const noexcept;`
 - Behavior: `steady_clock` のみ。`Remaining()` は期限切れなら zero を返す。負 timeout は即 expired。
 - Failure/edge cases: clock差し替えは初回なし。sleep依存テストは許容誤差を持たせる。
+- Complexity/performance: 全 query は clock 1回参照の O(1)。allocation・例外なし。
 - Tests: zero timeout、future deadline、Remaining非負、Restart、At。
 - Do not implement: `system_clock` deadline、scheduler、timer thread。
 
@@ -438,15 +599,26 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::string_view` で `argv` lifetime に依存する値を明示しながら扱える。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。option値 parse API と他 module 非依存の実装方針を固定後に決定。
+- Drop-in files: `modules/cli/ket_cli.h`、`modules/cli/ket_cli_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `ArgvView`, `ArgvView::Size`, `At`, `ProgramName`, `HasOption`,
-  `GetOption`, `GetOptionOr`, `OptionUInt<T>`, `Positional`。
+- Public API Signatures:
+  - `class ArgvView`:
+    - `ArgvView(int argc, const char* const* argv) noexcept;`
+    - `std::size_t Size() const noexcept;`
+    - `std::string_view At(std::size_t index) const noexcept;`
+    - `std::string_view ProgramName() const noexcept;`
+  - `bool HasOption(ArgvView args, std::string_view name) noexcept;`
+  - `std::optional<std::string_view> GetOption(ArgvView args, std::string_view name) noexcept;`
+  - `std::string_view GetOptionOr(ArgvView args, std::string_view name, std::string_view fallback) noexcept;`
+  - `std::vector<std::string_view> Positional(ArgvView args);`
 - Behavior: `--key value` と `--key=value` を両方許す。`--flag` は `HasOption`。
   duplicated option は最初を返す。戻り値の `std::string_view` は `argv` lifetime に依存する。
 - Failure/edge cases: `GetOption(args, "--id")` で次要素が別 option なら失敗。shell quote 展開なし。
+- Complexity/performance: `HasOption`/`GetOption`/`Positional` は argv を O(argc) 走査。`Positional` は
+  結果 vector を確保。値の `std::string_view` は argv を参照し追加 allocation なし。
 - Tests: `--help`、`--id 123`、`--id=123`、missing value、duplicate、positional。
-- Do not implement: subcommand framework、help generator、shell parser、config file。
+- Do not implement: subcommand framework、help generator、shell parser、config file、
+  `OptionUInt`（数値 parse は parse_numeric module の責務）。
 
 ### byte_view Module
 
@@ -454,13 +626,33 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11〜17。推奨理由:
   C++17以前で non-owning byte span の寿命と境界確認を小さく表現できる。
   非推奨版 C++20以降。非推奨理由: C++20以降は `std::span` を優先できる。
-- Drop-in files: 未製造。method/free function 境界、invalid view の表現、mutable API を固定後に決定。
+- Drop-in files: `modules/byte_view/ket_byte_view.h`、`modules/byte_view/ket_byte_view_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `ByteView`, `MutableByteView`, `MakeByteView`, `MakeMutableByteView`。
-- Behavior: `Data`, `Size`, `Empty`, `TryAt`, `TrySubView` を提供する。view は所有権を持たず、
-  元buffer lifetime に依存する。
+- Public API Signatures:
+  - `class ByteView`:
+    - `ByteView() noexcept;`
+    - `ByteView(const std::uint8_t* data, std::size_t size) noexcept;`
+    - `const std::uint8_t* Data() const noexcept;`
+    - `std::size_t Size() const noexcept;`
+    - `bool Empty() const noexcept;`
+    - `bool TryAt(std::size_t index, std::uint8_t& out) const noexcept;`
+    - `bool TrySubView(std::size_t offset, std::size_t count, ByteView& out) const noexcept;`
+  - `class MutableByteView`:
+    - `MutableByteView() noexcept;`
+    - `MutableByteView(std::uint8_t* data, std::size_t size) noexcept;`
+    - `std::uint8_t* Data() const noexcept;`
+    - `std::size_t Size() const noexcept;`
+    - `bool Empty() const noexcept;`
+    - `bool TryAt(std::size_t index, std::uint8_t& out) const noexcept;`
+    - `bool TrySet(std::size_t index, std::uint8_t value) noexcept;`
+    - `bool TrySubView(std::size_t offset, std::size_t count, MutableByteView& out) const noexcept;`
+  - `ByteView MakeByteView(const std::uint8_t* data, std::size_t size) noexcept;`
+  - `MutableByteView MakeMutableByteView(std::uint8_t* data, std::size_t size) noexcept;`
+- Behavior: view は所有権を持たず、元 buffer lifetime に依存する。`TryAt`/`TrySubView` は範囲内のみ
+  成功し out へ書き込む。`MutableByteView::TrySet` は範囲内のみ書き込む。
 - Failure/edge cases: `nullptr+0` は空 view。`nullptr+非0` は invalid view とし、access は失敗。
-  subview 範囲超過は失敗。
+  subview 範囲超過は失敗で out 不変。
+- Complexity/performance: 全 method は O(1)。view は pointer と size のみ保持し allocation なし。
 - Tests: default、empty、invalid、bounds、subview、mutable set。
 - Do not implement: `std::span` 置き換え、iterator 完備、owning bytes。
 
@@ -473,10 +665,17 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/utf8/ket_utf8.h`、`modules/utf8/ket_utf8.cpp`、
   `modules/utf8/ket_utf8_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Utf8ValidationResult`, `IsAscii`, `ValidateUtf8`, `IsUtf8`, `Utf8Length`。
-- Behavior: `Utf8Length` は code point 数を返す。invalid UTF-8 は `std::nullopt`。
+- Public API Signatures:
+  - `struct Utf8ValidationResult { bool valid = false; std::size_t error_offset = 0; };`
+  - `bool IsAscii(std::string_view text) noexcept;`
+  - `Utf8ValidationResult ValidateUtf8(std::string_view text) noexcept;`
+  - `bool IsUtf8(std::string_view text) noexcept;`
+  - `std::optional<std::size_t> Utf8Length(std::string_view text) noexcept;`
+- Behavior: `ValidateUtf8` は最初の不正 byte 位置を `error_offset` に入れる。`Utf8Length` は code point
+  数を返し、invalid UTF-8 は `std::nullopt`。`IsUtf8` は `ValidateUtf8(text).valid` と同義。
 - Failure/edge cases: overlong、surrogate、truncated sequence、continuation byte 不正、範囲外 code
-  point は invalid。`error_offset` は最初の不正 byte。
+  point は invalid。空文字列は valid で length 0。
+- Complexity/performance: 全関数 1パス O(n)。allocation なし。
 - Tests: ASCII、2/3/4 byte、空、overlong、truncated、surrogate、bad continuation。
 - Do not implement: normalization、case folding、locale、encoding conversion、grapheme cluster。
 
@@ -486,13 +685,23 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::filesystem` と `std::string_view` を使い、path と bytes/text の扱いを標準型へ寄せられる。
   非推奨版 なし。非推奨理由: 標準ライブラリだけでは全読み/全書きの失敗方針が長くなりやすい。
-- Drop-in files: 未製造。`std::error_code*` の optional detail 形、例外有無、短い write の扱いを固定後に決定。
+- Drop-in files: `modules/file/ket_file.h`、`modules/file/ket_file.cpp`、
+  `modules/file/ket_file_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `TryReadAllText`, `TryReadAllBytes`, `WriteAllText`, `WriteAllBytes`,
-  `FileExists`, `DirectoryExists`, `FileSize`。
-- Behavior: `std::filesystem::path` を受ける。text encoding は変換せず、bytes をそのまま
-  `std::string` に読む。optional detail として `std::error_code*` を受ける。
-- Failure/edge cases: not found、permission、directory path、短い write、巨大 file、error pointer null。
+- Public API Signatures:
+  - `bool TryReadAllText(const std::filesystem::path& path, std::string& out, std::error_code* error = nullptr);`
+  - `bool TryReadAllBytes(const std::filesystem::path& path, std::vector<std::uint8_t>& out, std::error_code* error = nullptr);`
+  - `bool WriteAllText(const std::filesystem::path& path, std::string_view text, std::error_code* error = nullptr);`
+  - `bool WriteAllBytes(const std::filesystem::path& path, const std::uint8_t* data, std::size_t size, std::error_code* error = nullptr);`
+  - `bool FileExists(const std::filesystem::path& path) noexcept;`
+  - `bool DirectoryExists(const std::filesystem::path& path) noexcept;`
+  - `std::optional<std::uintmax_t> FileSize(const std::filesystem::path& path) noexcept;`
+- Behavior: 非optional 出力は `out` 参照で受け、`std::error_code*` だけは optional detail のため
+  pointer（`nullptr` で error 詳細を無視）。text encoding は変換せず bytes をそのまま `std::string`
+  に読む。
+- Failure/edge cases: not found、permission、directory path、短い write、巨大 file、`error == nullptr`。
+- Complexity/performance: 読み書きは file size O(n) で 1回 allocation。`FileExists`/`DirectoryExists`/
+  `FileSize` は filesystem query のみ。
 - Tests: 空file、text、binary、missing file、directory、error_code設定。
 - Do not implement: recursive copy、watcher、encoding conversion、path normalization framework。
 
@@ -500,15 +709,27 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 - Purpose: stream の確実な読み書きと stream state 保存を小さく提供する。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
-  iostream の short read/write と state復元を小さいAPIで固定できる。
+  iostream の short read/write と state復元を小さいAPIで固定できる。`std::optional` を返す行読みは
+  C++17+ の convenience とし、C++11/14 では `TryReadLineTrimmedAscii(out&)` を core にする。
   非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/io_stream/ket_io_stream.h`、`modules/io_stream/ket_io_stream.cpp`、
   `modules/io_stream/ket_io_stream_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `ReadExactly`, `WriteAll`, `ReadLineTrimmedAscii`, `StreamStateSaver`。
-- Behavior: `ReadExactly` は requested size を読み切った場合のみ `true`。`StreamStateSaver` は
-  flags、precision、fill を保存・復元する。
-- Failure/edge cases: short read/write、stream error、null data with nonzero size は precondition 違反。
+- Public API Signatures:
+  - `bool ReadExactly(std::istream& stream, std::uint8_t* data, std::size_t size);`
+  - `bool WriteAll(std::ostream& stream, const std::uint8_t* data, std::size_t size);`
+  - `bool TryReadLineTrimmedAscii(std::istream& stream, std::string& out);`（C++11/14 の core）
+  - `std::optional<std::string> ReadLineTrimmedAscii(std::istream& stream);`（C++17+ の convenience）
+  - `class StreamStateSaver`:
+    - `explicit StreamStateSaver(std::ios& stream);`
+    - `~StreamStateSaver() noexcept;`
+    - copy constructor / copy assignment は delete
+- Behavior: `ReadExactly` は requested size を読み切った場合のみ `true`。行読みは末尾の ASCII
+  whitespace を除去する。`std::optional` を返す `ReadLineTrimmedAscii` は C++17+ で、C++11/14 では
+  `TryReadLineTrimmedAscii(out&)` を使う。`StreamStateSaver` は flags、precision、fill を保存・復元する。
+- Failure/edge cases: short read/write、stream error、`data == nullptr && size > 0` は precondition 違反。
+  EOF かつ空行は行読み失敗（optional は `std::nullopt`）。
+- Complexity/performance: read/write は size O(n)。行読みは行長 O(n)。`StreamStateSaver` は O(1)。
 - Tests: exact read、short read、write、state復元、trimmed line、EOF。
 - Do not implement: async I/O、filesystem wrapper、binary serialization。
 
@@ -518,14 +739,22 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   診断用の固定表記を標準ライブラリのみで小さく提供できる。
   非推奨版 なし。非推奨理由: `std::format` は書式化部品であり、ketの固定診断表記の直接代替ではない。
-- Drop-in files: 未製造。仕様分割後に決定。
+- Drop-in files: `modules/format_value/ket_format_value.h`、`modules/format_value/ket_format_value.cpp`、
+  `modules/format_value/ket_format_value_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `FormatBool`, `FormatSignedDecimal`, `FormatUnsignedDecimal`,
-  `ToBinaryString`, `FormatByteCount`, `FormatDuration`。
-- Behavior: 製造前に byte 単位表記、duration 単位、binary prefix、幅、符号の扱いを固定する。
-- Failure/edge cases: allocation 例外あり。duration の負値、極小/極大値、丸めを仕様化する。
+- Public API Signatures:
+  - `std::string FormatBool(bool value);`
+  - `std::string FormatBinary(std::uint64_t value, unsigned min_width = 0);`
+  - `std::string FormatByteCount(std::uint64_t bytes);`
+  - `std::string FormatDuration(std::chrono::nanoseconds duration);`
+- Behavior: `FormatBool` は `"true"`/`"false"`。`FormatBinary` は2進表記で `min_width` まで `0` 詰め。
+  `FormatByteCount` は IEC 1024 基準（B、KiB、MiB、GiB、TiB）で小数1桁に丸める。`FormatDuration` は
+  ns/µs/ms/s/min/h から自動で単位を選ぶ。
+- Failure/edge cases: allocation 例外あり。負 duration は符号付きで表記。極大値、境界値、丸めを固定する。
+- Complexity/performance: 各関数は出力長 O(k) の string を1回確保する。loop なしの定数規模処理。
 - Tests: 単位境界、min_width、負duration、0、最大値。
-- Do not implement: `std::format` 再実装、logging framework、locale対応、`ToHexString`。
+- Do not implement: `std::format` 再実装、logging framework、locale対応、`ToHexString`（hex module）、
+  `ToString`/`FormatSignedDecimal`/`FormatUnsignedDecimal`（`std::to_string` で十分）。
 
 ### algorithm_range Module
 
@@ -537,6 +766,11 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `AllOf`, `AnyOf`, `NoneOf`, `CountIf`, `FindIf`, `ForEachIndex`。
 - Behavior: range は `std::begin`/`std::end` が使える object。iterator pair を受ける overload は初回なし。
+- Spec-split decisions（要確定）:
+  1. 1:1 で `std::ranges` 別名になる API（`AllOf`/`AnyOf`/`NoneOf`/`CountIf`/`FindIf`）を採用するか、
+     固有価値のある `ForEachIndex` だけに絞るか。
+  2. range wrapper を今出すか、C++20 `std::ranges` 普及まで待つか。
+  3. `FindIf` の戻りを iterator にするか index にするか（not-found 規約の違い）。
 - Failure/edge cases: predicate 例外は伝播。空rangeの standard algorithm と同じ真理値。
 - Tests: empty、all/any/none、mutable find、index順。
 - Do not implement: `std::algorithm` の単なる全量別名、ranges framework。
@@ -547,12 +781,23 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   pointer alignment と object representation の意図を小さいAPIへ分離できる。
   非推奨版 なし。非推奨理由: secure zero と pointer alignment の直接代替は標準だけでは不足する。
-- Drop-in files: 未製造。`SecureZeroMemory` の保証範囲を固定後に決定。
+- Drop-in files: `modules/memory/ket_memory.h`,
+  `modules/memory/ket_memory_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `IsAligned`, `TryAlignUpPtr`, `TryAlignDownPtr`, `ZeroMemory`,
-  `SecureZeroMemory`, `ObjectBytes`, `ObjectByteSize`。
-- Behavior: pointer alignment と byte表現の読み取りに限定する。
+- Public API Signatures:
+  - `bool IsAligned(const void* ptr, std::size_t alignment) noexcept;`
+  - `bool TryAlignUpPtr(const void* ptr, std::size_t alignment, const void*& out) noexcept;`
+  - `bool TryAlignDownPtr(const void* ptr, std::size_t alignment, const void*& out) noexcept;`
+  - `void ZeroMemory(void* ptr, std::size_t size) noexcept;`
+  - `void SecureZeroMemory(void* ptr, std::size_t size) noexcept;`
+  - `template <typename T> const std::uint8_t* ObjectBytes(const T& object) noexcept;`
+  - `template <typename T> std::size_t ObjectByteSize(const T& object) noexcept;`
+- Behavior: pointer alignment と byte表現の読み取りに限定する。`alignment` は power-of-two 前提で、それ以外や
+  `alignment == 0` は false。`SecureZeroMemory` は volatile 経由で最適化除去を防ぐ best-effort。`ObjectBytes` は
+  trivially copyable 型に限定する。
 - Failure/edge cases: `alignment == 0`、非power-of-two alignment、null pointer、secure zero最適化除去対策。
+- Complexity/performance: alignment 判定は O(1)。zeroing は size に対し O(n)。`SecureZeroMemory` は最適化されない分
+  `ZeroMemory` より遅い。
 - Tests: aligned/unaligned、alignment 0、null+0、object byte size、zeroing。
 - Do not implement: object lifetime 操作、placement new helper、allocator、type punning。
 
@@ -562,14 +807,20 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   null許容性と所有権の有無を型名や関数名で明示できる。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。`NotNull` の失敗方針を固定後に決定。
+- Drop-in files: `modules/pointer/ket_pointer.h`,
+  `modules/pointer/ket_pointer_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `NotNull<Ptr>`, `LockWeak`, `GetOrNull`, `AddressOf`。
-- Behavior: `NotNull` は所有権を持たない non-null wrapper。`LockWeak` は expired 時に空
-  `std::shared_ptr`。
-- Failure/edge cases: `NotNull(nullptr)` を assert/terminate/throw のどれで扱うか製造前に固定する。
+- Public API Signatures:
+  - `template <typename Ptr> class NotNull { public: explicit NotNull(Ptr ptr); Ptr Get() const noexcept; auto operator*() const -> decltype(*std::declval<Ptr>()); Ptr operator->() const noexcept; };`
+  - `template <typename T> std::shared_ptr<T> LockWeak(const std::weak_ptr<T>& weak) noexcept;`
+  - `template <typename T> T* AddressOf(T& value) noexcept;`
+- Behavior: `NotNull` は所有権を持たない non-null wrapper で、構築時に null なら `std::invalid_argument` を投げる。
+  `LockWeak` は expired 時に空 `std::shared_ptr`。`AddressOf` は overload された `operator&` を回避して真の address を返す。
+- Failure/edge cases: `NotNull(nullptr)` は `std::invalid_argument`、weak expired、overloaded `operator&`。
+- Complexity/performance: 全 API は O(1)。`LockWeak` は `weak_ptr::lock` 相当の atomic 操作。
 - Tests: nullptr、dereference、operator->、weak alive/expired、AddressOf overloaded `operator&`。
-- Do not implement: `Owner<T*>`、smart pointer 再実装、lifetime tracking。
+- Do not implement: `Owner<T*>`、smart pointer 再実装、lifetime tracking、
+  `std::optional<std::reference_wrapper<T>>` を返す `GetOrNull`。
 
 ### testing_bytes Module
 
@@ -581,9 +832,12 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   `modules/testing_bytes/ket_testing_bytes.cpp`、
   `modules/testing_bytes/ket_testing_bytes_test.cpp`。
 - Dependencies: GoogleTest と標準ライブラリ。他の ket module への依存なし。
-- Public API: `BytesEq`, `HexEq`。
+- Public API Signatures:
+  - `::testing::AssertionResult BytesEq(const std::uint8_t* actual, std::size_t actual_size, const std::uint8_t* expected, std::size_t expected_size);`
+  - `::testing::AssertionResult HexEq(const std::uint8_t* actual, std::size_t actual_size, std::string_view expected_hex);`
 - Behavior: `::testing::AssertionResult` を返し、mismatch offset、actual/expected hex を表示する。
 - Failure/edge cases: null+0 は空として許可。null+非0 は failure。`HexEq` の不正hexは failure。
+- Complexity/performance: 比較は O(n)。失敗時のみ診断 string を確保し、成功時は allocation を避ける。
 - Tests: equal、different size、different byte、null+0、null+非0、invalid hex。
 - Do not implement: production library dependency、matcher framework、snapshot framework。
 
@@ -597,11 +851,15 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   `modules/semantic_version/ket_semantic_version.cpp`,
   `modules/semantic_version/ket_semantic_version_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `SemanticVersion`, `ParseSemanticVersion`, `FormatSemanticVersion`,
-  `CompareSemanticVersion`。
-- Behavior: 初回は `major.minor.patch` のみ。各要素は `std::uint32_t`。`0` 自体は許可し、
-  複数桁の leading zero は失敗。
+- Public API Signatures:
+  - `struct SemanticVersion { std::uint32_t major = 0; std::uint32_t minor = 0; std::uint32_t patch = 0; };`
+  - `std::optional<SemanticVersion> ParseSemanticVersion(std::string_view text) noexcept;`
+  - `std::string FormatSemanticVersion(SemanticVersion version);`
+  - `int CompareSemanticVersion(SemanticVersion a, SemanticVersion b) noexcept;`
+- Behavior: `major.minor.patch` のみ。各要素は `std::uint32_t`。`0` 自体は許可し、複数桁の leading zero
+  は失敗。`CompareSemanticVersion` は major→minor→patch 順で負/0/正を返す。
 - Failure/edge cases: 空、要素不足/過多、非数字、overflow、`01.2.3`。
+- Complexity/performance: parse は入力長 O(n)。compare は O(1)、format は出力長 O(k) で 1回確保。
 - Tests: `0.0.0`、normal parse、format、compare major/minor/patch、overflow、leading zero。
 - Do not implement: prerelease、build metadata、range constraint、package manager semantics。
 
@@ -614,10 +872,16 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/ipv4/ket_ipv4.h`、`modules/ipv4/ket_ipv4.cpp`、
   `modules/ipv4/ket_ipv4_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Ipv4Address`, `ParseIpv4Address`, `FormatIpv4Address`, `Ipv4AddressToU32Be`,
-  `U32BeToIpv4Address`。
-- Behavior: dotted decimal のみ。leading zero は失敗。`Ipv4AddressToU32Be` は network byte order の整数表現。
+- Public API Signatures:
+  - `struct Ipv4Address { std::uint8_t octets[4] = {0, 0, 0, 0}; };`
+  - `std::optional<Ipv4Address> ParseIpv4Address(std::string_view text) noexcept;`
+  - `std::string FormatIpv4Address(Ipv4Address value);`
+  - `std::uint32_t Ipv4AddressToU32Be(Ipv4Address value) noexcept;`
+  - `Ipv4Address U32BeToIpv4Address(std::uint32_t value) noexcept;`
+- Behavior: dotted decimal のみ。leading zero は失敗。`Ipv4AddressToU32Be` は network byte order の整数
+  表現。型名は Google C++ Style に合わせ `Ipv4Address`（proposal の `IpV4` ではない）を採用する。
 - Failure/edge cases: octet > 255、負値、空要素、要素不足/過多、空白、leading zero。
+- Complexity/performance: parse/format は固定4 octet の O(1)。変換は O(1)、allocation は format のみ。
 - Tests: `0.0.0.0`、`255.255.255.255`、format、u32 roundtrip、不正入力。
 - Do not implement: IPv6、CIDR、DNS、port、socket address。
 
@@ -630,12 +894,17 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/port/ket_port.h`、`modules/port/ket_port.cpp`、
   `modules/port/ket_port_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Port`, `TryMakePort`, `ParsePort`, `FormatPort`。
+- Public API Signatures:
+  - `struct Port { std::uint16_t value = 0; };`
+  - `constexpr bool TryMakePort(std::uint32_t value, Port& out) noexcept;`
+  - `std::optional<Port> ParsePort(std::string_view text) noexcept;`
+  - `std::string FormatPort(Port port);`
 - Behavior: port値は0〜65535を許可する。0は OS による自動割り当て用途を表せる有効値とし、
-  呼び出し側が必要なら別途禁止する。`ParsePort` は10進表記のみを完全消費し、format は leading
-  zero なしの10進文字列を返す。
+  呼び出し側が必要なら別途禁止する。`TryMakePort` は wide な整数から範囲確認して `out` に詰める。
+  `ParsePort` は10進表記のみを完全消費し、format は leading zero なしの10進文字列を返す。
 - Failure/edge cases: 空文字列、leading/trailing whitespace、`+`/`-`、不正文字、65535超過、
   複数桁の leading zero は失敗。
+- Complexity/performance: `TryMakePort`/`FormatPort` は O(1)、`ParsePort` は桁数 O(n)（≤5桁）。
 - Tests: 0、1、65535、65536、空、空白、符号、不正文字、leading zero、format。
 - Do not implement: socket address、service name 解決、protocol別port型、ephemeral port 採番。
 
@@ -648,9 +917,15 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/mac_address/ket_mac_address.h`,
   `modules/mac_address/ket_mac_address.cpp`, `modules/mac_address/ket_mac_address_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `MacAddress`, `ParseMacAddress`, `FormatMacAddress`, `FormatMacAddressUpper`。
+- Public API Signatures:
+  - `struct MacAddress { std::uint8_t bytes[6] = {0, 0, 0, 0, 0, 0}; };`
+  - `std::optional<MacAddress> ParseMacAddress(std::string_view text) noexcept;`
+  - `std::string FormatMacAddress(MacAddress value);`
+  - `std::string FormatMacAddressUpper(MacAddress value);`
 - Behavior: `AA:BB:CC:DD:EE:FF` と `aa-bb-cc-dd-ee-ff` を許可する。区切り文字の混在は失敗。
+  `FormatMacAddress` は lower-case、`FormatMacAddressUpper` は upper-case で `:` 区切り。
 - Failure/edge cases: byte数不足/過多、不正hex、区切り不足、混在区切り、Cisco形式は失敗。
+- Complexity/performance: parse/format は固定6 byte の O(1)。allocation は format のみ。
 - Tests: upper/lower、colon、hyphen、format lower/upper、不正hex、短い/長い入力。
 - Do not implement: Cisco形式、OUI lookup、network device model。
 
@@ -662,10 +937,14 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/function/ket_function.h`、`modules/function/ket_function_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Overload<Fs...>`, `MakeOverload`, `Noop`。
+- Public API Signatures:
+  - `template <typename... Fs> struct Overload : Fs... { using Fs::operator()...; };`
+  - `template <typename... Fs> Overload<Fs...> MakeOverload(Fs... fs);`
+  - `struct Noop { template <typename... Args> void operator()(Args&&...) const noexcept; };`
 - Behavior: `Overload` は複数 callable を値として保持し、`using Fs::operator()...` で overload set
   を作る。`Noop` は任意引数を無視し `noexcept`。
 - Failure/edge cases: callable の copy/move 制約は型に従う。呼び出し例外は handler から伝播。
+- Complexity/performance: `Overload` は callable を値合成するのみで O(1)、追加 allocation なし。
 - Tests: `std::visit`、複数型、戻り値、Noop、copy/move。
 - Do not implement: `FunctionRef`、`std::function` wrapper、signal/slot framework。
 
@@ -675,13 +954,20 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::variant` と visitor補助を標準ライブラリのみで薄く包める。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。`function` module との重複方針を固定後に決定。
+- Drop-in files: `modules/variant_match/ket_variant_match.h`,
+  `modules/variant_match/ket_variant_match_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `Match`, `Holds`, `GetIf`。
-- Behavior: `Match` は `std::visit` と overload helper を短くする。
-- Failure/edge cases: reference category、const、戻り型、exception propagation を製造前に固定する。
-- Tests: const/non-const、lvalue/rvalue、void/non-void、exception。
-- Do not implement: variant framework、pattern matching DSL、`function` module への依存。
+- Public API Signatures:
+  - `template <typename Variant, typename... Handlers> decltype(auto) Match(Variant&& variant, Handlers&&... handlers);`
+- Behavior: `Match` は内部の overload helper で handler 群を束ね `std::visit` に渡す。`function` module に
+  依存せず、overload helper は本 module 内に閉じて持つ。reference category と const を保持し、戻り型は
+  handler 共通型。
+- Failure/edge cases: handler 例外は呼び出し元へ伝播。全 alternative を網羅しない handler 集合は
+  compile error。
+- Complexity/performance: `std::visit` 相当の単一 dispatch。追加 allocation なし。
+- Tests: const/non-const、lvalue/rvalue、void/non-void、exception伝播。
+- Do not implement: variant framework、pattern matching DSL、`function` module への依存、
+  `std::holds_alternative` 別名の `Holds`、`std::get_if` 別名の `GetIf`。
 
 ### optional_ext Module
 
@@ -689,19 +975,24 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::optional` の小さい合成を、標準の値保持制約に従って扱える。
   非推奨版 なし。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
-- Drop-in files: 未製造。C++23 monadic API との重複、optional-like 戻り型、参照保持方針を固定後に決定。
+- Drop-in files: `modules/optional_ext/ket_optional_ext.h`,
+  `modules/optional_ext/ket_optional_ext_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `MapOptional`, `AndThen`, `ValueOrEval`, `HasValueAll`。
-- Behavior: empty の場合は mapper/factory を必要時以外呼ばない。`AndThen` の戻り型は mapper が返す
-  optional-like 値そのもの。
+- Public API Signatures:
+  - `template <typename T, typename F> auto MapOptional(const std::optional<T>& value, F f) -> std::optional<decltype(f(*value))>;`
+  - `template <typename T, typename F> auto AndThen(const std::optional<T>& value, F f) -> decltype(f(*value));`
+  - `template <typename T, typename F> T ValueOrEval(const std::optional<T>& value, F fallback_factory);`
+- Behavior: empty の場合は mapper/factory を呼ばない。`AndThen` の戻り型は mapper が返す
+  optional 値そのもの。`ValueOrEval` は empty のときだけ `fallback_factory()` を評価する。
 - Failure/edge cases: mapper 例外は伝播。reference wrapper など値保持型は標準 optional の制約に従う。
-- Tests: value/empty、mapper呼び出し回数、factory遅延、複数optional、戻り型。
+- Complexity/performance: 各APIは1回の分岐と高々1回の mapper/factory 呼び出し。追加 allocation なし。
+- Tests: value/empty、mapper呼び出し回数、factory遅延、戻り型。
 - API別標準代替:
   - `MapOptional`: C++23 `std::optional::transform`。
   - `AndThen`: C++23 `std::optional::and_then`。
-  - `ValueOrEval`: 直接代替なし。factory遅延評価を固定する場合のみ採用。
-  - `HasValueAll`: 直接代替なし。複数 optional の可読性改善が必要な場合のみ採用。
-- Do not implement: `Result`、`StatusOr`、monad framework、error accumulation。
+  - `ValueOrEval`: 直接代替なし。factory遅延評価を固定する場合に採用。
+- Do not implement: `Result`、`StatusOr`、monad framework、error accumulation、
+  複数 optional 合成の `HasValueAll`。
 
 ### contract Module
 
@@ -714,6 +1005,11 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Public API: 候補は `Expects`, `Ensures`, `AssertInvariant`, `RequireNonNull`, `CheckBounds`,
   `RequireInRange`。
 - Behavior: 契約違反時に assert、abort、terminate、NDEBUG 連動のどれを採るか製造前に固定する。
+- Spec-split decisions（要確定）:
+  1. 違反時の動作（abort / throw / std::terminate / 差し替え可能 handler）。
+  2. NDEBUG 連動の有無と、release で残す契約・消す契約の線引き。
+  3. function 実装か macro 実装か（source location を出すなら macro が必要）。
+  4. 条件式の副作用評価回数の保証（release で消える場合の扱い）。
 - Failure/edge cases: release build、side-effect条件式、nullptr、bounds。
 - Tests: policyに応じた death test、valid path、bounds。
 - Do not implement: macro 大量追加、exception hierarchy、debug logging framework。
@@ -724,13 +1020,21 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   errno保存、C buffer copy、handle cleanup の事故をC API境界に閉じ込められる。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。`UniqueHandle` の invalid value 方針を固定後に決定。
+- Drop-in files: `modules/c_interop/ket_c_interop.h`,
+  `modules/c_interop/ket_c_interop_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `ErrnoGuard`, `CopyToCBuffer`, `CopyBytesToCBuffer`, `UniqueHandle`。
-- Behavior: `ErrnoGuard` は構築時 errno を保存し destructor で復元する。C buffer copy は null終端と
-  size不足を明確に扱う。
-- Failure/edge cases: `dst_size == 0`、null pointer、src truncation、deleter noexcept、handle release。
-- Tests: errno復元、copy成功/不足、bytes copy、UniqueHandle reset/release。
+- Public API Signatures:
+  - `class ErrnoGuard { public: ErrnoGuard() noexcept; ~ErrnoGuard() noexcept; int Saved() const noexcept; };`
+  - `bool CopyToCBuffer(char* dst, std::size_t dst_size, std::string_view src) noexcept;`
+  - `bool CopyBytesToCBuffer(void* dst, std::size_t dst_size, const void* src, std::size_t src_size) noexcept;`
+  - `template <typename Handle, typename Deleter> class UniqueHandle { public: UniqueHandle() noexcept; UniqueHandle(Handle handle, Deleter deleter) noexcept; ~UniqueHandle() noexcept; Handle Get() const noexcept; Handle Release() noexcept; void Reset(Handle handle) noexcept; };`
+- Behavior: `ErrnoGuard` は構築時 errno を保存し destructor で復元する。`CopyToCBuffer` は null終端を保証し、
+  `src` が `dst_size` に収まらなければ false。`UniqueHandle` は sentinel値ではなく engaged flag で所有を表し、
+  engaged のときだけ deleter を呼ぶ。
+- Failure/edge cases: `dst_size == 0`、null pointer、src truncation、deleter noexcept、`Release` 後は非所有。
+- Complexity/performance: copy は `src_size` に対し O(n) memcpy。`ErrnoGuard`/`UniqueHandle` は O(1)、
+  allocation なし。
+- Tests: errno復元、copy成功/不足、bytes copy、UniqueHandle reset/release/move。
 - Do not implement: OS handle 専用 wrapper、C API framework、ownership annotation体系。
 
 ### platform_error Module
@@ -744,6 +1048,11 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Public API: 候補は `ErrnoMessage`, `_WIN32` 限定 `WindowsErrorMessage`, `GetLastErrorCode`,
   `EnvironmentVariable`。
 - Behavior: POSIX と Windows の差を隠しすぎず、OS専用APIは `#ifdef` と Doxygen に明記する。
+- Spec-split decisions（要確定）:
+  1. 採用する API の範囲（errno のみか、Windows error と env も含めるか）。
+  2. Windows error message の wide/narrow 変換方式と encoding。
+  3. `#ifdef` 分岐の戦略（共通 header + OS別 .cpp か、header 内 `#if` か）。
+  4. CI/test 環境で Windows 分岐をどう検証するか。
 - Failure/edge cases: unknown errno、missing env、encoding、Windows wide/narrow 変換。
 - Tests: known errno、missing env、present env、Windows conditional compile。
 - Do not implement: cross-platform error framework、logging、localization。
@@ -757,9 +1066,13 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/state_table/ket_state_table.h`,
   `modules/state_table/ket_state_table_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Transition<State, Event>`, `IsValidTransition`, `NextState`。
+- Public API Signatures:
+  - `template <typename State, typename Event> struct Transition { State from; Event event; State to; };`
+  - `template <typename State, typename Event, std::size_t N> bool IsValidTransition(State current, Event event, const Transition<State, Event> (&table)[N]) noexcept;`
+  - `template <typename State, typename Event, std::size_t N> std::optional<State> NextState(State current, Event event, const Transition<State, Event> (&table)[N]) noexcept;`
 - Behavior: table は利用者が明示する。先に一致した transition を採用する。
 - Failure/edge cases: 未定義遷移は `false` または `std::nullopt`。duplicate は先勝ち。
+- Complexity/performance: lookup は table 線形走査 O(N)。allocation なし。
 - Tests: known transition、unknown、duplicate、enum class state/event。
 - Do not implement: FSM framework、entry/exit action、guard expression DSL。
 
@@ -769,13 +1082,18 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   lazy value の thread-safety と例外後状態を局所的に固定できる。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。thread-safety と例外後状態を固定後に決定。
+- Drop-in files: `modules/cache_once/ket_cache_once.h`,
+  `modules/cache_once/ket_cache_once_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `Lazy<T>`, `OnceValue<T>`。
-- Behavior: 初回候補は non-thread-safe。`GetOrCreate`/`Get` は値が無い場合だけ factory を呼ぶ。
-- Failure/edge cases: factory例外後に値を保持するかどうか、Reset有無、copy/move制約を固定する。
+- Public API Signatures:
+  - `template <typename T> class Lazy { public: bool HasValue() const noexcept; void Reset(); template <typename Factory> T& GetOrCreate(Factory factory); };`
+- Behavior: non-thread-safe。`GetOrCreate` は値が無い場合だけ factory を呼び、以後は同じ値への参照を返す。
+  `Reset` は保持値を破棄し empty に戻す。factory が例外を投げた場合は empty のまま。
+- Failure/edge cases: factory例外後は empty、Reset後は再生成、move-only value、再入は未定義。
+- Complexity/performance: `HasValue`/`Reset` と生成後の `GetOrCreate` は O(1)。factory は高々1回。
 - Tests: factory呼び出し回数、Reset、例外後状態、move-only value。
-- Do not implement: thread-safe cache、global registry、memoization framework。
+- Do not implement: thread-safe cache、global registry、memoization framework、
+  単一値専用の `OnceValue`。
 
 ### serialization_tlv Module
 
@@ -788,6 +1106,11 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Public API: 候補は `TlvView`, `EncodeLengthPrefixed`, `TryDecodeLengthPrefixed`,
   `EncodeTlv`, `TryDecodeTlv`。
 - Behavior: field 単位で encode/decode する。`TlvView` は入力bufferへの non-owning view。
+- Spec-split decisions（要確定）:
+  1. length 幅（8/16/32-bit）と type 幅。
+  2. byte order（big-endian 固定か可変か）。
+  3. 最大 length と overflow 時の失敗規約。
+  4. `TlvView` が指す buffer の寿命契約と alignment。
 - Failure/edge cases: length幅、type幅、endian、最大長、短い入力、overflow を製造前に固定する。
 - Tests: roundtrip、short input、length過大、empty value、multiple records は初回対象外。
 - Do not implement: struct丸ごとbytes化、schema language、protocol framework。
@@ -800,10 +1123,13 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   非推奨版 なし。非推奨理由: 標準ライブラリだけでは tuple要素ごとの副作用呼び出しが冗長。
 - Drop-in files: `modules/tuple/ket_tuple.h`、`modules/tuple/ket_tuple_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `TupleForEach`, `TupleTransform`。
+- Public API Signatures:
+  - `template <typename Tuple, typename F> void TupleForEach(Tuple&& tuple, F f);`
+  - `template <typename Tuple, typename F> auto TupleTransform(Tuple&& tuple, F f);`
 - Behavior: `TupleForEach` は index順に callable を呼ぶ。`TupleTransform` は各要素に callable を適用した
   tuple を返す。
 - Failure/edge cases: callable 例外は伝播。empty tuple、const tuple、reference要素を扱う。
+- Complexity/performance: 要素数 N に対し compile-time 展開で O(N) 回呼び出し。実行時 allocation なし。
 - Tests: empty、heterogeneous、const、reference、戻りtuple型、呼び出し順。
 - Do not implement: pair helper、tuple DSL、reflection。
 
@@ -818,6 +1144,11 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Public API: 候補は `KET_CXX_VERSION`, `KET_HAS_STD_OPTIONAL`, `KET_HAS_STD_STRING_VIEW`,
   `KET_HAS_STD_SPAN`, `KET_HAS_STD_FORMAT`, `KET_COMPILER_*`, `KET_OS_*`。
 - Behavior: feature detection だけを行い、policy を持たない。
+- Spec-split decisions（要確定）:
+  1. global macro を1つの共有 header に置くか、各 module が自前で feature 判定するか。
+  2. drop-in 性を壊さない macro prefix と汚染範囲。
+  3. 各 module が build_config に依存してよいか（原則 module 独立との整合）。
+  4. 実際に必要になるまで保留するか、先行整備するか。
 - Failure/edge cases: compiler差、standard library feature macro差、include順。
 - Tests: compile-only checks、expected macro shape。
 - Do not implement: config framework、global behavior switch、module間の必須依存化。
@@ -828,12 +1159,22 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   小さい数学処理の丸め、overflow、単位名をAPIで固定できる。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。型制約と丸め方を固定後に決定。
+- Drop-in files: `modules/math_small/ket_math_small.h`,
+  `modules/math_small/ket_math_small_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `Lerp`, `DegreesToRadians`, `RadiansToDegrees`, `NearlyEqual`, `KiBToBytes`,
-  `MiBToBytes`, `BytesToKiB`, `BytesToMiB`。
-- Behavior: statistics や units framework へ広げない。constexpr 可能な範囲に留める。
-- Failure/edge cases: integer overflow、floating precision、NaN、epsilon負値を製造前に固定する。
+- Public API Signatures:
+  - `template <typename T, typename U> constexpr auto Lerp(T a, T b, U t) noexcept -> decltype(a + (b - a) * t);`
+  - `template <typename T> constexpr T DegreesToRadians(T degrees) noexcept;`
+  - `template <typename T> constexpr T RadiansToDegrees(T radians) noexcept;`
+  - `template <typename T> constexpr bool NearlyEqual(T a, T b, T epsilon) noexcept;`
+  - `constexpr std::uint64_t KiBToBytes(std::uint64_t kib) noexcept;`
+  - `constexpr std::uint64_t MiBToBytes(std::uint64_t mib) noexcept;`
+  - `constexpr double BytesToKiB(std::uint64_t bytes) noexcept;`
+  - `constexpr double BytesToMiB(std::uint64_t bytes) noexcept;`
+- Behavior: statistics や units framework へ広げない。全 API は constexpr。角度変換と `NearlyEqual` は
+  `static_assert` で floating-point 型に限定する。`NearlyEqual` の epsilon は正の絶対許容差。
+- Failure/edge cases: integer overflow、floating precision、NaN、epsilon が0以下のときの扱い。
+- Complexity/performance: 全 API は分岐のない O(1) constexpr。`Lerp` は C++20 `std::lerp` 非依存の独自実装。
 - Tests: endpoints、midpoint、angle roundtrip、epsilon、large byte values。
 - Do not implement: units framework、matrix/vector math、statistics。
 
@@ -843,20 +1184,27 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   C++11/14の欠落や冗長な言語儀式を小さいAPIで名前付けできる。
   非推奨版 なし。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
-- Drop-in files: 未製造。採用 API と標準代替の登場版を固定後に決定。
+- Drop-in files: `modules/language/ket_language.h`,
+  `modules/language/ket_language_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `IgnoreUnused`, `Unreachable`, `ArraySize`, `AsConst`, `Identity`。
+- Public API Signatures:
+  - `template <typename... Args> void IgnoreUnused(const Args&... args) noexcept;`
+  - `[[noreturn]] void Unreachable();`
+  - `template <typename T, std::size_t N> constexpr std::size_t ArraySize(const T (&array)[N]) noexcept;`
+  - `template <typename T> constexpr typename std::add_const<T>::type& AsConst(T& value) noexcept;`
 - Behavior: 純粋な言語儀式に限定し、状態やコピー・ムーブ制御は `object` module に分ける。
-  `std::exchange` のような既存標準と完全に重なる別名は採用しない。
-- Failure/edge cases: `Unreachable` 到達時の未定義動作、空配列、参照寿命を製造前に固定する。
+  `std::exchange` のような既存標準と完全に重なる別名は採用しない。`Unreachable` は到達時 undefined behavior
+  として `[[noreturn]]`。
+- Failure/edge cases: `Unreachable` 到達は契約違反、空配列は不可、`AsConst` は引数寿命に従う。
+- Complexity/performance: 全 API は O(1)。`ArraySize`/`AsConst` は constexpr で実行時コストなし。
 - Tests: unused 無視、配列長、const 化、C++11 compile-only、Unreachable death/assert。
 - API別標準代替:
-  - `IgnoreUnused`: C++17 `[[maybe_unused]]` と一部重複。式の明示破棄用途は製造前に要確認。
+  - `IgnoreUnused`: C++17 `[[maybe_unused]]` と一部重複。式の明示破棄用途で採用。
   - `ArraySize`: C++17 `std::size`。
   - `AsConst`: C++17 `std::as_const`。
-  - `Identity`: C++20 `std::type_identity` と一部重複。関数APIとして採用するか要確認。
   - `Unreachable`: C++23 `std::unreachable`。
-- Do not implement: macro 大量追加、attribute framework、`std::xxx` の単なる別名。
+- Do not implement: macro 大量追加、attribute framework、`std::xxx` の単なる別名、
+  C++20 `std::type_identity` と重なる `Identity`。
 
 ### object Module
 
@@ -864,15 +1212,23 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   helper で明示する候補。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   copy/move意図を型定義の近くへ集約できる。非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未製造。defaulted comparison との衝突回避方針を固定後に決定。
+- Drop-in files: `modules/object/ket_object.h`,
+  `modules/object/ket_object_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `NonCopyable`, `NonMovable`, `MovableOnly`, `ResetOnMove<T>`, `SwapAndReset`。
-- Behavior: 継承用 mixin と小さい helper に限定する。NonCopyable/NonMovable はコピー・ムーブの
-  意図を型に出す。`ResetOnMove` は move 後に source を既定値へ戻す。
-- Failure/edge cases: empty base optimization、自己 swap、move 後の状態、C++20 defaulted
-  comparison との相互作用を製造前に固定する。
-- Tests: copy 禁止 compile-fail、move、reset、自己 swap、空 base size。
-- Do not implement: regular type framework、smart pointer 再実装、`=delete` で足りる範囲の wrapper。
+- Public API Signatures:
+  - `class NonCopyable { protected: NonCopyable() = default; ~NonCopyable() = default; public: NonCopyable(const NonCopyable&) = delete; NonCopyable& operator=(const NonCopyable&) = delete; };`
+  - `class NonMovable { protected: NonMovable() = default; ~NonMovable() = default; public: NonMovable(const NonMovable&) = delete; NonMovable& operator=(const NonMovable&) = delete; NonMovable(NonMovable&&) = delete; NonMovable& operator=(NonMovable&&) = delete; };`
+  - `class MovableOnly { protected: MovableOnly() = default; ~MovableOnly() = default; public: MovableOnly(const MovableOnly&) = delete; MovableOnly& operator=(const MovableOnly&) = delete; MovableOnly(MovableOnly&&) = default; MovableOnly& operator=(MovableOnly&&) = default; };`
+  - `template <typename T> class ResetOnMove { public: ResetOnMove() = default; explicit ResetOnMove(T value); ResetOnMove(ResetOnMove&& other) noexcept; ResetOnMove& operator=(ResetOnMove&& other) noexcept; T& Get() noexcept; const T& Get() const noexcept; };`
+- Behavior: 継承用 mixin と小さい helper に限定する。NonCopyable/NonMovable/MovableOnly はコピー・ムーブの
+  意図を型に出す。`ResetOnMove` は move 後に source を `T{}` へ戻す。mixin は比較演算を宣言せず C++20
+  defaulted comparison と衝突させない。
+- Failure/edge cases: empty base optimization、move 後の source 状態、derived の特殊メンバ生成、C++20
+  defaulted comparison との相互作用。
+- Complexity/performance: mixin は空 base で size 増加なし。`ResetOnMove` の move は T の move + 既定値代入。
+- Tests: copy 禁止 compile-fail、move、reset、空 base size、defaulted comparison 併用。
+- Do not implement: regular type framework、smart pointer 再実装、`=delete` で足りる範囲の wrapper、
+  swap helper の `SwapAndReset`。
 
 ### meta Module
 
@@ -880,11 +1236,17 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   C++11/14で不足する小さいtraitsを局所的に補える。
   非推奨版 なし。非推奨理由: APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない。
-- Drop-in files: 未製造。標準代替との重複を整理後に決定。
+- Drop-in files: `modules/meta/ket_meta.h`,
+  `modules/meta/ket_meta_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `RemoveCvref`, `TypeIdentity`, `AlwaysFalse`, `VoidT`。
-- Behavior: template error を読みやすく保つ小さい alias/type に限定する。
+- Public API Signatures:
+  - `template <typename T> using RemoveCvref = typename std::remove_cv<typename std::remove_reference<T>::type>::type;`
+  - `template <typename T> struct TypeIdentity { using type = T; };`
+  - `template <typename...> struct AlwaysFalse : std::false_type {};`
+  - `template <typename...> using VoidT = void;`
+- Behavior: template error を読みやすく保つ小さい alias/type に限定する。評価時の実行動作は持たない。
 - Failure/edge cases: C++17 以降の標準代替、SFINAE 使用時の diagnostics。
+- Complexity/performance: 全て compile-time の alias/trait。実行時コストと allocation なし。
 - Tests: alias型一致、C++11 compile-only、SFINAE。
 - API別標準代替:
   - `VoidT`: C++17 `std::void_t`。
@@ -899,12 +1261,16 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   thread join と future ready 判定の小さい儀式を局所化できる。
   非推奨版 なし。非推奨理由: APIごとに標準代替の有無が異なるため、module単位では非推奨にしない。
-- Drop-in files: 未製造。destructor 方針とテスト方法を固定後に決定。
+- Drop-in files: `modules/concurrency_small/ket_concurrency_small.h`,
+  `modules/concurrency_small/ket_concurrency_small_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `JoiningThread`, `FutureReady`。
-- Behavior: `JoiningThread` は所有する `std::thread` を destructor で join する候補。
-  `FutureReady` は zero timeout wait で ready 判定する。
+- Public API Signatures:
+  - `class JoiningThread { public: JoiningThread() noexcept; explicit JoiningThread(std::thread thread) noexcept; ~JoiningThread() noexcept; JoiningThread(JoiningThread&& other) noexcept; JoiningThread& operator=(JoiningThread&& other) noexcept; std::thread& Get() noexcept; bool Joinable() const noexcept; };`
+  - `template <typename Future> bool FutureReady(Future& future) noexcept;`
+- Behavior: `JoiningThread` は所有する `std::thread` を destructor で joinable なら join する。move 代入は
+  旧 thread を join してから所有を移す。copy は禁止。`FutureReady` は `wait_for(0)` の結果で ready 判定する。
 - Failure/edge cases: self-join、move代入時の既存thread、join例外、deferred future。
+- Complexity/performance: `Joinable`/`Get`/`FutureReady` は O(1)。destructor と move 代入は join 完了まで blocking。
 - Tests: default、joinable、move、ready/not ready、deferred。
 - API別標準代替:
   - `JoiningThread`: C++20 `std::jthread`。
@@ -920,10 +1286,14 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/uuid/ket_uuid.h`、`modules/uuid/ket_uuid.cpp`、
   `modules/uuid/ket_uuid_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: `Uuid`, `ParseUuid`, `FormatUuid`。
+- Public API Signatures:
+  - `struct Uuid { std::uint8_t bytes[16] = {}; };`
+  - `std::optional<Uuid> ParseUuid(std::string_view text) noexcept;`
+  - `std::string FormatUuid(Uuid value);`
 - Behavior: canonical hyphen形式 `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` を parse/format する。
   hex は upper/lower を受け付け、format は lower-case 固定。
 - Failure/edge cases: 長さ不一致、hyphen位置不一致、不正hex、brace付き形式は失敗。
+- Complexity/performance: parse/format は固定36文字/16 byte の O(1)。allocation は format のみ。
 - Tests: zero uuid、normal uuid、upper input、bad length、bad hyphen、bad hex、format。
 - Do not implement: UUID generation、version/variant validation、URN形式、OS乱数。
 
@@ -933,12 +1303,19 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   RGB小値型の許容表記と不正hexを小さいAPIで固定できる。
   非推奨版 なし。非推奨理由: なし。
-- Drop-in files: 未定。仕様分割後に決定。
+- Drop-in files: `modules/color_rgb/ket_color_rgb.h`,
+  `modules/color_rgb/ket_color_rgb_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
-- Public API: 候補は `ParseColorRgb`, `FormatColorRgbHex`。
-- Behavior: 製造前に `#RRGGBB` だけにするか、`RRGGBB` も許すか、alpha を除外するか固定する。
-- Failure/edge cases: 不正長、不正hex、prefix有無、case、alpha。
-- Tests: black/white、lower/upper、不正長、不正文字。
+- Public API Signatures:
+  - `struct ColorRgb { std::uint8_t r = 0; std::uint8_t g = 0; std::uint8_t b = 0; };`
+  - `bool TryParseColorRgb(const std::string& text, ColorRgb& out) noexcept;`
+  - `std::string FormatColorRgbHex(ColorRgb color, bool with_hash = true);`
+- Behavior: 6桁hex `RRGGBB` を parse し、先頭 `#` は任意。alpha は扱わない。C++11 最小なので入力は
+  `std::string_view` ではなく `const std::string&`、戻りは `std::optional` ではなく `out` 引数 + bool。
+  `FormatColorRgbHex` は lower-case、`with_hash` で `#` 前置を制御する。
+- Failure/edge cases: 不正長、不正hex、3桁短縮形は失敗、case 混在は許容、alpha 付きは失敗。
+- Complexity/performance: parse/format は固定3 byte の O(1)。allocation は format のみ。
+- Tests: black/white、lower/upper、先頭 # 有無、不正長、不正文字。
 - Do not implement: color space 変換、CSS color name、alpha、theme system。
 
 ### percent Module
@@ -951,6 +1328,11 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API: 候補は `Percent::FromRatio`, `ClampPercent`。
 - Behavior: 0〜100 を値範囲にするか、0.0〜1.0 ratio を内部表現にするか製造前に固定する。
+- Spec-split decisions（要確定）:
+  1. 内部表現（0〜100 か 0.0〜1.0 ratio か）と保持型（整数か浮動小数点か）。
+  2. 範囲外（負値・100超過）を clamp するか reject するか。
+  3. 丸め方式と NaN/Inf の扱い。
+  4. 入力型（int / double / ratio）ごとの factory 構成。
 - Failure/edge cases: 負値、100超過、NaN、丸め、整数/浮動小数点入力。
 - Tests: 0、100、負値、100超過、ratio境界、clamp。
 - Do not implement: units framework、progress UI、format localization。
