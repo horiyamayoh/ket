@@ -1,7 +1,7 @@
 # ket
 
-ket は、C++で何度も出会う小さな定型処理に、短く安全な名前を与える
-drop-in utility catalog です。
+ket は、C++で何度も書く小さな定型処理を、短く安全に再利用できるAPIとして
+切り出す drop-in utility catalog です。
 
 このリポジトリは、最初から大量の空フォルダを作らず、moduleを1つずつ追加して育てます。
 設計思想の原典は [ket_coding_agent_brief.md](ket_coding_agent_brief.md) です。
