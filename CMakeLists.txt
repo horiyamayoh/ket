@@ -135,4 +135,53 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_percent_test
+		SOURCES
+			modules/percent/ket_percent_test.cpp
+	)
+
+	set(ket_percent_cxx11_check_source "${CMAKE_CURRENT_BINARY_DIR}/ket_percent_cxx11_check.cpp")
+	file(
+		WRITE
+		"${ket_percent_cxx11_check_source}"
+		[=[
+#include "ket_percent.h"
+
+namespace
+{
+	constexpr ket::percent::Percent kDefaultPercent;
+
+	static_assert(kDefaultPercent.BasisPoints() == 0U, "default percent is C++11 constexpr");
+	static_assert(kDefaultPercent.ToPercent() == 0.0, "percent conversion is C++11 constexpr");
+	static_assert(kDefaultPercent.ToRatio() == 0.0, "ratio conversion is C++11 constexpr");
+	static_assert(kDefaultPercent == ket::percent::Percent{}, "comparison is C++11 constexpr");
+
+} // namespace
+
+int KetPercentCxx11Check()
+{
+	ket::percent::Percent value;
+	const bool from_basis_points = ket::percent::Percent::TryFromBasisPoints(10000U, value);
+	const bool from_percent = ket::percent::Percent::TryFromPercent(12.345, value);
+	const bool from_ratio = ket::percent::Percent::TryFromRatio(0.12345, value);
+
+	return (from_basis_points && from_percent && from_ratio) ? 0 : 1;
+}
+]=]
+	)
+
+	ket_add_compile_check(
+		ket_percent_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			"${ket_percent_cxx11_check_source}"
+	)
+	target_include_directories(
+		ket_percent_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/percent"
+	)
+	add_dependencies(ket_percent_test ket_percent_cxx11_check)
 endif()
