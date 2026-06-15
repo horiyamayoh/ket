@@ -246,6 +246,10 @@ ket::bits::Rotl(value, count)
 ket::bits::PopCount(value)
 ```
 
+Canonical name note:
+
+- 型 `T` の bit 数を返す API は `docs/module_api_catalog.md` で `ket::bits::TypeBitWidth<T>()` を採用。
+
 C++バージョン要件:
 
 - 最小要件：C++11
@@ -273,7 +277,7 @@ Tests:
 - LowNibble(0xAB) == 0x0B
 - HasBit(value, 0) / 最上位 / 範囲外
 - TryMask(0) succeeds with 0
-- TryMask(BitWidth<T>()) succeeds with all bits set
+- TryMask(TypeBitWidth<T>()) succeeds with all bits set
 - rotate count 0 / bit幅以上
 
 ## Idea: Numeric
@@ -2549,6 +2553,11 @@ ket::percent::Percent::TryFromPercent(value, out)
 ket::percent::Percent::TryFromRatio(ratio, out)
 ket::percent::Clamp(value)
 ```
+
+Canonical name note:
+
+- percent 単位入力を clamp して `Percent` へ変換する API は `docs/module_api_catalog.md` で
+  `ket::percent::Percent::FromPercentClamped(value)` を採用。
 
 C++バージョン要件:
 
