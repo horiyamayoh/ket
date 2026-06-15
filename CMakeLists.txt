@@ -135,4 +135,19 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_endian_test
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_endian_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian.h
+	)
 endif()
