@@ -15,6 +15,7 @@ Statusは次の値を使います。
 
 | Module   | Category         | Status   | C++ Min | Tests                              | Format  | Notes                                  |
 | -------- | ---------------- | -------- | ------- | ---------------------------------- | ------- | -------------------------------------- |
+| ascii    | string           | verified | C++17   | GoogleTest                         | checked | ASCII前提のtrim、split、case変換、置換 |
 | bcd      | numeric / binary | verified | C++17   | GoogleTest                         | checked | packed BCDと10進整数・文字列を相互変換 |
 | date     | date             | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定        |
 | deadline | time             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定 |

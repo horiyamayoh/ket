@@ -135,4 +135,11 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_ascii_test
+		SOURCES
+			modules/ascii/ket_ascii.cpp
+			modules/ascii/ket_ascii_test.cpp
+	)
 endif()
