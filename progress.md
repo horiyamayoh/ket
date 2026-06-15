@@ -13,7 +13,8 @@ Statusは次の値を使います。
 - `verified`: format、build、test、必要なcompile-only checkが通っている
 - `deprecated`: 残しているが新規利用を推奨しない
 
-| Module | Category         | Status   | C++ Min | Tests      | Format  | Notes                                  |
-| ------ | ---------------- | -------- | ------- | ---------- | ------- | -------------------------------------- |
-| bcd    | numeric / binary | verified | C++17   | GoogleTest | checked | packed BCDと10進整数・文字列を相互変換 |
-| string | string           | verified | C++17   | GoogleTest | checked | 複数文字列片の連結と既存文字列への追記 |
+| Module   | Category         | Status   | C++ Min | Tests      | Format  | Notes                                  |
+| -------- | ---------------- | -------- | ------- | ---------- | ------- | -------------------------------------- |
+| bcd      | numeric / binary | verified | C++17   | GoogleTest | checked | packed BCDと10進整数・文字列を相互変換 |
+| deadline | time             | verified | C++11   | GoogleTest | checked | steady_clockベースの経過時間と期限判定 |
+| string   | string           | verified | C++17   | GoogleTest | checked | 複数文字列片の連結と既存文字列への追記 |
