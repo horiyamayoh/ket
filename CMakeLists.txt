@@ -135,4 +135,19 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_byte_writer_test
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_writer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer.h
+	)
 endif()
