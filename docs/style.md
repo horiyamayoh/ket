@@ -107,7 +107,8 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 
 正準動詞は次に統一します。
 
-- text→値: `Parse`（C++17は `std::optional` を返す）、`TryParse`（boolと出力引数）
+- text→値: domain moduleでは `Parse`（C++17は `std::optional` を返す）、`TryParse`（boolと出力引数）。
+  `parse` moduleでは操作名の重複を避け、対象名を主にした `UInt`、`TryUInt` の形。
 - 値→text: `Format`
 - 値↔値（非text）: `To<X>` / `From<X>`（相手表現が複数ある場合）
 - codec（単一の正準encoded形）: `Encode` / `Decode`（hex、tlv など）
@@ -116,8 +117,8 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 
 失敗の表現は次に統一します。
 
-- `TryVerb(out&) -> bool`：C++11/14で必須の形。
-- `Verb() -> std::optional`：C++17以降。
+- `TryVerb(out&) -> bool`：C++11/14で必須の形。操作名が namespace にある場合は `Try<X>(out&)`。
+- `Verb() -> std::optional`：C++17以降。操作名が namespace にある場合は `<X>() -> std::optional`。
 - fallback接尾辞：`OrNull`（`T*`）、`OrDefault`（値初期化）、`Or`（呼び出し側fallback）、`OrCreate`（挿入）、`OrEval`（遅延factory）。
 
 その他:
