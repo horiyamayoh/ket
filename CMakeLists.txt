@@ -135,4 +135,11 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_platform_test
+		SOURCES
+			modules/platform/ket_platform.cpp
+			modules/platform/ket_platform_test.cpp
+	)
 endif()
