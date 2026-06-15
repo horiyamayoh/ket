@@ -97,6 +97,13 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 - 関数名はmodule名と対象型名を繰り返しません。`ket::ipv4::Parse`、`ket::hex::Encode` のようにします。
 - struct/class名は型tokenを繰り返しません。`Ipv4Address`→`ket::ipv4::Address`、`MacAddress`→`ket::mac::Address`。
 - ただし `ket::port::Port`、`ket::uuid::Uuid` のように、短いdomain名がそのまま型名として自然な場合は重複を許容します。
+- `ket::bcd::ToInt`、`ket::bcd::FromInt` のように、変換先や変換元を名前に出すことで意図が明確になる場合は
+  `To<X>` / `From<X>` の対象tokenを残します。
+- `parse`、`format` のように操作そのものをmodule名にしたnamespaceでは、関数名は操作名ではなく対象名を主にします。
+  `ket::parse::UInt<T>()`、`ket::parse::UIntOr<T>()`、`ket::format::Bool()` のようにし、
+  `ket::parse::ParseUInt<T>()` のような重複は避けます。
+- `ipv4`、`mac`、`semver` のように対象domainをmodule名にしたnamespaceでは、従来通り `Parse` / `Format`
+  などの正準動詞を使います。
 
 正準動詞は次に統一します。
 
@@ -116,7 +123,8 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 その他:
 
 - format変種は名前ではなく引数で表します。`enum class LetterCase { kLower, kUpper }` か `<T>FormatOptions` を使い、`...Upper` のような名前接尾辞や無名boolは使いません。
-- 述語は free関数で `Is` / `Has` / `Contains`、memberの状態は `std` 流の素の名前（`Empty`、`Full`、`Expired`、`HasValue`）にします。妥当性確認は `IsValid<X>`。
+- `FormatOptions` などの名前付きoptions型では、`with_hash` のように意味が名前で固定される bool field を許容します。
+- 述語は free関数で `Is` / `Has` / `Contains`、memberの状態は `std` 流の素の名前（`Empty`、`Full`、`Expired`、`HasValue`）にします。妥当性確認は単一対象なら `IsValid`、複数対象を区別する場合は `IsValid<X>`。
 - `std` やplatform APIをそのまま薄く包む名前は、標準の綴りを維持します（`ToUnderlying`、`RemoveCvref`、`AddressOf`、`GetLastErrorCode` など）。
 
 ## 出力引数
