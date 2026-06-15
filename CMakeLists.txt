@@ -135,4 +135,11 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_ipv4_test
+		SOURCES
+			modules/ipv4/ket_ipv4.cpp
+			modules/ipv4/ket_ipv4_test.cpp
+	)
 endif()
