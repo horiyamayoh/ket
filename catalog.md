@@ -4,6 +4,8 @@
 
 ここに書くことは実装予定ではありません。C++で何度も調べる、書き間違えると危ない、
 標準ライブラリだけでは儀式が長い、という小さな痛みを失わないために記録します。
+`docs/module_api_catalog.md` に仕様カードがある module では、canonical name は
+`docs/module_api_catalog.md` を正とします。
 
 ## 記入テンプレート
 
@@ -812,12 +814,15 @@ Candidate API:
 
 ```cpp
 ket::bytes_builder::Builder
-builder.U8(value)
-builder.Be16(value)
-builder.Bytes(data, size)
+builder.AppendU8(value)
+builder.AppendBe16(value)
+builder.AppendBytes(data, size)
+builder.Bytes()
 builder.Build()
 ket::bytes_builder::AppendU8(dst, value)
 ```
+
+Canonical name は `docs/module_api_catalog.md` の `bytes_builder Module` を正とします。
 
 C++バージョン要件:
 
@@ -1811,10 +1816,12 @@ Candidate API:
 
 ```cpp
 ket::interop::ErrnoGuard
-ket::interop::CopyToBuffer(dst, dst_size, src, src_size)
+ket::interop::CopyStringToBuffer(dst, dst_size, src, src_size)
 ket::interop::CopyBytesToBuffer(dst, dst_size, src, src_size)
 ket::interop::UniqueHandle<Handle, Deleter>
 ```
+
+Canonical name は `docs/module_api_catalog.md` の `interop Module` を正とします。
 
 C++バージョン要件:
 
