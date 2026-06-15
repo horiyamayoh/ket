@@ -45,7 +45,7 @@ namespace ket
 {
 	namespace bcd
 	{
-		std::optional<std::string> ToDecimalString(const std::uint8_t* data, std::size_t size)
+		std::optional<std::string> Format(const std::uint8_t* data, std::size_t size)
 		{
 			// 入力妥当性確認
 			if (data == nullptr || size == 0U)
@@ -86,7 +86,7 @@ namespace ket
 			return result;
 		}
 
-		std::optional<std::vector<std::uint8_t>> FromDecimalString(std::string_view text)
+		std::optional<std::vector<std::uint8_t>> Parse(std::string_view text)
 		{
 			// 入力妥当性確認
 			const auto text_is_empty = text.empty();

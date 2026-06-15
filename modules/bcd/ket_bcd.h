@@ -89,49 +89,23 @@ namespace ket
 		constexpr std::optional<int> ToInt(std::uint32_t value) noexcept;
 
 		/**
-		 * @brief 2桁固定幅パックBCDへの10進整数変換。
+		 * @brief 固定幅パックBCDへの10進整数変換。
+		 * @tparam Packed 変換後のパックBCD格納型。`std::uint8_t`、`std::uint16_t`、
+		 * `std::uint32_t`のみ対応。
 		 * @param[in] value 変換対象の10進整数。
 		 * @retval value 変換後のパックBCD値。
-		 * @retval std::nullopt 負数、または2桁を超える値。
+		 * @retval std::nullopt 負数、または`Packed`の固定幅桁数を超える値。
 		 * @pre なし。負数と桁数超過は失敗値として扱う。
 		 * @post 引数と外部状態の変更なし。
-		 * @note 2桁固定幅のため、1桁値は上位nibbleを0として表現。
+		 * @note `std::uint8_t`は2桁、`std::uint16_t`は4桁、`std::uint32_t`は8桁の
+		 * fixed-width packed BCDとして表現。
 		 * @code
-		 * const auto value = ket::bcd::FromInt8(42);
+		 * const auto value = ket::bcd::FromInt<std::uint8_t>(42);
 		 * // value == std::optional<std::uint8_t>(0x42)
 		 * @endcode
 		 */
-		constexpr std::optional<std::uint8_t> FromInt8(int value) noexcept;
-
-		/**
-		 * @brief 4桁固定幅パックBCDへの10進整数変換。
-		 * @param[in] value 変換対象の10進整数。
-		 * @retval value 変換後のパックBCD値。
-		 * @retval std::nullopt 負数、または4桁を超える値。
-		 * @pre なし。負数と桁数超過は失敗値として扱う。
-		 * @post 引数と外部状態の変更なし。
-		 * @note 4桁固定幅のため、短い値は上位nibbleを0として表現。
-		 * @code
-		 * const auto value = ket::bcd::FromInt16(42);
-		 * // value == std::optional<std::uint16_t>(0x0042)
-		 * @endcode
-		 */
-		constexpr std::optional<std::uint16_t> FromInt16(int value) noexcept;
-
-		/**
-		 * @brief 8桁固定幅パックBCDへの10進整数変換。
-		 * @param[in] value 変換対象の10進整数。
-		 * @retval value 変換後のパックBCD値。
-		 * @retval std::nullopt 負数、または8桁を超える値。
-		 * @pre なし。負数と桁数超過は失敗値として扱う。
-		 * @post 引数と外部状態の変更なし。
-		 * @note 8桁固定幅のため、短い値は上位nibbleを0として表現。
-		 * @code
-		 * const auto value = ket::bcd::FromInt32(20260613);
-		 * // value == std::optional<std::uint32_t>(0x20260613)
-		 * @endcode
-		 */
-		constexpr std::optional<std::uint32_t> FromInt32(int value) noexcept;
+		template <typename Packed>
+		constexpr std::optional<Packed> FromInt(int value) noexcept;
 
 		/**
 		 * @brief 任意バイト長パックBCDの10進文字列変換。
@@ -146,11 +120,11 @@ namespace ket
 		 * @note std::stringの確保があるためnoexceptなし。
 		 * @code
 		 * const std::uint8_t data[] = {0x00U, 0x42U};
-		 * const auto value = ket::bcd::ToDecimalString(data, 2U);
+		 * const auto value = ket::bcd::Format(data, 2U);
 		 * // value == std::optional<std::string>("0042")
 		 * @endcode
 		 */
-		std::optional<std::string> ToDecimalString(const std::uint8_t* data, std::size_t size);
+		std::optional<std::string> Format(const std::uint8_t* data, std::size_t size);
 
 		/**
 		 * @brief 10進文字列の任意バイト長パックBCD変換。
@@ -162,11 +136,11 @@ namespace ket
 		 * @note 偶数桁は2桁ずつpacked BCDへ変換し、奇数桁は先頭に0を補って変換。
 		 * @note std::vectorの確保があるためnoexceptなし。
 		 * @code
-		 * const auto value = ket::bcd::FromDecimalString("123");
+		 * const auto value = ket::bcd::Parse("123");
 		 * // value == std::optional<std::vector<std::uint8_t>>({0x01, 0x23})
 		 * @endcode
 		 */
-		std::optional<std::vector<std::uint8_t>> FromDecimalString(std::string_view text);
+		std::optional<std::vector<std::uint8_t>> Parse(std::string_view text);
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -307,6 +281,51 @@ namespace ket
 				return result;
 			}
 
+			/**
+			 * @brief 固定幅パックBCD出力型のtraits。
+			 * @tparam Packed 判定対象の固定幅パックBCD格納型。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <typename Packed>
+			struct PackedBcdTraits
+			{
+				static constexpr bool kSupported = false;
+				static constexpr int kNibbleCount = 0;
+			};
+
+			/**
+			 * @brief 2桁固定幅パックBCD出力型のtraits。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <>
+			struct PackedBcdTraits<std::uint8_t>
+			{
+				static constexpr bool kSupported = true;
+				static constexpr int kNibbleCount = 2;
+			};
+
+			/**
+			 * @brief 4桁固定幅パックBCD出力型のtraits。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <>
+			struct PackedBcdTraits<std::uint16_t>
+			{
+				static constexpr bool kSupported = true;
+				static constexpr int kNibbleCount = 4;
+			};
+
+			/**
+			 * @brief 8桁固定幅パックBCD出力型のtraits。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <>
+			struct PackedBcdTraits<std::uint32_t>
+			{
+				static constexpr bool kSupported = true;
+				static constexpr int kNibbleCount = 8;
+			};
+
 		} // namespace detail
 
 		// -----------------------------------------------------------------------------
@@ -328,33 +347,22 @@ namespace ket
 			return detail::ParseBcdNibbles(value, 8);
 		}
 
-		constexpr std::optional<std::uint8_t> FromInt8(int value) noexcept
+		template <typename Packed>
+		constexpr std::optional<Packed> FromInt(int value) noexcept
 		{
-			const auto result = detail::ToBcdNibbles(value, 2);
+			static_assert(detail::PackedBcdTraits<Packed>::kSupported,
+						  "ket::bcd::FromInt supports std::uint8_t, std::uint16_t, and "
+						  "std::uint32_t only.");
+
+			const auto result =
+				detail::ToBcdNibbles(value, detail::PackedBcdTraits<Packed>::kNibbleCount);
 			const auto result_has_value = result.has_value();
 			if (!result_has_value)
 			{
 				return std::nullopt;
 			}
 
-			return static_cast<std::uint8_t>(*result);
-		}
-
-		constexpr std::optional<std::uint16_t> FromInt16(int value) noexcept
-		{
-			const auto result = detail::ToBcdNibbles(value, 4);
-			const auto result_has_value = result.has_value();
-			if (!result_has_value)
-			{
-				return std::nullopt;
-			}
-
-			return static_cast<std::uint16_t>(*result);
-		}
-
-		constexpr std::optional<std::uint32_t> FromInt32(int value) noexcept
-		{
-			return detail::ToBcdNibbles(value, 8);
+			return static_cast<Packed>(*result);
 		}
 
 	} // namespace bcd

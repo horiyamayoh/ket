@@ -68,11 +68,11 @@ Candidate API:
 
 ```cpp
 ket::bcd::ToInt(value)
-ket::bcd::FromInt8(value)
-ket::bcd::FromInt16(value)
-ket::bcd::FromInt32(value)
-ket::bcd::ToDecimalString(data, size)
-ket::bcd::FromDecimalString(text)
+ket::bcd::FromInt<std::uint8_t>(value)
+ket::bcd::FromInt<std::uint16_t>(value)
+ket::bcd::FromInt<std::uint32_t>(value)
+ket::bcd::Format(data, size)
+ket::bcd::Parse(text)
 ```
 
 C++バージョン要件:
@@ -107,14 +107,14 @@ Tests:
 - ToInt(0x10) == 10
 - ToInt(0x99) == 99
 - ToInt(0x0A) == std::nullopt
-- FromInt8(42) == 0x42
-- FromInt8(100) == std::nullopt
-- FromInt16(1234) == 0x1234
-- FromInt32(20260613) == 0x20260613
-- ToDecimalString({0x00, 0x42}) == "0042"
-- FromDecimalString("0042") == {0x00, 0x42}
-- FromDecimalString("123") == {0x01, 0x23}
-- FromDecimalString("12A4") == std::nullopt
+- FromInt<std::uint8_t>(42) == 0x42
+- FromInt<std::uint8_t>(100) == std::nullopt
+- FromInt<std::uint16_t>(1234) == 0x1234
+- FromInt<std::uint32_t>(20260613) == 0x20260613
+- Format({0x00, 0x42}) == "0042"
+- Parse("0042") == {0x00, 0x42}
+- Parse("123") == {0x01, 0x23}
+- Parse("12A4") == std::nullopt
 
 ## Idea: String
 
@@ -148,8 +148,8 @@ Failure / edge cases:
 - `char` as one-character part
 - embedded NUL in length-aware `std::string_view`
 - raw C string must be non-null and null-terminated
-- destination reference for `StrAppend` must refer to a valid `std::string`
-- self-reference such as `StrAppend(dst, dst, std::string_view(dst))`
+- destination reference for `Append` must refer to a valid `std::string`
+- self-reference such as `Append(dst, dst, std::string_view(dst))`
 
 他のライブラリへの依存:
 
@@ -397,7 +397,7 @@ Candidate API:
 ket::hex::Encode(data, size, options)
 ket::hex::Decode(text)
 ket::hex::Dump(data, size, options)
-ket::hex::EncodeU64(value, width)
+ket::hex::Encode(value, width)
 ```
 
 C++バージョン要件:
@@ -445,11 +445,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::parse::TryUInt<T>(text, out)
-ket::parse::UInt<T>(text)
-ket::parse::Int<T>(text)
-ket::parse::Bool(text)
-ket::parse::Hex<T>(text)
+ket::parse::TryParseUInt<T>(text, out)
+ket::parse::ParseUInt<T>(text)
+ket::parse::ParseInt<T>(text)
+ket::parse::ParseBool(text)
+ket::parse::ParseHex<T>(text)
 ```
 
 C++バージョン要件:
@@ -482,7 +482,7 @@ Tests:
 - " 1" and "1 " fail
 - "1x" fails
 - hex prefix acceptance policy
-- Bool("true") / "false" / uppercase rejection
+- ParseBool("true") / "false" / uppercase rejection
 
 ## Idea: EnumTable
 
@@ -805,11 +805,11 @@ Candidate API:
 
 ```cpp
 ket::bytes_builder::Builder
-builder.AppendU8(value)
-builder.AppendBe16(value)
-builder.AppendBytes(data, size)
+builder.U8(value)
+builder.Be16(value)
+builder.Bytes(data, size)
 builder.Build()
-ket::bytes_builder::MakeBuilder()
+ket::bytes_builder::AppendU8(dst, value)
 ```
 
 C++バージョン要件:
@@ -909,7 +909,8 @@ Candidate API:
 ```cpp
 ket::deadline::Stopwatch
 ket::deadline::Deadline
-ket::deadline::MakeDeadline(timeout)
+ket::deadline::Deadline::After(timeout)
+ket::deadline::Deadline::At(time_point)
 ```
 
 C++バージョン要件:
@@ -1002,16 +1003,15 @@ Pain:
 
 - C++11〜17 で `std::span` 相当の non-owning byte view がほしい
 - `nullptr + 0` と `nullptr + 非0` の扱いを明確にしたい
-- subview や bounds check を失敗値で扱いたい
+- slice や bounds check を失敗値で扱いたい
 
 Candidate API:
 
 ```cpp
 ket::byte_view::View
 ket::byte_view::MutableView
-ket::byte_view::MakeView(data, size)
 view.TryAt(index, out)
-view.TrySubView(offset, count, out)
+view.TrySlice(offset, count, out)
 ```
 
 C++バージョン要件:
@@ -1029,7 +1029,7 @@ Failure / edge cases:
 - nullptr + 0 は空 view
 - nullptr + 非0 は invalid view
 - bounds overrun
-- subview 失敗時 out 不変
+- slice 失敗時 out 不変
 
 他のライブラリへの依存:
 
@@ -1042,7 +1042,7 @@ Tests:
 - empty view
 - invalid view
 - TryAt bounds
-- TrySubView success / failure
+- TrySlice success / failure
 - mutable set
 
 ## Idea: Utf8
@@ -1855,11 +1855,11 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::platform::ErrnoMessage(error_number)
-ket::platform::EnvironmentVariable(name)
+ket::platform::FormatErrno(error_number)
+ket::platform::GetEnvironmentVariable(name)
 #ifdef _WIN32
 ket::platform::GetLastErrorCode()
-ket::platform::WindowsErrorMessage(code)
+ket::platform::FormatWindowsError(code)
 #endif
 ```
 
@@ -1910,8 +1910,8 @@ Candidate API:
 
 ```cpp
 ket::state::Transition<State, Event>
-ket::state::IsValidTransition(state, event, table)
-ket::state::NextState(state, event, table)
+ket::state::IsAllowed(state, event, table)
+ket::state::Next(state, event, table)
 ```
 
 C++バージョン要件:
@@ -2171,8 +2171,8 @@ ket::math::Lerp(a, b, t)
 ket::math::DegreesToRadians(degrees)
 ket::math::RadiansToDegrees(radians)
 ket::math::NearlyEqual(a, b, epsilon)
-ket::math::TryKiBToBytes(kib, out)
-ket::math::BytesToKiB(bytes)
+ket::math::TryBytesFromKiB(kib, out)
+ket::math::ToKiB(bytes)
 ```
 
 C++バージョン要件:
@@ -2466,7 +2466,7 @@ Candidate API:
 ```cpp
 ket::color::Rgb
 ket::color::TryParse(text, out)
-ket::color::FormatHex(color, with_hash)
+ket::color::Format(color, options)
 ```
 
 C++バージョン要件:
@@ -2515,10 +2515,10 @@ Candidate API:
 
 ```cpp
 ket::percent::Percent
-ket::percent::TryFromBasisPoints(value, out)
-ket::percent::TryFromRatio(numerator, denominator, out)
+ket::percent::Percent::TryFromBasisPoints(value, out)
+ket::percent::Percent::TryFromPercent(value, out)
+ket::percent::Percent::TryFromRatio(ratio, out)
 ket::percent::Clamp(value)
-ket::percent::Format(value)
 ```
 
 C++バージョン要件:

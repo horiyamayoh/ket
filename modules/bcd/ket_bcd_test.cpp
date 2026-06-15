@@ -54,13 +54,13 @@ namespace
 				  "uint32_t BCD is constexpr");
 	static_assert(OptionalIsEmpty(ket::bcd::ToInt(static_cast<std::uint8_t>(0x0AU))),
 				  "invalid BCD is constexpr");
-	static_assert(OptionalEquals(ket::bcd::FromInt8(42), static_cast<std::uint8_t>(0x42U)),
+	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint8_t>(42), static_cast<std::uint8_t>(0x42U)),
 				  "uint8_t BCD output is constexpr");
-	static_assert(OptionalEquals(ket::bcd::FromInt16(1234), static_cast<std::uint16_t>(0x1234U)),
+	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint16_t>(1234), static_cast<std::uint16_t>(0x1234U)),
 				  "uint16_t BCD output is constexpr");
-	static_assert(OptionalEquals(ket::bcd::FromInt32(20260613), std::uint32_t{0x20260613U}),
+	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint32_t>(20260613), std::uint32_t{0x20260613U}),
 				  "uint32_t BCD output is constexpr");
-	static_assert(OptionalIsEmpty(ket::bcd::FromInt8(100)), "out-of-range BCD output is constexpr");
+	static_assert(OptionalIsEmpty(ket::bcd::FromInt<std::uint8_t>(100)), "out-of-range BCD output is constexpr");
 
 } // namespace
 
@@ -157,10 +157,10 @@ TEST(KetBcdTest, RejectsInvalidWideBcd)
  */
 TEST(KetBcdTest, ConvertsIntToUint8Bcd)
 {
-	const auto zero = ket::bcd::FromInt8(0);
-	const auto nine = ket::bcd::FromInt8(9);
-	const auto forty_two = ket::bcd::FromInt8(42);
-	const auto ninety_nine = ket::bcd::FromInt8(99);
+	const auto zero = ket::bcd::FromInt<std::uint8_t>(0);
+	const auto nine = ket::bcd::FromInt<std::uint8_t>(9);
+	const auto forty_two = ket::bcd::FromInt<std::uint8_t>(42);
+	const auto ninety_nine = ket::bcd::FromInt<std::uint8_t>(99);
 
 	EXPECT_EQ(zero, std::optional<std::uint8_t>(0x00U));
 	EXPECT_EQ(nine, std::optional<std::uint8_t>(0x09U));
@@ -177,9 +177,9 @@ TEST(KetBcdTest, ConvertsIntToUint8Bcd)
  */
 TEST(KetBcdTest, ConvertsIntToUint16Bcd)
 {
-	const auto leading_zero = ket::bcd::FromInt16(42);
-	const auto normal = ket::bcd::FromInt16(1234);
-	const auto maximum = ket::bcd::FromInt16(9999);
+	const auto leading_zero = ket::bcd::FromInt<std::uint16_t>(42);
+	const auto normal = ket::bcd::FromInt<std::uint16_t>(1234);
+	const auto maximum = ket::bcd::FromInt<std::uint16_t>(9999);
 
 	EXPECT_EQ(leading_zero, std::optional<std::uint16_t>(0x0042U));
 	EXPECT_EQ(normal, std::optional<std::uint16_t>(0x1234U));
@@ -195,8 +195,8 @@ TEST(KetBcdTest, ConvertsIntToUint16Bcd)
  */
 TEST(KetBcdTest, ConvertsIntToUint32Bcd)
 {
-	const auto date = ket::bcd::FromInt32(20260613);
-	const auto maximum = ket::bcd::FromInt32(99999999);
+	const auto date = ket::bcd::FromInt<std::uint32_t>(20260613);
+	const auto maximum = ket::bcd::FromInt<std::uint32_t>(99999999);
 
 	EXPECT_EQ(date, std::optional<std::uint32_t>(0x20260613U));
 	EXPECT_EQ(maximum, std::optional<std::uint32_t>(0x99999999U));
@@ -211,12 +211,12 @@ TEST(KetBcdTest, ConvertsIntToUint32Bcd)
  */
 TEST(KetBcdTest, RejectsOutOfRangeIntToBcd)
 {
-	const auto negative_uint8 = ket::bcd::FromInt8(-1);
-	const auto too_large_uint8 = ket::bcd::FromInt8(100);
-	const auto negative_uint16 = ket::bcd::FromInt16(-1);
-	const auto too_large_uint16 = ket::bcd::FromInt16(10000);
-	const auto negative_uint32 = ket::bcd::FromInt32(-1);
-	const auto too_large_uint32 = ket::bcd::FromInt32(100000000);
+	const auto negative_uint8 = ket::bcd::FromInt<std::uint8_t>(-1);
+	const auto too_large_uint8 = ket::bcd::FromInt<std::uint8_t>(100);
+	const auto negative_uint16 = ket::bcd::FromInt<std::uint16_t>(-1);
+	const auto too_large_uint16 = ket::bcd::FromInt<std::uint16_t>(10000);
+	const auto negative_uint32 = ket::bcd::FromInt<std::uint32_t>(-1);
+	const auto too_large_uint32 = ket::bcd::FromInt<std::uint32_t>(100000000);
 
 	EXPECT_EQ(negative_uint8, std::nullopt);
 	EXPECT_EQ(too_large_uint8, std::nullopt);
@@ -233,16 +233,16 @@ TEST(KetBcdTest, RejectsOutOfRangeIntToBcd)
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
-TEST(KetBcdTest, ConvertsBcdBytesToDecimalString)
+TEST(KetBcdTest, FormatsBcdBytesAsDecimalString)
 {
 	const auto four_digits = std::array<std::uint8_t, 2>{{0x12U, 0x34U}};
 	const auto leading_zero = std::array<std::uint8_t, 2>{{0x00U, 0x42U}};
 	const auto date = std::array<std::uint8_t, 4>{{0x20U, 0x26U, 0x06U, 0x13U}};
 
-	const auto four_digits_text = ket::bcd::ToDecimalString(four_digits.data(), four_digits.size());
+	const auto four_digits_text = ket::bcd::Format(four_digits.data(), four_digits.size());
 	const auto leading_zero_text =
-		ket::bcd::ToDecimalString(leading_zero.data(), leading_zero.size());
-	const auto date_text = ket::bcd::ToDecimalString(date.data(), date.size());
+		ket::bcd::Format(leading_zero.data(), leading_zero.size());
+	const auto date_text = ket::bcd::Format(date.data(), date.size());
 
 	EXPECT_EQ(four_digits_text, std::optional<std::string>("1234"));
 	EXPECT_EQ(leading_zero_text, std::optional<std::string>("0042"));
@@ -256,12 +256,12 @@ TEST(KetBcdTest, ConvertsBcdBytesToDecimalString)
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
-TEST(KetBcdTest, ConvertsDecimalStringToBcdBytes)
+TEST(KetBcdTest, ParsesDecimalStringToBcdBytes)
 {
-	const auto even_digits = ket::bcd::FromDecimalString("1234");
-	const auto leading_zero = ket::bcd::FromDecimalString("0042");
-	const auto odd_digits = ket::bcd::FromDecimalString("123");
-	const auto single_digit = ket::bcd::FromDecimalString("7");
+	const auto even_digits = ket::bcd::Parse("1234");
+	const auto leading_zero = ket::bcd::Parse("0042");
+	const auto odd_digits = ket::bcd::Parse("123");
+	const auto single_digit = ket::bcd::Parse("7");
 
 	const auto expected_even_digits = std::optional<std::vector<std::uint8_t>>(
 		std::vector<std::uint8_t>{std::uint8_t{0x12U}, std::uint8_t{0x34U}});
@@ -285,13 +285,13 @@ TEST(KetBcdTest, ConvertsDecimalStringToBcdBytes)
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
-TEST(KetBcdTest, RejectsInvalidDecimalStringToBcd)
+TEST(KetBcdTest, RejectsInvalidDecimalStringDuringParse)
 {
-	const auto empty = ket::bcd::FromDecimalString("");
-	const auto single_alphabet = ket::bcd::FromDecimalString("A");
-	const auto alphabet = ket::bcd::FromDecimalString("12A4");
-	const auto sign = ket::bcd::FromDecimalString("-1");
-	const auto space = ket::bcd::FromDecimalString("12 4");
+	const auto empty = ket::bcd::Parse("");
+	const auto single_alphabet = ket::bcd::Parse("A");
+	const auto alphabet = ket::bcd::Parse("12A4");
+	const auto sign = ket::bcd::Parse("-1");
+	const auto space = ket::bcd::Parse("12 4");
 
 	EXPECT_EQ(empty, std::nullopt);
 	EXPECT_EQ(single_alphabet, std::nullopt);
@@ -314,11 +314,11 @@ TEST(KetBcdTest, RejectsInvalidBcdBytes)
 	const auto invalid_second = std::array<std::uint8_t, 2>{{0x12U, 0x3AU}};
 
 	const auto invalid_first_text =
-		ket::bcd::ToDecimalString(invalid_first.data(), invalid_first.size());
+		ket::bcd::Format(invalid_first.data(), invalid_first.size());
 	const auto invalid_high_nibble_text =
-		ket::bcd::ToDecimalString(invalid_high_nibble.data(), invalid_high_nibble.size());
+		ket::bcd::Format(invalid_high_nibble.data(), invalid_high_nibble.size());
 	const auto invalid_second_text =
-		ket::bcd::ToDecimalString(invalid_second.data(), invalid_second.size());
+		ket::bcd::Format(invalid_second.data(), invalid_second.size());
 
 	EXPECT_EQ(invalid_first_text, std::nullopt);
 	EXPECT_EQ(invalid_high_nibble_text, std::nullopt);
@@ -336,9 +336,9 @@ TEST(KetBcdTest, RejectsEmptyOrNullInput)
 {
 	const auto value = std::uint8_t{0x12U};
 
-	const auto null_input = ket::bcd::ToDecimalString(nullptr, 1U);
-	const auto null_empty_input = ket::bcd::ToDecimalString(nullptr, 0U);
-	const auto empty_input = ket::bcd::ToDecimalString(&value, 0U);
+	const auto null_input = ket::bcd::Format(nullptr, 1U);
+	const auto null_empty_input = ket::bcd::Format(nullptr, 0U);
+	const auto empty_input = ket::bcd::Format(&value, 0U);
 
 	EXPECT_EQ(null_input, std::nullopt);
 	EXPECT_EQ(null_empty_input, std::nullopt);

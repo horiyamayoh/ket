@@ -106,7 +106,7 @@ namespace ket
 				std::is_convertible_v<Part, std::string_view>;
 
 			/**
-			 * @brief StrCatとStrAppendが受け付ける文字列片の型判定。
+			 * @brief CatとAppendが受け付ける文字列片の型判定。
 			 * @tparam Part 判定対象の型。
 			 * @note char、またはstd::string_viewに変換可能な型を受け付ける。
 			 * @note detail配下の型は公開APIではない。
