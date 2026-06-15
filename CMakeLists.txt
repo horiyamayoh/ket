@@ -135,4 +135,40 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_math_test
+		SOURCES
+			modules/math/ket_math_test.cpp
+	)
+
+	set(ket_math_cxx11_check_source "${CMAKE_CURRENT_BINARY_DIR}/ket_math_cxx11_check.cpp")
+	file(
+		WRITE
+		"${ket_math_cxx11_check_source}"
+		"#include \"${CMAKE_CURRENT_SOURCE_DIR}/modules/math/ket_math.h\"\n"
+		"\n"
+		"#include <cstdint>\n"
+		"\n"
+		"static_assert(ket::math::Lerp(10.0, 20.0, 0.25) == 12.5, "
+		"\"Lerp is C++11 constexpr\");\n"
+		"static_assert(ket::math::NearlyEqual(1.0, 1.001, 0.01), "
+		"\"NearlyEqual is C++11 constexpr\");\n"
+		"static_assert(!ket::math::NearlyEqual(1.0, 1.0, 0.0), "
+		"\"NearlyEqual rejects zero epsilon in C++11 constexpr\");\n"
+		"static_assert(ket::math::NearlyEqual("
+		"ket::math::ToDegrees(ket::math::ToRadians(90.0)), 90.0, 0.000000000001), "
+		"\"angle conversion is C++11 constexpr\");\n"
+		"static_assert(ket::math::BytesToKiB(std::uint64_t{2048U}) == 2.0, "
+		"\"BytesToKiB is C++11 constexpr\");\n"
+		"static_assert(ket::math::BytesToMiB(std::uint64_t{2097152U}) == 2.0, "
+		"\"BytesToMiB is C++11 constexpr\");\n"
+	)
+
+	ket_add_compile_check(
+		ket_math_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			"${ket_math_cxx11_check_source}"
+	)
 endif()
