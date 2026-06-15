@@ -359,6 +359,59 @@ class CheckConventionsTest(unittest.TestCase):
 
 		self.assertEqual(errors, [])
 
+	def test_header_type_comment_before_template_specialization_is_accepted(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"/**",
+					" * @brief Generic trait.",
+					" * @tparam T Checked type.",
+					" */",
+					"template <typename T>",
+					"struct Traits",
+					"{",
+					"};",
+					"",
+					"/**",
+					" * @brief Integer trait specialization.",
+					" */",
+					"template <>",
+					"struct Traits<int>",
+					"{",
+					"};",
+					"",
+				)
+			),
+		)
+
+		self.assertEqual(errors, [])
+
+	def test_missing_header_type_comment_before_template_specialization_is_reported(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"/**",
+					" * @brief Generic trait.",
+					" * @tparam T Checked type.",
+					" */",
+					"template <typename T>",
+					"struct Traits",
+					"{",
+					"};",
+					"",
+					"template <>",
+					"struct Traits<int>",
+					"{",
+					"};",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(any("type declaration requires a Doxygen comment." in error for error in errors))
+
 	def test_missing_header_type_comment_is_reported(self) -> None:
 		errors = self.check_text(
 			"modules/sample/ket_sample.h",

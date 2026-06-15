@@ -24,7 +24,7 @@ HEADER_SECTIONS = (
 CONTROL_PREFIXES = ("if ", "while ", "for ", "switch ", "return ", "throw ", "static_assert")
 MACRO_PREFIXES = ("TEST", "EXPECT_", "ASSERT_")
 TYPE_DECLARATION_PATTERN = re.compile(
-	r"^(?:template\s*<[^>]+>\s*)?(?:(?:struct|class)\s+[A-Za-z_][A-Za-z0-9_]*|enum(?:\s+class)?\s+[A-Za-z_][A-Za-z0-9_]*)\b"
+	r"^(?:template\s*<[^>]*>\s*)?(?:(?:struct|class)\s+[A-Za-z_][A-Za-z0-9_]*|enum(?:\s+class)?\s+[A-Za-z_][A-Za-z0-9_]*)\b"
 )
 
 

@@ -4,6 +4,8 @@
 
 ここに書くことは実装予定ではありません。C++で何度も調べる、書き間違えると危ない、
 標準ライブラリだけでは儀式が長い、という小さな痛みを失わないために記録します。
+`docs/module_api_catalog.md` に仕様カードがある module では、canonical name は
+`docs/module_api_catalog.md` を正とします。
 
 ## 記入テンプレート
 
@@ -180,7 +182,7 @@ Candidate API:
 
 ```cpp
 ket::port::Port
-ket::port::TryMake(value, out)
+ket::port::TryFromUInt(value, out)
 ket::port::Parse(text)
 ket::port::Format(port)
 ```
@@ -211,9 +213,9 @@ Failure / edge cases:
 
 Tests:
 
-- TryMake(0) succeeds
-- TryMake(65535) succeeds
-- TryMake(65536) fails
+- TryFromUInt(0) succeeds
+- TryFromUInt(65535) succeeds
+- TryFromUInt(65536) fails
 - Parse("0") succeeds
 - Parse("65535") succeeds
 - Parse("65536") fails
@@ -237,11 +239,16 @@ Candidate API:
 ```cpp
 ket::bits::HighNibble(value)
 ket::bits::LowNibble(value)
+ket::bits::TryPackNibbles(high, low, out)
 ket::bits::HasBit(value, bit_index)
 ket::bits::TryMask(width, out)
 ket::bits::Rotl(value, count)
 ket::bits::PopCount(value)
 ```
+
+Canonical name note:
+
+- 型 `T` の bit 数を返す API は `docs/module_api_catalog.md` で `ket::bits::TypeBitWidth<T>()` を採用。
 
 C++バージョン要件:
 
@@ -270,7 +277,7 @@ Tests:
 - LowNibble(0xAB) == 0x0B
 - HasBit(value, 0) / 最上位 / 範囲外
 - TryMask(0) succeeds with 0
-- TryMask(BitWidth<T>()) succeeds with all bits set
+- TryMask(TypeBitWidth<T>()) succeeds with all bits set
 - rotate count 0 / bit幅以上
 
 ## Idea: Numeric
@@ -291,8 +298,10 @@ ket::numeric::Clamp(value, min_value, max_value)
 ket::numeric::AbsDiff(a, b)
 ket::numeric::TryDivideRoundUp(value, divisor, out)
 ket::numeric::TryAlignUp(value, alignment, out)
-ket::numeric::TryCheckedAdd(a, b, out)
-ket::numeric::TryCheckedCast<To>(value, out)
+ket::numeric::TryAdd(a, b, out)
+ket::numeric::TrySub(a, b, out)
+ket::numeric::TryMul(a, b, out)
+ket::numeric::TryCast<To>(value, out)
 ket::numeric::SaturatingAdd(a, b)
 ```
 
@@ -323,11 +332,11 @@ Tests:
 
 - TryAlignUp(0, 4) == 0
 - TryAlignUp(max, 2) fails when overflow
-- TryCheckedAdd(max, 1) fails
-- TryCheckedSub(min, 1) fails
-- TryCheckedMul boundary cases
-- TryCheckedCast<std::uint8_t>(255) succeeds
-- TryCheckedCast<std::uint8_t>(256) fails
+- TryAdd(max, 1) fails
+- TrySub(min, 1) fails
+- TryMul boundary cases
+- TryCast<std::uint8_t>(255) succeeds
+- TryCast<std::uint8_t>(256) fails
 - bool / char の compile-only 不採用確認
 
 ## Idea: Endian
@@ -445,11 +454,16 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::parse::TryParseUInt<T>(text, out)
-ket::parse::ParseUInt<T>(text)
-ket::parse::ParseInt<T>(text)
-ket::parse::ParseBool(text)
-ket::parse::ParseHex<T>(text)
+ket::parse::TryUInt<T>(text, out)
+ket::parse::TryInt<T>(text, out)
+ket::parse::TryHex<T>(text, out)
+ket::parse::TryBool(text, out)
+ket::parse::UInt<T>(text)
+ket::parse::Int<T>(text)
+ket::parse::Hex<T>(text)
+ket::parse::Bool(text)
+ket::parse::UIntOr<T>(text, fallback)
+ket::parse::IntOr<T>(text, fallback)
 ```
 
 C++バージョン要件:
@@ -482,7 +496,7 @@ Tests:
 - " 1" and "1 " fail
 - "1x" fails
 - hex prefix acceptance policy
-- ParseBool("true") / "false" / uppercase rejection
+- Bool("true") / "false" / uppercase rejection
 
 ## Idea: EnumTable
 
@@ -600,12 +614,19 @@ Candidate API:
 
 ```cpp
 ket::ascii::Trim(text)
-ket::ascii::SplitView(text, delimiter, options)
+ket::ascii::SplitViews(text, delimiter)
 ket::ascii::ToLower(text)
 ket::ascii::ReplaceAll(text, from, to)
 ket::ascii::StartsWith(text, prefix)
 ket::ascii::EndsWith(text, suffix)
+ket::ascii::StripPrefix(text, prefix)
+ket::ascii::StripSuffix(text, suffix)
 ```
+
+Canonical name note:
+
+- 条件付きで prefix/suffix を取り除き、一致しなければ元 view を返す API は
+  `docs/module_api_catalog.md` で `StripPrefix` / `StripSuffix` を採用。
 
 C++バージョン要件:
 
@@ -620,7 +641,7 @@ Failure / edge cases:
 
 - ASCII whitespace のみ
 - UTF-8 byte は保持
-- empty delimiter
+- leading / trailing delimiter
 - empty fields
 - view lifetime
 - allocation 例外
@@ -633,7 +654,7 @@ Failure / edge cases:
 Tests:
 
 - Trim empty / whitespace / normal
-- SplitView keeps or drops empty fields
+- SplitViews keeps empty fields
 - ToLower leaves non-ASCII bytes unchanged
 - ReplaceAll no match / repeated match
 - StartsWith / EndsWith boundaries
@@ -804,13 +825,19 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::bytes_builder::Builder
-builder.U8(value)
-builder.Be16(value)
-builder.Bytes(data, size)
+ket::bytes::Builder
+builder.AppendU8(value)
+builder.AppendBe16(value)
+builder.Append(data, size)
+builder.Buffer()
 builder.Build()
-ket::bytes_builder::AppendU8(dst, value)
+ket::bytes::AppendU8(dst, value)
 ```
+
+Canonical name note:
+
+- module 名は `docs/module_api_catalog.md` の `bytes Module` を正とし、
+  公開 namespace は `ket::bytes` を採用。
 
 C++バージョン要件:
 
@@ -837,7 +864,7 @@ Failure / edge cases:
 Tests:
 
 - AppendU8 / BE / LE golden bytes
-- AppendBytes empty
+- Append empty
 - reserve
 - Build returns expected vector
 - Build after move leaves valid object
@@ -860,6 +887,9 @@ ket::date::TryDaysInMonth(year, month, out)
 ket::date::IsValidDate(year, month, day)
 ket::date::IsValidTime(hour, minute, second)
 ```
+
+Canonical API in `docs/module_api_catalog.md`: `ket::date::TryDaysInMonth` is superseded by
+`ket::date::TryGetDaysInMonth`.
 
 C++バージョン要件:
 
@@ -960,7 +990,7 @@ ket::cli::ArgvView
 ket::cli::HasOption(args, "--help")
 ket::cli::OptionValue(args, "--id")
 ket::cli::OptionValueOr(args, "--mode", "default")
-ket::cli::Positional(args)
+ket::cli::PositionalArguments(args)
 ```
 
 C++バージョン要件:
@@ -1060,7 +1090,7 @@ Candidate API:
 ```cpp
 ket::utf8::Validate(text)
 ket::utf8::IsValid(text)
-ket::utf8::Length(text)
+ket::utf8::CountCodePoints(text)
 ket::utf8::IsAscii(text)
 ```
 
@@ -1165,7 +1195,7 @@ Candidate API:
 ket::io_stream::TryReadExactly(stream, data, size)
 ket::io_stream::TryWriteAll(stream, data, size)
 ket::io_stream::StateSaver
-ket::io_stream::TryReadLineTrimmed(stream, out)
+ket::io_stream::TryReadLineTrimmedAscii(stream, out)
 ```
 
 C++バージョン要件:
@@ -1263,7 +1293,7 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ranges::ForEachIndex(range, f)
+ket::ranges::ForEachWithIndex(range, f)
 ket::ranges::FindIndexIf(range, predicate, out)
 ```
 
@@ -1414,6 +1444,10 @@ ket::testing::BytesEq(expected, actual)
 ket::testing::HexEq(hex, actual)
 ```
 
+Canonical API in `docs/module_api_catalog.md`: `ket::testing::BytesEq` and
+`ket::testing::HexEq` are superseded by `ket::testing::BytesEqual` and
+`ket::testing::HexEqual`.
+
 C++バージョン要件:
 
 - 最小要件：C++17
@@ -1458,11 +1492,14 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::semver::Version
-ket::semver::Parse(text)
-ket::semver::Compare(a, b)
-ket::semver::Format(value)
+ket::version::Triplet
+ket::version::Parse(text)
+ket::version::Compare(a, b)
+ket::version::Format(value)
 ```
+
+Canonical API in `docs/module_api_catalog.md`: full SemVer ではない numeric triplet として
+`ket::version` module を採用。
 
 C++バージョン要件:
 
@@ -1758,6 +1795,9 @@ KET_REQUIRE_NON_NULL(ptr)
 ket::contract::CheckBounds(index, size)
 ```
 
+Canonical API in `docs/module_api_catalog.md`: `ket::contract::CheckBounds` is superseded by
+`ket::contract::IsInBounds`.
+
 C++バージョン要件:
 
 - 最小要件：C++11
@@ -1804,10 +1844,12 @@ Candidate API:
 
 ```cpp
 ket::interop::ErrnoGuard
-ket::interop::CopyToBuffer(dst, dst_size, src, src_size)
+ket::interop::CopyStringToBuffer(dst, dst_size, src, src_size)
 ket::interop::CopyBytesToBuffer(dst, dst_size, src, src_size)
 ket::interop::UniqueHandle<Handle, Deleter>
 ```
+
+Canonical name は `docs/module_api_catalog.md` の `interop Module` を正とします。
 
 C++バージョン要件:
 
@@ -2168,12 +2210,17 @@ Candidate API:
 
 ```cpp
 ket::math::Lerp(a, b, t)
-ket::math::DegreesToRadians(degrees)
-ket::math::RadiansToDegrees(radians)
+ket::math::ToRadians(degrees)
+ket::math::ToDegrees(radians)
 ket::math::NearlyEqual(a, b, epsilon)
 ket::math::TryBytesFromKiB(kib, out)
-ket::math::ToKiB(bytes)
+ket::math::BytesToKiB(bytes)
 ```
+
+Canonical name note:
+
+- bytes 入力を KiB/MiB へ変換する API は `docs/module_api_catalog.md` で
+  `BytesToKiB` / `BytesToMiB` を採用。
 
 C++バージョン要件:
 
@@ -2269,7 +2316,7 @@ Candidate API:
 ```cpp
 ket::object::NonCopyable
 ket::object::NonMovable
-ket::object::MovableOnly
+ket::object::MoveOnly
 ket::object::ResetOnMove<T>
 ```
 
@@ -2365,7 +2412,7 @@ Candidate API:
 
 ```cpp
 ket::concurrency::JoiningThread
-ket::concurrency::FutureReady(future)
+ket::concurrency::IsReady(future)
 ```
 
 C++バージョン要件:
@@ -2520,6 +2567,11 @@ ket::percent::Percent::TryFromPercent(value, out)
 ket::percent::Percent::TryFromRatio(ratio, out)
 ket::percent::Clamp(value)
 ```
+
+Canonical name note:
+
+- percent 単位入力を clamp して `Percent` へ変換する API は `docs/module_api_catalog.md` で
+  `ket::percent::Percent::FromPercentClamped(value)` を採用。
 
 C++バージョン要件:
 

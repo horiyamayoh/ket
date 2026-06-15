@@ -29,7 +29,7 @@ modules/<name>/ket_<name>_test.cpp
 ```
 
 - 公開APIは module ごとの入れ子namespace `namespace ket::<module>` に置きます。C++11/14のdrop-inを維持するため、`namespace ket { namespace <module> { ... } }` の入れ子block形式で書き、C++17の `namespace ket::<module>` 短縮形は使わないでください。top-levelの `namespace ket` は1つだけにします。
-- module名はfolder名と一致させます。冗長なfolder名は短い別名にします（`parse_numeric`→`parse`、`string_ascii`→`ascii`、`semantic_version`→`semver` など）。
+- module名はfolder名と一致させます。冗長なfolder名は短い別名にします（`parse_numeric`→`parse`、`string_ascii`→`ascii`、`semantic_version`→`version` など）。
 - namespaceで対象moduleが明らかになるため、API名からmodule tokenと型tokenを落とします（`ParseIpv4Address`→`ket::ipv4::Parse`、`Ipv4Address`→`ket::ipv4::Address`）。正準動詞とfallback接尾辞の詳細は `docs/style.md` に従ってください。
 - 公開ヘッダでは、公開APIのDoxygen付き宣言を先に並べ、その後に `ket::<module>::detail` の内部helper、最後にinline、constexpr、templateなどの公開API定義を書いてください。
 - 公開ヘッダの各sectionには、`Public API declarations`、`Internal implementation details`、`Public API definitions` のdashed bannerコメントを置いてください。

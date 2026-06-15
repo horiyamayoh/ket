@@ -90,17 +90,36 @@ namespace ket
 
 - top-levelの `namespace ket` は1つだけにし、drop-in時のrenameが1箇所で済むようにします。
 - 内部helperは `ket::<module>::detail` に置きます。
-- module名はfolder名と一致させます。冗長なfolder名は短い別名にします（`parse_numeric`→`parse`、`string_ascii`→`ascii`、`mac_address`→`mac`、`semantic_version`→`semver` など）。
+- module名はfolder名と一致させます。冗長なfolder名は短い別名にします（`parse_numeric`→`parse`、`string_ascii`→`ascii`、`mac_address`→`mac`、`semantic_version`→`version` など）。
 
 namespaceで対象moduleが明らかになるため、API名からはmodule tokenと型tokenを落とします。
 
 - 関数名はmodule名と対象型名を繰り返しません。`ket::ipv4::Parse`、`ket::hex::Encode` のようにします。
 - struct/class名は型tokenを繰り返しません。`Ipv4Address`→`ket::ipv4::Address`、`MacAddress`→`ket::mac::Address`。
-- ただし `ket::port::Port`、`ket::uuid::Uuid` のように、短いdomain名がそのまま型名として自然な場合は重複を許容します。
+- `ket::<module>::<API>` として読んだときに、module名とAPI名が同じ意味を重複させないことを最終確認します。
+- `Kind`、`Address`、`View` のような短い型名は、namespaceが十分な文脈を持つ場合に優先します。
+- ただし `ket::port::Port`、`ket::uuid::Uuid`、`ket::percent::Percent` のように、短いdomain名がそのまま型名として自然な場合は重複を許容します。
+- `ket::bcd::ToInt`、`ket::bcd::FromInt` のように、変換先や変換元を名前に出すことで意図が明確になる場合は
+  `To<X>` / `From<X>` の対象tokenを残します。
+- `parse`、`format` のように操作そのものをmodule名にしたnamespaceでは、関数名は操作名ではなく対象名を主にします。
+  `ket::parse::UInt<T>()`、`ket::parse::UIntOr<T>()`、`ket::format::Bool()` のようにし、
+  `ket::parse::ParseUInt<T>()` のような重複は避けます。
+- `ipv4`、`mac`、`version` のように対象domainをmodule名にしたnamespaceでは、従来通り `Parse` / `Format`
+  などの正準動詞を使います。
+- ASCII、endian、non-owning、unit、lifetimeなど誤解しやすい制約は、API名かDoxygenのどちらかに必ず出します。
+  module名だけでは推測しにくい場合はAPI名へ出します。
+- 標準APIと同名で意味が異なる場合は、対象や単位を名前に足して誤読を避けます。
+  例: `std::string_view::remove_prefix` と異なる条件付き・非破壊処理は
+  `ket::ascii::StripPrefix` のように名前を分けます。
+- `Clamp` や `Get` のような generic verb が変換、丸め、単位解釈を隠す場合は、`To<X>`、`From<X>`、
+  または unit 名で入力・出力の意味を明示します。
+- `ket::percent::Percent::TryFromPercent` は `TryFromBasisPoints` / `TryFromRatio` と入力単位を揃えるため許容します。
+- `ket::ascii::SplitViews` は owning/non-owning の違いを名前で区別するため許容します。
 
 正準動詞は次に統一します。
 
-- text→値: `Parse`（C++17は `std::optional` を返す）、`TryParse`（boolと出力引数）
+- text→値: domain moduleでは `Parse`（C++17は `std::optional` を返す）、`TryParse`（boolと出力引数）。
+  `parse` moduleでは操作名の重複を避け、対象名を主にした `UInt`、`TryUInt` の形。
 - 値→text: `Format`
 - 値↔値（非text）: `To<X>` / `From<X>`（相手表現が複数ある場合）
 - codec（単一の正準encoded形）: `Encode` / `Decode`（hex、tlv など）
@@ -109,14 +128,17 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 
 失敗の表現は次に統一します。
 
-- `TryVerb(out&) -> bool`：C++11/14で必須の形。
-- `Verb() -> std::optional`：C++17以降。
-- fallback接尾辞：`OrNull`（`T*`）、`OrDefault`（値初期化）、`Or`（呼び出し側fallback）、`OrCreate`（挿入）、`OrEval`（遅延factory）。
+- `TryVerb(out&) -> bool`：C++11/14で必須の形。操作名が namespace にある場合は `Try<X>(out&)`。
+- `Verb() -> std::optional`：C++17以降。操作名が namespace にある場合は `<X>() -> std::optional`。
+- `Try` の後ろは動詞、または操作対象として自然に読める名詞にします。値を取得する処理では、単独の名詞より `TryGet<X>` を優先します。
+- fallback接尾辞：`OrNull`（`T*`）、`OrDefault`（値初期化）、`Or`（呼び出し側fallback）、`OrCreate`（挿入）、`OrEval`（遅延factory）、`OrEmpty`（空文字列または空view）。
 
 その他:
 
 - format変種は名前ではなく引数で表します。`enum class LetterCase { kLower, kUpper }` か `<T>FormatOptions` を使い、`...Upper` のような名前接尾辞や無名boolは使いません。
-- 述語は free関数で `Is` / `Has` / `Contains`、memberの状態は `std` 流の素の名前（`Empty`、`Full`、`Expired`、`HasValue`）にします。妥当性確認は `IsValid<X>`。
+- `FormatOptions` などの名前付きoptions型では、`with_hash` のように意味が名前で固定される bool field を許容します。
+- bool predicateは原則として free関数で `Is` / `Has` / `Contains`、memberの状態は `std` 流の素の名前（`Empty`、`Full`、`Expired`、`HasValue`）にします。妥当性確認は単一対象なら `IsValid`、複数対象を区別する場合は `IsValid<X>`。
+- unit名は、API名では広く認知された単位記号（`KiB`、`MiB` など）以外を省略しません。`Milliseconds` のように、意味が長くても曖昧さを減らす名前を優先します。
 - `std` やplatform APIをそのまま薄く包む名前は、標準の綴りを維持します（`ToUnderlying`、`RemoveCvref`、`AddressOf`、`GetLastErrorCode` など）。
 
 ## 出力引数

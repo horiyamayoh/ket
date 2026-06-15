@@ -54,13 +54,17 @@ namespace
 				  "uint32_t BCD is constexpr");
 	static_assert(OptionalIsEmpty(ket::bcd::ToInt(static_cast<std::uint8_t>(0x0AU))),
 				  "invalid BCD is constexpr");
-	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint8_t>(42), static_cast<std::uint8_t>(0x42U)),
+	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint8_t>(42),
+								 static_cast<std::uint8_t>(0x42U)),
 				  "uint8_t BCD output is constexpr");
-	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint16_t>(1234), static_cast<std::uint16_t>(0x1234U)),
+	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint16_t>(1234),
+								 static_cast<std::uint16_t>(0x1234U)),
 				  "uint16_t BCD output is constexpr");
-	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint32_t>(20260613), std::uint32_t{0x20260613U}),
+	static_assert(OptionalEquals(ket::bcd::FromInt<std::uint32_t>(20260613),
+								 std::uint32_t{0x20260613U}),
 				  "uint32_t BCD output is constexpr");
-	static_assert(OptionalIsEmpty(ket::bcd::FromInt<std::uint8_t>(100)), "out-of-range BCD output is constexpr");
+	static_assert(OptionalIsEmpty(ket::bcd::FromInt<std::uint8_t>(100)),
+				  "out-of-range BCD output is constexpr");
 
 } // namespace
 
@@ -240,8 +244,7 @@ TEST(KetBcdTest, FormatsBcdBytesAsDecimalString)
 	const auto date = std::array<std::uint8_t, 4>{{0x20U, 0x26U, 0x06U, 0x13U}};
 
 	const auto four_digits_text = ket::bcd::Format(four_digits.data(), four_digits.size());
-	const auto leading_zero_text =
-		ket::bcd::Format(leading_zero.data(), leading_zero.size());
+	const auto leading_zero_text = ket::bcd::Format(leading_zero.data(), leading_zero.size());
 	const auto date_text = ket::bcd::Format(date.data(), date.size());
 
 	EXPECT_EQ(four_digits_text, std::optional<std::string>("1234"));
@@ -313,12 +316,10 @@ TEST(KetBcdTest, RejectsInvalidBcdBytes)
 	const auto invalid_high_nibble = std::array<std::uint8_t, 2>{{0xA1U, 0x34U}};
 	const auto invalid_second = std::array<std::uint8_t, 2>{{0x12U, 0x3AU}};
 
-	const auto invalid_first_text =
-		ket::bcd::Format(invalid_first.data(), invalid_first.size());
+	const auto invalid_first_text = ket::bcd::Format(invalid_first.data(), invalid_first.size());
 	const auto invalid_high_nibble_text =
 		ket::bcd::Format(invalid_high_nibble.data(), invalid_high_nibble.size());
-	const auto invalid_second_text =
-		ket::bcd::Format(invalid_second.data(), invalid_second.size());
+	const auto invalid_second_text = ket::bcd::Format(invalid_second.data(), invalid_second.size());
 
 	EXPECT_EQ(invalid_first_text, std::nullopt);
 	EXPECT_EQ(invalid_high_nibble_text, std::nullopt);
