@@ -135,4 +135,76 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_pointer_test
+		SOURCES
+			modules/pointer/ket_pointer_test.cpp
+	)
+
+	set(KET_POINTER_CXX11_CHECK_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/ket_pointer_cxx11_check.cpp")
+	file(
+		WRITE
+		"${KET_POINTER_CXX11_CHECK_SOURCE}"
+		"#include \"${CMAKE_CURRENT_SOURCE_DIR}/modules/pointer/ket_pointer.h\"\n"
+	)
+	file(
+		APPEND
+		"${KET_POINTER_CXX11_CHECK_SOURCE}"
+		[=[
+#include <memory>
+
+namespace
+{
+	class OverloadedAddress
+	{
+	public:
+		explicit OverloadedAddress(int value) noexcept : value_(value) {}
+
+		OverloadedAddress* operator&() noexcept
+		{
+			return nullptr;
+		}
+
+		const OverloadedAddress* operator&() const noexcept
+		{
+			return nullptr;
+		}
+
+		int Value() const noexcept
+		{
+			return value_;
+		}
+
+	private:
+		int value_;
+	};
+
+} // namespace
+
+int KetPointerCxx11Check()
+{
+	int value = 1;
+	ket::pointer::NotNull<int> ptr(&value);
+	*ptr = 2;
+
+	const auto raw = ptr.Get();
+	const auto owner = std::make_shared<int>(4);
+	const std::weak_ptr<int> weak = owner;
+	const auto locked = ket::pointer::LockWeak(weak);
+
+	OverloadedAddress object(3);
+	const auto actual_address = ket::pointer::AddressOf(object);
+
+	return *raw + *locked + actual_address->Value();
+}
+]=]
+	)
+
+	ket_add_compile_check(
+		ket_pointer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			"${KET_POINTER_CXX11_CHECK_SOURCE}"
+	)
 endif()
