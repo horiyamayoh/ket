@@ -135,4 +135,11 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_uuid_test
+		SOURCES
+			modules/uuid/ket_uuid.cpp
+			modules/uuid/ket_uuid_test.cpp
+	)
 endif()
