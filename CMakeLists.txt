@@ -135,4 +135,10 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_enums_test
+		SOURCES
+			modules/enums/ket_enums_test.cpp
+	)
 endif()
