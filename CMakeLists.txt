@@ -135,4 +135,47 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_lang_test
+		SOURCES
+			modules/lang/ket_lang_test.cpp
+	)
+
+	set(KET_LANG_CXX11_CHECK_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/ket_lang_cxx11_check.cpp")
+	file(
+		WRITE
+		"${KET_LANG_CXX11_CHECK_SOURCE}"
+		"#include \"ket_lang.h\"\n"
+		"\n"
+		"#include <cstddef>\n"
+		"#include <type_traits>\n"
+		"\n"
+		"int ket_lang_cxx11_values[3] = {};\n"
+		"\n"
+		"static_assert(ket::lang::ArraySize(ket_lang_cxx11_values) == 3U, "
+		"\"ArraySize is C++11 constexpr\");\n"
+		"\n"
+		"void KetLangCxx11CompileCheck()\n"
+		"{\n"
+		"\tint value = 1;\n"
+		"\ttypedef decltype(ket::lang::AsConst(value)) ConstValueReference;\n"
+		"\tstatic_assert(std::is_same<ConstValueReference, const int&>::value, "
+		"\"AsConst returns const reference\");\n"
+		"\tconst int& const_value = ket::lang::AsConst(value);\n"
+		"\tket::lang::IgnoreUnused(const_value);\n"
+		"}\n"
+	)
+	ket_add_compile_check(
+		ket_lang_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			"${KET_LANG_CXX11_CHECK_SOURCE}"
+	)
+	target_include_directories(
+		ket_lang_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/lang"
+	)
+	add_dependencies(ket_lang_test ket_lang_cxx11_check)
 endif()
