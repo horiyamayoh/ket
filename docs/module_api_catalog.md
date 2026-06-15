@@ -742,9 +742,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
     - `Builder& AppendBe32(std::uint32_t value);`
     - `Builder& AppendLe16(std::uint16_t value);`
     - `Builder& AppendLe32(std::uint32_t value);`
-    - `Builder& AppendBytes(const std::uint8_t* data, std::size_t size);`
+    - `Builder& Append(const std::uint8_t* data, std::size_t size);`
     - `Builder& AppendAscii(std::string_view text);`
-    - `const std::vector<std::uint8_t>& Bytes() const noexcept;`
+    - `const std::vector<std::uint8_t>& Buffer() const noexcept;`
     - `std::vector<std::uint8_t> Build() &&;`
     - `void Clear() noexcept;`
   - `void AppendU8(std::vector<std::uint8_t>& dst, std::uint8_t value);`
@@ -752,14 +752,16 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   - `void AppendBe32(std::vector<std::uint8_t>& dst, std::uint32_t value);`
   - `void AppendLe16(std::vector<std::uint8_t>& dst, std::uint16_t value);`
   - `void AppendLe32(std::vector<std::uint8_t>& dst, std::uint32_t value);`
-  - `void AppendBytes(std::vector<std::uint8_t>& dst, const std::uint8_t* data, std::size_t size);`
-- Behavior: fluent API は `*this` を返す。free function は既存 vector へ追加する。`Build() &&` は
-  内部 vector を move して返す。
-- Failure/edge cases: allocation があるため `noexcept` なし。`AppendBytes(nullptr, 0)` は no-op。
-  `AppendBytes(nullptr, size > 0)` は precondition 違反。
+  - `void Append(std::vector<std::uint8_t>& dst, const std::uint8_t* data, std::size_t size);`
+- Behavior: fluent API は `*this` を返す。free function は既存 vector へ追加する。`AppendAscii` は
+  ASCII byte列として扱う文字列片を追加し、encoding 変換はしない。`Buffer()` は構築途中の
+  内部 vector への const 参照を返す。`Build() &&` は内部 vector を move して返す。
+- Failure/edge cases: allocation があるため `noexcept` なし。`Append(nullptr, 0)` は no-op。
+  `Append(nullptr, size > 0)` は precondition 違反。`AppendAscii` の入力は ASCII byte列であることを
+  precondition とし、UTF-8 validation や変換はしない。
 - Complexity/performance: 各 append は追加 byte 数に比例し、vector 再確保は amortized O(1)。
   `reserve_size` で再確保を抑制。`Build() &&` は move で O(1)。
-- Tests: U8/BE/LE append、reserve constructor、Clear、Bytes、Build move、null+0。
+- Tests: U8/BE/LE append、reserve constructor、Clear、Buffer、Build move、null+0、ASCII append。
 - Do not implement: serializer framework、field schema、checksum、protocol固有処理。
 
 ### date Module

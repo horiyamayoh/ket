@@ -828,8 +828,8 @@ Candidate API:
 ket::bytes::Builder
 builder.AppendU8(value)
 builder.AppendBe16(value)
-builder.AppendBytes(data, size)
-builder.Bytes()
+builder.Append(data, size)
+builder.Buffer()
 builder.Build()
 ket::bytes::AppendU8(dst, value)
 ```
@@ -864,7 +864,7 @@ Failure / edge cases:
 Tests:
 
 - AppendU8 / BE / LE golden bytes
-- AppendBytes empty
+- Append empty
 - reserve
 - Build returns expected vector
 - Build after move leaves valid object
@@ -1492,15 +1492,14 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::semver::Version
-ket::semver::Parse(text)
-ket::semver::Compare(a, b)
-ket::semver::Format(value)
+ket::version::Triplet
+ket::version::Parse(text)
+ket::version::Compare(a, b)
+ket::version::Format(value)
 ```
 
-Canonical API in `docs/module_api_catalog.md`: the `ket::semver` candidates are superseded by
-`ket::version::Triplet`, `ket::version::Parse`, `ket::version::Compare`, and
-`ket::version::Format`.
+Canonical API in `docs/module_api_catalog.md`: full SemVer ではない numeric triplet として
+`ket::version` module を採用。
 
 C++バージョン要件:
 

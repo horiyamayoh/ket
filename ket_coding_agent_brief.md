@@ -967,7 +967,7 @@ reader.ReadBe32(out)
 writer.WriteU8(value)
 writer.WriteBe16(value)
 writer.WriteBe32(value)
-builder.AppendBytes(data, size)
+builder.Append(data, size)
 ```
 
 fluent interface 例:
@@ -977,7 +977,7 @@ auto payload = ket::bytes::Builder{}
     .AppendU8(command)
     .AppendBe16(sequence)
     .AppendBe32(id)
-    .AppendBytes(date_bcd, sizeof(date_bcd))
+    .Append(date_bcd, sizeof(date_bcd))
     .Build();
 ```
 
@@ -1638,7 +1638,7 @@ ket::ipv4::Address
 ket::mac::Address
 ket::port::Port
 ket::uuid::Uuid
-ket::semver::Version
+ket::version::Triplet
 ket::color::Rgb
 ket::percent::Percent
 ```
@@ -1650,8 +1650,8 @@ ket::ipv4::Parse(text)
 ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
-ket::semver::Parse(text)
-ket::semver::Compare(a, b)
+ket::version::Parse(text)
+ket::version::Compare(a, b)
 ```
 
 注意:
