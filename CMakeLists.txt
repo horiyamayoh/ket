@@ -135,4 +135,17 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_contract_test
+		SOURCES
+			modules/contract/ket_contract_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_contract_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/contract/ket_contract_cxx11_check.cpp
+	)
 endif()
