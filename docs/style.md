@@ -90,7 +90,7 @@ namespace ket
 
 - top-levelの `namespace ket` は1つだけにし、drop-in時のrenameが1箇所で済むようにします。
 - 内部helperは `ket::<module>::detail` に置きます。
-- module名はfolder名と一致させます。冗長なfolder名は短い別名にします（`parse_numeric`→`parse`、`string_ascii`→`ascii`、`mac_address`→`mac`、`semantic_version`→`semver` など）。
+- module名はfolder名と一致させます。冗長なfolder名は短い別名にします（`parse_numeric`→`parse`、`string_ascii`→`ascii`、`mac_address`→`mac`、`semantic_version`→`version` など）。
 
 namespaceで対象moduleが明らかになるため、API名からはmodule tokenと型tokenを落とします。
 
@@ -102,7 +102,7 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 - `parse`、`format` のように操作そのものをmodule名にしたnamespaceでは、関数名は操作名ではなく対象名を主にします。
   `ket::parse::UInt<T>()`、`ket::parse::UIntOr<T>()`、`ket::format::Bool()` のようにし、
   `ket::parse::ParseUInt<T>()` のような重複は避けます。
-- `ipv4`、`mac`、`semver` のように対象domainをmodule名にしたnamespaceでは、従来通り `Parse` / `Format`
+- `ipv4`、`mac`、`version` のように対象domainをmodule名にしたnamespaceでは、従来通り `Parse` / `Format`
   などの正準動詞を使います。
 
 正準動詞は次に統一します。
@@ -119,13 +119,15 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 
 - `TryVerb(out&) -> bool`：C++11/14で必須の形。操作名が namespace にある場合は `Try<X>(out&)`。
 - `Verb() -> std::optional`：C++17以降。操作名が namespace にある場合は `<X>() -> std::optional`。
-- fallback接尾辞：`OrNull`（`T*`）、`OrDefault`（値初期化）、`Or`（呼び出し側fallback）、`OrCreate`（挿入）、`OrEval`（遅延factory）。
+- `Try` の後ろは動詞、または操作対象として自然に読める名詞にします。値を取得する処理では、単独の名詞より `TryGet<X>` を優先します。
+- fallback接尾辞：`OrNull`（`T*`）、`OrDefault`（値初期化）、`Or`（呼び出し側fallback）、`OrCreate`（挿入）、`OrEval`（遅延factory）、`OrEmpty`（空文字列または空view）。
 
 その他:
 
 - format変種は名前ではなく引数で表します。`enum class LetterCase { kLower, kUpper }` か `<T>FormatOptions` を使い、`...Upper` のような名前接尾辞や無名boolは使いません。
 - `FormatOptions` などの名前付きoptions型では、`with_hash` のように意味が名前で固定される bool field を許容します。
-- 述語は free関数で `Is` / `Has` / `Contains`、memberの状態は `std` 流の素の名前（`Empty`、`Full`、`Expired`、`HasValue`）にします。妥当性確認は単一対象なら `IsValid`、複数対象を区別する場合は `IsValid<X>`。
+- bool predicateは原則として free関数で `Is` / `Has` / `Contains`、memberの状態は `std` 流の素の名前（`Empty`、`Full`、`Expired`、`HasValue`）にします。妥当性確認は単一対象なら `IsValid`、複数対象を区別する場合は `IsValid<X>`。
+- unit名は、API名では広く認知された単位記号（`KiB`、`MiB` など）以外を省略しません。`Milliseconds` のように、意味が長くても曖昧さを減らす名前を優先します。
 - `std` やplatform APIをそのまま薄く包む名前は、標準の綴りを維持します（`ToUnderlying`、`RemoveCvref`、`AddressOf`、`GetLastErrorCode` など）。
 
 ## 出力引数

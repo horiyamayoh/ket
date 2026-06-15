@@ -873,6 +873,9 @@ ket::date::IsValidDate(year, month, day)
 ket::date::IsValidTime(hour, minute, second)
 ```
 
+Canonical API in `docs/module_api_catalog.md`: `ket::date::TryDaysInMonth` is superseded by
+`ket::date::TryGetDaysInMonth`.
+
 C++バージョン要件:
 
 - 最小要件：C++11
@@ -1426,6 +1429,10 @@ ket::testing::BytesEq(expected, actual)
 ket::testing::HexEq(hex, actual)
 ```
 
+Canonical API in `docs/module_api_catalog.md`: `ket::testing::BytesEq` and
+`ket::testing::HexEq` are superseded by `ket::testing::BytesEqual` and
+`ket::testing::HexEqual`.
+
 C++バージョン要件:
 
 - 最小要件：C++17
@@ -1475,6 +1482,10 @@ ket::semver::Parse(text)
 ket::semver::Compare(a, b)
 ket::semver::Format(value)
 ```
+
+Canonical API in `docs/module_api_catalog.md`: the `ket::semver` candidates are superseded by
+`ket::version::Triplet`, `ket::version::Parse`, `ket::version::Compare`, and
+`ket::version::Format`.
 
 C++バージョン要件:
 
@@ -1769,6 +1780,9 @@ KET_ASSERT_INVARIANT(condition)
 KET_REQUIRE_NON_NULL(ptr)
 ket::contract::CheckBounds(index, size)
 ```
+
+Canonical API in `docs/module_api_catalog.md`: `ket::contract::CheckBounds` is superseded by
+`ket::contract::IsInBounds`.
 
 C++バージョン要件:
 
