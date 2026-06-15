@@ -135,4 +135,17 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_container_test
+		SOURCES
+			modules/container/ket_container_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_container_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_container_cxx11_check.cpp
+	)
 endif()
