@@ -135,4 +135,22 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_bits_test
+		SOURCES
+			modules/bits/ket_bits_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_bits_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_bits_cxx11_check.cpp
+	)
+	target_include_directories(
+		ket_bits_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/bits"
+	)
 endif()
