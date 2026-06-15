@@ -135,4 +135,17 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_memory_test
+		SOURCES
+			modules/memory/ket_memory_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_memory_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/memory/ket_memory_cxx11_check.cpp
+	)
 endif()
