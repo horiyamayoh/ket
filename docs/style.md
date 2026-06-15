@@ -96,7 +96,9 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 
 - 関数名はmodule名と対象型名を繰り返しません。`ket::ipv4::Parse`、`ket::hex::Encode` のようにします。
 - struct/class名は型tokenを繰り返しません。`Ipv4Address`→`ket::ipv4::Address`、`MacAddress`→`ket::mac::Address`。
-- ただし `ket::port::Port`、`ket::uuid::Uuid` のように、短いdomain名がそのまま型名として自然な場合は重複を許容します。
+- `ket::<module>::<API>` として読んだときに、module名とAPI名が同じ意味を重複させないことを最終確認します。
+- `Kind`、`Address`、`View` のような短い型名は、namespaceが十分な文脈を持つ場合に優先します。
+- ただし `ket::port::Port`、`ket::uuid::Uuid`、`ket::percent::Percent` のように、短いdomain名がそのまま型名として自然な場合は重複を許容します。
 - `ket::bcd::ToInt`、`ket::bcd::FromInt` のように、変換先や変換元を名前に出すことで意図が明確になる場合は
   `To<X>` / `From<X>` の対象tokenを残します。
 - `parse`、`format` のように操作そのものをmodule名にしたnamespaceでは、関数名は操作名ではなく対象名を主にします。
@@ -104,6 +106,10 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
   `ket::parse::ParseUInt<T>()` のような重複は避けます。
 - `ipv4`、`mac`、`version` のように対象domainをmodule名にしたnamespaceでは、従来通り `Parse` / `Format`
   などの正準動詞を使います。
+- ASCII、endian、non-owning、unit、lifetimeなど誤解しやすい制約は、API名かDoxygenのどちらかに必ず出します。
+  module名だけでは推測しにくい場合はAPI名へ出します。
+- `ket::percent::Percent::TryFromPercent` は `TryFromBasisPoints` / `TryFromRatio` と入力単位を揃えるため許容します。
+- `ket::ascii::SplitViews` は owning/non-owning の違いを名前で区別するため許容します。
 
 正準動詞は次に統一します。
 

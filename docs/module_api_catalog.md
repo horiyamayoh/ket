@@ -95,11 +95,17 @@ signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポイン
 
 - module token と型 token を公開API名で重複させない。ただし `ket::port::Port`、`ket::uuid::Uuid`、
   `ket::percent::Percent` のように短い domain 名がそのまま自然な型名になる場合は許容する。
+- `ket::<module>::<API>` として読んだときに冗長でないことを確認する。
+- `Kind`、`Address`、`View` のような短い型名は、namespace が十分な文脈を持つ場合に優先する。
+- ASCII、endian、non-owning、unit、lifetime など誤解しやすい制約は、名前か Doxygen のどちらかに必ず出す。
+  module名から推測しにくい場合は名前に出す。
 - 失敗表現は `TryXxx(..., out&) -> bool`、`Xxx() -> std::optional<T>`、`XxxOr`/`XxxOrDefault`/
   `XxxOrNull`/`XxxOrEmpty` のいずれかに揃える。
 - format 変種は API 名接尾辞ではなく、`LetterCase` や `FormatOptions` などの引数で表す。
 - `Parse`、`Format`、`Encode`、`Decode`、`To<X>`、`From<X>`、`Load<Order><Width>`、
   `Store<Order><Width>` の正準動詞から外れる名前は、namespace と仕様だけで意味が閉じる場合に限る。
+- `ket::percent::Percent::TryFromPercent` は `TryFromBasisPoints` / `TryFromRatio` と入力単位を揃えるため維持する。
+- `ket::ascii::SplitViews` は owning/non-owning の違いを名前で区別するため維持する。
 - 現時点で維持する境界名は `hex::Dump`、`file::Size`、`state::Next`、`function::Noop`、
   `byte_view::TryAt`、`memory::Zero`。いずれも対象 module の責務が狭く、名前だけで操作対象が特定できるため採用する。
 
@@ -768,7 +774,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   - `bool TryGetDaysInMonth(int year, unsigned month, unsigned& out) noexcept`
   - `constexpr bool IsValidDate(int year, unsigned month, unsigned day) noexcept`
   - `constexpr bool IsValidTime(unsigned hour, unsigned minute, unsigned second) noexcept`
-  - `constexpr bool IsValidTimeMilliseconds(unsigned hour, unsigned minute, unsigned second, unsigned millisecond) noexcept`
+  - `constexpr bool IsValidTimeWithMilliseconds(unsigned hour, unsigned minute, unsigned second, unsigned millisecond) noexcept`
 - Behavior: Gregorian calendar、`year >= 1`。timezone と leap second は扱わない。`IsValidDate` は
   内部 constexpr helper で当月日数を求め、`TryGetDaysInMonth` に依存せず constexpr を保つ。`TryGetDaysInMonth` は
   out へ当月日数を書き、C++11 では mutating Try を constexpr 化できないため `noexcept` のみ。C++14 以降で
@@ -935,7 +941,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Purpose: stream の確実な読み書きと stream state 保存を小さく提供する。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   iostream の short read/write と state復元を小さいAPIで固定できる。行読みは C++11 で成立する
-  `TryReadLineTrimmed(out&)` に固定する。
+  `TryReadLineTrimmedAscii(out&)` に固定する。
   非推奨版 なし。非推奨理由: なし。
 - Drop-in files: `modules/io_stream/ket_io_stream.h`、`modules/io_stream/ket_io_stream.cpp`、
   `modules/io_stream/ket_io_stream_test.cpp`。
@@ -943,7 +949,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Public API Signatures（`namespace ket::io_stream`）:
   - `bool TryReadExactly(std::istream& stream, std::uint8_t* data, std::size_t size);`
   - `bool TryWriteAll(std::ostream& stream, const std::uint8_t* data, std::size_t size);`
-  - `bool TryReadLineTrimmed(std::istream& stream, std::string& out);`
+  - `bool TryReadLineTrimmedAscii(std::istream& stream, std::string& out);`
 
   ```cpp
   class StateSaver {
@@ -1295,10 +1301,10 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Public API Signatures（`namespace ket::contract`、macro は global）:
 
   ```cpp
-  enum class ContractKind { kExpects, kEnsures, kInvariant };
+  enum class Kind { kExpects, kEnsures, kInvariant };
 
-  [[noreturn]] void ContractViolation(
-      ContractKind kind,
+  [[noreturn]] void Fail(
+      Kind kind,
       const char* expression,
       const char* file,
       int line) noexcept;
@@ -1321,7 +1327,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Behavior: `KET_EXPECTS`、`KET_ENSURES`、`KET_ASSERT_INVARIANT` は対応する backend function へ
   condition、文字列化した式、`__FILE__`、`__LINE__` を渡す。statement として使う macro で、戻り値は持たない。
   `KET_REQUIRE_NON_NULL(ptr)` は ptr 式を1回だけ評価し、non-null なら同じ pointer 型の値を返す。
-  違反時は `ContractViolation` が `std::terminate` を呼び、戻らない。debug/release とも常時評価し、
+  違反時は `Fail` が `std::terminate` を呼び、戻らない。debug/release とも常時評価し、
   `NDEBUG` では消さない。`IsInBounds` は `index < size` の純粋判定。
 - Failure/edge cases: 契約違反は例外ではなく process termination。差し替え可能 handler は持たない。
   macro は condition または ptr 式を1回だけ評価する。`expression`/`file` が null の場合でも terminate 方針は変えず、

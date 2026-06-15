@@ -1181,7 +1181,7 @@ Candidate API:
 ket::io_stream::TryReadExactly(stream, data, size)
 ket::io_stream::TryWriteAll(stream, data, size)
 ket::io_stream::StateSaver
-ket::io_stream::TryReadLineTrimmed(stream, out)
+ket::io_stream::TryReadLineTrimmedAscii(stream, out)
 ```
 
 C++バージョン要件:
