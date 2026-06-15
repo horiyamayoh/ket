@@ -135,4 +135,19 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_io_stream_test
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_io_stream_cxx11
+		CXX_STANDARD 11
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream.h
+	)
 endif()
