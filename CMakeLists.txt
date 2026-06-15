@@ -135,4 +135,18 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_concurrency_test
+		SOURCES
+			modules/concurrency/ket_concurrency_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_concurrency_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/concurrency/ket_concurrency_test.cpp
+	)
+	target_compile_definitions(ket_concurrency_cxx11_check PRIVATE KET_CONCURRENCY_COMPILE_CHECK)
 endif()
