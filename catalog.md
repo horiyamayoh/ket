@@ -619,7 +619,14 @@ ket::ascii::ToLower(text)
 ket::ascii::ReplaceAll(text, from, to)
 ket::ascii::StartsWith(text, prefix)
 ket::ascii::EndsWith(text, suffix)
+ket::ascii::StripPrefix(text, prefix)
+ket::ascii::StripSuffix(text, suffix)
 ```
+
+Canonical name note:
+
+- 条件付きで prefix/suffix を取り除き、一致しなければ元 view を返す API は
+  `docs/module_api_catalog.md` で `StripPrefix` / `StripSuffix` を採用。
 
 C++バージョン要件:
 
@@ -818,16 +825,19 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::bytes_builder::Builder
+ket::bytes::Builder
 builder.AppendU8(value)
 builder.AppendBe16(value)
 builder.AppendBytes(data, size)
 builder.Bytes()
 builder.Build()
-ket::bytes_builder::AppendU8(dst, value)
+ket::bytes::AppendU8(dst, value)
 ```
 
-Canonical name は `docs/module_api_catalog.md` の `bytes_builder Module` を正とします。
+Canonical name note:
+
+- module 名は `docs/module_api_catalog.md` の `bytes Module` を正とし、
+  公開 namespace は `ket::bytes` を採用。
 
 C++バージョン要件:
 
@@ -2205,8 +2215,13 @@ ket::math::ToRadians(degrees)
 ket::math::ToDegrees(radians)
 ket::math::NearlyEqual(a, b, epsilon)
 ket::math::TryBytesFromKiB(kib, out)
-ket::math::ToKiB(bytes)
+ket::math::BytesToKiB(bytes)
 ```
+
+Canonical name note:
+
+- bytes 入力を KiB/MiB へ変換する API は `docs/module_api_catalog.md` で
+  `BytesToKiB` / `BytesToMiB` を採用。
 
 C++バージョン要件:
 

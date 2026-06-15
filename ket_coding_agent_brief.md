@@ -960,7 +960,7 @@ ket::byte_view::View
 ket::byte_view::MutableView
 ket::byte_reader::Reader
 ket::byte_writer::Writer
-ket::bytes_builder::Builder
+ket::bytes::Builder
 reader.ReadU8(out)
 reader.ReadBe16(out)
 reader.ReadBe32(out)
@@ -973,7 +973,7 @@ builder.AppendBytes(data, size)
 fluent interface 例:
 
 ```cpp
-auto payload = ket::bytes_builder::Builder{}
+auto payload = ket::bytes::Builder{}
     .AppendU8(command)
     .AppendBe16(sequence)
     .AppendBe32(id)
@@ -1030,8 +1030,8 @@ ket::ascii::TrimRight(s)
 ket::ascii::Split(s, delimiter)
 ket::ascii::Join(parts, delimiter)
 ket::ascii::ReplaceAll(s, from, to)
-ket::ascii::RemovePrefix(s, prefix)
-ket::ascii::RemoveSuffix(s, suffix)
+ket::ascii::StripPrefix(s, prefix)
+ket::ascii::StripSuffix(s, suffix)
 ket::ascii::ToLower(s)
 ket::ascii::ToUpper(s)
 ket::ascii::EqualsIgnoreCase(a, b)
@@ -1780,7 +1780,7 @@ ket::endian::LoadLe32(ptr)
 ```cpp
 ket::byte_view::View           // non-owning
 ket::byte_view::MutableView    // non-owning mutable
-ket::bytes_builder::Builder    // owning builder
+ket::bytes::Builder            // owning builder
 FunctionRef                    // non-owning callable reference
 Owner<T*>                      // owning raw pointer annotation
 ket::pointer::NotNull<T>       // non-null invariant

@@ -109,6 +109,8 @@ namespaceで対象moduleが明らかになるため、API名からはmodule toke
 - ASCII、endian、non-owning、unit、lifetimeなど誤解しやすい制約は、API名かDoxygenのどちらかに必ず出します。
   module名だけでは推測しにくい場合はAPI名へ出します。
 - 標準APIと同名で意味が異なる場合は、対象や単位を名前に足して誤読を避けます。
+  例: `std::string_view::remove_prefix` と異なる条件付き・非破壊処理は
+  `ket::ascii::StripPrefix` のように名前を分けます。
 - `Clamp` や `Get` のような generic verb が変換、丸め、単位解釈を隠す場合は、`To<X>`、`From<X>`、
   または unit 名で入力・出力の意味を明示します。
 - `ket::percent::Percent::TryFromPercent` は `TryFromBasisPoints` / `TryFromRatio` と入力単位を揃えるため許容します。
