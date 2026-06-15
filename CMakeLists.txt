@@ -131,6 +131,19 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_deadline_test ket_deadline_cxx11_check)
 
 	ket_add_module_test(
+		ket_build_config_test
+		SOURCES
+			modules/build_config/ket_build_config_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_build_config_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/build_config/ket_build_config.h
+	)
+
+	ket_add_module_test(
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp

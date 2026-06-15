@@ -212,6 +212,19 @@ def check_header_preamble(root: Path, layout: ModuleLayout, errors: list[str]) -
 		if marker not in preamble:
 			add_error(errors, root, layout.header, message)
 
+	if layout.name == "build_config":
+		if "公開API：ket" not in preamble:
+			add_error(errors, root, layout.header, "header preamble must describe namespace ket public API.")
+
+		if "内部実装：ket::detail" not in preamble:
+			add_error(
+				errors,
+				root,
+				layout.header,
+				"header preamble must describe namespace ket detail implementation.",
+			)
+		return
+
 	# 公開APIと内部実装のnamespaceはmodule毎の入れ子namespace (ket::<module>) を要求
 	public_namespace = f"公開API：ket::{layout.name}"
 	if public_namespace not in preamble:

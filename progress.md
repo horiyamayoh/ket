@@ -13,9 +13,10 @@ Statusは次の値を使います。
 - `verified`: format、build、test、必要なcompile-only checkが通っている
 - `deprecated`: 残しているが新規利用を推奨しない
 
-| Module   | Category         | Status   | C++ Min | Tests                              | Format  | Notes                                  |
-| -------- | ---------------- | -------- | ------- | ---------------------------------- | ------- | -------------------------------------- |
-| bcd      | numeric / binary | verified | C++17   | GoogleTest                         | checked | packed BCDと10進整数・文字列を相互変換 |
-| date     | date             | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定        |
-| deadline | time             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定 |
-| string   | string           | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記 |
+| Module       | Category         | Status   | C++ Min | Tests                              | Format  | Notes                                    |
+| ------------ | ---------------- | -------- | ------- | ---------------------------------- | ------- | ---------------------------------------- |
+| bcd          | numeric / binary | verified | C++17   | GoogleTest                         | checked | packed BCDと10進整数・文字列を相互変換   |
+| build_config | config           | verified | C++11   | GoogleTest + C++11 compile         | checked | compiler/OS/標準feature macroを0/1で判定 |
+| date         | date             | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定          |
+| deadline     | time             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定   |
+| string       | string           | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記   |
