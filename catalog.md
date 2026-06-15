@@ -239,6 +239,7 @@ Candidate API:
 ```cpp
 ket::bits::HighNibble(value)
 ket::bits::LowNibble(value)
+ket::bits::TryPackNibbles(high, low, out)
 ket::bits::HasBit(value, bit_index)
 ket::bits::TryMask(width, out)
 ket::bits::Rotl(value, count)
@@ -975,7 +976,7 @@ ket::cli::ArgvView
 ket::cli::HasOption(args, "--help")
 ket::cli::OptionValue(args, "--id")
 ket::cli::OptionValueOr(args, "--mode", "default")
-ket::cli::Positional(args)
+ket::cli::PositionalArguments(args)
 ```
 
 C++バージョン要件:
@@ -1278,7 +1279,7 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::ranges::ForEachIndex(range, f)
+ket::ranges::ForEachWithIndex(range, f)
 ket::ranges::FindIndexIf(range, predicate, out)
 ```
 
@@ -2297,7 +2298,7 @@ Candidate API:
 ```cpp
 ket::object::NonCopyable
 ket::object::NonMovable
-ket::object::MovableOnly
+ket::object::MoveOnly
 ket::object::ResetOnMove<T>
 ```
 
