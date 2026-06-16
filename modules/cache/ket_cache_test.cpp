@@ -116,9 +116,9 @@ TEST(KetCacheTest, CreatesValueOnlyOnce)
  */
 TEST(KetCacheTest, ResetsAndRecreatesValue)
 {
-	ket::cache::Lazy<DestructionCounter> value;
 	int factory_count = 0;
 	int destroy_count = 0;
+	ket::cache::Lazy<DestructionCounter> value;
 
 	const DestructionCounter& first = value.GetOrCreate(
 		[&factory_count, &destroy_count]
