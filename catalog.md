@@ -886,6 +886,7 @@ ket::date::IsLeapYear(year)
 ket::date::TryDaysInMonth(year, month, out)
 ket::date::IsValidDate(year, month, day)
 ket::date::IsValidTime(hour, minute, second)
+ket::date::IsValidDateTime(year, month, day, hour, minute, second)
 ```
 
 Canonical API in `docs/module_api_catalog.md`: `ket::date::TryDaysInMonth` is superseded by

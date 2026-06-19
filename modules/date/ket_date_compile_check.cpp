@@ -9,6 +9,12 @@ static_assert(ket::date::IsValidDate(2024, 2U, 29U), "2024-02-29 is valid");
 static_assert(!ket::date::IsValidDate(2023, 2U, 29U), "2023-02-29 is invalid");
 static_assert(ket::date::IsValidTime(23U, 59U, 59U), "23:59:59 is valid");
 static_assert(!ket::date::IsValidTime(23U, 59U, 60U), "leap second is invalid");
+static_assert(ket::date::IsValidDateTime(2024, 2U, 29U, 23U, 59U, 59U),
+			  "2024-02-29T23:59:59 is valid");
+static_assert(!ket::date::IsValidDateTime(2023, 2U, 29U, 23U, 59U, 59U),
+			  "invalid date makes date-time invalid");
+static_assert(!ket::date::IsValidDateTime(2024, 2U, 29U, 23U, 59U, 60U),
+			  "invalid time makes date-time invalid");
 static_assert(ket::date::IsValidTimeWithMilliseconds(23U, 59U, 59U, 999U), "23:59:59.999 is valid");
 static_assert(!ket::date::IsValidTimeWithMilliseconds(23U, 59U, 59U, 1000U),
 			  "millisecond 1000 is invalid");

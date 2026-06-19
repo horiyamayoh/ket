@@ -5,7 +5,7 @@
  * @brief Gregorian日付と時刻の小さい妥当性判定API。
  *
  * @details calendar frameworkを持ち込まず、leap year、年月日、時分秒、
- * millisecond付き時刻の境界判定を標準ライブラリ不要の算術で扱う。
+ * date-time、millisecond付き時刻の境界判定を標準ライブラリ不要の算術で扱う。
  * ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。
  *
  * @par プロジェクトへの適用方法
@@ -115,6 +115,31 @@ namespace ket
 		 * @endcode
 		 */
 		constexpr bool IsValidTime(unsigned hour, unsigned minute, unsigned second) noexcept;
+
+		/**
+		 * @brief Gregorian calendarの日付と24時間表記の時分秒を合わせた妥当性判定。
+		 * @param[in] year 判定対象の年。
+		 * @param[in] month 判定対象の月番号。
+		 * @param[in] day 判定対象の日。
+		 * @param[in] hour 判定対象の時。
+		 * @param[in] minute 判定対象の分。
+		 * @param[in] second 判定対象の秒。
+		 * @retval true 年月日と時分秒がどちらも有効。
+		 * @retval false 年月日、または時分秒のいずれかが範囲外。
+		 * @pre なし。timezone、calendar conversion、date arithmetic、leap secondは対象外。
+		 * @post 引数と外部状態の変更なし。
+		 * @note `IsValidDate`と`IsValidTime`を組み合わせた判定。
+		 * @code
+		 * const auto valid = ket::date::IsValidDateTime(2024, 2U, 29U, 23U, 59U, 59U);
+		 * // valid == true
+		 * @endcode
+		 */
+		constexpr bool IsValidDateTime(int year,
+									   unsigned month,
+									   unsigned day,
+									   unsigned hour,
+									   unsigned minute,
+									   unsigned second) noexcept;
 
 		/**
 		 * @brief millisecond付き24時間表記の時刻妥当性判定。
@@ -269,6 +294,16 @@ namespace ket
 		constexpr bool IsValidTime(unsigned hour, unsigned minute, unsigned second) noexcept
 		{
 			return hour < 24U && minute < 60U && second < 60U;
+		}
+
+		constexpr bool IsValidDateTime(int year,
+									   unsigned month,
+									   unsigned day,
+									   unsigned hour,
+									   unsigned minute,
+									   unsigned second) noexcept
+		{
+			return IsValidDate(year, month, day) && IsValidTime(hour, minute, second);
 		}
 
 		constexpr bool IsValidTimeWithMilliseconds(unsigned hour,

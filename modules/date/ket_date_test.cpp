@@ -17,6 +17,12 @@ namespace
 	static_assert(!ket::date::IsValidDate(2023, 2U, 29U), "common-year leap day is invalid");
 	static_assert(ket::date::IsValidTime(23U, 59U, 59U), "last second is constexpr valid");
 	static_assert(!ket::date::IsValidTime(24U, 0U, 0U), "hour 24 is constexpr invalid");
+	static_assert(ket::date::IsValidDateTime(2024, 2U, 29U, 23U, 59U, 59U),
+				  "leap-day last second is constexpr valid");
+	static_assert(!ket::date::IsValidDateTime(2023, 2U, 29U, 23U, 59U, 59U),
+				  "invalid date makes constexpr date-time invalid");
+	static_assert(!ket::date::IsValidDateTime(2024, 2U, 29U, 23U, 59U, 60U),
+				  "invalid time makes constexpr date-time invalid");
 	static_assert(ket::date::IsValidTimeWithMilliseconds(23U, 59U, 59U, 999U),
 				  "last millisecond is constexpr valid");
 	static_assert(!ket::date::IsValidTimeWithMilliseconds(23U, 59U, 59U, 1000U),
@@ -174,6 +180,26 @@ TEST(KetDateTest, ValidatesTimes)
 	EXPECT_FALSE(hour_twenty_four);
 	EXPECT_FALSE(minute_sixty);
 	EXPECT_FALSE(second_sixty);
+}
+
+/**
+ * @test
+ * @brief Gregorian年月日と24時間表記の時分秒を合わせた境界確認。
+ * @details 有効なdate-time、無効日付、有効日付と無効時刻を入力し、合成判定の境界を固定。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetDateTest, ValidatesDateTimes)
+{
+	const auto leap_day_last_second = ket::date::IsValidDateTime(2024, 2U, 29U, 23U, 59U, 59U);
+	const auto common_year_leap_day = ket::date::IsValidDateTime(2023, 2U, 29U, 23U, 59U, 59U);
+	const auto invalid_time = ket::date::IsValidDateTime(2024, 2U, 29U, 24U, 0U, 0U);
+	const auto invalid_date_and_time = ket::date::IsValidDateTime(2023, 2U, 29U, 23U, 59U, 60U);
+
+	EXPECT_TRUE(leap_day_last_second);
+	EXPECT_FALSE(common_year_leap_day);
+	EXPECT_FALSE(invalid_time);
+	EXPECT_FALSE(invalid_date_and_time);
 }
 
 /**
