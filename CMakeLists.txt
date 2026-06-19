@@ -95,6 +95,26 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_date_test
+		SOURCES
+			modules/date/ket_date_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_date_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/date/ket_date_compile_check.cpp
+	)
+
+	ket_add_compile_check(
+		ket_date_cxx14_check
+		CXX_STANDARD 14
+		SOURCES
+			modules/date/ket_date_compile_check.cpp
+	)
+
+	ket_add_module_test(
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp
