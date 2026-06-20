@@ -240,6 +240,7 @@ Candidate API:
 ket::bits::HighNibble(value)
 ket::bits::LowNibble(value)
 ket::bits::TryPackNibbles(high, low, out)
+ket::bits::TypeBitWidth<T>()
 ket::bits::HasBit(value, bit_index)
 ket::bits::TryMask(width, out)
 ket::bits::Rotl(value, count)
@@ -264,7 +265,7 @@ Failure / edge cases:
 - bit index 範囲外
 - width 0 / bit幅 full / bit幅超過
 - 不正 nibble
-- signed integral は対象外
+- signed integral、bool、char、wchar_t、char16_t、char32_t は対象外
 
 他のライブラリへの依存:
 
@@ -298,11 +299,13 @@ ket::numeric::Clamp(value, min_value, max_value)
 ket::numeric::AbsDiff(a, b)
 ket::numeric::TryDivideRoundUp(value, divisor, out)
 ket::numeric::TryAlignUp(value, alignment, out)
+ket::numeric::TryAlignDown(value, alignment, out)
 ket::numeric::TryAdd(a, b, out)
 ket::numeric::TrySub(a, b, out)
 ket::numeric::TryMul(a, b, out)
 ket::numeric::TryCast<To>(value, out)
 ket::numeric::SaturatingAdd(a, b)
+ket::numeric::SaturatingSub(a, b)
 ```
 
 C++バージョン要件:
@@ -320,7 +323,8 @@ Failure / edge cases:
 - divisor == 0
 - signed / unsigned overflow
 - signed 最小値を含む AbsDiff
-- bool / character 型の不採用
+- bool / text character 型の不採用
+- `std::int8_t` / `std::uint8_t` alias の採用
 - cast 範囲外
 
 他のライブラリへの依存:
@@ -332,12 +336,15 @@ Tests:
 
 - TryAlignUp(0, 4) == 0
 - TryAlignUp(max, 2) fails when overflow
+- TryAlignDown(5, 4) == 4
 - TryAdd(max, 1) fails
 - TrySub(min, 1) fails
 - TryMul boundary cases
+- SaturatingSub(min, 1) == min
 - TryCast<std::uint8_t>(255) succeeds
 - TryCast<std::uint8_t>(256) fails
 - bool / char の compile-only 不採用確認
+- std::int8_t / std::uint8_t の compile-only 採用確認
 
 ## Idea: Endian
 
@@ -367,7 +374,12 @@ C++バージョン要件:
 - 推奨理由：endian と unaligned access の意図を名前に出し、strict aliasing 依存を避けられる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：C++20 `std::endian` は判定であり、byte列読み書きの直接代替ではない
+- 標準代替：C++20 `std::endian` は byte order の判定であり、byte列の固定幅整数読み書きや失敗値付き Try API の直接代替ではない
+
+使い分け:
+
+- 外部入力、受信 buffer、可変長 slice など長さ確認が境界に残る箇所は TryLoad/TryStore
+- 固定長 protocol や直前の検証で必要 byte 数を保証済みの内部経路は Load/Store
 
 Failure / edge cases:
 
@@ -741,6 +753,7 @@ Failure / edge cases:
 
 - null + 非0 size は invalid reader
 - empty
+- invalid reader は empty として扱わない
 - size不足
 - 成功時だけ offset 更新
 - 失敗時 out 不変
@@ -851,7 +864,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - allocation 例外
+- 固定幅 append は一時配列を単一 insert で追記し strong exception guarantee（失敗時 dst 無変更）
 - null + 非0 size は precondition
+- self-append 未対応（data は dst / 内部 buffer と非 overlap）
+- AppendAscii は検査なしの byte copy（ASCII は precondition）
 - BE/LE fixed width
 - reserve size
 - Build 後の moved-from state
@@ -1044,6 +1060,7 @@ ket::byte_view::View
 ket::byte_view::MutableView
 view.TryAt(index, out)
 view.TrySlice(offset, count, out)
+// default constructor, Data, Size, Empty は constexpr
 ```
 
 C++バージョン要件:
@@ -1060,6 +1077,7 @@ Failure / edge cases:
 - lifetime は呼び出し側責任
 - nullptr + 0 は空 view
 - nullptr + 非0 は invalid view
+- copy / move は non-owning pointer と size だけを複製
 - bounds overrun
 - slice 失敗時 out 不変
 
@@ -2011,7 +2029,7 @@ C++バージョン要件:
 
 - 最小要件：C++11
 - 本ライブラリの適用を推奨する C++ バージョン：C++11以降
-- 推奨理由：lazy value の thread-safety と例外後状態を局所的に固定できる
+- 推奨理由：lazy value の非 thread-safe 方針と例外後状態を局所的に固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -2023,7 +2041,7 @@ Failure / edge cases:
 - move-only value
 - copy/move of Lazy disabled
 - destructor exception terminates
-- reentrancy precondition
+- reentrancy terminates when detected
 
 他のライブラリへの依存:
 
@@ -2037,6 +2055,7 @@ Tests:
 - exception leaves empty
 - move-only value
 - address stability
+- reentrancy termination
 - copy/move disabled compile-only
 
 ## Idea: SerializationTlv
@@ -2125,6 +2144,9 @@ Failure / edge cases:
 - heterogeneous types
 - const tuple
 - reference elements
+- tuple-like objects
+- rvalue / move-only elements
+- non-copyable callable
 - callable exception propagation
 - evaluation order
 
@@ -2141,6 +2163,9 @@ Tests:
 - reference preservation
 - transform return tuple type
 - call order
+- tuple-like objects
+- non-copyable callable
+- rvalue forwarding
 
 ## Idea: BuildConfig
 

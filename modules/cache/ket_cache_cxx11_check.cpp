@@ -28,6 +28,27 @@ namespace
 		int value_;
 	};
 
+	class MoveOnlyIntFactory
+	{
+	  public:
+		explicit MoveOnlyIntFactory(int* call_count) noexcept : call_count_(call_count) {}
+
+		MoveOnlyIntFactory(const MoveOnlyIntFactory&) = delete;
+		MoveOnlyIntFactory& operator=(const MoveOnlyIntFactory&) = delete;
+
+		MoveOnlyIntFactory(MoveOnlyIntFactory&&) = delete;
+		MoveOnlyIntFactory& operator=(MoveOnlyIntFactory&&) = delete;
+
+		int operator()() const noexcept
+		{
+			++(*call_count_);
+			return 13;
+		}
+
+	  private:
+		int* call_count_;
+	};
+
 	struct IntFactory
 	{
 		int operator()() const noexcept
@@ -58,8 +79,23 @@ namespace
 void KetCacheCxx11CompileCheck()
 {
 	ket::cache::Lazy<int> int_value;
+	const bool initial_has_value = int_value.HasValue();
+	static_cast<void>(initial_has_value);
+
 	const int& created_int = int_value.GetOrCreate(IntFactory());
 	static_cast<void>(created_int);
+
+	const bool created_has_value = int_value.HasValue();
+	static_cast<void>(created_has_value);
+
+	int factory_count = 0;
+	const MoveOnlyIntFactory int_factory(&factory_count);
+	const int& created_from_lvalue_factory = int_value.GetOrCreate(int_factory);
+	static_cast<void>(created_from_lvalue_factory);
+
+	int_value.Reset();
+	const bool reset_has_value = int_value.HasValue();
+	static_cast<void>(reset_has_value);
 
 	ket::cache::Lazy<MoveOnlyValue> move_only_value;
 	const MoveOnlyValue& created_move_only = move_only_value.GetOrCreate(MoveOnlyFactory());

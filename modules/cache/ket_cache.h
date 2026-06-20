@@ -14,7 +14,7 @@
  * @par C++バージョン要件
  * 最小要件：C++11。
  * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。
- * 推奨理由：lazy valueのthread-safetyと例外後状態を標準ライブラリのみで局所的に固定可能。
+ * 推奨理由：lazy valueの非thread-safe方針と例外後状態を標準ライブラリのみで局所的に固定可能。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
  * 非推奨理由：なし。
  *
@@ -27,8 +27,10 @@
  * 内部実装：ket::cache::detail
  */
 
+#include <exception>
 #include <new>
 #include <type_traits>
+#include <utility>
 
 namespace ket
 {
@@ -47,10 +49,18 @@ namespace ket
 		template <typename T>
 		class Lazy
 		{
+			// NOLINTNEXTLINE(modernize-type-traits): C++11最小要件のため`_v` alias不使用。
+			static_assert(std::is_object<T>::value, "ket::cache::Lazy<T> requires an object type.");
+			// NOLINTNEXTLINE(modernize-type-traits): C++11最小要件のため`_v` alias不使用。
+			static_assert(!std::is_array<T>::value,
+						  "ket::cache::Lazy<T> does not support array types.");
+			// NOLINTNEXTLINE(modernize-type-traits): C++11最小要件のため`_v` alias不使用。
+			static_assert(std::is_destructible<T>::value,
+						  "ket::cache::Lazy<T> requires a destructible type.");
+
 		  public:
 			/**
 			 * @brief 空状態のlazy value構築。
-			 * @retval void 戻り値なし。
 			 * @pre `T`は`std::aligned_storage`で格納可能なobject type。
 			 * @post 保持値なし。heap allocationなし。
 			 * @code
@@ -62,8 +72,7 @@ namespace ket
 
 			/**
 			 * @brief 保持値がある場合の破棄。
-			 * @retval void 戻り値なし。
-			 * @pre `T`のdestructorは例外を投げない。
+			 * @pre `T`のdestructorは例外を投げず、同じ`Lazy`へ再入しない。
 			 * @post 保持値があった場合はそのlifetime終了。destructor例外は`std::terminate`。
 			 * @code
 			 * {
@@ -75,9 +84,56 @@ namespace ket
 			 */
 			~Lazy() noexcept;
 
+			/**
+			 * @brief copy construction禁止。
+			 * @param[in] other copy元候補。delete済みのため参照不可。
+			 * @pre 呼び出し不可。
+			 * @post `Lazy` objectは生成されない。
+			 * @code
+			 * ket::cache::Lazy<int> value;
+			 * // ket::cache::Lazy<int> copy(value); // compile error
+			 * @endcode
+			 */
 			Lazy(const Lazy&) = delete;
+
+			/**
+			 * @brief copy assignment禁止。
+			 * @param[in] other copy元候補。delete済みのため参照不可。
+			 * @retval self 到達不可。宣言上は左辺参照を返す。
+			 * @pre 呼び出し不可。
+			 * @post 左辺の`Lazy`状態変更なし。
+			 * @code
+			 * ket::cache::Lazy<int> lhs;
+			 * ket::cache::Lazy<int> rhs;
+			 * // lhs = rhs; // compile error
+			 * @endcode
+			 */
 			Lazy& operator=(const Lazy&) = delete;
+
+			/**
+			 * @brief move construction禁止。
+			 * @param[in] other move元候補。delete済みのため参照不可。
+			 * @pre 呼び出し不可。
+			 * @post `Lazy` objectは生成されない。
+			 * @code
+			 * ket::cache::Lazy<int> value;
+			 * // ket::cache::Lazy<int> moved(std::move(value)); // compile error
+			 * @endcode
+			 */
 			Lazy(Lazy&&) = delete;
+
+			/**
+			 * @brief move assignment禁止。
+			 * @param[in] other move元候補。delete済みのため参照不可。
+			 * @retval self 到達不可。宣言上は左辺参照を返す。
+			 * @pre 呼び出し不可。
+			 * @post 左辺の`Lazy`状態変更なし。
+			 * @code
+			 * ket::cache::Lazy<int> lhs;
+			 * ket::cache::Lazy<int> rhs;
+			 * // lhs = std::move(rhs); // compile error
+			 * @endcode
+			 */
 			Lazy& operator=(Lazy&&) = delete;
 
 			/**
@@ -99,9 +155,9 @@ namespace ket
 			/**
 			 * @brief 保持値の明示的な破棄。
 			 * @retval void 戻り値なし。
-			 * @pre `T`のdestructorは例外を投げない。
+			 * @pre `T`のdestructorは例外を投げず、同じ`Lazy`へ再入しない。
 			 * @post 保持値があった場合はemptyへ戻る。保持値なしの場合は状態変更なし。
-			 * @note 破棄中の例外は`std::terminate`。
+			 * @note 破棄中の例外または再入検出時は`std::terminate`。
 			 * @code
 			 * ket::cache::Lazy<int> value;
 			 * value.GetOrCreate([] { return 42; });
@@ -114,11 +170,13 @@ namespace ket
 			/**
 			 * @brief 保持値の取得または遅延生成。
 			 * @tparam Factory 保持値がない場合に呼び出すfactoryの型。
-			 * @param[in] factory `T`へ直接初期化可能な値を返す呼び出し可能object。
+			 * @param[in] factory 必要時だけ呼び出すfactory object。
 			 * @retval value 保持値への参照。
 			 * @pre 同じ`Lazy`への`GetOrCreate`または`Reset`をfactory実行中に再入呼び出ししない。
 			 * @post 成功時は保持値あり。factoryまたは`T`構築の例外時はemptyのまま。
-			 * @note 値がある場合、factoryは呼び出しなし。追加heap allocationなし。
+			 * @note 値がある場合、factoryは呼び出しなし。factory objectは`Lazy`内に保持しない。
+			 * @note factory実行中の再入検出時は`std::terminate`。
+			 * @note 追加heap allocationなし。
 			 * @code
 			 * ket::cache::Lazy<int> value;
 			 * int& first = value.GetOrCreate([] { return 42; });
@@ -127,12 +185,14 @@ namespace ket
 			 * @endcode
 			 */
 			template <typename Factory>
-			T& GetOrCreate(Factory factory);
+			T& GetOrCreate(Factory&& factory);
 
 		  private:
 			// NOLINTNEXTLINE(modernize-type-traits): C++11最小要件のため`_t` alias不使用。
 			typename std::aligned_storage<sizeof(T), alignof(T)>::type storage_;
 			bool has_value_ = false;
+			bool is_constructing_ = false;
+			bool is_destroying_ = false;
 		};
 
 		// -----------------------------------------------------------------------------
@@ -169,7 +229,12 @@ namespace ket
 			template <typename T, typename Storage>
 			T* ConstructedValuePointer(Storage& storage) noexcept
 			{
-				return reinterpret_cast<T*>(&storage);
+				T* const value = static_cast<T*>(MutableStorageAddress(storage));
+#if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606L
+				return std::launder(value);
+#else
+				return value;
+#endif
 			}
 
 			/**
@@ -185,7 +250,29 @@ namespace ket
 			template <typename T, typename Storage>
 			const T* ConstructedValuePointer(const Storage& storage) noexcept
 			{
-				return reinterpret_cast<const T*>(&storage);
+				const T* const value = reinterpret_cast<const T*>(&storage);
+#if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606L
+				return std::launder(value);
+#else
+				return value;
+#endif
+			}
+
+			/**
+			 * @brief placement new成功直後に保持値あり状態へmark。
+			 * @tparam T 保持値の型。
+			 * @param[in] value placement newが返した保持値pointer。
+			 * @param[in,out] has_value 保持値有無flag。
+			 * @retval value `value`をそのまま返す。
+			 * @pre `value`はplacement new成功直後の有効な保持値pointer。
+			 * @post `has_value`はtrue。
+			 * @note factory戻り値の一時object破棄より前にmarkするためのdetail helper。
+			 */
+			template <typename T>
+			T* MarkConstructed(T* value, bool& has_value) noexcept
+			{
+				has_value = true;
+				return value;
 			}
 
 		} // namespace detail
@@ -211,8 +298,14 @@ namespace ket
 		}
 
 		template <typename T>
-		void Lazy<T>::Reset() noexcept // NOLINT(bugprone-exception-escape)
+		void Lazy<T>::Reset() noexcept // NOLINT(bugprone-exception-escape,misc-no-recursion)
 		{
+			const auto operation_in_progress = is_constructing_ || is_destroying_;
+			if (operation_in_progress)
+			{
+				std::terminate();
+			}
+
 			const auto value_exists = has_value_;
 			if (!value_exists)
 			{
@@ -220,16 +313,24 @@ namespace ket
 			}
 
 			T* const value = detail::ConstructedValuePointer<T>(storage_);
+			has_value_ = false;
+			is_destroying_ = true;
 			// cppcheck-suppress nullPointer
 			// cppcheck-suppress throwInNoexceptFunction
 			value->~T();
-			has_value_ = false;
+			is_destroying_ = false;
 		}
 
 		template <typename T>
 		template <typename Factory>
-		T& Lazy<T>::GetOrCreate(Factory factory)
+		T& Lazy<T>::GetOrCreate(Factory&& factory) // NOLINT(misc-no-recursion)
 		{
+			const auto operation_in_progress = is_constructing_ || is_destroying_;
+			if (operation_in_progress)
+			{
+				std::terminate();
+			}
+
 			const auto value_exists = has_value_;
 			if (value_exists)
 			{
@@ -237,12 +338,31 @@ namespace ket
 			}
 
 			void* const storage = detail::MutableStorageAddress(storage_);
-			T* const value = new (storage) T(factory());
-			has_value_ = true;
+			is_constructing_ = true;
 
-			// cppcheck-suppress nullPointer
-			// cppcheck-suppress uninitdata
-			return *value;
+			try
+			{
+				T* const value = detail::MarkConstructed(
+					new (storage) T(std::forward<Factory>(factory)()), has_value_);
+				is_constructing_ = false;
+
+				// cppcheck-suppress nullPointer
+				// cppcheck-suppress uninitdata
+				return *value;
+			}
+			catch (...)
+			{
+				is_constructing_ = false;
+
+				const auto constructed_before_exception = has_value_;
+				// cppcheck-suppress knownConditionTrueFalse
+				if (constructed_before_exception)
+				{
+					Reset();
+				}
+
+				throw;
+			}
 		}
 
 	} // namespace cache
