@@ -61,76 +61,6 @@ namespace
 		return {text.data() + offset, size};
 	}
 
-	bool EqualBytesAt(std::string_view text, std::size_t offset, std::string_view expected) noexcept
-	{
-		const auto expected_size = expected.size();
-		for (std::size_t index = 0; index < expected_size; ++index)
-		{
-			const auto text_char = text[offset + index];
-			const auto expected_char = expected[index];
-			const auto chars_match = text_char == expected_char;
-			if (!chars_match)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	std::size_t
-	FindBytes(std::string_view text, std::string_view needle, std::size_t start) noexcept
-	{
-		const auto text_size = text.size();
-		const auto needle_size = needle.size();
-		const auto needle_is_empty = needle_size == 0U;
-		if (needle_is_empty)
-		{
-			return start;
-		}
-
-		const auto start_is_past_end = start > text_size;
-		if (start_is_past_end)
-		{
-			return kNotFound;
-		}
-
-		const auto needle_too_long = needle_size > (text_size - start);
-		if (needle_too_long)
-		{
-			return kNotFound;
-		}
-
-		const auto last_position = text_size - needle_size;
-		for (std::size_t position = start; position <= last_position; ++position)
-		{
-			const auto matches_here = EqualBytesAt(text, position, needle);
-			if (matches_here)
-			{
-				return position;
-			}
-		}
-
-		return kNotFound;
-	}
-
-	std::size_t CountSplitFields(std::string_view text, char delimiter) noexcept
-	{
-		std::size_t count = 1U;
-		const auto text_size = text.size();
-
-		for (std::size_t index = 0; index < text_size; ++index)
-		{
-			const auto char_is_delimiter = text[index] == delimiter;
-			if (char_is_delimiter)
-			{
-				++count;
-			}
-		}
-
-		return count;
-	}
-
 	void AppendView(std::string& destination, std::string_view part)
 	{
 		const auto part_is_empty = part.empty();
@@ -197,31 +127,20 @@ namespace ket
 		{
 			const auto text_size = text.size();
 			const auto prefix_size = prefix.size();
-			const auto prefix_is_empty = prefix_size == 0U;
-			if (prefix_is_empty)
-			{
-				return true;
-			}
-
 			const auto prefix_too_long = prefix_size > text_size;
 			if (prefix_too_long)
 			{
 				return false;
 			}
 
-			return EqualBytesAt(text, 0U, prefix);
+			const auto compare_result = text.compare(0U, prefix_size, prefix);
+			return compare_result == 0;
 		}
 
 		bool EndsWith(std::string_view text, std::string_view suffix) noexcept
 		{
 			const auto text_size = text.size();
 			const auto suffix_size = suffix.size();
-			const auto suffix_is_empty = suffix_size == 0U;
-			if (suffix_is_empty)
-			{
-				return true;
-			}
-
 			const auto suffix_too_long = suffix_size > text_size;
 			if (suffix_too_long)
 			{
@@ -229,12 +148,13 @@ namespace ket
 			}
 
 			const auto suffix_offset = text_size - suffix_size;
-			return EqualBytesAt(text, suffix_offset, suffix);
+			const auto compare_result = text.compare(suffix_offset, suffix_size, suffix);
+			return compare_result == 0;
 		}
 
 		bool Contains(std::string_view text, std::string_view needle) noexcept
 		{
-			const auto position = FindBytes(text, needle, 0U);
+			const auto position = text.find(needle);
 			return position != kNotFound;
 		}
 
@@ -310,23 +230,24 @@ namespace ket
 		std::vector<std::string_view> SplitViews(std::string_view text, char delimiter)
 		{
 			std::vector<std::string_view> result;
-			const auto field_count = CountSplitFields(text, delimiter);
-			result.reserve(field_count);
 
 			const auto text_size = text.size();
 			std::size_t field_begin = 0U;
 
-			for (std::size_t index = 0; index <= text_size; ++index)
+			while (true)
 			{
-				const auto reached_end = index == text_size;
-				const auto found_delimiter = !reached_end && text[index] == delimiter;
-				const auto should_emit_field = reached_end || found_delimiter;
-				if (should_emit_field)
+				const auto delimiter_position = text.find(delimiter, field_begin);
+				const auto delimiter_found = delimiter_position != kNotFound;
+				const auto field_end = delimiter_found ? delimiter_position : text_size;
+				const auto field_size = field_end - field_begin;
+				result.push_back(MakeView(text, field_begin, field_size));
+
+				if (!delimiter_found)
 				{
-					const auto field_size = index - field_begin;
-					result.push_back(MakeView(text, field_begin, field_size));
-					field_begin = index + 1U;
+					break;
 				}
+
+				field_begin = delimiter_position + 1U;
 			}
 
 			return result;
@@ -334,13 +255,26 @@ namespace ket
 
 		std::vector<std::string> Split(std::string_view text, char delimiter)
 		{
-			const auto views = SplitViews(text, delimiter);
-			const auto view_count = views.size();
-
 			std::vector<std::string> result;
-			result.reserve(view_count);
+			const auto text_size = text.size();
+			std::size_t field_begin = 0U;
 
-			std::transform(views.begin(), views.end(), std::back_inserter(result), StringFromView);
+			while (true)
+			{
+				const auto delimiter_position = text.find(delimiter, field_begin);
+				const auto delimiter_found = delimiter_position != kNotFound;
+				const auto field_end = delimiter_found ? delimiter_position : text_size;
+				const auto field_size = field_end - field_begin;
+				const auto field = MakeView(text, field_begin, field_size);
+				result.push_back(StringFromView(field));
+
+				if (!delimiter_found)
+				{
+					break;
+				}
+
+				field_begin = delimiter_position + 1U;
+			}
 
 			return result;
 		}
@@ -372,7 +306,7 @@ namespace ket
 			const auto from_is_empty = from.empty();
 			if (from_is_empty)
 			{
-				return StringFromView(text);
+				throw std::invalid_argument("ket ascii ReplaceAll requires non-empty from.");
 			}
 
 			std::string result;
@@ -381,7 +315,7 @@ namespace ket
 
 			while (cursor < text_size)
 			{
-				const auto match_position = FindBytes(text, from, cursor);
+				const auto match_position = text.find(from, cursor);
 				const auto match_found = match_position != kNotFound;
 				if (!match_found)
 				{

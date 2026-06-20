@@ -6,7 +6,7 @@
  *
  * @details Unicode、locale、正規化を扱わないASCII限定のtrim、case変換、split、
  * prefix/suffix処理を集約する。drop-in時は宣言と実装を同じ単位で持ち出す。
- * `SplitViews`は元文字列を参照するnon-owning viewを返し、lifetimeは呼び出し側が保持する。
+ * viewを返すAPIは元文字列を参照するnon-owning viewを返し、lifetimeは呼び出し側が保持する。
  *
  * @par プロジェクトへの適用方法
  * `ket_ascii.h` と `ket_ascii.cpp` を対象プロジェクトへコピー。
@@ -16,7 +16,7 @@
  * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
  * 推奨理由：`std::string_view`でnon-owningな文字列処理を短く扱える。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
- * 非推奨理由：標準ライブラリにASCII限定のtrim/case/split方針を固定した直接APIなし。
+ * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
  * 標準ライブラリのみ。
@@ -29,6 +29,7 @@
 
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace ket
@@ -212,7 +213,8 @@ namespace ket
 		 * @retval value `from`に一致した全ての非重複部分を`to`へ置換した文字列。
 		 * @pre `from`は空でない。各非空viewのdataはsizeバイト以上読み取り可能な領域を指す。
 		 * @post 引数と外部状態の変更なし。ASCII以外のbyteも一致判定と出力で保持。
-		 * @note 出力stringの確保があるためnoexceptなし。
+		 * @note
+		 * `from`が空の場合はstd::invalid_argument送出。出力stringの確保があるためnoexceptなし。
 		 * @code
 		 * const auto text = ket::ascii::ReplaceAll("a--b--", "--", ":");
 		 * // text == "a:b:"
@@ -263,6 +265,99 @@ namespace ket
 		 * @endcode
 		 */
 		bool EqualsIgnoreCase(std::string_view a, std::string_view b) noexcept;
+
+		// -----------------------------------------------------------------------------
+		// Internal implementation details
+		// -----------------------------------------------------------------------------
+
+		namespace detail
+		{
+			/**
+			 * @brief std::stringのrvalueだけを検出するtrait。
+			 */
+			template <typename T>
+			struct IsStringRvalue
+				: std::integral_constant<
+					  bool,
+					  std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, std::string> &&
+						  std::is_rvalue_reference_v<T&&>>
+			{
+			};
+
+			/**
+			 * @brief std::stringのrvalueでのみ有効なSFINAE helper。
+			 */
+			template <typename T>
+			using EnableIfStringRvalue = std::enable_if_t<IsStringRvalue<T>::value>;
+
+		} // namespace detail
+
+		// -----------------------------------------------------------------------------
+		// Public API definitions
+		// -----------------------------------------------------------------------------
+
+		/**
+		 * @brief 一時std::stringからのdangling view生成を拒否。
+		 * @param[in] text 拒否対象の一時std::string。
+		 * @retval value 戻り値なし。このoverloadは常にdelete。
+		 * @pre `text`はstd::stringのrvalue。
+		 * @post 呼び出しはcompile時に拒否され、runtime副作用なし。
+		 */
+		template <typename T, typename = detail::EnableIfStringRvalue<T>>
+		std::string_view Trim(T&& text) = delete;
+
+		/**
+		 * @brief 一時std::stringからのdangling view生成を拒否。
+		 * @param[in] text 拒否対象の一時std::string。
+		 * @retval value 戻り値なし。このoverloadは常にdelete。
+		 * @pre `text`はstd::stringのrvalue。
+		 * @post 呼び出しはcompile時に拒否され、runtime副作用なし。
+		 */
+		template <typename T, typename = detail::EnableIfStringRvalue<T>>
+		std::string_view TrimLeft(T&& text) = delete;
+
+		/**
+		 * @brief 一時std::stringからのdangling view生成を拒否。
+		 * @param[in] text 拒否対象の一時std::string。
+		 * @retval value 戻り値なし。このoverloadは常にdelete。
+		 * @pre `text`はstd::stringのrvalue。
+		 * @post 呼び出しはcompile時に拒否され、runtime副作用なし。
+		 */
+		template <typename T, typename = detail::EnableIfStringRvalue<T>>
+		std::string_view TrimRight(T&& text) = delete;
+
+		/**
+		 * @brief 一時std::stringからのdangling view生成を拒否。
+		 * @param[in] text 拒否対象の一時std::string。
+		 * @param[in] prefix 参照しないprefix。
+		 * @retval value 戻り値なし。このoverloadは常にdelete。
+		 * @pre `text`はstd::stringのrvalue。
+		 * @post 呼び出しはcompile時に拒否され、runtime副作用なし。
+		 */
+		template <typename T, typename = detail::EnableIfStringRvalue<T>>
+		std::string_view StripPrefix(T&& text, std::string_view prefix) = delete;
+
+		/**
+		 * @brief 一時std::stringからのdangling view生成を拒否。
+		 * @param[in] text 拒否対象の一時std::string。
+		 * @param[in] suffix 参照しないsuffix。
+		 * @retval value 戻り値なし。このoverloadは常にdelete。
+		 * @pre `text`はstd::stringのrvalue。
+		 * @post 呼び出しはcompile時に拒否され、runtime副作用なし。
+		 */
+		template <typename T, typename = detail::EnableIfStringRvalue<T>>
+		std::string_view StripSuffix(T&& text, std::string_view suffix) = delete;
+
+		/**
+		 * @brief 一時std::stringからのdangling view生成を拒否。
+		 * @param[in] text 拒否対象の一時std::string。
+		 * @param[in] delimiter 参照しないdelimiter。
+		 * @retval value 戻り値なし。このoverloadは常にdelete。
+		 * @pre `text`はstd::stringのrvalue。
+		 * @post 呼び出しはcompile時に拒否され、runtime副作用なし。
+		 */
+		template <typename T, typename = detail::EnableIfStringRvalue<T>>
+		std::vector<std::string_view> SplitViews(T&& text, char delimiter) = delete;
 
 	} // namespace ascii
 
