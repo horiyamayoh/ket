@@ -111,6 +111,10 @@ namespace ket
 			 * @retval value 値初期化済みのwrapper。
 			 * @pre `T{}`が有効。
 			 * @post `Get()`は値初期化された`T`への参照を返す。
+			 * @code
+			 * ket::object::ResetOnMove<int> value;
+			 * // value.Get() == 0
+			 * @endcode
 			 */
 			ResetOnMove() = default;
 
@@ -120,6 +124,10 @@ namespace ket
 			 * @retval value `value`からmove構築したwrapper。
 			 * @pre `T`は`value`からmove構築可能。
 			 * @post `Get()`は渡された値からmove構築した`T`への参照を返す。
+			 * @code
+			 * ket::object::ResetOnMove<int> value(42);
+			 * // value.Get() == 42
+			 * @endcode
 			 */
 			explicit ResetOnMove(T value);
 
@@ -130,6 +138,11 @@ namespace ket
 			 * @pre `other`は有効なwrapper。`T{}`によるresetが有効。
 			 * @post
 			 * 構築先はmove前の`other.Get()`の値を保持し、`other.Get()`は`T{}`で代入された状態。
+			 * @code
+			 * ket::object::ResetOnMove<int> source(42);
+			 * ket::object::ResetOnMove<int> moved(std::move(source));
+			 * // moved.Get() == 42, source.Get() == 0
+			 * @endcode
 			 */
 			ResetOnMove(ResetOnMove&& other) noexcept(
 				std::is_nothrow_move_constructible<T>::value &&
@@ -143,6 +156,12 @@ namespace ket
 			 * @pre `*this`と`other`は有効なwrapper。`T{}`によるresetが有効。
 			 * @post
 			 * `*this`はmove前の`other.Get()`の値を保持し、`other.Get()`は`T{}`で代入された状態。
+			 * @code
+			 * ket::object::ResetOnMove<int> source(42);
+			 * ket::object::ResetOnMove<int> target;
+			 * target = std::move(source);
+			 * // target.Get() == 42, source.Get() == 0
+			 * @endcode
 			 */
 			ResetOnMove& operator=(ResetOnMove&& other) noexcept(
 				std::is_nothrow_move_assignable<T>::value &&
@@ -153,6 +172,11 @@ namespace ket
 			 * @retval value 保持値へのmutable参照。
 			 * @pre `*this`は有効なwrapper。
 			 * @post wrapperの保持値と外部状態の変更なし。
+			 * @code
+			 * ket::object::ResetOnMove<int> value;
+			 * value.Get() = 42;
+			 * // value.Get() == 42
+			 * @endcode
 			 */
 			T& Get() noexcept;
 
@@ -161,6 +185,11 @@ namespace ket
 			 * @retval value 保持値へのconst参照。
 			 * @pre `*this`は有効なwrapper。
 			 * @post wrapperの保持値と外部状態の変更なし。
+			 * @code
+			 * const ket::object::ResetOnMove<int> value(42);
+			 * const auto current = value.Get();
+			 * // current == 42
+			 * @endcode
 			 */
 			const T& Get() const noexcept;
 
