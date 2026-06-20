@@ -67,7 +67,13 @@ namespace ket
 
 		bool Writer::Full() const noexcept
 		{
-			return Remaining() == 0U;
+			const auto can_write_zero = CanWrite(data_, size_, offset_, 0U);
+			if (!can_write_zero)
+			{
+				return false;
+			}
+
+			return offset_ == size_;
 		}
 
 		bool Writer::Skip(std::size_t size) noexcept

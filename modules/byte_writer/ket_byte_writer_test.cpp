@@ -167,7 +167,7 @@ TEST(KetByteWriterTest, SkipsWithoutMutatingBuffer)
  * @test
  * @brief invalid writerの失敗確認。
  * @details nullptrと非0
- * sizeで生成したwriterへ非空writeとskipを行い、すべて失敗してoffsetを保持することを確認。
+ * sizeで生成したwriterへ非空writeとskipを行い、すべて失敗してoffsetを保持し、fullではないことを確認。
  * @pre C++17以降。
  * @post invalid writerはconstructor直後のoffsetを保持。
  */
@@ -191,7 +191,7 @@ TEST(KetByteWriterTest, RejectsInvalidWriterOperations)
 	EXPECT_EQ(writer.Size(), 4U);
 	EXPECT_EQ(writer.Offset(), 0U);
 	EXPECT_EQ(writer.Remaining(), 0U);
-	EXPECT_TRUE(writer_is_full);
+	EXPECT_FALSE(writer_is_full);
 }
 
 /**

@@ -168,9 +168,9 @@ namespace ket
 			std::size_t Remaining() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
-			 * @brief offsetが末尾に到達したかの判定。
-			 * @retval true 残りbyte数が0。
-			 * @retval false 残りbyte数が1以上。
+			 * @brief valid writerのoffsetが末尾に到達したかの判定。
+			 * @retval true writerがvalidで残りbyte数が0。
+			 * @retval false invalid writer、内部不整合、または残りbyte数が1以上。
 			 * @pre なし。
 			 * @post writer状態とbuffer内容の変更なし。
 			 * @code
