@@ -15,15 +15,7 @@ namespace
 	bool UuidBytesEqual(const ket::uuid::Uuid& value,
 						const std::array<std::uint8_t, kUuidByteCount>& expected) noexcept
 	{
-		for (std::size_t index = 0U; index < kUuidByteCount; ++index)
-		{
-			if (value.bytes[index] != expected[index])
-			{
-				return false;
-			}
-		}
-
-		return true;
+		return value.bytes == expected;
 	}
 
 	bool OptionalUuidBytesEqual(const std::optional<ket::uuid::Uuid>& value,
@@ -90,6 +82,37 @@ TEST(KetUuidTest, ParsesNormalUuid)
 
 /**
  * @test
+ * @brief all-ff UUID のparse確認。
+ * @details 全byteが0xffのcanonical UUIDを入力し、16 byteすべてが0xffとしてparseされることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetUuidTest, ParsesAllFfUuid)
+{
+	const auto value = ket::uuid::Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
+	const auto expected = std::array<std::uint8_t, kUuidByteCount>{{0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU,
+																	0xffU}};
+
+	const auto bytes_match = OptionalUuidBytesEqual(value, expected);
+	EXPECT_TRUE(bytes_match);
+}
+
+/**
+ * @test
  * @brief upper-case UUID 入力のparse確認。
  * @details upper-case hexを含むcanonical
  * UUIDを入力し、lower-case入力と同じbyte列へparseされることを確認。
@@ -122,23 +145,25 @@ TEST(KetUuidTest, ParsesUppercaseUuid)
 
 /**
  * @test
- * @brief UUID parse の長さ不一致拒否確認。
+ * @brief UUID parse の長さ不一致と非canonical形式拒否確認。
  * @details
- * 空文字、短すぎる文字列、長すぎる文字列、brace付き形式を入力し、std::nulloptを返すことを確認。
+ * 空文字、短すぎる文字列、長すぎる文字列、brace付き形式、URN形式を入力し、std::nulloptを返すことを確認。
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
-TEST(KetUuidTest, RejectsBadLengthAndBracedForm)
+TEST(KetUuidTest, RejectsBadLengthBracedAndUrnForms)
 {
 	const auto empty = ket::uuid::Parse("");
 	const auto short_text = ket::uuid::Parse("00112233-4455-6677-8899-aabbccddeef");
 	const auto long_text = ket::uuid::Parse("00112233-4455-6677-8899-aabbccddeeff0");
 	const auto braced_text = ket::uuid::Parse("{00112233-4455-6677-8899-aabbccddeeff}");
+	const auto urn_text = ket::uuid::Parse("urn:uuid:00112233-4455-6677-8899-aabbccddeeff");
 
 	EXPECT_EQ(empty, std::nullopt);
 	EXPECT_EQ(short_text, std::nullopt);
 	EXPECT_EQ(long_text, std::nullopt);
 	EXPECT_EQ(braced_text, std::nullopt);
+	EXPECT_EQ(urn_text, std::nullopt);
 }
 
 /**
@@ -151,16 +176,33 @@ TEST(KetUuidTest, RejectsBadLengthAndBracedForm)
  */
 TEST(KetUuidTest, RejectsBadHyphenPlacement)
 {
-	std::string missing_required_hyphen = "00112233-4455-6677-8899-aabbccddeeff";
-	std::string extra_hyphen = "00112233-4455-6677-8899-aabbccddeeff";
-	missing_required_hyphen[8] = '0';
-	extra_hyphen[9] = '-';
+	const auto required_hyphen_positions = std::array<std::size_t, 4U>{{8U, 13U, 18U, 23U}};
+	const auto unexpected_hyphen_positions =
+		std::array<std::size_t, 8U>{{7U, 9U, 12U, 14U, 17U, 19U, 22U, 24U}};
 
-	const auto missing_required = ket::uuid::Parse(missing_required_hyphen);
-	const auto unexpected_hyphen = ket::uuid::Parse(extra_hyphen);
+	for (const auto position : required_hyphen_positions)
+	{
+		const auto trace = std::string("required hyphen index ") + std::to_string(position);
+		SCOPED_TRACE(trace);
+		std::string missing_required_hyphen = "00112233-4455-6677-8899-aabbccddeeff";
+		missing_required_hyphen[position] = '0';
 
-	EXPECT_EQ(missing_required, std::nullopt);
-	EXPECT_EQ(unexpected_hyphen, std::nullopt);
+		const auto missing_required = ket::uuid::Parse(missing_required_hyphen);
+
+		EXPECT_EQ(missing_required, std::nullopt);
+	}
+
+	for (const auto position : unexpected_hyphen_positions)
+	{
+		const auto trace = std::string("unexpected hyphen index ") + std::to_string(position);
+		SCOPED_TRACE(trace);
+		std::string extra_hyphen = "00112233-4455-6677-8899-aabbccddeeff";
+		extra_hyphen[position] = '-';
+
+		const auto unexpected_hyphen = ket::uuid::Parse(extra_hyphen);
+
+		EXPECT_EQ(unexpected_hyphen, std::nullopt);
+	}
 }
 
 /**
@@ -214,4 +256,151 @@ TEST(KetUuidTest, FormatsUuidAsLowercaseCanonicalText)
 	const auto text = ket::uuid::Format(value);
 
 	EXPECT_EQ(text, std::string("abcdefab-cdef-abcd-efab-cdefabcdefab"));
+}
+
+/**
+ * @test
+ * @brief all-ff UUID の文字列化確認。
+ * @details 全byteが0xffのUUID値を入力し、全桁fのcanonical hyphen形式へformatされることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetUuidTest, FormatsAllFfUuid)
+{
+	const auto value = ket::uuid::Uuid{{0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU,
+										0xffU}};
+
+	const auto text = ket::uuid::Format(value);
+
+	EXPECT_EQ(text, std::string("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+}
+
+/**
+ * @test
+ * @brief upper-case入力のcanonical文字列化確認。
+ * @details upper-case
+ * UUIDをparseしてからformatし、lower-case固定のcanonical形式へ正規化されることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetUuidTest, FormatsParsedUppercaseAsLowercaseCanonical)
+{
+	const auto parsed = ket::uuid::Parse("ABCDEFAB-CDEF-ABCD-EFAB-CDEFABCDEFAB");
+	const auto expected = std::array<std::uint8_t, kUuidByteCount>{{0xabU,
+																	0xcdU,
+																	0xefU,
+																	0xabU,
+																	0xcdU,
+																	0xefU,
+																	0xabU,
+																	0xcdU,
+																	0xefU,
+																	0xabU,
+																	0xcdU,
+																	0xefU,
+																	0xabU,
+																	0xcdU,
+																	0xefU,
+																	0xabU}};
+	const auto bytes_match = OptionalUuidBytesEqual(parsed, expected);
+	const auto parsed_value = parsed.value_or(ket::uuid::Uuid{});
+
+	const auto text = ket::uuid::Format(parsed_value);
+
+	EXPECT_TRUE(bytes_match);
+	EXPECT_EQ(text, std::string("abcdefab-cdef-abcd-efab-cdefabcdefab"));
+}
+
+/**
+ * @test
+ * @brief Format Doxygen例の確認。
+ * @details Doxygen例と同じUUID値を入力し、canonical hyphen形式の文字列を返すことを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetUuidTest, FormatsDocumentedExample)
+{
+	const auto value = ket::uuid::Uuid{{0x00U,
+										0x11U,
+										0x22U,
+										0x33U,
+										0x44U,
+										0x55U,
+										0x66U,
+										0x77U,
+										0x88U,
+										0x99U,
+										0xaaU,
+										0xbbU,
+										0xccU,
+										0xddU,
+										0xeeU,
+										0xffU}};
+
+	const auto text = ket::uuid::Format(value);
+
+	EXPECT_EQ(text, std::string("00112233-4455-6677-8899-aabbccddeeff"));
+}
+
+/**
+ * @test
+ * @brief format結果のparse roundtrip確認。
+ * @details UUID値をformatしてからparseし、元の16 byte表現へ戻ることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetUuidTest, ParsesFormattedUuidRoundtrip)
+{
+	const auto value = ket::uuid::Uuid{{0x10U,
+										0x32U,
+										0x54U,
+										0x76U,
+										0x98U,
+										0xbaU,
+										0xdcU,
+										0xfeU,
+										0x01U,
+										0x23U,
+										0x45U,
+										0x67U,
+										0x89U,
+										0xabU,
+										0xcdU,
+										0xefU}};
+	const auto expected = std::array<std::uint8_t, kUuidByteCount>{{0x10U,
+																	0x32U,
+																	0x54U,
+																	0x76U,
+																	0x98U,
+																	0xbaU,
+																	0xdcU,
+																	0xfeU,
+																	0x01U,
+																	0x23U,
+																	0x45U,
+																	0x67U,
+																	0x89U,
+																	0xabU,
+																	0xcdU,
+																	0xefU}};
+
+	const auto text = ket::uuid::Format(value);
+	const auto reparsed = ket::uuid::Parse(text);
+	const auto bytes_match = OptionalUuidBytesEqual(reparsed, expected);
+
+	EXPECT_TRUE(bytes_match);
 }

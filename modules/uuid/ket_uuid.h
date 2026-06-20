@@ -24,9 +24,10 @@
  *
  * @par namespace
  * 公開API：ket::uuid
- * 内部実装：ket::uuid::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -46,14 +47,15 @@ namespace ket
 		 */
 		struct Uuid
 		{
-			std::uint8_t bytes[16] = {};
+			std::array<std::uint8_t, 16U> bytes = {};
 		};
 
 		/**
 		 * @brief canonical hyphen形式 UUID 文字列のparse。
 		 * @param[in] text parse対象の文字列。
 		 * @retval value parse後の UUID。
-		 * @retval std::nullopt 長さ不一致、hyphen位置不一致、不正hex、またはbrace付き形式。
+		 * @retval std::nullopt 長さ不一致、hyphen位置不一致、不正hex、brace/URN形式、
+		 * またはcanonical hyphen形式以外。
 		 * @pre なし。canonical hyphen形式以外は失敗値として扱う。
 		 * @post 引数と外部状態の変更なし。version/variant bit の妥当性検証なし。
 		 * @note hex は upper/lower の両方を受け付ける。
@@ -79,7 +81,7 @@ namespace ket
 		 * // text == "00112233-4455-6677-8899-aabbccddeeff"
 		 * @endcode
 		 */
-		std::string Format(Uuid value);
+		std::string Format(const Uuid& value);
 
 	} // namespace uuid
 

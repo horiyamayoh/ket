@@ -1,5 +1,6 @@
 #include "ket_uuid.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -8,17 +9,45 @@
 
 namespace
 {
-	constexpr std::size_t kUuidByteCount = 16U;
-	constexpr std::size_t kCanonicalTextLength = 36U;
+	constexpr std::array<std::size_t, 5U> kGroupByteCounts{{4U, 2U, 2U, 2U, 6U}};
+	constexpr std::size_t kUuidByteCount = kGroupByteCounts[0] + kGroupByteCounts[1] +
+		kGroupByteCounts[2] + kGroupByteCounts[3] + kGroupByteCounts[4];
+	constexpr std::size_t kCanonicalTextLength =
+		(kUuidByteCount * 2U) + kGroupByteCounts.size() - 1U;
 
 	constexpr bool IsHyphenIndex(std::size_t index) noexcept
 	{
-		return index == 8U || index == 13U || index == 18U || index == 23U;
+		std::size_t boundary_byte_count = 0U;
+		for (std::size_t group_index = 0U; group_index + 1U < kGroupByteCounts.size();
+			 ++group_index)
+		{
+			boundary_byte_count += kGroupByteCounts[group_index];
+			const auto hyphen_index = (boundary_byte_count * 2U) + group_index;
+			const auto index_matches = index == hyphen_index;
+			if (index_matches)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	constexpr bool NeedsHyphenBeforeByte(std::size_t byte_index) noexcept
 	{
-		return byte_index == 4U || byte_index == 6U || byte_index == 8U || byte_index == 10U;
+		std::size_t boundary_byte_count = 0U;
+		for (std::size_t group_index = 0U; group_index + 1U < kGroupByteCounts.size();
+			 ++group_index)
+		{
+			boundary_byte_count += kGroupByteCounts[group_index];
+			const auto byte_index_matches = byte_index == boundary_byte_count;
+			if (byte_index_matches)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	constexpr std::optional<std::uint8_t> HexValue(char value) noexcept
@@ -63,7 +92,6 @@ namespace ket
 	{
 		std::optional<Uuid> Parse(std::string_view text) noexcept
 		{
-			// 入力形式確認
 			const auto text_size = text.size();
 			const auto text_has_expected_length = text_size == kCanonicalTextLength;
 			if (!text_has_expected_length)
@@ -117,10 +145,16 @@ namespace ket
 				}
 			}
 
+			const auto consumed_all_bytes = byte_index == kUuidByteCount && next_is_high_nibble;
+			if (!consumed_all_bytes)
+			{
+				return std::nullopt;
+			}
+
 			return result;
 		}
 
-		std::string Format(Uuid value)
+		std::string Format(const Uuid& value)
 		{
 			std::string result;
 			result.reserve(kCanonicalTextLength);
