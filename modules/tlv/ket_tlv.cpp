@@ -8,6 +8,8 @@
 
 namespace
 {
+	constexpr std::size_t kHeaderSize = 6U;
+
 	std::uint16_t LoadBe16(const std::uint8_t* data) noexcept
 	{
 		const auto high = static_cast<std::uint16_t>(data[0]);
@@ -40,37 +42,64 @@ namespace
 		dst.push_back(static_cast<std::uint8_t>(value & 0x000000FFU));
 	}
 
-	void ReserveForAppend(std::vector<std::uint8_t>& dst, std::uint32_t value_size)
+	std::size_t CheckedRecordSize(std::uint32_t value_size)
 	{
-		const auto max_size = dst.max_size();
-		const auto header_does_not_fit = max_size < ket::tlv::detail::kHeaderSize;
+		const auto max_size = std::vector<std::uint8_t>().max_size();
+		const auto header_does_not_fit = max_size < kHeaderSize;
 		if (header_does_not_fit)
 		{
 			throw std::length_error("ket TLV record exceeds std::vector::max_size().");
 		}
 
-		const auto value_count = static_cast<std::size_t>(value_size);
-		const auto max_value_size = max_size - ket::tlv::detail::kHeaderSize;
-		const auto value_too_large = value_count > max_value_size;
+		const auto max_value_size = max_size - kHeaderSize;
+		const auto value_too_large = value_size > max_value_size;
 		if (value_too_large)
 		{
 			throw std::length_error("ket TLV record exceeds std::vector::max_size().");
 		}
 
-		const auto record_size = ket::tlv::detail::kHeaderSize + value_count;
+		const auto value_count = static_cast<std::size_t>(value_size);
+		const auto record_size = kHeaderSize + value_count;
+		return record_size;
+	}
+
+	void ReserveForAppend(const std::vector<std::uint8_t>& dst, std::size_t record_size)
+	{
+		const auto max_size = dst.max_size();
+		const auto record_too_large = record_size > max_size;
+		if (record_too_large)
+		{
+			throw std::length_error("ket TLV record exceeds std::vector::max_size().");
+		}
+
 		const auto record_does_not_fit = dst.size() > max_size - record_size;
 		if (record_does_not_fit)
 		{
 			throw std::length_error("ket TLV output exceeds std::vector::max_size().");
 		}
+	}
 
-		dst.reserve(dst.size() + record_size);
+	std::vector<std::uint8_t>
+	BuildRecord(std::uint16_t type, const std::uint8_t* value, std::uint32_t value_size)
+	{
+		const auto record_size = CheckedRecordSize(value_size);
+		std::vector<std::uint8_t> record;
+		record.reserve(record_size);
+		AppendBe16(record, type);
+		AppendBe32(record, value_size);
+
+		for (std::uint32_t index = 0; index < value_size; ++index)
+		{
+			record.push_back(value[index]);
+		}
+
+		return record;
 	}
 
 	bool ConsumedSizeWouldOverflow(std::uint32_t value_size) noexcept
 	{
 		const auto max_size = std::numeric_limits<std::size_t>::max();
-		const auto header_size = ket::tlv::detail::kHeaderSize;
+		const auto header_size = kHeaderSize;
 		const auto header_does_not_fit = max_size < header_size;
 		if (header_does_not_fit)
 		{
@@ -78,9 +107,7 @@ namespace
 		}
 
 		const auto max_value_size = max_size - header_size;
-		const auto value_size_as_size = static_cast<std::size_t>(value_size);
-
-		return value_size_as_size > max_value_size;
+		return value_size > max_value_size;
 	}
 
 } // namespace
@@ -92,10 +119,7 @@ namespace ket
 		std::vector<std::uint8_t>
 		Encode(std::uint16_t type, const std::uint8_t* value, std::uint32_t value_size)
 		{
-			std::vector<std::uint8_t> result;
-			Append(result, type, value, value_size);
-
-			return result;
+			return BuildRecord(type, value, value_size);
 		}
 
 		void Append(std::vector<std::uint8_t>& dst,
@@ -103,14 +127,10 @@ namespace ket
 					const std::uint8_t* value,
 					std::uint32_t value_size)
 		{
-			ReserveForAppend(dst, value_size);
-			AppendBe16(dst, type);
-			AppendBe32(dst, value_size);
-
-			for (std::uint32_t index = 0; index < value_size; ++index)
-			{
-				dst.push_back(value[index]);
-			}
+			const auto record = BuildRecord(type, value, value_size);
+			ReserveForAppend(dst, record.size());
+			dst.reserve(dst.size() + record.size());
+			dst.insert(dst.end(), record.begin(), record.end());
 		}
 
 		bool TryDecode(const std::uint8_t* data, std::size_t size, DecodeResult& out) noexcept
@@ -120,7 +140,7 @@ namespace ket
 				return false;
 			}
 
-			const auto header_is_short = size < detail::kHeaderSize;
+			const auto header_is_short = size < kHeaderSize;
 			if (header_is_short)
 			{
 				return false;
@@ -134,7 +154,7 @@ namespace ket
 				return false;
 			}
 
-			const auto remaining_size = size - detail::kHeaderSize;
+			const auto remaining_size = size - kHeaderSize;
 			const auto value_size_as_size = static_cast<std::size_t>(value_size);
 			const auto value_exceeds_input = value_size_as_size > remaining_size;
 			if (value_exceeds_input)
@@ -142,8 +162,8 @@ namespace ket
 				return false;
 			}
 
-			const DecodeResult result{{type, data + detail::kHeaderSize, value_size},
-									  detail::kHeaderSize + value_size_as_size};
+			const DecodeResult result{{type, data + kHeaderSize, value_size},
+									  kHeaderSize + value_size_as_size};
 			out = result;
 
 			return true;

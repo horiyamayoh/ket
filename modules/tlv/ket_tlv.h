@@ -25,7 +25,7 @@
  *
  * @par namespace
  * 公開API：ket::tlv
- * 内部実装：ket::tlv::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
@@ -47,9 +47,9 @@ namespace ket
 		 */
 		struct View
 		{
-			std::uint16_t type;
-			const std::uint8_t* value;
-			std::uint32_t value_size;
+			std::uint16_t type = 0U;
+			const std::uint8_t* value = nullptr;
+			std::uint32_t value_size = 0U;
 		};
 
 		/**
@@ -59,7 +59,7 @@ namespace ket
 		struct DecodeResult
 		{
 			View view;
-			std::size_t consumed;
+			std::size_t consumed = 0U;
 		};
 
 		/**
@@ -89,9 +89,11 @@ namespace ket
 		 * @param[in] value_size 追加するvalue byte数。wire headerへbig-endian uint32で格納。
 		 * @retval void 戻り値なし。
 		 * @pre `dst`は有効なstd::vector。`value_size > 0`の場合、`value`は`value_size`バイト以上
-		 * 読み取り可能な配列を指す。`value == nullptr && value_size > 0`はprecondition違反。
+		 * 読み取り可能な配列を指す。`value`は`dst`の内部storageを指していてもよい。
+		 * `value == nullptr && value_size > 0`はprecondition違反。
 		 * @post `dst`の既存内容を保持し、末尾にTLV recordを追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note 例外時は`dst`を変更しない強い例外保証。
 		 * @code
 		 * std::vector<std::uint8_t> output;
 		 * const std::uint8_t value[] = {0xAAU};
@@ -106,14 +108,13 @@ namespace ket
 
 		/**
 		 * @brief 入力先頭の1つのTLV recordをdecode。
-		 * @param[in] data decode対象のbyte列。`size == 0`の場合のみ`nullptr`可。
+		 * @param[in] data decode対象のbyte列。`nullptr`の場合は`size`によらず失敗。
 		 * @param[in] size `data`のbyte数。
 		 * @param[out] out decode成功時に先頭recordのviewと消費byte数を格納。
 		 * @retval true 先頭1 recordをdecodeし、`out`を更新。
-		 * @retval false `nullptr && size == 0`、6 bytes未満、declared length過大、
+		 * @retval false `data == nullptr`、6 bytes未満、declared length過大、
 		 * または消費byte数のstd::size_t overflow。`out`は不変。
-		 * @pre `size > 0`の場合、`data`は`size`バイト以上読み取り可能な配列を指す。
-		 * `data == nullptr && size > 0`はprecondition違反。
+		 * @pre `data != nullptr`の場合、`data`は`size`バイト以上読み取り可能な配列を指す。
 		 * @post 成功時だけ`out`を更新。失敗時は`out`を変更なし。
 		 * @note `out.view.value`は入力bufferを指すnon-owning pointer。
 		 * decode後の参照有効性は入力buffer lifetimeに依存。
@@ -125,16 +126,6 @@ namespace ket
 		 * @endcode
 		 */
 		bool TryDecode(const std::uint8_t* data, std::size_t size, DecodeResult& out) noexcept;
-
-		// -----------------------------------------------------------------------------
-		// Internal implementation details
-		// -----------------------------------------------------------------------------
-
-		namespace detail
-		{
-			constexpr std::size_t kHeaderSize = 6U;
-
-		} // namespace detail
 
 	} // namespace tlv
 
