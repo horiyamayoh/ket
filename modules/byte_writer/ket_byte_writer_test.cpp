@@ -176,16 +176,22 @@ TEST(KetByteWriterTest, RejectsInvalidWriterOperations)
 	const auto source = std::array<std::uint8_t, 1>{{0x33U}};
 	ket::byte_writer::Writer writer(nullptr, 4U);
 
+	const auto empty_write = writer.WriteBytes(nullptr, 0U);
 	const auto write_u8 = writer.WriteU8(0x12U);
 	const auto write_bytes = writer.WriteBytes(source.data(), source.size());
+	const auto skip_zero = writer.Skip(0U);
 	const auto skip = writer.Skip(1U);
+	const auto writer_is_full = writer.Full();
 
+	EXPECT_FALSE(empty_write);
 	EXPECT_FALSE(write_u8);
 	EXPECT_FALSE(write_bytes);
+	EXPECT_FALSE(skip_zero);
 	EXPECT_FALSE(skip);
 	EXPECT_EQ(writer.Size(), 4U);
 	EXPECT_EQ(writer.Offset(), 0U);
-	EXPECT_EQ(writer.Remaining(), 4U);
+	EXPECT_EQ(writer.Remaining(), 0U);
+	EXPECT_TRUE(writer_is_full);
 }
 
 /**

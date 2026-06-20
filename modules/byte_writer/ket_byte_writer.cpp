@@ -5,6 +5,32 @@
 
 namespace
 {
+	constexpr bool IsValidWriter(const std::uint8_t* data, std::size_t size) noexcept
+	{
+		return data != nullptr || size == 0U;
+	}
+
+	bool CanWrite(const std::uint8_t* data,
+				  std::size_t size,
+				  std::size_t offset,
+				  std::size_t requested_size) noexcept
+	{
+		const auto writer_is_valid = IsValidWriter(data, size);
+		if (!writer_is_valid)
+		{
+			return false;
+		}
+
+		const auto offset_is_valid = offset <= size;
+		if (!offset_is_valid)
+		{
+			return false;
+		}
+
+		const auto remaining = size - offset;
+		return requested_size <= remaining;
+	}
+
 	constexpr std::uint8_t ByteAt(std::uint32_t value, unsigned int shift) noexcept
 	{
 		return static_cast<std::uint8_t>((value >> shift) & 0xFFU);
@@ -30,8 +56,8 @@ namespace ket
 
 		std::size_t Writer::Remaining() const noexcept
 		{
-			const auto offset_is_past_size = offset_ > size_;
-			if (offset_is_past_size)
+			const auto can_write_zero = CanWrite(data_, size_, offset_, 0U);
+			if (!can_write_zero)
 			{
 				return 0U;
 			}
@@ -46,21 +72,8 @@ namespace ket
 
 		bool Writer::Skip(std::size_t size) noexcept
 		{
-			const auto requested_is_empty = size == 0U;
-			if (requested_is_empty)
-			{
-				return true;
-			}
-
-			const auto destination_is_missing = data_ == nullptr;
-			if (destination_is_missing)
-			{
-				return false;
-			}
-
-			const auto remaining = Remaining();
-			const auto has_space = size <= remaining;
-			if (!has_space)
+			const auto can_write = CanWrite(data_, size_, offset_, size);
+			if (!can_write)
 			{
 				return false;
 			}
@@ -106,6 +119,12 @@ namespace ket
 
 		bool Writer::WriteBytes(const std::uint8_t* data, std::size_t size) noexcept
 		{
+			const auto can_write = CanWrite(data_, size_, offset_, size);
+			if (!can_write)
+			{
+				return false;
+			}
+
 			const auto requested_is_empty = size == 0U;
 			if (requested_is_empty)
 			{
@@ -114,19 +133,6 @@ namespace ket
 
 			const auto source_is_missing = data == nullptr;
 			if (source_is_missing)
-			{
-				return false;
-			}
-
-			const auto destination_is_missing = data_ == nullptr;
-			if (destination_is_missing)
-			{
-				return false;
-			}
-
-			const auto remaining = Remaining();
-			const auto has_space = size <= remaining;
-			if (!has_space)
 			{
 				return false;
 			}

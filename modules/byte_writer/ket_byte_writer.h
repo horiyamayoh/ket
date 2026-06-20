@@ -42,7 +42,7 @@ namespace ket
 		 * @brief fixed bufferへ逐次書き込むnon-owning writer。
 		 *
 		 * `data == nullptr && size == 0`は有効な空writer。`data == nullptr && size > 0`は
-		 * invalid writerとして扱い、非空の書き込みとskipは失敗。
+		 * invalid writerとして扱い、書き込みとskipは失敗。
 		 */
 		class Writer
 		{
@@ -154,7 +154,8 @@ namespace ket
 
 			/**
 			 * @brief 残り書き込み可能byte数取得。
-			 * @retval value `Size() - Offset()`。offsetがsizeを超える内部不整合時は0。
+			 * @retval value valid writerでは`Size() - Offset()`。invalid writerまたはoffsetがsizeを
+			 * 超える内部不整合時は0。
 			 * @pre なし。
 			 * @post writer状態とbuffer内容の変更なし。
 			 * @code
@@ -285,7 +286,7 @@ namespace ket
 			 * @brief byte列の書き込み。
 			 * @param[in] data 書き込むbyte列先頭。`size == 0`のときだけnullptr可。
 			 * @param[in] size 書き込むbyte数。
-			 * @retval true 書き込みに成功。`size == 0`はno-op成功。
+			 * @retval true 書き込みに成功。valid writerの`size == 0`はno-op成功。
 			 * @retval false null source、invalid writer、または残りbyte数不足。
 			 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`nullptr`と非0
 			 * sizeの組は失敗値として扱う。
