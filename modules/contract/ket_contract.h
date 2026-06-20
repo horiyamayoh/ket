@@ -59,6 +59,11 @@ namespace ket
 		 * @post `std::terminate`を呼び出し、呼び出し元へ戻らない。
 		 * @note `kind`、`expression`、`file`、`line`は将来の診断拡張用に受け取るが、
 		 * 初回APIではhandler差し替えやloggingを提供しない。
+		 * @code
+		 * const auto kind = ket::contract::Kind::kExpects;
+		 * ket::contract::Fail(kind, "count <= capacity", "file.cpp", 42);
+		 * // 呼び出し元へ戻らない。
+		 * @endcode
 		 */
 		[[noreturn]] inline void
 		Fail(Kind kind, const char* expression, const char* file, int line) noexcept;
@@ -249,6 +254,9 @@ namespace ket
 /**
  * @brief preconditionを常時評価するstatement macro。
  * @param condition 評価対象のprecondition式。
+ * @code
+ * KET_EXPECTS(count <= capacity);
+ * @endcode
  */
 #define KET_EXPECTS(condition) \
 	::ket::contract::Expects(!!(condition), #condition, __FILE__, __LINE__)
@@ -256,6 +264,9 @@ namespace ket
 /**
  * @brief postconditionを常時評価するstatement macro。
  * @param condition 評価対象のpostcondition式。
+ * @code
+ * KET_ENSURES(result != nullptr);
+ * @endcode
  */
 #define KET_ENSURES(condition) \
 	::ket::contract::Ensures(!!(condition), #condition, __FILE__, __LINE__)
@@ -263,6 +274,9 @@ namespace ket
 /**
  * @brief invariantを常時評価するstatement macro。
  * @param condition 評価対象のinvariant式。
+ * @code
+ * KET_ASSERT_INVARIANT(size_ <= capacity_);
+ * @endcode
  */
 #define KET_ASSERT_INVARIANT(condition) \
 	::ket::contract::AssertInvariant(!!(condition), #condition, __FILE__, __LINE__)
@@ -270,5 +284,8 @@ namespace ket
 /**
  * @brief non-null pointerを要求し、成功時に同じpointer型で返すmacro。
  * @param ptr 評価対象のpointer式。
+ * @code
+ * int* const value = KET_REQUIRE_NON_NULL(ptr);
+ * @endcode
  */
 #define KET_REQUIRE_NON_NULL(ptr) ::ket::contract::RequireNonNull((ptr), #ptr, __FILE__, __LINE__)
