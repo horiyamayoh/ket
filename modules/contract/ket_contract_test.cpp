@@ -2,14 +2,16 @@
 
 #include "ket_contract.h"
 
-#include <string>
+#include <cstddef>
+#include <limits>
+#include <string> // NOLINT(misc-include-cleaner): GoogleTest death macroのIWYU要件。
 #include <type_traits>
 
 #include <gtest/gtest.h>
 
 namespace
 {
-	const std::string kAnyDeathOutputRegex;
+	const char kAnyDeathOutputRegex[] = "";
 
 	int* CountedPointer(int& call_count, int* ptr) noexcept
 	{
@@ -17,11 +19,19 @@ namespace
 		return ptr;
 	}
 
-	bool CountedTrue(int& call_count) noexcept
+	bool CountedExpectedCall(int& call_count, int expected_call_count) noexcept
 	{
 		++call_count;
-		return true;
+		return call_count == expected_call_count;
 	}
+
+	struct ExplicitBoolCondition
+	{
+		explicit operator bool() const noexcept
+		{
+			return true;
+		}
+	};
 
 } // namespace
 
@@ -52,7 +62,7 @@ TEST(KetContractTest, AcceptsValidContracts)
  */
 TEST(KetContractTest, TerminatesWhenExpectsFails)
 {
-	EXPECT_DEATH({ KET_EXPECTS(false); }, kAnyDeathOutputRegex.c_str());
+	EXPECT_DEATH({ KET_EXPECTS(false); }, kAnyDeathOutputRegex);
 }
 
 /**
@@ -64,7 +74,7 @@ TEST(KetContractTest, TerminatesWhenExpectsFails)
  */
 TEST(KetContractTest, TerminatesWhenEnsuresFails)
 {
-	EXPECT_DEATH({ KET_ENSURES(false); }, kAnyDeathOutputRegex.c_str());
+	EXPECT_DEATH({ KET_ENSURES(false); }, kAnyDeathOutputRegex);
 }
 
 /**
@@ -76,7 +86,7 @@ TEST(KetContractTest, TerminatesWhenEnsuresFails)
  */
 TEST(KetContractTest, TerminatesWhenInvariantFails)
 {
-	EXPECT_DEATH({ KET_ASSERT_INVARIANT(false); }, kAnyDeathOutputRegex.c_str());
+	EXPECT_DEATH({ KET_ASSERT_INVARIANT(false); }, kAnyDeathOutputRegex);
 }
 
 /**
@@ -88,24 +98,43 @@ TEST(KetContractTest, TerminatesWhenInvariantFails)
  */
 TEST(KetContractTest, TerminatesWithoutDiagnosticPointers)
 {
-	EXPECT_DEATH(
-		{ ket::contract::Expects(false, nullptr, nullptr, 0); }, kAnyDeathOutputRegex.c_str());
+	EXPECT_DEATH({ ket::contract::Expects(false, nullptr, nullptr, 0); }, kAnyDeathOutputRegex);
 }
 
 /**
  * @test
- * @brief 契約式の1回評価確認。
- * @details `KET_EXPECTS`へ副作用を持つ式を渡し、成功時に1回だけ評価されることを確認。
+ * @brief 契約macro条件式の1回評価確認。
+ * @details 各契約macroへ副作用を持つ式を渡し、成功時にそれぞれ1回だけ評価されることを確認。
  * @pre C++17以降。
- * @post counterは1へ変化。その他の外部状態の変更なし。
+ * @post counterは3へ変化。その他の外部状態の変更なし。
  */
-TEST(KetContractTest, EvaluatesConditionOnce)
+TEST(KetContractTest, EvaluatesEachConditionOnce)
 {
 	int call_count = 0;
 
-	KET_EXPECTS(CountedTrue(call_count));
+	KET_EXPECTS(CountedExpectedCall(call_count, 1));
+	KET_ENSURES(CountedExpectedCall(call_count, 2));
+	KET_ASSERT_INVARIANT(CountedExpectedCall(call_count, 3));
 
-	EXPECT_EQ(call_count, 1);
+	EXPECT_EQ(call_count, 3);
+}
+
+/**
+ * @test
+ * @brief 明示的bool変換を持つ条件式の確認。
+ * @details 明示的なbool変換を持つ型を契約macroへ渡し、通常の条件式と同じ形で評価されることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetContractTest, AcceptsExplicitBoolCondition)
+{
+	const auto condition = ExplicitBoolCondition{};
+
+	KET_EXPECTS(condition);
+	KET_ENSURES(condition);
+	KET_ASSERT_INVARIANT(condition);
+
+	SUCCEED();
 }
 
 /**
@@ -187,7 +216,7 @@ TEST(KetContractTest, TerminatesWhenPointerIsNull)
 			int* const result = KET_REQUIRE_NON_NULL(ptr);
 			static_cast<void>(result);
 		},
-		kAnyDeathOutputRegex.c_str());
+		kAnyDeathOutputRegex);
 }
 
 /**
@@ -203,11 +232,19 @@ TEST(KetContractTest, ChecksIndexBounds)
 	const auto first_element = ket::contract::IsInBounds(0U, 1U);
 	const auto last_element = ket::contract::IsInBounds(2U, 3U);
 	const auto one_past_last = ket::contract::IsInBounds(3U, 3U);
+	const auto max_index = std::numeric_limits<std::size_t>::max();
+	const auto max_size = std::numeric_limits<std::size_t>::max();
+	const auto max_minus_one_index = max_index - 1U;
+	const auto max_minus_one_is_in_bounds =
+		ket::contract::IsInBounds(max_minus_one_index, max_size);
+	const auto max_index_is_out_of_bounds = ket::contract::IsInBounds(max_index, max_size);
 
 	EXPECT_FALSE(empty_range);
 	EXPECT_TRUE(first_element);
 	EXPECT_TRUE(last_element);
 	EXPECT_FALSE(one_past_last);
+	EXPECT_TRUE(max_minus_one_is_in_bounds);
+	EXPECT_FALSE(max_index_is_out_of_bounds);
 }
 
 /**
@@ -227,5 +264,5 @@ TEST(KetContractTest, EvaluatesWhenNdebugIsDefined)
 #endif
 		"NDEBUG is defined for this translation unit");
 
-	EXPECT_DEATH({ KET_EXPECTS(false); }, kAnyDeathOutputRegex.c_str());
+	EXPECT_DEATH({ KET_EXPECTS(false); }, kAnyDeathOutputRegex);
 }

@@ -234,54 +234,54 @@ BCD の次に ket の価値を最も表しやすい module 群。
 
 ## 5. module proposal 一覧
 
-| Module              | 優先 | C++ Min  | 狙い                             | 代表API                                            |
-| ------------------- | ---- | -------- | -------------------------------- | -------------------------------------------------- |
-| `bcd`               | done | C++17    | packed BCD 変換                  | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`         |
-| `bits`              | P0   | C++11    | bit/nibble/mask の事故防止       | `HighNibble`, `HasBit`, `Mask`                     |
-| `numeric`           | P0   | C++11    | overflow/align/cast の小さい正解 | `AlignUp`, `CheckedAdd`, `InRange`                 |
-| `endian`            | P0   | C++11    | unaligned/endian 読み書き        | `LoadBe32`, `StoreLe16`                            |
-| `hex`               | P0   | C++17    | bytes と16進文字列/hex dump      | `BytesToHex`, `HexToBytes`, `HexDump`              |
-| `parse_numeric`     | P0   | C++17    | `from_chars` 周りの儀式除去      | `ParseUInt`, `TryParseHex`                         |
-| `enum_table`        | P0   | C++17    | enum class と文字列変換          | `EnumName`, `ParseEnum`, `ToUnderlying`            |
-| `container`         | P0   | C++11/17 | map/vector の小さい儀式          | `ContainsKey`, `AtOrNull`, `GetOrDefault`          |
-| `string_ascii`      | P0   | C++17    | ASCII前提の文字列処理            | `TrimAscii`, `SplitView`, `ToLowerAscii`           |
-| `scope`             | P0   | C++11    | RAII cleanup                     | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`      |
-| `byte_reader`       | P0   | C++11    | byte列の安全な逐次読み取り       | `ReadU8`, `ReadBe16`, `Remaining`                  |
-| `byte_writer`       | P0   | C++11    | fixed buffer への安全な書き込み  | `WriteU8`, `WriteLe32`, `Remaining`                |
-| `bytes_builder`     | P0   | C++17    | owning payload builder           | `AppendU8`, `AppendBe16`, `Build`                  |
-| `date`              | P0   | C++11    | 日付・時刻の妥当性               | `IsLeapYear`, `IsValidDate`                        |
-| `deadline`          | P0   | C++11    | timeout と elapsed time          | `Stopwatch`, `Deadline`                            |
-| `cli`               | P0   | C++17    | 小さい社内CLIの option 取得      | `HasOption`, `GetOption`, `Positional`             |
-| `byte_view`         | P1   | C++11    | non-owning byte span             | `ByteView`, `SubView`, `SafeAt`                    |
-| `utf8`              | P1   | C++17    | UTF-8検査を小さく隔離            | `ValidateUtf8`, `IsUtf8`, `Utf8Length`             |
-| `file`              | P1   | C++17    | ファイル全読み/全書き            | `ReadAllText`, `WriteAllBytes`                     |
-| `io_stream`         | P1   | C++11    | stream の確実な読み書き          | `ReadExactly`, `StreamStateSaver`                  |
-| `format_value`      | P1   | C++17    | 診断用文字列                     | `ToHexString`, `FormatBytes`, `FormatDuration`     |
-| `algorithm_range`   | P1   | C++11    | iterator pair の儀式除去         | `AllOf`, `FindIf`, `IndexOf`                       |
-| `memory`            | P1   | C++11    | alignment/object bytes           | `IsAligned`, `ObjectBytes`, `SecureZeroMemory`     |
-| `pointer`           | P1   | C++11    | null/ownership の明示            | `NotNull`, `LockWeak`, `AddressOf`                 |
-| `testing_bytes`     | P1   | C++17    | bytes系テスト補助                | `BytesEq`, `HexEq`                                 |
-| `semantic_version`  | P1   | C++17    | semver-like 値の parse/compare   | `ParseSemanticVersion`, `CompareVersion`           |
-| `ipv4`              | P1   | C++17    | IPv4 parse/format                | `ParseIpV4`, `FormatIpV4`                          |
-| `mac_address`       | P1   | C++17    | MAC address parse/format         | `ParseMacAddress`, `FormatMacAddress`              |
-| `function`          | P2   | C++17    | callable/visitor の儀式除去      | `Overload`, `MakeOverload`                         |
-| `variant_match`     | P2   | C++17    | `std::variant` visitor 補助      | `Match`, `Holds`, `GetIf`                          |
-| `optional_ext`      | P2   | C++17    | optional の小さい合成            | `MapOptional`, `AndThen`, `ValueOrEval`            |
-| `contract`          | P2   | C++11    | precondition 明示                | `Expects`, `RequireNonNull`, `CheckBounds`         |
-| `c_interop`         | P2   | C++11    | C API 境界の事故防止             | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle` |
-| `platform_error`    | P2   | C++17    | errno/Windows error の文字列化   | `ErrnoMessage`, `WindowsErrorMessage`              |
-| `state_table`       | P2   | C++17    | 小さい状態遷移表                 | `NextState`, `IsValidTransition`                   |
-| `cache_once`        | P2   | C++11    | once/lazy value                  | `OnceValue`, `Lazy`, `GetOrCreate`                 |
-| `serialization_tlv` | P2   | C++17    | length-prefix/TLV                | `EncodeTlv`, `TryDecodeTlv`                        |
-| `tuple`             | P2   | C++17    | tuple/pair の小さい補助          | `TupleForEach`, `TupleTransform`                   |
-| `build_config`      | P2   | C++11    | feature detection                | `KET_HAS_STD_OPTIONAL`                             |
-| `math_small`        | P2   | C++11    | 単位・補間など小さい数学         | `Lerp`, `MapRange`, `DegreesToRadians`             |
-| `meta`              | P3   | C++11/17 | type traits 補助                 | `RemoveCvref`, `AlwaysFalse`                       |
-| `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助     | `JoiningThread`, `FutureReady`                     |
-| `uuid`              | P3   | C++17    | UUID parse/format                | `ParseUuid`, `FormatUuid`                          |
-| `color_rgb`         | P3   | C++11    | RGB小値型                        | `ParseColorRgb`, `FormatColorRgbHex`               |
-| `percent`           | P3   | C++11    | percent小値型                    | `Percent::FromRatio`, `ClampPercent`               |
-| `recipes`           | P3   | mixed    | moduleの使い方実例               | `recipes/binary_payload`, `recipes/c_api_wrapper`  |
+| Module              | 優先 | C++ Min  | 狙い                             | 代表API                                             |
+| ------------------- | ---- | -------- | -------------------------------- | --------------------------------------------------- |
+| `bcd`               | done | C++17    | packed BCD 変換                  | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`          |
+| `bits`              | P0   | C++11    | bit/nibble/mask の事故防止       | `HighNibble`, `HasBit`, `Mask`                      |
+| `numeric`           | P0   | C++11    | overflow/align/cast の小さい正解 | `AlignUp`, `CheckedAdd`, `InRange`                  |
+| `endian`            | P0   | C++11    | unaligned/endian 読み書き        | `LoadBe32`, `StoreLe16`                             |
+| `hex`               | P0   | C++17    | bytes と16進文字列/hex dump      | `BytesToHex`, `HexToBytes`, `HexDump`               |
+| `parse_numeric`     | P0   | C++17    | `from_chars` 周りの儀式除去      | `ParseUInt`, `TryParseHex`                          |
+| `enum_table`        | P0   | C++17    | enum class と文字列変換          | `EnumName`, `ParseEnum`, `ToUnderlying`             |
+| `container`         | P0   | C++11/17 | map/vector の小さい儀式          | `ContainsKey`, `AtOrNull`, `GetOrDefault`           |
+| `string_ascii`      | P0   | C++17    | ASCII前提の文字列処理            | `TrimAscii`, `SplitView`, `ToLowerAscii`            |
+| `scope`             | P0   | C++11    | RAII cleanup                     | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`       |
+| `byte_reader`       | P0   | C++11    | byte列の安全な逐次読み取り       | `ReadU8`, `ReadBe16`, `Remaining`                   |
+| `byte_writer`       | P0   | C++11    | fixed buffer への安全な書き込み  | `WriteU8`, `WriteLe32`, `Remaining`                 |
+| `bytes_builder`     | P0   | C++17    | owning payload builder           | `AppendU8`, `AppendBe16`, `Build`                   |
+| `date`              | P0   | C++11    | 日付・時刻の妥当性               | `IsLeapYear`, `IsValidDate`                         |
+| `deadline`          | P0   | C++11    | timeout と elapsed time          | `Stopwatch`, `Deadline`                             |
+| `cli`               | P0   | C++17    | 小さい社内CLIの option 取得      | `HasOption`, `GetOption`, `Positional`              |
+| `byte_view`         | P1   | C++11    | non-owning byte span             | `ByteView`, `SubView`, `SafeAt`                     |
+| `utf8`              | P1   | C++17    | UTF-8検査を小さく隔離            | `ValidateUtf8`, `IsUtf8`, `Utf8Length`              |
+| `file`              | P1   | C++17    | ファイル全読み/全書き            | `ReadAllText`, `WriteAllBytes`                      |
+| `io_stream`         | P1   | C++11    | stream の確実な読み書き          | `ReadExactly`, `StreamStateSaver`                   |
+| `format_value`      | P1   | C++17    | 診断用文字列                     | `ToHexString`, `FormatBytes`, `FormatDuration`      |
+| `algorithm_range`   | P1   | C++11    | iterator pair の儀式除去         | `AllOf`, `FindIf`, `IndexOf`                        |
+| `memory`            | P1   | C++11    | alignment/object bytes           | `IsAligned`, `ObjectBytes`, `SecureZeroMemory`      |
+| `pointer`           | P1   | C++11    | null/ownership の明示            | `NotNull`, `LockWeak`, `AddressOf`                  |
+| `testing_bytes`     | P1   | C++17    | bytes系テスト補助                | `BytesEq`, `HexEq`                                  |
+| `semantic_version`  | P1   | C++17    | semver-like 値の parse/compare   | `ParseSemanticVersion`, `CompareVersion`            |
+| `ipv4`              | P1   | C++17    | IPv4 parse/format                | `ParseIpV4`, `FormatIpV4`                           |
+| `mac_address`       | P1   | C++17    | MAC address parse/format         | `ParseMacAddress`, `FormatMacAddress`               |
+| `function`          | P2   | C++17    | callable/visitor の儀式除去      | `Overload`, `MakeOverload`                          |
+| `variant_match`     | P2   | C++17    | `std::variant` visitor 補助      | `Match`, `Holds`, `GetIf`                           |
+| `optional_ext`      | P2   | C++17    | optional の小さい合成            | `MapOptional`, `AndThen`, `ValueOrEval`             |
+| `contract`          | done | C++11    | precondition 明示                | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds` |
+| `c_interop`         | P2   | C++11    | C API 境界の事故防止             | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle`  |
+| `platform_error`    | P2   | C++17    | errno/Windows error の文字列化   | `ErrnoMessage`, `WindowsErrorMessage`               |
+| `state_table`       | P2   | C++17    | 小さい状態遷移表                 | `NextState`, `IsValidTransition`                    |
+| `cache_once`        | P2   | C++11    | once/lazy value                  | `OnceValue`, `Lazy`, `GetOrCreate`                  |
+| `serialization_tlv` | P2   | C++17    | length-prefix/TLV                | `EncodeTlv`, `TryDecodeTlv`                         |
+| `tuple`             | P2   | C++17    | tuple/pair の小さい補助          | `ForEach`, `Transform`                              |
+| `build_config`      | P2   | C++11    | feature detection                | `KET_HAS_STD_OPTIONAL`                              |
+| `math_small`        | P2   | C++11    | 単位・補間など小さい数学         | `Lerp`, `MapRange`, `DegreesToRadians`              |
+| `meta`              | P3   | C++11/17 | type traits 補助                 | `RemoveCvref`, `AlwaysFalse`                        |
+| `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助     | `JoiningThread`, `FutureReady`                      |
+| `uuid`              | P3   | C++17    | UUID parse/format                | `ParseUuid`, `FormatUuid`                           |
+| `color_rgb`         | P3   | C++11    | RGB小値型                        | `ParseColorRgb`, `FormatColorRgbHex`                |
+| `percent`           | P3   | C++11    | percent小値型                    | `Percent::FromRatio`, `ClampPercent`                |
+| `recipes`           | P3   | mixed    | moduleの使い方実例               | `recipes/binary_payload`, `recipes/c_api_wrapper`   |
 
 ---
 
@@ -300,60 +300,65 @@ Dependencies: Standard library only, no ket dependencies
 ```cpp
 namespace ket
 {
-	constexpr bool IsNibble(std::uint8_t value) noexcept;
-	constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept;
-	constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept;
-	constexpr bool TryMakeByteFromNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t* out) noexcept;
+	namespace bits
+	{
+		constexpr bool IsNibble(std::uint8_t value) noexcept;
+		constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept;
+		constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept;
+		bool TryPackNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept;
 
-	template <typename T>
-	constexpr unsigned BitWidth() noexcept;
+		template <typename T>
+		constexpr unsigned TypeBitWidth() noexcept;
 
-	template <typename T>
-	constexpr bool HasBit(T value, unsigned bit_index) noexcept;
+		template <typename T>
+		constexpr bool HasBit(T value, unsigned bit_index) noexcept;
 
-	template <typename T>
-	constexpr bool TrySetBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TrySetBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryClearBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TryClearBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryToggleBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TryToggleBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryMask(unsigned width, T* out) noexcept;
+		template <typename T>
+		bool TryMask(unsigned width, T& out) noexcept;
 
-	template <typename T>
-	constexpr unsigned PopCount(T value) noexcept;
+		template <typename T>
+		constexpr unsigned PopCount(T value) noexcept;
 
-	template <typename T>
-	constexpr bool IsPowerOfTwo(T value) noexcept;
+		template <typename T>
+		constexpr bool IsPowerOfTwo(T value) noexcept;
 
-	template <typename T>
-	constexpr T Rotl(T value, unsigned count) noexcept;
+		template <typename T>
+		constexpr T Rotl(T value, unsigned count) noexcept;
 
-	template <typename T>
-	constexpr T Rotr(T value, unsigned count) noexcept;
+		template <typename T>
+		constexpr T Rotr(T value, unsigned count) noexcept;
+
+	} // namespace bits
 
 } // namespace ket
 ```
 
 仕様メモ:
 
-- `HasBit(value, bit_index)` は `bit_index >= BitWidth<T>()` の場合 `false`。
-- `TrySetBit` / `TryClearBit` / `TryToggleBit` は `out == nullptr` または index 範囲外なら `false`。
-- `TryMask<T>(0, &out)` は `out = 0` で成功。
-- `TryMask<T>(BitWidth<T>(), &out)` は全bit 1 で成功。
-- `TryMask<T>(width, &out)` は `width > BitWidth<T>()` なら失敗。
+- `HasBit(value, bit_index)` は `bit_index >= TypeBitWidth<T>()` の場合 `false`。
+- `TrySetBit` / `TryClearBit` / `TryToggleBit` は index 範囲外なら `false`。
+- `TryMask<T>(0, out)` は `out = 0` で成功。
+- `TryMask<T>(TypeBitWidth<T>(), out)` は全bit 1 で成功。
+- `TryMask<T>(width, out)` は `width > TypeBitWidth<T>()` なら失敗。
 - `Rotl` / `Rotr` は count を bit 幅で剰余化し、shift 幅 overflow を起こさない。
-- まず unsigned integral 対象に絞る。signed 対応は入れないか、内部で unsigned 化して明示する。
+- まず bool、char、wchar_t、char16_t、char32_t を除く unsigned integral 対象に絞る。
+  signed 対応は入れないか、内部で unsigned 化して明示する。
 
 テスト観点:
 
 - `HighNibble(0xAB) == 0x0A`
 - `LowNibble(0xAB) == 0x0B`
-- `TryMakeByteFromNibbles(0x0A, 0x0B) == 0xAB`
-- `TryMakeByteFromNibbles(0x10, 0x00)` は失敗。
+- `TryPackNibbles(0x0A, 0x0B) == 0xAB`
+- `TryPackNibbles(0x10, 0x00)` は失敗。
 - `HasBit(0b1000, 3)` は true。
 - `HasBit(0b1000, 8)` は false。
 - `TryMask<std::uint8_t>(0) == 0x00`
@@ -929,24 +934,28 @@ Dependencies: Standard library only, no ket dependencies
 ```cpp
 namespace ket
 {
-	class ByteReader
+	namespace byte_reader
 	{
-	public:
-		ByteReader(const std::uint8_t* data, std::size_t size) noexcept;
+		class Reader
+		{
+		public:
+			Reader(const std::uint8_t* data, std::size_t size) noexcept;
 
-		std::size_t Size() const noexcept;
-		std::size_t Offset() const noexcept;
-		std::size_t Remaining() const noexcept;
-		bool Empty() const noexcept;
+			std::size_t Size() const noexcept;
+			std::size_t Offset() const noexcept;
+			std::size_t Remaining() const noexcept;
+			bool Empty() const noexcept;
 
-		bool Skip(std::size_t size) noexcept;
-		bool ReadU8(std::uint8_t* out) noexcept;
-		bool ReadBe16(std::uint16_t* out) noexcept;
-		bool ReadBe32(std::uint32_t* out) noexcept;
-		bool ReadLe16(std::uint16_t* out) noexcept;
-		bool ReadLe32(std::uint32_t* out) noexcept;
-		bool ReadBytes(const std::uint8_t** out_data, std::size_t size) noexcept;
-	};
+			bool Skip(std::size_t size) noexcept;
+			bool ReadU8(std::uint8_t& out) noexcept;
+			bool ReadBe16(std::uint16_t& out) noexcept;
+			bool ReadBe32(std::uint32_t& out) noexcept;
+			bool ReadLe16(std::uint16_t& out) noexcept;
+			bool ReadLe32(std::uint32_t& out) noexcept;
+			bool ReadBytes(std::size_t size, const std::uint8_t*& out_data) noexcept;
+		};
+
+	} // namespace byte_reader
 
 } // namespace ket
 ```
@@ -955,6 +964,7 @@ namespace ket
 
 - `data == nullptr && size == 0` は有効な空 reader。
 - `data == nullptr && size > 0` は invalid reader とし、全 read を失敗させる。
+- `Empty()` は valid reader が末尾に到達した場合だけ true を返す。
 - `ReadXxx` は成功時のみ offset を進める。
 - 失敗時は offset を変えない。
 - `ReadBytes` は non-owning pointer を返す。reader の元 buffer lifetime が必要。
@@ -1647,25 +1657,39 @@ namespace ket
 ```cpp
 namespace ket
 {
-	void Expects(bool condition) noexcept;
-	void Ensures(bool condition) noexcept;
-	void AssertInvariant(bool condition) noexcept;
+	namespace contract
+	{
+		enum class Kind
+		{
+			kExpects,
+			kEnsures,
+			kInvariant
+		};
 
-	template <typename T>
-	T* RequireNonNull(T* ptr) noexcept;
+		[[noreturn]] void Fail(Kind kind, const char* expression, const char* file, int line) noexcept;
+		void Expects(bool condition, const char* expression, const char* file, int line) noexcept;
+		void Ensures(bool condition, const char* expression, const char* file, int line) noexcept;
+		void AssertInvariant(bool condition, const char* expression, const char* file, int line) noexcept;
 
-	bool CheckBounds(std::size_t index, std::size_t size) noexcept;
+		template <typename T>
+		T* RequireNonNull(T* ptr, const char* expression, const char* file, int line) noexcept;
 
-	template <typename T>
-	bool RequireInRange(T value, T min_value, T max_value) noexcept;
+		constexpr bool IsInBounds(std::size_t index, std::size_t size) noexcept;
+
+	} // namespace contract
 
 } // namespace ket
+
+#define KET_EXPECTS(condition)
+#define KET_ENSURES(condition)
+#define KET_ASSERT_INVARIANT(condition)
+#define KET_REQUIRE_NON_NULL(ptr)
 ```
 
 仕様メモ:
 
 - assert/abort/terminate のポリシーを明確にする。
-- macro にしすぎない。
+- global macro は `KET_` prefixの4個に限定する。
 - `debug` とは分ける。contract は意味、debug は観測。
 
 ---
@@ -1821,11 +1845,15 @@ namespace ket
 ```cpp
 namespace ket
 {
-	template <typename Tuple, typename F>
-	void TupleForEach(Tuple&& tuple, F f);
+	namespace tuple
+	{
+		template <typename Tuple, typename F>
+		void ForEach(Tuple&& tuple, F&& f);
 
-	template <typename Tuple, typename F>
-	auto TupleTransform(Tuple&& tuple, F f);
+		template <typename Tuple, typename F>
+		auto Transform(Tuple&& tuple, F&& f);
+
+	} // namespace tuple
 
 } // namespace ket
 ```
@@ -2201,7 +2229,7 @@ ket::endian::LoadLe32(data)
 [ ] 公開APIは namespace ket
 [ ] 他の ket module に依存していない
 [ ] 公開ヘッダが必要な標準ヘッダを自分で include している
-[ ] Doxygen に @brief / @param / @retval / @pre / @post がある
+[ ] Doxygen に @brief / @param / @retval / @pre / @post がある（constructor/destructorは @retval なし）
 [ ] 失敗条件を戻り値・precondition・例外のどれで扱うか固定した
 [ ] null / empty / overflow / size不足 / invalid input のテストがある
 [ ] format / static analysis / conventions / CTest が通る

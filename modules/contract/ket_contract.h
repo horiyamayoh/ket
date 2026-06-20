@@ -16,14 +16,15 @@
  * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。
  * 推奨理由：契約違反時のプロジェクト方針を小さいAPIへ閉じ込められる。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
- * 非推奨理由：C++ contracts は標準化状況と利用可能性が安定していない。
+ * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
  * 標準ライブラリのみ。
  * 他のket moduleへの依存なし。
  *
  * @par namespace
- * 公開API：ket::contract
+ * 公開API：ket::contract、global macro `KET_EXPECTS`、`KET_ENSURES`、
+ * `KET_ASSERT_INVARIANT`、`KET_REQUIRE_NON_NULL`
  * 内部実装：ket::contract::detail
  */
 
@@ -144,11 +145,12 @@ namespace ket
 		 * @retval false `index >= size`。
 		 * @pre なし。`size == 0`の場合は常にfalse。
 		 * @post 引数と外部状態の変更なし。
+		 * @note C++11 constexprとして利用可能。
 		 * @code
 		 * KET_EXPECTS(ket::contract::IsInBounds(index, size));
 		 * @endcode
 		 */
-		inline bool IsInBounds(std::size_t index, std::size_t size) noexcept;
+		constexpr bool IsInBounds(std::size_t index, std::size_t size) noexcept;
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -157,33 +159,33 @@ namespace ket
 		namespace detail
 		{
 			/**
-			 * @brief 契約違反kindの未使用抑止。
-			 * @param[in] kind 契約違反の種類。
-			 * @retval void 戻り値なし。
+			 * @brief bool条件値をそのまま返す。
+			 * @param[in] condition 契約条件の評価結果。
+			 * @retval true 条件成立。
+			 * @retval false 条件不成立。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
-			inline void IgnoreKind(Kind kind) noexcept
+			inline bool ToBool(bool condition) noexcept
 			{
-				static_cast<void>(kind);
+				return condition;
 			}
 
 			/**
-			 * @brief 契約違反位置情報の未使用抑止。
-			 * @param[in] expression 文字列化済みの契約式。
-			 * @param[in] file 呼び出し元file名。
-			 * @param[in] line 呼び出し元line番号。
-			 * @retval void 戻り値なし。
-			 * @pre なし。`nullptr`は許容。
+			 * @brief 明示的bool変換を持つ条件値をboolへ変換。
+			 * @tparam T 条件式の型。
+			 * @param[in] condition 契約条件式の評価結果。
+			 * @retval true 条件成立。
+			 * @retval false 条件不成立。
+			 * @pre `condition`は`static_cast<bool>`で変換可能。
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
-			inline void IgnoreLocation(const char* expression, const char* file, int line) noexcept
+			template <typename T>
+			inline bool ToBool(T&& condition) noexcept(noexcept(static_cast<bool>(condition)))
 			{
-				static_cast<void>(expression);
-				static_cast<void>(file);
-				static_cast<void>(line);
+				return static_cast<bool>(condition);
 			}
 
 		} // namespace detail
@@ -195,8 +197,10 @@ namespace ket
 		[[noreturn]] inline void
 		Fail(Kind kind, const char* expression, const char* file, int line) noexcept
 		{
-			detail::IgnoreKind(kind);
-			detail::IgnoreLocation(expression, file, line);
+			static_cast<void>(kind);
+			static_cast<void>(expression);
+			static_cast<void>(file);
+			static_cast<void>(line);
 			std::terminate();
 		}
 
@@ -242,7 +246,7 @@ namespace ket
 			return ptr;
 		}
 
-		inline bool IsInBounds(std::size_t index, std::size_t size) noexcept
+		constexpr bool IsInBounds(std::size_t index, std::size_t size) noexcept
 		{
 			return index < size;
 		}
@@ -259,7 +263,8 @@ namespace ket
  * @endcode
  */
 #define KET_EXPECTS(condition) \
-	::ket::contract::Expects(!!(condition), #condition, __FILE__, __LINE__)
+	::ket::contract::Expects( \
+		::ket::contract::detail::ToBool((condition)), #condition, __FILE__, __LINE__)
 
 /**
  * @brief postconditionを常時評価するstatement macro。
@@ -269,7 +274,8 @@ namespace ket
  * @endcode
  */
 #define KET_ENSURES(condition) \
-	::ket::contract::Ensures(!!(condition), #condition, __FILE__, __LINE__)
+	::ket::contract::Ensures( \
+		::ket::contract::detail::ToBool((condition)), #condition, __FILE__, __LINE__)
 
 /**
  * @brief invariantを常時評価するstatement macro。
@@ -279,7 +285,8 @@ namespace ket
  * @endcode
  */
 #define KET_ASSERT_INVARIANT(condition) \
-	::ket::contract::AssertInvariant(!!(condition), #condition, __FILE__, __LINE__)
+	::ket::contract::AssertInvariant( \
+		::ket::contract::detail::ToBool((condition)), #condition, __FILE__, __LINE__)
 
 /**
  * @brief non-null pointerを要求し、成功時に同じpointer型で返すmacro。

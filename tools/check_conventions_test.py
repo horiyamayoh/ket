@@ -230,7 +230,6 @@ class CheckConventionsTest(unittest.TestCase):
 					"\t  private:",
 					"\t\t/**",
 					"\t\t * @brief Private construction.",
-					"\t\t * @retval value Constructed value.",
 					"\t\t * @pre Internal caller only.",
 					"\t\t * @post No external state changes.",
 					"\t\t */",
@@ -245,6 +244,101 @@ class CheckConventionsTest(unittest.TestCase):
 
 		self.assertFalse(
 			any("public API function Doxygen comment requires @code and @endcode." in error for error in errors)
+		)
+
+	def test_constructor_and_destructor_without_retval_are_accepted(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"namespace ket",
+					"{",
+					"\t// -----------------------------------------------------------------------------",
+					"\t// Public API declarations",
+					"\t// -----------------------------------------------------------------------------",
+					"",
+					"\t/**",
+					"\t * @brief Sample value.",
+					"\t */",
+					"\tclass Value",
+					"\t{",
+					"\t  public:",
+					"\t\t/**",
+					"\t\t * @brief Empty value construction.",
+					"\t\t * @pre Caller needs an empty value.",
+					"\t\t * @post Value has no stored payload.",
+					"\t\t * @code",
+					"\t\t * ket::Value value;",
+					"\t\t * @endcode",
+					"\t\t */",
+					"\t\tValue() = default;",
+					"",
+					"\t\t/**",
+					"\t\t * @brief Copy construction.",
+					"\t\t * @param[in] other Source value.",
+					"\t\t * @pre `other` is a valid Value object.",
+					"\t\t * @post New value holds the same payload as `other`.",
+					"\t\t * @code",
+					"\t\t * ket::Value source;",
+					"\t\t * ket::Value copy(source);",
+					"\t\t * @endcode",
+					"\t\t */",
+					"\t\tValue(const Value& other) = default;",
+					"",
+					"\t\t/**",
+					"\t\t * @brief Value destruction.",
+					"\t\t * @pre Object lifetime is ending.",
+					"\t\t * @post Owned resources are released.",
+					"\t\t * @code",
+					"\t\t * {",
+					"\t\t * \tket::Value value;",
+					"\t\t * }",
+					"\t\t * @endcode",
+					"\t\t */",
+					"\t\t~Value() = default;",
+					"\t};",
+					"",
+					"} // namespace ket",
+					"",
+				)
+			),
+		)
+
+		self.assertEqual(errors, [])
+
+	def test_constructor_return_tag_is_reported(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"namespace ket",
+					"{",
+					"\t/**",
+					"\t * @brief Sample value.",
+					"\t */",
+					"\tclass Value",
+					"\t{",
+					"\t  private:",
+					"\t\t/**",
+					"\t\t * @brief Private construction.",
+					"\t\t * @retval value Constructed value.",
+					"\t\t * @pre Internal caller only.",
+					"\t\t * @post No external state changes.",
+					"\t\t */",
+					"\t\tValue() noexcept;",
+					"\t};",
+					"",
+					"} // namespace ket",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(
+			any(
+				"constructor/destructor Doxygen comment must not use @retval or @return." in error
+				for error in errors
+			)
 		)
 
 	def test_missing_header_section_banner_is_reported(self) -> None:

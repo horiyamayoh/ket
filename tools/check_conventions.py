@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 import ket_tooling
 
@@ -12,6 +13,7 @@ import ket_tooling
 POLITE_WORDS = ("です", "ます", "ください")
 TEST_TAGS = ("@test", "@brief", "@details", "@pre", "@post")
 FUNCTION_TAGS = ("@brief", "@retval", "@pre", "@post")
+SPECIAL_MEMBER_TAGS = ("@brief", "@pre", "@post")
 TYPE_TAGS = ("@brief",)
 ALLOWED_CONDITION_CALLS = {"alignof", "sizeof"}
 SECTION_BANNER_BODY = "// -----------------------------------------------------------------------------"
@@ -27,8 +29,19 @@ TYPE_DECLARATION_PATTERN = re.compile(
 	r"^(?:template\s*<[^>]*>\s*)?(?:(?:struct|class)\s+[A-Za-z_][A-Za-z0-9_]*|enum(?:\s+class)?\s+[A-Za-z_][A-Za-z0-9_]*)\b"
 )
 CLASS_OR_STRUCT_PATTERN = re.compile(
-	r"^(?:template\s*<[^>]*>\s*)?(struct|class)\s+[A-Za-z_][A-Za-z0-9_]*\b"
+	r"^(?:template\s*<[^>]*>\s*)?(struct|class)\s+([A-Za-z_][A-Za-z0-9_]*)\b"
 )
+
+
+class ClassContext(NamedTuple):
+	name: str
+	depth: int
+
+
+class FunctionSignature(NamedTuple):
+	text: str
+	end_index: int
+	is_special_member: bool
 
 
 def read_lines(path: Path) -> list[str]:
@@ -101,7 +114,7 @@ def canonical_function_signature(signature: str) -> str:
 	return stripped.rstrip("{;").strip()
 
 
-def line_looks_like_function_signature(signature: str) -> bool:
+def line_looks_like_regular_function_signature(signature: str) -> bool:
 	stripped = signature.strip()
 	if "(" not in stripped or ")" not in stripped:
 		return False
@@ -118,6 +131,72 @@ def line_looks_like_function_signature(signature: str) -> bool:
 			stripped,
 		)
 	)
+
+
+def class_context_before(lines: list[str], index: int) -> str | None:
+	contexts: list[ClassContext] = []
+	pending_class: str | None = None
+	brace_depth = 0
+	in_block_comment = False
+
+	for line in lines[:index]:
+		stripped = line.strip()
+
+		if in_block_comment:
+			if "*/" in stripped:
+				in_block_comment = False
+			continue
+		if stripped.startswith("//"):
+			continue
+		if stripped.startswith("/*") or stripped.startswith("*"):
+			if "*/" not in stripped:
+				in_block_comment = True
+			continue
+
+		class_match = CLASS_OR_STRUCT_PATTERN.match(stripped)
+		if class_match is not None:
+			name = class_match.group(2)
+			has_class_body_open = "{" in stripped and (";" not in stripped or stripped.find("{") < stripped.find(";"))
+			if has_class_body_open:
+				contexts.append(ClassContext(name, brace_depth + 1))
+			elif ";" not in stripped:
+				pending_class = name
+
+		opens = stripped.count("{")
+		closes = stripped.count("}")
+		if pending_class is not None and opens > 0:
+			contexts.append(ClassContext(pending_class, brace_depth + 1))
+			pending_class = None
+
+		brace_depth += opens
+		brace_depth -= closes
+
+		while contexts and brace_depth < contexts[-1].depth:
+			contexts.pop()
+
+	if not contexts:
+		return None
+
+	return contexts[-1].name
+
+
+def signature_looks_like_special_member(signature: str, class_name: str | None) -> bool:
+	if class_name is None:
+		return False
+
+	stripped = re.sub(r"\s+", " ", signature.strip())
+	stripped = stripped.rstrip("{;").strip()
+	name = re.escape(class_name)
+	return bool(
+		re.match(
+			rf"^(?:(?:explicit|inline|constexpr|virtual)\s+)*(?:~?{name})\s*\([^;{{}}]*\)\s*(?:noexcept(?:\([^)]*\))?\s*)?(?:override\s*)?(?:final\s*)?(?:\s*:\s*[^;{{}}]*)?(?:=\s*(?:default|delete|0)\s*)?$",
+			stripped,
+		)
+	)
+
+
+def doxygen_has_return_tag(comment: str) -> bool:
+	return re.search(r"@(retval|return)\b", comment) is not None
 
 
 def next_significant_line(lines: list[str], index: int) -> str:
@@ -148,7 +227,7 @@ def function_signature_is_definition(lines: list[str], signature_end: int) -> bo
 	return next_significant_line(lines, signature_end) == "{"
 
 
-def function_signature_at(lines: list[str], index: int) -> tuple[str, int] | None:
+def function_signature_at(lines: list[str], index: int) -> FunctionSignature | None:
 	stripped = lines[index].strip()
 	if not stripped:
 		return None
@@ -161,6 +240,7 @@ def function_signature_at(lines: list[str], index: int) -> tuple[str, int] | Non
 	paren_depth = 0
 	saw_paren = False
 	cursor = index
+	class_name = class_context_before(lines, index)
 
 	while cursor < len(lines):
 		current = lines[cursor].strip()
@@ -182,12 +262,15 @@ def function_signature_at(lines: list[str], index: int) -> tuple[str, int] | Non
 		ends_before_definition = saw_paren and paren_depth == 0 and next_line == "{"
 
 		if ends_declaration or opens_definition or ends_before_definition:
-			if line_looks_like_function_signature(signature):
-				return signature, cursor
+			is_special_member = signature_looks_like_special_member(signature, class_name)
+			if is_special_member or line_looks_like_regular_function_signature(signature):
+				return FunctionSignature(signature, cursor, is_special_member)
 			return None
 
-		if saw_paren and paren_depth == 0 and not line_looks_like_function_signature(signature):
-			return None
+		if saw_paren and paren_depth == 0:
+			is_special_member = signature_looks_like_special_member(signature, class_name)
+			if not is_special_member and not line_looks_like_regular_function_signature(signature):
+				return None
 
 		cursor += 1
 
@@ -292,17 +375,17 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 			index += 1
 			continue
 
-		signature_text = signature[0]
+		signature_text = signature.text
 		signature_key = canonical_function_signature(signature_text)
-		is_definition = function_signature_is_definition(lines, signature[1])
+		is_definition = function_signature_is_definition(lines, signature.end_index)
 		comment = previous_doxygen(lines, index)
 		if comment is None:
 			if is_definition and signature_key in documented_signatures:
-				index = signature[1] + 1
+				index = signature.end_index + 1
 				continue
 
 			add_error(errors, path, index + 1, "function declaration requires a Doxygen comment.")
-			index = signature[1] + 1
+			index = signature.end_index + 1
 			continue
 
 		if is_definition and signature_key in documented_signatures:
@@ -312,12 +395,21 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 				index + 1,
 				"function definition must not duplicate Doxygen comment from its declaration.",
 			)
-			index = signature[1] + 1
+			index = signature.end_index + 1
 			continue
 
-		for tag in FUNCTION_TAGS:
+		required_tags = SPECIAL_MEMBER_TAGS if signature.is_special_member else FUNCTION_TAGS
+		for tag in required_tags:
 			if not doxygen_tag_has_text(comment, tag):
 				add_error(errors, path, index + 1, f"function Doxygen comment requires {tag}.")
+
+		if signature.is_special_member and doxygen_has_return_tag(comment):
+			add_error(
+				errors,
+				path,
+				index + 1,
+				"constructor/destructor Doxygen comment must not use @retval or @return.",
+			)
 
 		if function_has_parameters(signature_text) and not doxygen_has_documented_param(comment):
 			add_error(
@@ -336,7 +428,7 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 			)
 
 		documented_signatures.add(signature_key)
-		index = signature[1] + 1
+		index = signature.end_index + 1
 
 
 def header_has_detail_namespace(lines: list[str]) -> bool:
@@ -360,10 +452,10 @@ def header_has_public_api_definitions(lines: list[str]) -> bool:
 			index += 1
 			continue
 
-		if function_signature_is_definition(lines, signature[1]):
+		if function_signature_is_definition(lines, signature.end_index):
 			return True
 
-		index = signature[1] + 1
+		index = signature.end_index + 1
 
 	return False
 

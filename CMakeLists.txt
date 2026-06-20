@@ -148,4 +148,137 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/contract/ket_contract_cxx11_check.cpp
 	)
+	add_dependencies(ket_contract_test ket_contract_cxx11_check)
+
+	ket_add_module_test(
+		ket_tuple_test
+		SOURCES
+			modules/tuple/ket_tuple_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_optional_test
+		SOURCES
+			modules/optional/ket_optional_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_meta_test
+		SOURCES
+			modules/meta/ket_meta_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_meta_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/meta/ket_meta_cxx11_check.cpp
+	)
+	add_dependencies(ket_meta_test ket_meta_cxx11_check)
+
+	ket_add_module_test(
+		ket_bits_test
+		SOURCES
+			modules/bits/ket_bits_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_bits_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_bits_cxx11_check.cpp
+	)
+	target_include_directories(
+		ket_bits_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/bits"
+	)
+	add_dependencies(ket_bits_test ket_bits_cxx11_check)
+
+	ket_add_module_test(
+		ket_numeric_test
+		SOURCES
+			modules/numeric/ket_numeric_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_numeric_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/numeric/ket_numeric_cxx11_check.cpp
+	)
+	add_dependencies(ket_numeric_test ket_numeric_cxx11_check)
+
+	ket_add_module_test(
+		ket_byte_reader_test
+		SOURCES
+			modules/byte_reader/ket_byte_reader.cpp
+			modules/byte_reader/ket_byte_reader_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_reader_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/byte_reader/ket_byte_reader.cpp
+			modules/byte_reader/ket_byte_reader.h
+	)
+	add_dependencies(ket_byte_reader_test ket_byte_reader_cxx11_check)
+
+	ket_add_module_test(
+		ket_byte_writer_test
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_writer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer.h
+	)
+	add_dependencies(ket_byte_writer_test ket_byte_writer_cxx11_check)
+
+	ket_add_module_test(
+		ket_endian_test
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_endian_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian.h
+	)
+	add_dependencies(ket_endian_test ket_endian_cxx11_check)
+
+	ket_add_module_test(
+		ket_bytes_test
+		SOURCES
+			modules/bytes/ket_bytes_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_byte_view_test
+		SOURCES
+			modules/byte_view/ket_byte_view_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_view_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_byte_view_cxx11_check.cpp
+	)
+	target_include_directories(
+		ket_byte_view_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
+	)
+	add_dependencies(ket_byte_view_test ket_byte_view_cxx11_check)
 endif()
