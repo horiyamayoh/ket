@@ -1,7 +1,20 @@
 # ket-wire package design
 
 この文書は、最初の ket package である `ket-wire` の v0 設計である。
-生産コード、`modules/wire`、空の package 実装フォルダはまだ作らない。
+v0 design-only の成果物として作成した時点では、生産コード、`modules/wire`、空の package 実装フォルダを
+作成対象にしなかった。
+
+## 実装依頼時の読み方
+
+この文書にある「v0 では作らない」「実装しない」「test 追加なし」は、v0 design-only 作業範囲の説明であり、
+将来の明示的な実装依頼を拒否する根拠ではない。
+
+ユーザーが `ket-wire` の runtime API、compile 対象 recipe、または関連 module 抽出を明示的に依頼した場合は、
+その依頼が現在の作業範囲を更新する。実装対象を確認し、package runtime は `packages/wire/`、compile 対象
+recipe は `examples/wire/`、独立 utility は通常の module として扱う。
+
+`modules/wire` は原則として作らない。`wire` は ordinary module ではなく package として扱い、runtime API を
+追加する場合の配置は `packages/wire/` を第一候補にする。
 
 ## 0. documentation location
 
@@ -115,7 +128,8 @@ package に残すべきもの:
 
 ## 7. v0 scope
 
-v0 は recipe-only package とする。生産 runtime API は追加しない。
+v0 design-only の作業範囲では recipe-only package とし、生産 runtime API は追加対象外だった。これは将来の
+明示的な実装依頼を拒否する根拠ではない。
 
 含めるもの:
 
@@ -127,7 +141,7 @@ v0 は recipe-only package とする。生産 runtime API は追加しない。
 - 2 つ以上の struct 例
 - 将来 API の評価と review checklist
 
-含めないもの:
+v0 design-only で含めなかったもの:
 
 - `modules/wire`
 - `packages/wire` の production header/source
@@ -447,7 +461,8 @@ v0 package convention は C++11 を基準にする。
 
 ## 23. header-only vs `.cpp`
 
-v0 では runtime header/source を作らない。
+v0 design-only の文書作成では runtime header/source を作成対象外にした。runtime API の実装依頼では、
+次の判断基準に従う。
 
 将来 descriptor API を作る場合:
 
@@ -458,7 +473,7 @@ v0 では runtime header/source を作らない。
 
 ## 24. test plan
 
-v0 design-only では test 追加なし。
+v0 design-only の文書作成だけなら test 追加なし。
 
 runtime API または compile 対象 recipe を追加するときの test plan:
 
@@ -739,7 +754,8 @@ bool TryEncodeClockFrame(const ClockFrame& value,
 
 ## 26. review checklist
 
-- `ket-wire` を package として扱い、`modules/wire` を作っていない。
+- documentation-only v0 では `ket-wire` を package として扱い、`modules/wire` を作っていない。
+- runtime package code を追加する場合は、`packages/wire/` を第一候補にして配置判断を明記した。
 - package code を追加する前に recipe で重複と不足を確認した。
 - C++11-facing API に C++17-only 型を入れていない。
 - dependency が package 側にだけ閉じている。
