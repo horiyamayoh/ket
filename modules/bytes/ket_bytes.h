@@ -52,6 +52,11 @@ namespace ket
 		 * @pre `dst`は有効なstd::vectorオブジェクト。
 		 * @post `dst`の既存内容を保持し、末尾に`value`を1byte追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @code
+		 * std::vector<std::uint8_t> bytes;
+		 * ket::bytes::AppendU8(bytes, std::uint8_t{0x12U});
+		 * // bytes == {0x12}
+		 * @endcode
 		 */
 		inline void AppendU8(std::vector<std::uint8_t>& dst, std::uint8_t value);
 
@@ -79,6 +84,11 @@ namespace ket
 		 * @pre `dst`は有効なstd::vectorオブジェクト。
 		 * @post `dst`の既存内容を保持し、末尾に上位byteから4byte追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @code
+		 * std::vector<std::uint8_t> bytes;
+		 * ket::bytes::AppendBe32(bytes, std::uint32_t{0x12345678U});
+		 * // bytes == {0x12, 0x34, 0x56, 0x78}
+		 * @endcode
 		 */
 		inline void AppendBe32(std::vector<std::uint8_t>& dst, std::uint32_t value);
 
@@ -106,6 +116,11 @@ namespace ket
 		 * @pre `dst`は有効なstd::vectorオブジェクト。
 		 * @post `dst`の既存内容を保持し、末尾に下位byteから4byte追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @code
+		 * std::vector<std::uint8_t> bytes;
+		 * ket::bytes::AppendLe32(bytes, std::uint32_t{0x12345678U});
+		 * // bytes == {0x78, 0x56, 0x34, 0x12}
+		 * @endcode
 		 */
 		inline void AppendLe32(std::vector<std::uint8_t>& dst, std::uint32_t value);
 
@@ -120,6 +135,12 @@ namespace ket
 		 * @post `dst`の既存内容を保持し、`size`が0でなければ末尾に`data[0..size)`を同じ順序で追加。
 		 * @note raw byte列を扱うC API境界に近い入力のため、nullable条件付きのポインタを使う。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @code
+		 * const std::uint8_t data[] = {0x01U, 0x02U};
+		 * std::vector<std::uint8_t> bytes{0xF0U};
+		 * ket::bytes::Append(bytes, data, 2U);
+		 * // bytes == {0xF0, 0x01, 0x02}
+		 * @endcode
 		 */
 		inline void
 		Append(std::vector<std::uint8_t>& dst, const std::uint8_t* data, std::size_t size);
@@ -135,6 +156,10 @@ namespace ket
 			 * @brief 空のbuilderを作る。
 			 * @pre なし。
 			 * @post `Buffer()`は空のbyte列を参照。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * // builder.Buffer().empty() == true
+			 * @endcode
 			 */
 			Builder() = default;
 
@@ -145,6 +170,10 @@ namespace ket
 			 * @pre `reserve_size`はstd::vector<std::uint8_t>でreserve可能な値。
 			 * @post `Buffer().capacity()`は`reserve_size`以上。
 			 * @note std::vectorの確保があるためnoexceptなし。
+			 * @code
+			 * ket::bytes::Builder builder(8U);
+			 * // builder.Buffer().capacity() >= 8
+			 * @endcode
 			 */
 			explicit Builder(std::size_t reserve_size)
 			{
@@ -157,6 +186,12 @@ namespace ket
 			 * @retval *this 追記後のbuilder。
 			 * @pre なし。
 			 * @post 内部bufferの既存内容を保持し、末尾に`value`を1byte追加。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * auto& same = builder.AppendU8(std::uint8_t{0xA5U});
+			 * // &same == &builder
+			 * // builder.Buffer() == {0xA5}
+			 * @endcode
 			 */
 			Builder& AppendU8(std::uint8_t value)
 			{
@@ -170,6 +205,11 @@ namespace ket
 			 * @retval *this 追記後のbuilder。
 			 * @pre なし。
 			 * @post 内部bufferの既存内容を保持し、末尾に上位byteから2byte追加。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendBe16(std::uint16_t{0x1234U});
+			 * // builder.Buffer() == {0x12, 0x34}
+			 * @endcode
 			 */
 			Builder& AppendBe16(std::uint16_t value)
 			{
@@ -183,6 +223,11 @@ namespace ket
 			 * @retval *this 追記後のbuilder。
 			 * @pre なし。
 			 * @post 内部bufferの既存内容を保持し、末尾に上位byteから4byte追加。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendBe32(std::uint32_t{0x12345678U});
+			 * // builder.Buffer() == {0x12, 0x34, 0x56, 0x78}
+			 * @endcode
 			 */
 			Builder& AppendBe32(std::uint32_t value)
 			{
@@ -196,6 +241,11 @@ namespace ket
 			 * @retval *this 追記後のbuilder。
 			 * @pre なし。
 			 * @post 内部bufferの既存内容を保持し、末尾に下位byteから2byte追加。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendLe16(std::uint16_t{0x1234U});
+			 * // builder.Buffer() == {0x34, 0x12}
+			 * @endcode
 			 */
 			Builder& AppendLe16(std::uint16_t value)
 			{
@@ -209,6 +259,11 @@ namespace ket
 			 * @retval *this 追記後のbuilder。
 			 * @pre なし。
 			 * @post 内部bufferの既存内容を保持し、末尾に下位byteから4byte追加。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendLe32(std::uint32_t{0x12345678U});
+			 * // builder.Buffer() == {0x78, 0x56, 0x34, 0x12}
+			 * @endcode
 			 */
 			Builder& AppendLe32(std::uint32_t value)
 			{
@@ -225,6 +280,12 @@ namespace ket
 			 * no-op、`Append(nullptr, size > 0)`はprecondition違反。
 			 * @post 内部bufferの既存内容を保持し、`size`が0でなければ末尾に`data[0..size)`を
 			 * 同じ順序で追加。
+			 * @code
+			 * const std::uint8_t data[] = {0x01U, 0x02U};
+			 * ket::bytes::Builder builder;
+			 * builder.Append(data, 2U);
+			 * // builder.Buffer() == {0x01, 0x02}
+			 * @endcode
 			 */
 			Builder& Append(const std::uint8_t* data, std::size_t size)
 			{
@@ -239,6 +300,11 @@ namespace ket
 			 * @pre `text`の各要素はASCII byte列。UTF-8 validationやencoding変換は行わない。
 			 * @post 内部bufferの既存内容を保持し、末尾に`text`の各byteを同じ順序で追加。
 			 * @note std::vectorの確保があるためnoexceptなし。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendAscii("AZ");
+			 * // builder.Buffer() == {0x41, 0x5A}
+			 * @endcode
 			 */
 			Builder& AppendAscii(std::string_view text)
 			{
@@ -258,6 +324,12 @@ namespace ket
 			 * @retval value 内部bufferへのconst参照。
 			 * @pre なし。
 			 * @post builderと内部bufferの変更なし。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendU8(std::uint8_t{0xA5U});
+			 * const auto& buffer = builder.Buffer();
+			 * // buffer == {0xA5}
+			 * @endcode
 			 */
 			[[nodiscard]] const std::vector<std::uint8_t>& Buffer() const noexcept
 			{
@@ -269,6 +341,12 @@ namespace ket
 			 * @retval value Build呼び出し時点の内部buffer内容。
 			 * @pre rvalueのbuilderに対して呼び出す。
 			 * @post 戻り値へ内部bufferをmove。対象builderはvalidだが内部buffer状態は規定しない。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendU8(std::uint8_t{0xA5U});
+			 * auto payload = std::move(builder).Build();
+			 * // payload == {0xA5}
+			 * @endcode
 			 */
 			std::vector<std::uint8_t> Build() &&
 			{
@@ -280,6 +358,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post `Buffer().empty()`はtrue。内部bufferのcapacityはstd::vector::clearに従い保持。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendU8(std::uint8_t{0xA5U});
+			 * builder.Clear();
+			 * // builder.Buffer().empty() == true
+			 * @endcode
 			 */
 			void Clear() noexcept
 			{
