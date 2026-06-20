@@ -72,6 +72,9 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note std::stringの確保があるためnoexceptなし。
 		 * @code
+		 * const auto value = ket::uuid::Uuid{{0x00U, 0x11U, 0x22U, 0x33U, 0x44U, 0x55U,
+		 *                                    0x66U, 0x77U, 0x88U, 0x99U, 0xaaU, 0xbbU,
+		 *                                    0xccU, 0xddU, 0xeeU, 0xffU}};
 		 * const auto text = ket::uuid::Format(value);
 		 * // text == "00112233-4455-6677-8899-aabbccddeeff"
 		 * @endcode
