@@ -28,6 +28,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 namespace ket
@@ -42,15 +43,35 @@ namespace ket
 		 * @brief nullを保持しないraw pointer wrapper。
 		 * @tparam T 参照先の型。
 		 * @note 所有権は持たず、参照先のlifetimeは呼び出し側の責任。
+		 * @note `void`は対象外。参照先型があるraw pointerに限定。
 		 */
 		template <typename T>
 		class NotNull
 		{
+			// NOLINTBEGIN(modernize-type-traits): C++11最小要件の公開signature。
+			static_assert(!std::is_void<T>::value,
+						  "ket::pointer::NotNull does not support void pointees.");
+
+			template <typename U>
+			using EnableIfPointerConvertibleTo =
+				typename std::enable_if<std::is_convertible<T*, U*>::value &&
+										!std::is_void<U>::value>::type;
+
+			/**
+			 * @brief NotNull間変換でnull再検査を省く内部tag。
+			 */
+			struct AlreadyChecked
+			{
+			};
+			// NOLINTEND(modernize-type-traits)
+
+			template <typename U>
+			friend class NotNull;
+
 		  public:
 			/**
 			 * @brief non-null raw pointerからの構築。
 			 * @param[in] ptr 保持対象のraw pointer。
-			 * @retval void 構築成功。
 			 * @pre `ptr`はraw pointer。`nullptr`はstd::invalid_argumentとして扱う。
 			 * @post 構築成功時、`Get()`は`ptr`と同じpointer値を返す。
 			 * @code
@@ -59,7 +80,23 @@ namespace ket
 			 * // *ptr == 42
 			 * @endcode
 			 */
-			explicit NotNull(T* ptr);
+			constexpr explicit NotNull(T* ptr);
+
+			/**
+			 * @brief pointer互換のNotNullへの変換。
+			 * @tparam U 変換先の参照先型。
+			 * @retval value 同じraw pointerを保持する変換先NotNull。
+			 * @pre `T*`は`U*`へ暗黙変換可能。参照先lifetimeが有効。
+			 * @post 変換元と参照先の状態変更なし。
+			 * @code
+			 * int value = 42;
+			 * ket::pointer::NotNull<int> mutable_ptr(&value);
+			 * ket::pointer::NotNull<const int> const_ptr = mutable_ptr;
+			 * // *const_ptr == 42
+			 * @endcode
+			 */
+			template <typename U, typename = EnableIfPointerConvertibleTo<U>>
+			constexpr operator NotNull<U>() const noexcept;
 
 			/**
 			 * @brief 保持中のraw pointer取得。
@@ -72,7 +109,7 @@ namespace ket
 			 * // ptr.Get() == &value
 			 * @endcode
 			 */
-			T* Get() const noexcept // NOLINT(modernize-use-nodiscard): C++11 signature.
+			constexpr T* Get() const noexcept // NOLINT(modernize-use-nodiscard): C++11 signature.
 			{
 				return ptr_;
 			}
@@ -89,7 +126,8 @@ namespace ket
 			 * // value == 7
 			 * @endcode
 			 */
-			T& operator*() const noexcept
+			constexpr typename std::add_lvalue_reference<T>::type // NOLINT(modernize-type-traits)
+			operator*() const noexcept
 			{
 				return *ptr_;
 			}
@@ -109,12 +147,14 @@ namespace ket
 			 * // ptr->value == 42
 			 * @endcode
 			 */
-			T* operator->() const noexcept
+			constexpr T* operator->() const noexcept
 			{
 				return ptr_;
 			}
 
 		  private:
+			constexpr NotNull(T* ptr, AlreadyChecked /*already_checked*/) noexcept : ptr_(ptr) {}
+
 			T* ptr_;
 		};
 
@@ -162,15 +202,9 @@ namespace ket
 			 * @note detail配下の関数は公開APIではない。
 			 */
 			template <typename T>
-			T* RequireNotNull(T* ptr)
+			constexpr T* RequireNotNull(T* ptr)
 			{
-				if (ptr == nullptr)
-				{
-					throw std::invalid_argument(
-						"ket::pointer::NotNull requires a non-null pointer.");
-				}
-
-				return ptr;
+				return ptr != nullptr ? ptr : throw std::invalid_argument("null pointer");
 			}
 
 		} // namespace detail
@@ -180,8 +214,15 @@ namespace ket
 		// -----------------------------------------------------------------------------
 
 		template <typename T>
-		NotNull<T>::NotNull(T* ptr) : ptr_(detail::RequireNotNull(ptr))
+		constexpr NotNull<T>::NotNull(T* ptr) : ptr_(detail::RequireNotNull(ptr))
 		{
+		}
+
+		template <typename T>
+		template <typename U, typename>
+		constexpr NotNull<T>::operator NotNull<U>() const noexcept
+		{
+			return NotNull<U>(ptr_, typename NotNull<U>::AlreadyChecked());
 		}
 
 		template <typename T>
