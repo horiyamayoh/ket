@@ -101,7 +101,7 @@ namespace ket
 		 *     {Mode::kIdle, Event::kStart, Mode::kRunning},
 		 * };
 		 * const auto next = ket::state::Next(Mode::kIdle, Event::kStart, table);
-		 * // next == std::optional<Mode>(Mode::kRunning)
+		 * // next.has_value() == true, *next == Mode::kRunning
 		 * @endcode
 		 */
 		template <typename State, typename Event, std::size_t N>
