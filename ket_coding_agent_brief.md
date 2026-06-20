@@ -1563,12 +1563,12 @@ ket::Positional(args)
 候補:
 
 ```cpp
-ket::ErrnoMessage(errno_value)
-ket::WindowsErrorMessage(error_code)
-ket::GetLastErrorCode()
-ket::CurrentThreadIdString()
-ket::SleepFor(duration)
-ket::EnvironmentVariable(name)
+ket::platform::FormatErrno(errno_value)
+ket::platform::ReadEnvironmentVariable(name)
+#ifdef _WIN32
+ket::platform::GetLastErrorCode()
+ket::platform::FormatWindowsError(error_code)
+#endif
 ```
 
 注意:

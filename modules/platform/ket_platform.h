@@ -16,7 +16,7 @@
  * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
  * 推奨理由：platform APIの差分を隠しすぎず、標準文字列で結果を扱える。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
- * 非推奨理由：標準ライブラリだけではerrno/Windows error messageの扱いが不十分。
+ * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
  * 標準ライブラリとplatform API。
@@ -24,7 +24,7 @@
  *
  * @par namespace
  * 公開API：ket::platform
- * 内部実装：ket::platform::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <optional>
@@ -47,7 +47,7 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。戻り値は空文字列にしない。
 		 * @note message取得に失敗した場合は`Unknown error <n>`形式を返す。
 		 * @code
-		 * const auto text = ket::platform::FormatErrno(EINVAL);
+		 * const auto text = ket::platform::FormatErrno(22);
 		 * // !text.empty()
 		 * @endcode
 		 */
@@ -59,15 +59,15 @@ namespace ket
 		 * @retval value environment variableが存在する場合の値。
 		 * @retval std::nullopt missing、空name、NULを含むname、またはplatform変換失敗。
 		 * @pre なし。空nameとNULを含むnameは失敗値として扱う。
-		 * @post process environmentは変更しない。environment同時変更時の一貫性はplatform
-		 * API規約に従う。
+		 * @post process environmentは変更しない。Windowsでは現在threadのlast-error codeを保持する。
+		 * environment同時変更時の一貫性はplatform API規約に従う。
 		 * @note Windowsではwide APIからUTF-8 narrow stringへ変換する。
 		 * @code
-		 * const auto value = ket::platform::GetEnvironmentVariable("PATH");
-		 * // value.has_value() はprocess environmentに依存
+		 * const auto value = ket::platform::ReadEnvironmentVariable("");
+		 * // value == std::nullopt
 		 * @endcode
 		 */
-		std::optional<std::string> GetEnvironmentVariable(std::string_view name);
+		std::optional<std::string> ReadEnvironmentVariable(std::string_view name);
 
 #ifdef _WIN32
 		/**
@@ -90,17 +90,28 @@ namespace ket
 		/**
 		 * @brief Windows error codeのmessage文字列化。
 		 * @param[in] code 文字列化対象のWindows error code。
-		 * @retval value Windows wide APIから取得してUTF-8へ変換したmessage、またはASCII fallback。
+		 * @retval value Windows wide
+		 * APIから取得し、末尾の空白・改行を除去してUTF-8へ変換したmessage、 またはASCII fallback。
 		 * @pre なし。未知のWindows error codeはfallback文字列として扱う。
 		 * @post 引数と外部状態の変更なし。戻り値は空文字列にしない。
 		 * @note UTF-8変換に失敗した場合は`Unknown Windows error <n>`形式を返す。
+		 * @note Windows message resource由来の末尾CR、LF、tab、space、NULは除去する。
 		 * @code
-		 * const auto text = ket::platform::FormatWindowsError(ERROR_FILE_NOT_FOUND);
+		 * const auto text = ket::platform::FormatWindowsError(
+		 *     static_cast<ket::platform::WindowsErrorCode>(2));
 		 * // !text.empty()
 		 * @endcode
 		 */
 		std::string FormatWindowsError(WindowsErrorCode code);
 #endif
+
+		// -----------------------------------------------------------------------------
+		// Internal implementation details
+		// -----------------------------------------------------------------------------
+
+		// -----------------------------------------------------------------------------
+		// Public API definitions
+		// -----------------------------------------------------------------------------
 
 	} // namespace platform
 

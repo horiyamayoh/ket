@@ -1,6 +1,7 @@
 #include "ket_platform.h"
 
 #include <array>
+#include <cerrno>
 #include <cstdlib>
 #include <optional>
 #include <string>
@@ -20,6 +21,23 @@
 namespace
 {
 	constexpr std::size_t kErrnoMessageBufferSize = 256U;
+
+	class ErrnoRestorer
+	{
+	  public:
+		ErrnoRestorer() noexcept : saved_(errno) {}
+
+		ErrnoRestorer(const ErrnoRestorer&) = delete;
+		ErrnoRestorer& operator=(const ErrnoRestorer&) = delete;
+
+		~ErrnoRestorer() noexcept
+		{
+			errno = saved_;
+		}
+
+	  private:
+		int saved_ = 0;
+	};
 
 	std::string FormatUnknownErrno(int error_number)
 	{
@@ -60,6 +78,52 @@ namespace
 	std::string FormatUnknownWindowsError(ket::platform::WindowsErrorCode code)
 	{
 		return std::string("Unknown Windows error ") + std::to_string(code);
+	}
+
+	class LastErrorRestorer
+	{
+	  public:
+		LastErrorRestorer() noexcept : saved_(::GetLastError()) {}
+
+		LastErrorRestorer(const LastErrorRestorer&) = delete;
+		LastErrorRestorer& operator=(const LastErrorRestorer&) = delete;
+
+		~LastErrorRestorer() noexcept
+		{
+			::SetLastError(saved_);
+		}
+
+	  private:
+		DWORD saved_ = ERROR_SUCCESS;
+	};
+
+	bool IsTrailingWindowsMessageCharacter(wchar_t value) noexcept
+	{
+		return value == L'\r' || value == L'\n' || value == L'\t' || value == L' ' ||
+			value == L'\0';
+	}
+
+	std::wstring_view TrimTrailingWindowsMessageCharacters(std::wstring_view text) noexcept
+	{
+		while (true)
+		{
+			const auto text_is_empty = text.empty();
+			if (text_is_empty)
+			{
+				return text;
+			}
+
+			const auto last_character = text.back();
+			const auto should_trim = IsTrailingWindowsMessageCharacter(last_character);
+			if (!should_trim)
+			{
+				return text;
+			}
+
+			text.remove_suffix(1U);
+		}
+
+		return text;
 	}
 
 	std::optional<std::wstring> Utf8ToWide(std::string_view text)
@@ -183,6 +247,7 @@ namespace ket
 	{
 		std::string FormatErrno(int error_number)
 		{
+			const ErrnoRestorer errno_restorer;
 			std::array<char, kErrnoMessageBufferSize> buffer{};
 
 #ifdef _WIN32
@@ -201,7 +266,7 @@ namespace ket
 #endif
 		}
 
-		std::optional<std::string> GetEnvironmentVariable(std::string_view name)
+		std::optional<std::string> ReadEnvironmentVariable(std::string_view name)
 		{
 			const auto name_is_valid = EnvironmentVariableNameIsValid(name);
 			if (!name_is_valid)
@@ -210,6 +275,8 @@ namespace ket
 			}
 
 #ifdef _WIN32
+			const LastErrorRestorer last_error_restorer;
+
 			const auto wide_name = Utf8ToWide(name);
 			const auto has_wide_name = wide_name.has_value();
 			if (!has_wide_name)
@@ -217,10 +284,18 @@ namespace ket
 				return std::nullopt;
 			}
 
+			::SetLastError(ERROR_SUCCESS);
 			DWORD capacity = ::GetEnvironmentVariableW(wide_name->c_str(), nullptr, 0U);
 			const auto initial_lookup_failed = capacity == 0U;
 			if (initial_lookup_failed)
 			{
+				const auto last_error = ::GetLastError();
+				const auto empty_value = last_error == ERROR_SUCCESS;
+				if (empty_value)
+				{
+					return std::string();
+				}
+
 				return std::nullopt;
 			}
 
@@ -277,6 +352,8 @@ namespace ket
 
 		std::string FormatWindowsError(WindowsErrorCode code)
 		{
+			const LastErrorRestorer last_error_restorer;
+
 			wchar_t* message = nullptr;
 			constexpr DWORD kFormatFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
 				FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
@@ -296,7 +373,9 @@ namespace ket
 			const auto local_memory = LocalMemory(static_cast<HLOCAL>(message));
 			static_cast<void>(local_memory);
 
-			const auto converted = WideToUtf8(std::wstring_view(message, message_length));
+			const auto message_view =
+				TrimTrailingWindowsMessageCharacters(std::wstring_view(message, message_length));
+			const auto converted = WideToUtf8(message_view);
 			const auto converted_has_value = converted.has_value();
 			if (!converted_has_value)
 			{

@@ -44,7 +44,7 @@ namespace
 	{
 	  public:
 		explicit EnvironmentVariableRestorer(const char* name)
-			: name_(name), original_(ket::platform::GetEnvironmentVariable(name))
+			: name_(name), original_(ket::platform::ReadEnvironmentVariable(name))
 		{
 		}
 
@@ -56,7 +56,7 @@ namespace
 			const auto original_has_value = original_.has_value();
 			if (original_has_value)
 			{
-				const auto restored = SetEnvironmentVariableForTest(name_, *original_);
+				const auto restored = SetEnvironmentVariableForTest(name_, original_.value());
 				static_cast<void>(restored);
 				return;
 			}
@@ -70,12 +70,24 @@ namespace
 		std::optional<std::string> original_;
 	};
 
+	std::string UnknownErrnoMessage(int error_number)
+	{
+		return std::string("Unknown error ") + std::to_string(error_number);
+	}
+
+#ifdef _WIN32
+	std::string UnknownWindowsErrorMessage(ket::platform::WindowsErrorCode code)
+	{
+		return std::string("Unknown Windows error ") + std::to_string(code);
+	}
+#endif
+
 } // namespace
 
 /**
  * @test
  * @brief 既知errno番号のmessage取得確認。
- * @details EINVALを入力し、platformから非空messageが返ることを確認。
+ * @details EINVALを入力し、platformから非空かつfallbackでないmessageが返ることを確認。
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
@@ -83,14 +95,16 @@ TEST(KetPlatformTest, FormatsKnownErrno)
 {
 	const auto message = ket::platform::FormatErrno(EINVAL);
 	const auto message_is_empty = message.empty();
+	const auto fallback = UnknownErrnoMessage(EINVAL);
 
 	EXPECT_FALSE(message_is_empty);
+	EXPECT_NE(message, fallback);
 }
 
 /**
  * @test
  * @brief 未知errno番号のfallback確認。
- * @details 大きいerrno番号を入力し、非空かつ番号を含むmessageが返ることを確認。
+ * @details 大きいerrno番号を入力し、ASCII fallback形式のmessageが返ることを確認。
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
@@ -100,11 +114,31 @@ TEST(KetPlatformTest, FormatsUnknownErrnoWithFallback)
 
 	const auto message = ket::platform::FormatErrno(kUnknownError);
 	const auto message_is_empty = message.empty();
-	const auto number_position = message.find("123456789");
-	const auto message_contains_number = number_position != std::string::npos;
+	const auto fallback = UnknownErrnoMessage(kUnknownError);
+	const auto message_uses_fallback_prefix = message.rfind("Unknown error ", 0U) == 0U;
 
 	EXPECT_FALSE(message_is_empty);
-	EXPECT_TRUE(message_contains_number);
+	EXPECT_EQ(message, fallback);
+	EXPECT_TRUE(message_uses_fallback_prefix);
+}
+
+/**
+ * @test
+ * @brief errno番号のmessage取得時のerrno保存確認。
+ * @details FormatErrno呼び出し前のerrno値が呼び出し後も保持されることを確認。
+ * @pre C++17以降。
+ * @post errnoはテスト中に設定した値を保持。
+ */
+TEST(KetPlatformTest, FormatErrnoPreservesErrno)
+{
+	errno = ERANGE;
+
+	const auto message = ket::platform::FormatErrno(EINVAL);
+	const auto message_is_empty = message.empty();
+	const auto current_errno = errno;
+
+	EXPECT_FALSE(message_is_empty);
+	EXPECT_EQ(current_errno, ERANGE);
 }
 
 /**
@@ -122,7 +156,7 @@ TEST(KetPlatformTest, ReturnsNulloptForMissingEnvironmentVariable)
 	const auto removed = UnsetEnvironmentVariableForTest(kName);
 	static_cast<void>(removed);
 
-	const auto value = ket::platform::GetEnvironmentVariable(kName);
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
 	const auto value_has_value = value.has_value();
 
 	EXPECT_FALSE(value_has_value);
@@ -144,10 +178,93 @@ TEST(KetPlatformTest, ReadsPresentEnvironmentVariable)
 
 	ASSERT_TRUE(set_succeeded);
 
-	const auto value = ket::platform::GetEnvironmentVariable(kName);
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
 	const auto expected = std::optional<std::string>("platform-value");
 
 	EXPECT_EQ(value, expected);
+}
+
+/**
+ * @test
+ * @brief 空値を持つpresent environment variableの取得確認。
+ * @details 一意なKET_
+ * prefixの変数へ空文字列を設定し、missingではなく空のstd::stringを返すことを確認。
+ * @pre C++17以降。
+ * @post 対象environment variableはテスト前の状態へ復元。
+ */
+TEST(KetPlatformTest, ReadsPresentEmptyEnvironmentVariable)
+{
+	constexpr const char* kName = "KET_PLATFORM_TEST_EMPTY_VALUE";
+	const auto restorer = EnvironmentVariableRestorer(kName);
+	static_cast<void>(restorer);
+	const auto set_succeeded = SetEnvironmentVariableForTest(kName, "");
+
+	ASSERT_TRUE(set_succeeded);
+
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
+	const auto expected = std::optional<std::string>("");
+
+	EXPECT_EQ(value, expected);
+}
+
+/**
+ * @test
+ * @brief restorerがpresent environment variableを復元することの確認。
+ * @details 元値を持つ一意なKET_ prefixの変数をscope内で変更し、scope終了後に元値へ戻ることを確認。
+ * @pre C++17以降。
+ * @post 対象environment variableはテスト開始時と同じ値。
+ */
+TEST(KetPlatformTest, RestoresPresentEnvironmentVariableAfterScope)
+{
+	constexpr const char* kName = "KET_PLATFORM_TEST_RESTORE_PRESENT";
+	const auto outer_restorer = EnvironmentVariableRestorer(kName);
+	static_cast<void>(outer_restorer);
+	const auto set_succeeded = SetEnvironmentVariableForTest(kName, "original-value");
+
+	ASSERT_TRUE(set_succeeded);
+
+	{
+		const auto inner_restorer = EnvironmentVariableRestorer(kName);
+		static_cast<void>(inner_restorer);
+		const auto changed = SetEnvironmentVariableForTest(kName, "changed-value");
+
+		ASSERT_TRUE(changed);
+	}
+
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
+	const auto expected = std::optional<std::string>("original-value");
+
+	EXPECT_EQ(value, expected);
+}
+
+/**
+ * @test
+ * @brief restorerがmissing environment variableを削除状態へ戻すことの確認。
+ * @details 元々missingの一意なKET_
+ * prefixの変数をscope内で作成し、scope終了後にstd::nulloptへ戻ることを確認。
+ * @pre C++17以降。
+ * @post 対象environment variableはテスト開始時の状態へ復元。
+ */
+TEST(KetPlatformTest, RestoresMissingEnvironmentVariableAfterScope)
+{
+	constexpr const char* kName = "KET_PLATFORM_TEST_RESTORE_MISSING";
+	const auto outer_restorer = EnvironmentVariableRestorer(kName);
+	static_cast<void>(outer_restorer);
+	const auto removed_before_test = UnsetEnvironmentVariableForTest(kName);
+	static_cast<void>(removed_before_test);
+
+	{
+		const auto restorer = EnvironmentVariableRestorer(kName);
+		static_cast<void>(restorer);
+		const auto set_succeeded = SetEnvironmentVariableForTest(kName, "temporary-value");
+
+		ASSERT_TRUE(set_succeeded);
+	}
+
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
+	const auto value_has_value = value.has_value();
+
+	EXPECT_FALSE(value_has_value);
 }
 
 /**
@@ -159,7 +276,7 @@ TEST(KetPlatformTest, ReadsPresentEnvironmentVariable)
  */
 TEST(KetPlatformTest, RejectsEmptyEnvironmentVariableName)
 {
-	const auto value = ket::platform::GetEnvironmentVariable(std::string_view());
+	const auto value = ket::platform::ReadEnvironmentVariable(std::string_view());
 	const auto value_has_value = value.has_value();
 
 	EXPECT_FALSE(value_has_value);
@@ -178,7 +295,7 @@ TEST(KetPlatformTest, RejectsEnvironmentVariableNameContainingNul)
 		std::string("KET_PLATFORM_TEST_NUL\0NAME", sizeof("KET_PLATFORM_TEST_NUL\0NAME") - 1U);
 
 	const auto value =
-		ket::platform::GetEnvironmentVariable(std::string_view(name.data(), name.size()));
+		ket::platform::ReadEnvironmentVariable(std::string_view(name.data(), name.size()));
 	const auto value_has_value = value.has_value();
 
 	EXPECT_FALSE(value_has_value);
@@ -217,5 +334,122 @@ TEST(KetPlatformTest, ReadsAndFormatsWindowsLastError)
 
 	EXPECT_EQ(code, expected);
 	EXPECT_FALSE(message_is_empty);
+}
+
+/**
+ * @test
+ * @brief 未知Windows error codeのfallback確認。
+ * @details 未割り当て想定のWindows error codeを入力し、ASCII fallback文字列が返ることを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post 現在threadのlast-error codeは変更しない。
+ */
+TEST(KetPlatformTest, FormatsUnknownWindowsErrorWithFallback)
+{
+	constexpr auto kUnknownError = static_cast<ket::platform::WindowsErrorCode>(0xFFFFFFFFUL);
+
+	::SetLastError(ERROR_ACCESS_DENIED);
+
+	const auto message = ket::platform::FormatWindowsError(kUnknownError);
+	const auto expected = UnknownWindowsErrorMessage(kUnknownError);
+	const auto last_error = ::GetLastError();
+
+	EXPECT_EQ(message, expected);
+	EXPECT_EQ(last_error, static_cast<DWORD>(ERROR_ACCESS_DENIED));
+}
+
+/**
+ * @test
+ * @brief Windows present environment variable取得時のlast-error保存確認。
+ * @details present environment variable読取前のlast-error codeが読取後も保持されることを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post 対象environment variableはテスト前の状態へ復元し、last-error codeは元値を保持。
+ */
+TEST(KetPlatformTest, ReadEnvironmentVariablePreservesWindowsLastError)
+{
+	constexpr const char* kName = "KET_PLATFORM_TEST_LAST_ERROR_ENV";
+	const auto restorer = EnvironmentVariableRestorer(kName);
+	static_cast<void>(restorer);
+	const auto set_succeeded = SetEnvironmentVariableForTest(kName, "platform-value");
+
+	ASSERT_TRUE(set_succeeded);
+
+	::SetLastError(ERROR_ACCESS_DENIED);
+
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
+	const auto last_error = ::GetLastError();
+	const auto expected = std::optional<std::string>("platform-value");
+
+	EXPECT_EQ(value, expected);
+	EXPECT_EQ(last_error, static_cast<DWORD>(ERROR_ACCESS_DENIED));
+}
+
+/**
+ * @test
+ * @brief Windows missing environment variable取得時のlast-error保存確認。
+ * @details missing environment variable読取前のlast-error codeが読取後も保持されることを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post 対象environment variableはテスト前の状態へ復元し、last-error codeは元値を保持。
+ */
+TEST(KetPlatformTest, ReadMissingEnvironmentVariablePreservesWindowsLastError)
+{
+	constexpr const char* kName = "KET_PLATFORM_TEST_LAST_ERROR_MISSING_ENV";
+	const auto restorer = EnvironmentVariableRestorer(kName);
+	static_cast<void>(restorer);
+	const auto removed = UnsetEnvironmentVariableForTest(kName);
+	static_cast<void>(removed);
+
+	::SetLastError(ERROR_ACCESS_DENIED);
+
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
+	const auto value_has_value = value.has_value();
+	const auto last_error = ::GetLastError();
+
+	EXPECT_FALSE(value_has_value);
+	EXPECT_EQ(last_error, static_cast<DWORD>(ERROR_ACCESS_DENIED));
+}
+
+/**
+ * @test
+ * @brief Windows empty environment variable取得時のlast-error保存確認。
+ * @details 空値を持つenvironment variable読取前のlast-error codeが読取後も保持されることを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post 対象environment variableはテスト前の状態へ復元し、last-error codeは元値を保持。
+ */
+TEST(KetPlatformTest, ReadEmptyEnvironmentVariablePreservesWindowsLastError)
+{
+	constexpr const char* kName = "KET_PLATFORM_TEST_LAST_ERROR_EMPTY_ENV";
+	const auto restorer = EnvironmentVariableRestorer(kName);
+	static_cast<void>(restorer);
+	const auto set_succeeded = SetEnvironmentVariableForTest(kName, "");
+
+	ASSERT_TRUE(set_succeeded);
+
+	::SetLastError(ERROR_ACCESS_DENIED);
+
+	const auto value = ket::platform::ReadEnvironmentVariable(kName);
+	const auto last_error = ::GetLastError();
+	const auto expected = std::optional<std::string>("");
+
+	EXPECT_EQ(value, expected);
+	EXPECT_EQ(last_error, static_cast<DWORD>(ERROR_ACCESS_DENIED));
+}
+
+/**
+ * @test
+ * @brief Windows error message文字列化時のlast-error保存確認。
+ * @details Windows error codeの文字列化前のlast-error codeが文字列化後も保持されることを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post 現在threadのlast-error codeは元値を保持。
+ */
+TEST(KetPlatformTest, FormatWindowsErrorPreservesWindowsLastError)
+{
+	::SetLastError(ERROR_ACCESS_DENIED);
+
+	const auto message = ket::platform::FormatWindowsError(ERROR_FILE_NOT_FOUND);
+	const auto message_is_empty = message.empty();
+	const auto last_error = ::GetLastError();
+
+	EXPECT_FALSE(message_is_empty);
+	EXPECT_EQ(last_error, static_cast<DWORD>(ERROR_ACCESS_DENIED));
 }
 #endif
