@@ -105,6 +105,27 @@ TEST(KetByteReaderTest, RejectsReadWhenOneByteShort)
 
 /**
  * @test
+ * @brief size不足時のSkip失敗確認。
+ * @details 残りbyte数を超えるSkipを行い、失敗時にoffsetとremainingが変化しないことを確認。
+ * @pre C++17以降。
+ * @post reader offsetとremainingは入力時の値を保持。外部bufferの変更なし。
+ */
+TEST(KetByteReaderTest, RejectsOversizedSkipWithoutAdvancing)
+{
+	const auto data = std::array<std::uint8_t, 2>{{0x12U, 0x34U}};
+	ket::byte_reader::Reader reader(data.data(), data.size());
+
+	const auto skipped = reader.Skip(3U);
+	const auto offset = reader.Offset();
+	const auto remaining = reader.Remaining();
+
+	EXPECT_FALSE(skipped);
+	EXPECT_EQ(offset, 0U);
+	EXPECT_EQ(remaining, 2U);
+}
+
+/**
+ * @test
  * @brief 失敗時offset保持確認。
  * @details
  * 1byte読んだ後に残りbyte数を超えるReadBytesを行い、失敗時にoffsetと出力pointerが変化しないことを確認。
