@@ -139,6 +139,10 @@ namespace ket
 		 * @retval false path不在、またはfilesystem query失敗。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto exists = ket::file::Exists("config.txt");
+		 * // exists == true if config.txt exists
+		 * @endcode
 		 */
 		bool Exists(const std::filesystem::path& path) noexcept;
 
@@ -149,6 +153,10 @@ namespace ket
 		 * @retval false path不在、directory以外、またはfilesystem query失敗。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto directory = ket::file::IsDirectory("logs");
+		 * // directory == true if logs is an existing directory
+		 * @endcode
 		 */
 		bool IsDirectory(const std::filesystem::path& path) noexcept;
 
@@ -159,6 +167,10 @@ namespace ket
 		 * @retval std::nullopt path不在、directory指定、またはfilesystem query失敗。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto size = ket::file::Size("payload.bin");
+		 * // size == std::optional<std::uintmax_t>(file byte count)
+		 * @endcode
 		 */
 		std::optional<std::uintmax_t> Size(const std::filesystem::path& path) noexcept;
 
