@@ -61,20 +61,24 @@ TEST(KetIoStreamTest, ReadsExactlyRequestedBytes)
 /**
  * @test
  * @brief short readの失敗確認。
- * @details 要求サイズより短い入力を渡し、読み切り失敗としてfalseを返すことを確認。
+ * @details 要求サイズより短い入力を渡し、読み切り失敗としてfalseを返し、読めたbyteだけ
+ * bufferへ格納されることを確認。
  * @pre C++17以降。
- * @post streamは標準istreamのshort read後の状態へ進む。
+ * @post streamは標準istreamのshort read後の状態へ進み、出力bufferの先頭だけが更新される。
  */
 TEST(KetIoStreamTest, RejectsShortRead)
 {
 	std::istringstream stream("ab");
 	auto output = std::array<std::uint8_t, 4>{{0xAAU, 0xAAU, 0xAAU, 0xAAU}};
+	const auto expected = std::array<std::uint8_t, 4>{
+		{static_cast<std::uint8_t>('a'), static_cast<std::uint8_t>('b'), 0xAAU, 0xAAU}};
 
 	const auto result = ket::io_stream::TryReadExactly(stream, output.data(), output.size());
 	const auto reached_eof = stream.eof();
 
 	EXPECT_FALSE(result);
 	EXPECT_TRUE(reached_eof);
+	EXPECT_EQ(output, expected);
 }
 
 /**
@@ -93,6 +97,68 @@ TEST(KetIoStreamTest, ReadsZeroBytesAsSuccess)
 
 	EXPECT_TRUE(result);
 	EXPECT_FALSE(stream_failed);
+}
+
+/**
+ * @test
+ * @brief null bufferへの非0バイト読み取り失敗確認。
+ * @details nullptrと非0サイズを渡し、streamへアクセスせずfalseを返すことを確認。
+ * @pre C++17以降。
+ * @post stream状態と読み取り位置は変更なし。
+ */
+TEST(KetIoStreamTest, RejectsNullReadBufferWithoutTouchingStream)
+{
+	std::istringstream stream("ab");
+
+	const auto result = ket::io_stream::TryReadExactly(stream, nullptr, 1U);
+	const auto next = stream.peek();
+	const auto stream_failed = stream.fail();
+
+	EXPECT_FALSE(result);
+	EXPECT_EQ(next, static_cast<int>('a'));
+	EXPECT_FALSE(stream_failed);
+}
+
+/**
+ * @test
+ * @brief 空入力からの非0バイト読み取り失敗確認。
+ * @details 空streamから1バイト読み取りを試み、falseを返して出力bufferを変更しないことを確認。
+ * @pre C++17以降。
+ * @post streamはEOF状態へ進み、出力bufferは入力時の値を保持。
+ */
+TEST(KetIoStreamTest, RejectsReadFromEmptyInputForNonzeroSize)
+{
+	std::istringstream stream("");
+	auto output = std::array<std::uint8_t, 1>{{0xAAU}};
+
+	const auto result = ket::io_stream::TryReadExactly(stream, output.data(), output.size());
+	const auto reached_eof = stream.eof();
+
+	EXPECT_FALSE(result);
+	EXPECT_TRUE(reached_eof);
+	EXPECT_EQ(output[0], 0xAAU);
+}
+
+/**
+ * @test
+ * @brief bad streamからの読み取り失敗確認。
+ * @details
+ * badbit設定済みstreamから1バイト読み取りを試み、falseを返して出力bufferを変更しないことを確認。
+ * @pre C++17以降。
+ * @post streamはbad状態を保持し、出力bufferは入力時の値を保持。
+ */
+TEST(KetIoStreamTest, RejectsReadFromBadStream)
+{
+	std::istringstream stream("ab");
+	stream.setstate(std::ios::badbit);
+	auto output = std::array<std::uint8_t, 1>{{0xAAU}};
+
+	const auto result = ket::io_stream::TryReadExactly(stream, output.data(), output.size());
+	const auto stream_is_bad = stream.bad();
+
+	EXPECT_FALSE(result);
+	EXPECT_TRUE(stream_is_bad);
+	EXPECT_EQ(output[0], 0xAAU);
 }
 
 /**
@@ -135,6 +201,26 @@ TEST(KetIoStreamTest, WritesZeroBytesAsSuccess)
 
 /**
  * @test
+ * @brief null bufferからの非0バイト書き込み失敗確認。
+ * @details nullptrと非0サイズを渡し、streamへアクセスせずfalseを返すことを確認。
+ * @pre C++17以降。
+ * @post 出力streamと外部状態の変更なし。
+ */
+TEST(KetIoStreamTest, RejectsNullWriteBufferWithoutTouchingStream)
+{
+	std::ostringstream stream;
+
+	const auto result = ket::io_stream::TryWriteAll(stream, nullptr, 1U);
+	const auto output = stream.str();
+	const auto stream_failed = stream.fail();
+
+	EXPECT_FALSE(result);
+	EXPECT_EQ(output, std::string());
+	EXPECT_FALSE(stream_failed);
+}
+
+/**
+ * @test
  * @brief stream error時の書き込み失敗確認。
  * @details badbit設定済みstreamへ1バイトを書き込み、falseを返すことを確認。
  * @pre C++17以降。
@@ -151,6 +237,58 @@ TEST(KetIoStreamTest, RejectsWriteToBadStream)
 
 	EXPECT_FALSE(result);
 	EXPECT_TRUE(stream_is_bad);
+}
+
+/**
+ * @test
+ * @brief 読み取り例外の伝播確認。
+ * @details failbit例外mask設定済みstreamでshort
+ * readを起こし、istream例外が呼び出し側へ伝播することを確認。
+ * @pre C++17以降。
+ * @post streamは標準istreamの例外発生後の状態を保持。
+ */
+TEST(KetIoStreamTest, PropagatesReadExceptions)
+{
+	std::istringstream stream("ab");
+	stream.exceptions(std::ios::failbit);
+	auto output = std::array<std::uint8_t, 4>{{0xAAU, 0xAAU, 0xAAU, 0xAAU}};
+
+	const auto read_operation = [&stream, &output]()
+	{
+		static_cast<void>(ket::io_stream::TryReadExactly(stream, output.data(), output.size()));
+	};
+
+	EXPECT_THROW(read_operation(), std::ios_base::failure);
+}
+
+/**
+ * @test
+ * @brief 書き込み例外の伝播確認。
+ * @details
+ * badbit例外mask設定済みstreamで書き込み失敗を起こし、ostream例外が呼び出し側へ伝播することを確認。
+ * @pre C++17以降。
+ * @post streamは標準ostreamの例外発生後の状態を保持。
+ */
+TEST(KetIoStreamTest, PropagatesWriteExceptions)
+{
+	const auto input = std::array<std::uint8_t, 1>{{0x42U}};
+	std::ostringstream stream;
+	stream.exceptions(std::ios::badbit);
+	try
+	{
+		stream.setstate(std::ios::badbit);
+	}
+	catch (const std::ios_base::failure& error)
+	{
+		static_cast<void>(error);
+	}
+
+	const auto write_operation = [&stream, &input]()
+	{
+		static_cast<void>(ket::io_stream::TryWriteAll(stream, input.data(), input.size()));
+	};
+
+	EXPECT_THROW(write_operation(), std::ios_base::failure);
 }
 
 /**
@@ -208,6 +346,24 @@ TEST(KetIoStreamTest, ReadsLineAndTrimsTrailingAsciiWhitespace)
 
 /**
  * @test
+ * @brief form feedとvertical tabを含む行末ASCII whitespace除去確認。
+ * @details 行末にspace、tab、CR、form feed、vertical tabを置き、全て除去されることを確認。
+ * @pre C++17以降。
+ * @post outはASCII trim後の行に更新。
+ */
+TEST(KetIoStreamTest, TrimsAllTrailingAsciiWhitespaceBytes)
+{
+	std::istringstream stream("value \t\r\f\v\n");
+	std::string output = "unchanged";
+
+	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+
+	EXPECT_TRUE(result);
+	EXPECT_EQ(output, std::string("value"));
+}
+
+/**
+ * @test
  * @brief 空行読み取りの成功確認。
  * @details 改行だけの入力を渡し、空文字列として成功することを確認。
  * @pre C++17以降。
@@ -222,6 +378,26 @@ TEST(KetIoStreamTest, ReadsEmptyLineAsSuccess)
 
 	EXPECT_TRUE(result);
 	EXPECT_EQ(output, std::string());
+}
+
+/**
+ * @test
+ * @brief 改行なし最終行のEOF成功確認。
+ * @details 改行なしでEOFへ到達する入力を渡し、読み取れた文字列を成功として扱うことを確認。
+ * @pre C++17以降。
+ * @post outはtrim後の最終行に更新。streamはEOF状態へ進む。
+ */
+TEST(KetIoStreamTest, ReadsFinalLineAtEofWithoutTrailingNewline)
+{
+	std::istringstream stream("value \t");
+	std::string output = "unchanged";
+
+	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+	const auto reached_eof = stream.eof();
+
+	EXPECT_TRUE(result);
+	EXPECT_TRUE(reached_eof);
+	EXPECT_EQ(output, std::string("value"));
 }
 
 /**
@@ -266,4 +442,27 @@ TEST(KetIoStreamTest, KeepsNonAsciiTrailingBytesDuringLineTrim)
 
 	EXPECT_TRUE(result);
 	EXPECT_EQ(output, expected);
+}
+
+/**
+ * @test
+ * @brief 行読み例外の伝播確認。
+ * @details
+ * failbit例外mask設定済みstreamでEOF行読みを起こし、istream例外が呼び出し側へ伝播することを確認。
+ * @pre C++17以降。
+ * @post outは入力時の文字列を保持。
+ */
+TEST(KetIoStreamTest, PropagatesLineReadExceptions)
+{
+	std::istringstream stream("");
+	stream.exceptions(std::ios::failbit);
+	std::string output = "unchanged";
+
+	const auto read_operation = [&stream, &output]()
+	{
+		static_cast<void>(ket::io_stream::TryReadLineTrimmedAscii(stream, output));
+	};
+
+	EXPECT_THROW(read_operation(), std::ios_base::failure);
+	EXPECT_EQ(output, std::string("unchanged"));
 }

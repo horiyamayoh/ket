@@ -20,10 +20,10 @@ namespace
 
 	void TrimRightAsciiWhitespace(std::string& text)
 	{
-		auto text_has_content = !text.empty();
-		while (text_has_content)
+		auto trim_size = text.size();
+		while (trim_size > 0U)
 		{
-			const auto last_index = text.size() - 1U;
+			const auto last_index = trim_size - 1U;
 			const auto last_is_ascii_whitespace =
 				ket::io_stream::detail::IsAsciiWhitespace(text[last_index]);
 			if (!last_is_ascii_whitespace)
@@ -31,9 +31,10 @@ namespace
 				break;
 			}
 
-			text.erase(last_index, 1U);
-			text_has_content = !text.empty();
+			--trim_size;
 		}
+
+		text.erase(trim_size);
 	}
 
 } // namespace
