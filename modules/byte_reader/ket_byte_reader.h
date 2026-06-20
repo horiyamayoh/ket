@@ -54,6 +54,12 @@ namespace ket
 			 * @pre `data`は`size`byte以上読み取り可能な配列を指す。
 			 * `data == nullptr && size > 0`はinvalid readerとして保持。
 			 * @post `Offset()`は0。入力pointerとsizeを保持。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U, 0x34U};
+			 * ket::byte_reader::Reader reader(data, 2U);
+			 * // reader.Size() == 2
+			 * // reader.Offset() == 0
+			 * @endcode
 			 */
 			Reader(const std::uint8_t* data, std::size_t size) noexcept;
 
@@ -63,6 +69,13 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post non-owning pointer、size、offsetを`other`と同じ値で保持。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U};
+			 * ket::byte_reader::Reader source(data, 1U);
+			 * ket::byte_reader::Reader copied(source);
+			 * // copied.Size() == 1
+			 * // copied.Offset() == 0
+			 * @endcode
 			 */
 			Reader(const Reader& other) noexcept = default;
 
@@ -72,6 +85,13 @@ namespace ket
 			 * @retval reference `*this`。
 			 * @pre なし。
 			 * @post non-owning pointer、size、offsetを`other`と同じ値で保持。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U};
+			 * ket::byte_reader::Reader source(data, 1U);
+			 * ket::byte_reader::Reader assigned(nullptr, 0U);
+			 * assigned = source;
+			 * // assigned.Size() == 1
+			 * @endcode
 			 */
 			Reader& operator=(const Reader& other) noexcept = default;
 
@@ -81,6 +101,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post non-owning pointer、size、offsetをmove前の`other`と同じ値で保持。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U};
+			 * ket::byte_reader::Reader source(data, 1U);
+			 * ket::byte_reader::Reader moved(static_cast<ket::byte_reader::Reader&&>(source));
+			 * // moved.Size() == 1
+			 * @endcode
 			 */
 			Reader(Reader&& other) noexcept = default;
 
@@ -90,6 +116,13 @@ namespace ket
 			 * @retval reference `*this`。
 			 * @pre なし。
 			 * @post non-owning pointer、size、offsetをmove前の`other`と同じ値で保持。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U};
+			 * ket::byte_reader::Reader source(data, 1U);
+			 * ket::byte_reader::Reader assigned(nullptr, 0U);
+			 * assigned = static_cast<ket::byte_reader::Reader&&>(source);
+			 * // assigned.Size() == 1
+			 * @endcode
 			 */
 			Reader& operator=(Reader&& other) noexcept = default;
 
@@ -98,6 +131,12 @@ namespace ket
 			 * @retval value 構築時に渡したbyte数。invalid readerでも入力sizeを返す。
 			 * @pre なし。
 			 * @post reader状態と外部状態の変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U, 0x34U};
+			 * ket::byte_reader::Reader reader(data, 2U);
+			 * const auto size = reader.Size();
+			 * // size == 2
+			 * @endcode
 			 */
 			std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -106,6 +145,12 @@ namespace ket
 			 * @retval value 次に読み取るbyte位置。
 			 * @pre なし。
 			 * @post reader状態と外部状態の変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U};
+			 * ket::byte_reader::Reader reader(data, 1U);
+			 * const auto offset = reader.Offset();
+			 * // offset == 0
+			 * @endcode
 			 */
 			std::size_t Offset() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -114,6 +159,12 @@ namespace ket
 			 * @retval value valid readerでは`Size() - Offset()`。invalid readerでは0。
 			 * @pre なし。
 			 * @post reader状態と外部状態の変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U, 0x34U};
+			 * ket::byte_reader::Reader reader(data, 2U);
+			 * const auto remaining = reader.Remaining();
+			 * // remaining == 2
+			 * @endcode
 			 */
 			std::size_t Remaining() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -123,6 +174,11 @@ namespace ket
 			 * @retval false 1byte以上の読み取り可能byteあり。
 			 * @pre なし。
 			 * @post reader状態と外部状態の変更なし。
+			 * @code
+			 * ket::byte_reader::Reader reader(nullptr, 0U);
+			 * const auto empty = reader.Empty();
+			 * // empty == true
+			 * @endcode
 			 */
 			bool Empty() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -133,6 +189,13 @@ namespace ket
 			 * @retval false invalid reader、または残りbyte不足。
 			 * @pre 元buffer lifetimeはreader利用中保持。
 			 * @post 成功時だけ`Offset()`が`size`増加。失敗時はoffset不変。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U, 0x34U};
+			 * ket::byte_reader::Reader reader(data, 2U);
+			 * const auto ok = reader.Skip(1U);
+			 * // ok == true
+			 * // reader.Offset() == 1
+			 * @endcode
 			 */
 			bool Skip(std::size_t size) noexcept;
 
@@ -143,6 +206,13 @@ namespace ket
 			 * @retval false invalid reader、または残りbyte不足。
 			 * @pre `out`は有効な参照。元buffer lifetimeはreader利用中保持。
 			 * @post 成功時だけ`Offset()`が1増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U};
+			 * ket::byte_reader::Reader reader(data, 1U);
+			 * std::uint8_t value = 0U;
+			 * const auto ok = reader.ReadU8(value);
+			 * // ok == true, value == 0x12U, reader.Offset() == 1
+			 * @endcode
 			 */
 			bool ReadU8(std::uint8_t& out) noexcept;
 
@@ -170,6 +240,13 @@ namespace ket
 			 * @retval false invalid reader、または残りbyte不足。
 			 * @pre `out`は有効な参照。元buffer lifetimeはreader利用中保持。
 			 * @post 成功時だけ`Offset()`が4増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+			 * ket::byte_reader::Reader reader(data, 4U);
+			 * std::uint32_t value = 0U;
+			 * const auto ok = reader.ReadBe32(value);
+			 * // ok == true, value == 0x12345678U, reader.Offset() == 4
+			 * @endcode
 			 */
 			bool ReadBe32(std::uint32_t& out) noexcept;
 
@@ -180,6 +257,13 @@ namespace ket
 			 * @retval false invalid reader、または残りbyte不足。
 			 * @pre `out`は有効な参照。元buffer lifetimeはreader利用中保持。
 			 * @post 成功時だけ`Offset()`が2増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U, 0x34U};
+			 * ket::byte_reader::Reader reader(data, 2U);
+			 * std::uint16_t value = 0U;
+			 * const auto ok = reader.ReadLe16(value);
+			 * // ok == true, value == 0x3412U, reader.Offset() == 2
+			 * @endcode
 			 */
 			bool ReadLe16(std::uint16_t& out) noexcept;
 
@@ -190,6 +274,13 @@ namespace ket
 			 * @retval false invalid reader、または残りbyte不足。
 			 * @pre `out`は有効な参照。元buffer lifetimeはreader利用中保持。
 			 * @post 成功時だけ`Offset()`が4増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。
+			 * @code
+			 * const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+			 * ket::byte_reader::Reader reader(data, 4U);
+			 * std::uint32_t value = 0U;
+			 * const auto ok = reader.ReadLe32(value);
+			 * // ok == true, value == 0x78563412U, reader.Offset() == 4
+			 * @endcode
 			 */
 			bool ReadLe32(std::uint32_t& out) noexcept;
 
@@ -203,6 +294,13 @@ namespace ket
 			 * @post 成功時だけ`Offset()`が`size`増加し、`out_data`へ元buffer内の位置を書き込む。
 			 * 失敗時はoffsetと`out_data`不変。
 			 * @note validな空readerから0byteを読む場合、`out_data`はnullptr。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
+			 * ket::byte_reader::Reader reader(data, 3U);
+			 * const std::uint8_t* bytes = nullptr;
+			 * const auto ok = reader.ReadBytes(bytes, 2U);
+			 * // ok == true, bytes == data, reader.Offset() == 2
+			 * @endcode
 			 */
 			bool ReadBytes(const std::uint8_t*& out_data, std::size_t size) noexcept;
 
