@@ -13,6 +13,10 @@ namespace
 {
 	constexpr char kLowerHexDigits[] = "0123456789abcdef";
 	constexpr char kUpperHexDigits[] = "0123456789ABCDEF";
+	constexpr std::size_t kDumpBytesPerRow = 16U;
+	constexpr std::size_t kDumpHalfRowBytes = 8U;
+	constexpr unsigned kByteHexWidth = 2U;
+	constexpr unsigned kOffsetHexWidth = 8U;
 	constexpr std::size_t kDumpReservedRowSize = 79U;
 
 	constexpr const char* HexDigits(ket::hex::LetterCase letter_case) noexcept
@@ -84,6 +88,21 @@ namespace
 		return digit_count;
 	}
 
+	std::uint64_t DumpOffsetValue(std::size_t offset)
+	{
+#if SIZE_MAX > UINT64_MAX
+		const auto offset_exceeds_uint64 = offset > static_cast<std::size_t>(UINT64_MAX);
+		if (offset_exceeds_uint64)
+		{
+			throw std::length_error("ket hex dump offset exceeds std::uint64_t.");
+		}
+
+		return static_cast<std::uint64_t>(offset);
+#else
+		return offset;
+#endif
+	}
+
 	void AppendHexDigits(std::string& destination,
 						 std::uint64_t value,
 						 std::size_t min_width,
@@ -127,37 +146,41 @@ namespace
 		}
 
 		const auto remaining_size = max_size - separator_count;
-		const auto bytes_exceed_max = size > (remaining_size / ket::hex::detail::kByteHexWidth);
+		const auto bytes_exceed_max = size > (remaining_size / kByteHexWidth);
 		if (bytes_exceed_max)
 		{
 			throw std::length_error("ket hex result exceeds std::string::max_size().");
 		}
 
-		return (size * ket::hex::detail::kByteHexWidth) + separator_count;
+		return (size * kByteHexWidth) + separator_count;
 	}
 
 	void ReserveDumpString(std::string& destination, std::size_t size)
 	{
-		const auto full_row_count = size / ket::hex::detail::kDumpBytesPerRow;
-		const auto has_partial_row = (size % ket::hex::detail::kDumpBytesPerRow) != 0U;
+		const auto full_row_count = size / kDumpBytesPerRow;
+		const auto has_partial_row = (size % kDumpBytesPerRow) != 0U;
 		const auto row_count = full_row_count + (has_partial_row ? 1U : 0U);
+		const auto maximum_offset = size - 1U;
+		const auto maximum_offset_width = std::max(HexDigitCount(DumpOffsetValue(maximum_offset)),
+												   static_cast<std::size_t>(kOffsetHexWidth));
+		const auto row_reserved_size =
+			kDumpReservedRowSize + (maximum_offset_width - kOffsetHexWidth);
 		const auto max_size = destination.max_size();
-		const auto row_count_exceeds_max = row_count > (max_size / kDumpReservedRowSize);
+		const auto row_count_exceeds_max = row_count > (max_size / row_reserved_size);
 		if (row_count_exceeds_max)
 		{
 			throw std::length_error("ket hex dump result exceeds std::string::max_size().");
 		}
 
-		destination.reserve(row_count * kDumpReservedRowSize);
+		destination.reserve(row_count * row_reserved_size);
 	}
 
-	void
-	AppendDumpHexArea(std::string& destination, const std::uint8_t* row_data, std::size_t row_size)
+	template <typename Byte>
+	void AppendDumpHexArea(std::string& destination, const Byte* row_data, std::size_t row_size)
 	{
-		for (std::size_t byte_index = 0; byte_index < ket::hex::detail::kDumpBytesPerRow;
-			 ++byte_index)
+		for (std::size_t byte_index = 0; byte_index < kDumpBytesPerRow; ++byte_index)
 		{
-			const auto starts_second_half = byte_index == ket::hex::detail::kDumpHalfRowBytes;
+			const auto starts_second_half = byte_index == kDumpHalfRowBytes;
 			if (starts_second_half)
 			{
 				destination.push_back(' ');
@@ -166,7 +189,8 @@ namespace
 			const auto byte_exists = byte_index < row_size;
 			if (byte_exists)
 			{
-				AppendByteHex(destination, row_data[byte_index], ket::hex::LetterCase::kLower);
+				const auto byte = static_cast<std::uint8_t>(row_data[byte_index]);
+				AppendByteHex(destination, byte, ket::hex::LetterCase::kLower);
 				destination.push_back(' ');
 				continue;
 			}
@@ -175,19 +199,80 @@ namespace
 		}
 	}
 
-	void AppendDumpAsciiPreview(std::string& destination,
-								const std::uint8_t* row_data,
-								std::size_t row_size)
+	template <typename Byte>
+	void
+	AppendDumpAsciiPreview(std::string& destination, const Byte* row_data, std::size_t row_size)
 	{
 		destination.push_back(' ');
 		destination.push_back('|');
 
 		for (std::size_t byte_index = 0; byte_index < row_size; ++byte_index)
 		{
-			destination.push_back(ToAsciiPreviewChar(row_data[byte_index]));
+			const auto byte = static_cast<std::uint8_t>(row_data[byte_index]);
+			destination.push_back(ToAsciiPreviewChar(byte));
 		}
 
 		destination.push_back('|');
+	}
+
+	std::optional<std::size_t> CountHexDigits(std::string_view text)
+	{
+		std::size_t digit_count = 0U;
+
+		for (const auto value : text)
+		{
+			const auto is_whitespace = IsAsciiWhitespace(value);
+			if (is_whitespace)
+			{
+				continue;
+			}
+
+			const auto is_hex_digit = IsHexDigit(value);
+			if (!is_hex_digit)
+			{
+				return std::nullopt;
+			}
+
+			++digit_count;
+		}
+
+		return digit_count;
+	}
+
+	template <typename Byte>
+	std::string DumpBytes(const Byte* data, std::size_t size)
+	{
+		std::string result;
+		const auto input_is_empty = size == 0U;
+		if (input_is_empty)
+		{
+			return result;
+		}
+
+		ReserveDumpString(result, size);
+
+		for (std::size_t offset = 0U; offset < size;)
+		{
+			const auto is_not_first_row = offset != 0U;
+			if (is_not_first_row)
+			{
+				result.push_back('\n');
+			}
+
+			const auto remaining_size = size - offset;
+			const auto row_size = std::min(remaining_size, kDumpBytesPerRow);
+			const auto* const row_data = data + offset;
+
+			AppendHexDigits(
+				result, DumpOffsetValue(offset), kOffsetHexWidth, ket::hex::LetterCase::kLower);
+			result.append(2U, ' ');
+			AppendDumpHexArea(result, row_data, row_size);
+			AppendDumpAsciiPreview(result, row_data, row_size);
+
+			offset += row_size;
+		}
+
+		return result;
 	}
 
 } // namespace
@@ -196,7 +281,7 @@ namespace ket
 {
 	namespace hex
 	{
-		std::string Encode(std::uint64_t value, unsigned min_width, LetterCase letter_case)
+		std::string Format(std::uint64_t value, unsigned min_width, LetterCase letter_case)
 		{
 			std::string result;
 			const auto output_width =
@@ -238,9 +323,21 @@ namespace ket
 
 		std::optional<std::vector<std::uint8_t>> Decode(std::string_view text)
 		{
-			std::vector<std::uint8_t> result;
-			result.reserve(text.size() / detail::kByteHexWidth);
+			const auto hex_digit_count = CountHexDigits(text);
+			const auto has_invalid_input = !hex_digit_count.has_value();
+			if (has_invalid_input)
+			{
+				return std::nullopt;
+			}
 
+			const auto has_odd_digit_count = (*hex_digit_count % kByteHexWidth) != 0U;
+			if (has_odd_digit_count)
+			{
+				return std::nullopt;
+			}
+
+			std::vector<std::uint8_t> result;
+			result.reserve(*hex_digit_count / kByteHexWidth);
 			bool has_high_nibble = false;
 			std::uint8_t high_nibble = 0U;
 
@@ -250,12 +347,6 @@ namespace ket
 				if (is_whitespace)
 				{
 					continue;
-				}
-
-				const auto is_hex_digit = IsHexDigit(value);
-				if (!is_hex_digit)
-				{
-					return std::nullopt;
 				}
 
 				const auto nibble = HexDigitValue(value);
@@ -281,46 +372,14 @@ namespace ket
 
 		std::string Dump(const std::uint8_t* data, std::size_t size)
 		{
-			std::string result;
-			const auto input_is_empty = size == 0U;
-			if (input_is_empty)
-			{
-				return result;
-			}
-
-			ReserveDumpString(result, size);
-
-			for (std::size_t offset = 0U; offset < size;)
-			{
-				const auto is_not_first_row = offset != 0U;
-				if (is_not_first_row)
-				{
-					result.push_back('\n');
-				}
-
-				const auto remaining_size = size - offset;
-				const auto row_size = std::min(remaining_size, detail::kDumpBytesPerRow);
-				const auto* const row_data = data + offset;
-
-				AppendHexDigits(result,
-								static_cast<std::uint64_t>(offset),
-								detail::kOffsetHexWidth,
-								LetterCase::kLower);
-				result.append(2U, ' ');
-				AppendDumpHexArea(result, row_data, row_size);
-				AppendDumpAsciiPreview(result, row_data, row_size);
-
-				offset += row_size;
-			}
-
-			return result;
+			return DumpBytes(data, size);
 		}
 
-		std::string Dump(const void* data, std::size_t size)
+		std::string DumpMemory(const void* data, std::size_t size)
 		{
-			const auto* const bytes = static_cast<const std::uint8_t*>(data);
+			const auto* const bytes = static_cast<const unsigned char*>(data);
 
-			return Dump(bytes, size);
+			return DumpBytes(bytes, size);
 		}
 
 	} // namespace hex

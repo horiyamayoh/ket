@@ -24,7 +24,7 @@
  *
  * @par namespace
  * 公開API：ket::hex
- * 内部実装：ket::hex::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
@@ -71,11 +71,11 @@ namespace ket
 		 * @note `value == 0` では `min_width == 0` でも1桁の`"0"`を返す。
 		 * @note std::stringの確保があるためnoexceptなし。
 		 * @code
-		 * const auto text = ket::hex::Encode(0x2aU, 4U, ket::hex::LetterCase::kLower);
+		 * const auto text = ket::hex::Format(0x2aU, 4U, ket::hex::LetterCase::kLower);
 		 * // text == "002a"
 		 * @endcode
 		 */
-		std::string Encode(std::uint64_t value,
+		std::string Format(std::uint64_t value,
 						   unsigned min_width = 0,
 						   LetterCase letter_case = LetterCase::kUpper);
 
@@ -107,6 +107,7 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note ASCII whitespaceは`0x09`から`0x0d`と`0x20`のみ許容。
 		 * @note separatorつきhexの自動parseは行わない。separatorは不正文字として扱う。
+		 * @note std::vectorの確保があるためnoexceptなし。
 		 * @code
 		 * const auto bytes = ket::hex::Decode("de ad BE EF");
 		 * // bytes == std::optional<std::vector<std::uint8_t>>({0xde, 0xad, 0xbe, 0xef})
@@ -122,13 +123,15 @@ namespace ket
 		 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`nullptr` は `size == 0`
 		 * の場合だけ許容し、`nullptr` かつ非0 sizeはprecondition違反。
 		 * @post 引数と外部状態の変更なし。
-		 * @note 16 bytes/row、8桁zero-pad lower hex offset、lower hex byte、ASCII preview
-		 * の固定形式。行末のnewlineは付けない。
+		 * @note 16 bytes/row、最小8桁zero-pad lower hex offset、lower hex byte、8 byteごとの
+		 * 追加space、`|...|`で囲むASCII previewの固定形式。ASCII previewは`0x20`から`0x7e`
+		 * をそのまま表示し、それ以外は`.`。最終行のhex欠落分はspace
+		 * padding。行末のnewlineは付けない。
 		 * @note std::stringの確保があるためnoexceptなし。
 		 * @code
 		 * const std::uint8_t data[] = {0x00U, 0x41U};
 		 * const auto text = ket::hex::Dump(data, 2U);
-		 * // text == "00000000  00 41                                            |.A|"
+		 * // text == "00000000  00 41                                             |.A|"
 		 * @endcode
 		 */
 		std::string Dump(const std::uint8_t* data, std::size_t size);
@@ -141,28 +144,15 @@ namespace ket
 		 * @pre `data`は`size`バイト以上読み取り可能なメモリ範囲を指す。`nullptr` は
 		 * `size == 0` の場合だけ許容し、`nullptr` かつ非0 sizeはprecondition違反。
 		 * @post 引数と外部状態の変更なし。
-		 * @note C API境界の`void*` bufferをbyte列としてdumpするためのoverload。
+		 * @note C API境界の`void*` bufferをbyte列としてdumpするための明示API。
 		 * @note std::stringの確保があるためnoexceptなし。
 		 * @code
 		 * const std::uint32_t value = 0x12345678U;
-		 * const auto text = ket::hex::Dump(&value, sizeof(value));
+		 * const auto text = ket::hex::DumpMemory(&value, sizeof(value));
 		 * // textは`value`のobject representationをdumpした文字列
 		 * @endcode
 		 */
-		std::string Dump(const void* data, std::size_t size);
-
-		// -----------------------------------------------------------------------------
-		// Internal implementation details
-		// -----------------------------------------------------------------------------
-
-		namespace detail
-		{
-			constexpr std::size_t kDumpBytesPerRow = 16U;
-			constexpr std::size_t kDumpHalfRowBytes = 8U;
-			constexpr unsigned kByteHexWidth = 2U;
-			constexpr unsigned kOffsetHexWidth = 8U;
-
-		} // namespace detail
+		std::string DumpMemory(const void* data, std::size_t size);
 
 	} // namespace hex
 
