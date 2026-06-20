@@ -50,7 +50,6 @@ namespace ket
 			 * @brief non-owning buffer readerの構築。
 			 * @param[in] data 読み取り対象buffer先頭。`size == 0`の場合のみnullptr可。
 			 * @param[in] size `data`のbyte数。
-			 * @retval void 戻り値なし。
 			 * @pre `data`は`size`byte以上読み取り可能な配列を指す。
 			 * `data == nullptr && size > 0`はinvalid readerとして保持。
 			 * @post `Offset()`は0。入力pointerとsizeを保持。
@@ -66,7 +65,6 @@ namespace ket
 			/**
 			 * @brief reader状態のcopy構築。
 			 * @param[in] other copy元reader。
-			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post non-owning pointer、size、offsetを`other`と同じ値で保持。
 			 * @code
@@ -98,7 +96,6 @@ namespace ket
 			/**
 			 * @brief reader状態のmove構築。
 			 * @param[in,out] other move元reader。
-			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post non-owning pointer、size、offsetをmove前の`other`と同じ値で保持。
 			 * @code

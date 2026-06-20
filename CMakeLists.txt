@@ -150,4 +150,43 @@ if(KET_BUILD_TESTS)
 			modules/byte_reader/ket_byte_reader.cpp
 			modules/byte_reader/ket_byte_reader.h
 	)
+	add_dependencies(ket_byte_reader_test ket_byte_reader_cxx11_check)
+
+	ket_add_module_test(
+		ket_byte_writer_test
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_writer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer.h
+	)
+	add_dependencies(ket_byte_writer_test ket_byte_writer_cxx11_check)
+
+	ket_add_module_test(
+		ket_endian_test
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_endian_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian.h
+	)
+	add_dependencies(ket_endian_test ket_endian_cxx11_check)
+
+	ket_add_module_test(
+		ket_bytes_test
+		SOURCES
+			modules/bytes/ket_bytes_test.cpp
+	)
 endif()
