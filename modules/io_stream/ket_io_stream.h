@@ -111,6 +111,11 @@ namespace ket
 			 * @retval StateSaver 保存した状態を保持するobject。
 			 * @pre `stream`はこのobjectのdestructor完了まで同じobjectとして生存。
 			 * @post `stream`のflags、precision、fillを記録。構築直後のstream状態は変更なし。
+			 * @code
+			 * std::ostringstream stream;
+			 * const ket::io_stream::StateSaver saver(stream);
+			 * stream.precision(9);
+			 * @endcode
 			 */
 			explicit StateSaver(std::ios& stream);
 
@@ -119,12 +124,68 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre 対象streamはconstructor呼び出し時と同じobjectとして生存。
 			 * @post 対象streamのflags、precision、fillはconstructor呼び出し時の値へ復元。
+			 * @code
+			 * std::ostringstream stream;
+			 * stream.precision(3);
+			 * {
+			 *     const ket::io_stream::StateSaver saver(stream);
+			 *     stream.precision(9);
+			 * }
+			 * // stream.precision() == 3
+			 * @endcode
 			 */
 			~StateSaver() noexcept;
 
+			/**
+			 * @brief copy構築禁止。
+			 * @param[in] other copy元。使用不可。
+			 * @retval void 戻り値なし。
+			 * @pre copy操作は利用不可。
+			 * @post 状態変更なし。
+			 * @code
+			 * const auto copyable = std::is_copy_constructible<ket::io_stream::StateSaver>::value;
+			 * // copyable == false
+			 * @endcode
+			 */
 			StateSaver(const StateSaver&) = delete;
+
+			/**
+			 * @brief copy代入禁止。
+			 * @param[in] other copy元。使用不可。
+			 * @retval value 使用不可。
+			 * @pre copy操作は利用不可。
+			 * @post 状態変更なし。
+			 * @code
+			 * const auto assignable = std::is_copy_assignable<ket::io_stream::StateSaver>::value;
+			 * // assignable == false
+			 * @endcode
+			 */
 			StateSaver& operator=(const StateSaver&) = delete;
+
+			/**
+			 * @brief move構築禁止。
+			 * @param[in] other move元。使用不可。
+			 * @retval void 戻り値なし。
+			 * @pre move操作は利用不可。
+			 * @post 状態変更なし。
+			 * @code
+			 * const auto movable = std::is_move_constructible<ket::io_stream::StateSaver>::value;
+			 * // movable == false
+			 * @endcode
+			 */
 			StateSaver(StateSaver&&) = delete;
+
+			/**
+			 * @brief move代入禁止。
+			 * @param[in] other move元。使用不可。
+			 * @retval value 使用不可。
+			 * @pre move操作は利用不可。
+			 * @post 状態変更なし。
+			 * @code
+			 * const auto movable = std::is_move_assignable<ket::io_stream::StateSaver>::value;
+			 * // movable == false
+			 * @endcode
+			 */
 			StateSaver& operator=(StateSaver&&) = delete;
 
 		  private:
