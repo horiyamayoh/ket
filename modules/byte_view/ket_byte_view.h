@@ -50,6 +50,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post `Data() == nullptr`、`Size() == 0`、`Empty() == true`。
+			 * @code
+			 * ket::byte_view::View view;
+			 * // view.Data() == nullptr
+			 * // view.Size() == 0
+			 * // view.Empty() == true
+			 * @endcode
 			 */
 			View() noexcept : data_(nullptr), size_(0U) {}
 
@@ -61,6 +67,12 @@ namespace ket
 			 * @pre `data`は`size`byte以上読み取り可能な配列を指す。`nullptr + 非0`はinvalid
 			 * viewとして保持。
 			 * @post `data`と`size`を保持し、bufferの所有権は取得なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U, 0x20U};
+			 * ket::byte_view::View view(data, 2U);
+			 * // view.Data() == data
+			 * // view.Size() == 2
+			 * @endcode
 			 */
 			View(const std::uint8_t* data, std::size_t size) noexcept : data_(data), size_(size) {}
 
@@ -70,6 +82,12 @@ namespace ket
 			 * viewでは`nullptr`もあり得る。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::View view(data, 1U);
+			 * const auto pointer = view.Data();
+			 * // pointer == data
+			 * @endcode
 			 */
 			const std::uint8_t* Data() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -78,6 +96,12 @@ namespace ket
 			 * @retval value 構築時に渡されたbyte数。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U, 0x20U};
+			 * ket::byte_view::View view(data, 2U);
+			 * const auto size = view.Size();
+			 * // size == 2
+			 * @endcode
 			 */
 			std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -87,6 +111,11 @@ namespace ket
 			 * @retval false `Size() != 0`。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。
+			 * @code
+			 * ket::byte_view::View view;
+			 * const auto empty = view.Empty();
+			 * // empty == true
+			 * @endcode
 			 */
 			bool Empty() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -118,6 +147,13 @@ namespace ket
 			 * @pre `out`は有効な参照。viewの元buffer lifetimeはsubview利用中も維持。
 			 * @post 成功時のみ`out`を変更。viewと元bufferの変更なし。
 			 * @note `offset == Size()`かつ`count == 0`の空subviewは成功。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
+			 * ket::byte_view::View view(data, 3U);
+			 * ket::byte_view::View slice;
+			 * const auto ok = view.TrySlice(1U, 2U, slice);
+			 * // ok == true, slice.Data() == data + 1, slice.Size() == 2
+			 * @endcode
 			 */
 			bool TrySlice(std::size_t offset, std::size_t count, View& out) const noexcept;
 
@@ -138,6 +174,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post `Data() == nullptr`、`Size() == 0`、`Empty() == true`。
+			 * @code
+			 * ket::byte_view::MutableView view;
+			 * // view.Data() == nullptr
+			 * // view.Size() == 0
+			 * // view.Empty() == true
+			 * @endcode
 			 */
 			MutableView() noexcept : data_(nullptr), size_(0U) {}
 
@@ -149,6 +191,12 @@ namespace ket
 			 * @pre `data`は`size`byte以上読み書き可能な配列を指す。`nullptr + 非0`はinvalid
 			 * viewとして保持。
 			 * @post `data`と`size`を保持し、bufferの所有権は取得なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U, 0x20U};
+			 * ket::byte_view::MutableView view(data, 2U);
+			 * // view.Data() == data
+			 * // view.Size() == 2
+			 * @endcode
 			 */
 			MutableView(std::uint8_t* data, std::size_t size) noexcept : data_(data), size_(size) {}
 
@@ -158,6 +206,12 @@ namespace ket
 			 * viewでは`nullptr`もあり得る。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::MutableView view(data, 1U);
+			 * const auto pointer = view.Data();
+			 * // pointer == data
+			 * @endcode
 			 */
 			std::uint8_t* Data() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -166,6 +220,12 @@ namespace ket
 			 * @retval value 構築時に渡されたbyte数。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U, 0x20U};
+			 * ket::byte_view::MutableView view(data, 2U);
+			 * const auto size = view.Size();
+			 * // size == 2
+			 * @endcode
 			 */
 			std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -175,6 +235,11 @@ namespace ket
 			 * @retval false `Size() != 0`。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。
+			 * @code
+			 * ket::byte_view::MutableView view;
+			 * const auto empty = view.Empty();
+			 * // empty == true
+			 * @endcode
 			 */
 			bool Empty() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -186,6 +251,13 @@ namespace ket
 			 * @retval false invalid view、または範囲外index。`out`は変更なし。
 			 * @pre `out`は有効な参照。viewの元buffer lifetimeは呼び出し中維持。
 			 * @post 成功時のみ`out`を変更。viewと元bufferの変更なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U, 0x20U};
+			 * ket::byte_view::MutableView view(data, 2U);
+			 * std::uint8_t value = 0U;
+			 * const auto ok = view.TryAt(1U, value);
+			 * // ok == true, value == 0x20
+			 * @endcode
 			 */
 			bool TryAt(std::size_t index, std::uint8_t& out) const noexcept;
 
@@ -217,6 +289,13 @@ namespace ket
 			 * lifetimeと書き込み可能性はsubview利用中も維持。
 			 * @post 成功時のみ`out`を変更。viewと元bufferの変更なし。
 			 * @note `offset == Size()`かつ`count == 0`の空subviewは成功。
+			 * @code
+			 * std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
+			 * ket::byte_view::MutableView view(data, 3U);
+			 * ket::byte_view::MutableView slice;
+			 * const auto ok = view.TrySlice(1U, 2U, slice);
+			 * // ok == true, slice.Data() == data + 1, slice.Size() == 2
+			 * @endcode
 			 */
 			bool TrySlice(std::size_t offset, std::size_t count, MutableView& out) const noexcept;
 
