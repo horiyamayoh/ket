@@ -51,7 +51,6 @@ namespace ket
 			 * @brief 書き込み先bufferを参照するwriter生成。
 			 * @param[in,out] data 書き込み先buffer先頭。`size == 0`のときだけnullptr可。
 			 * @param[in] size 書き込み先bufferのbyte数。
-			 * @retval void 戻り値なし。
 			 * @pre `data`は`size`バイト以上書き込み可能な配列を指す。`nullptr`と非0
 			 * sizeの組はinvalid writerとして構築。
 			 * @post offsetは0。buffer内容の変更なし。
@@ -67,7 +66,6 @@ namespace ket
 			/**
 			 * @brief writer状態のcopy constructor。
 			 * @param[in] other copy元writer。
-			 * @retval void 戻り値なし。
 			 * @pre `other`は有効またはinvalidなWriter object。
 			 * @post non-owning pointer、size、offsetをそのまま複製。buffer内容の変更なし。
 			 * @code
@@ -99,7 +97,6 @@ namespace ket
 			/**
 			 * @brief writer状態のmove constructor。
 			 * @param[in,out] other move元writer。
-			 * @retval void 戻り値なし。
 			 * @pre `other`は有効またはinvalidなWriter object。
 			 * @post non-owning pointer、size、offsetをそのまま移動。buffer内容の変更なし。
 			 * @code

@@ -394,7 +394,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Purpose: byte order の読み書きを unaligned access や strict aliasing に頼らず安全に行う。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   endian と unaligned access の意図を名前に出し、strict aliasing 依存を避けられる。
-  非推奨版 なし。非推奨理由: C++20 `std::endian` は判定であり、byte列読み書きの直接代替ではない。
+  非推奨版 なし。非推奨理由: なし。
+  標準代替: C++20 `std::endian` は byte order の判定であり、byte列の固定幅整数読み書きや
+  失敗値付き Try API の直接代替ではない。
 - Drop-in files: `modules/endian/ket_endian.h`、`modules/endian/ket_endian.cpp`、
   `modules/endian/ket_endian_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -427,7 +429,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   - `bool TryStoreLe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept`
   - `bool TryStoreLe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept`
 - Behavior: `LoadXxx`/`StoreXxx` は pointer が十分な長さの buffer を指すことを precondition。
-  `TryXxx` は null、size不足を `false` で扱う。plain と `Try` は 16/32/64 すべてで対称に揃える。
+  呼び出し境界で長さ確認が残る入力は `TryXxx` を優先し、plain Load/Store は固定長 protocol や
+  直前検証で必要 byte 数を保証済みの内部経路向け。`TryXxx` は null、size不足を `false` で扱う。
+  plain と `Try` は 16/32/64 すべてで対称に揃える。
   実装は byte 単位の shift/or で組み立て、`reinterpret_cast` と unaligned access をしない。
 - Failure/edge cases: `TryLoadXxx` は失敗時に出力不変。`TryStoreXxx` は失敗時に buffer 不変。
 - Complexity/performance: 各 Load/Store は語幅分の定数 byte のみ触る O(1)。`ByteSwap` は `constexpr` で
@@ -756,9 +760,12 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Behavior: fluent API は `*this` を返す。free function は既存 vector へ追加する。`AppendAscii` は
   ASCII byte列として扱う文字列片を追加し、encoding 変換はしない。`Buffer()` は構築途中の
   内部 vector への const 参照を返す。`Build() &&` は内部 vector を move して返す。
-- Failure/edge cases: allocation があるため `noexcept` なし。`Append(nullptr, 0)` は no-op。
-  `Append(nullptr, size > 0)` は precondition 違反。`AppendAscii` の入力は ASCII byte列であることを
-  precondition とし、UTF-8 validation や変換はしない。
+- Failure/edge cases: allocation があるため `noexcept` なし。固定幅 append（`AppendBe16/Be32/Le16/Le32`）は
+  一時配列を単一 insert で追記し、allocation 失敗時は `dst` を変更しない strong exception guarantee。
+  `Append(nullptr, 0)` は no-op。`Append(nullptr, size > 0)` は precondition 違反。raw `Append` と
+  `AppendAscii` の入力は `dst`（builder では内部 buffer）と重ならない（self-append 未対応、重なる場合は未定義）。
+  `AppendAscii` の入力は ASCII byte列であることを precondition とし、検査せず byte copy のみで
+  UTF-8 validation や変換はしない。
 - Complexity/performance: 各 append は追加 byte 数に比例し、vector 再確保は amortized O(1)。
   `reserve_size` で再確保を抑制。`Build() &&` は move で O(1)。
 - Tests: U8/BE/LE append、reserve constructor、Clear、Buffer、Build move、null+0、ASCII append。
@@ -1898,7 +1905,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 [ ] 他の ket module に依存していない
 [ ] 公開ヘッダが必要な標準ヘッダを自分で include している
 [ ] 公開ヘッダの section banner が規約通り
-[ ] 公開API関数 Doxygen に @brief / @param / @retval / @pre / @post / @code がある
+[ ] 公開API関数 Doxygen に @brief / @param / @retval / @pre / @post / @code がある（constructor/destructorは @retval なし）
 [ ] struct / class / enum の Doxygen に @brief がある
 [ ] 失敗条件を戻り値・precondition・例外のどれで扱うか固定した
 [ ] null / empty / overflow / size不足 / invalid input のテストがある
