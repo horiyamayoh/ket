@@ -1651,6 +1651,7 @@ ket::ipv4::Parse(text)
 ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
+mac_a == mac_b
 ket::version::Parse(text)
 ket::version::Compare(a, b)
 ```

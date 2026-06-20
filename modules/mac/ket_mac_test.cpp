@@ -1,42 +1,9 @@
 #include "ket_mac.h"
 
-#include <cstddef>
 #include <optional>
 #include <string>
 
 #include <gtest/gtest.h>
-
-namespace
-{
-	constexpr std::size_t kAddressByteCount = 6U;
-
-	bool AddressEquals(ket::mac::Address value, ket::mac::Address expected) noexcept
-	{
-		for (std::size_t index = 0; index < kAddressByteCount; ++index)
-		{
-			const auto byte_matches = value.bytes[index] == expected.bytes[index];
-			if (!byte_matches)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool OptionalAddressEquals(std::optional<ket::mac::Address> value,
-							   ket::mac::Address expected) noexcept
-	{
-		const auto value_has_value = value.has_value();
-		if (!value_has_value)
-		{
-			return false;
-		}
-
-		return AddressEquals(*value, expected);
-	}
-
-} // namespace
 
 /**
  * @test
@@ -49,9 +16,11 @@ TEST(KetMacTest, ParsesUpperColonAddress)
 {
 	const auto parsed = ket::mac::Parse("AA:BB:CC:DD:EE:FF");
 	const auto expected = ket::mac::Address{{0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0xFFU}};
-	const auto parsed_matches = OptionalAddressEquals(parsed, expected);
+	const auto parsed_has_value = parsed.has_value();
+	ASSERT_TRUE(parsed_has_value);
 
-	EXPECT_TRUE(parsed_matches);
+	const auto parsed_value = parsed.value_or(ket::mac::Address{});
+	EXPECT_EQ(parsed_value, expected);
 }
 
 /**
@@ -65,9 +34,11 @@ TEST(KetMacTest, ParsesLowerHyphenAddress)
 {
 	const auto parsed = ket::mac::Parse("aa-bb-cc-dd-ee-ff");
 	const auto expected = ket::mac::Address{{0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0xFFU}};
-	const auto parsed_matches = OptionalAddressEquals(parsed, expected);
+	const auto parsed_has_value = parsed.has_value();
+	ASSERT_TRUE(parsed_has_value);
 
-	EXPECT_TRUE(parsed_matches);
+	const auto parsed_value = parsed.value_or(ket::mac::Address{});
+	EXPECT_EQ(parsed_value, expected);
 }
 
 /**
@@ -81,9 +52,57 @@ TEST(KetMacTest, ParsesMixedHexCase)
 {
 	const auto parsed = ket::mac::Parse("aA:Bb:Cc:Dd:eE:Ff");
 	const auto expected = ket::mac::Address{{0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0xFFU}};
-	const auto parsed_matches = OptionalAddressEquals(parsed, expected);
+	const auto parsed_has_value = parsed.has_value();
+	ASSERT_TRUE(parsed_has_value);
 
-	EXPECT_TRUE(parsed_matches);
+	const auto parsed_value = parsed.value_or(ket::mac::Address{});
+	EXPECT_EQ(parsed_value, expected);
+}
+
+/**
+ * @test
+ * @brief 数字hex digitと境界byteのparse確認。
+ * @details 0から9のhex
+ * digitと0x00/0x01/0x09/0x10/0xFFを含む入力を渡し、各byte値へ変換されることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetMacTest, ParsesDecimalHexDigitsAndBoundaryBytes)
+{
+	const auto parsed = ket::mac::Parse("00:01:09:0a:10:ff");
+	const auto expected = ket::mac::Address{{0x00U, 0x01U, 0x09U, 0x0AU, 0x10U, 0xFFU}};
+	const auto parsed_has_value = parsed.has_value();
+	ASSERT_TRUE(parsed_has_value);
+
+	const auto parsed_value = parsed.value_or(ket::mac::Address{});
+	EXPECT_EQ(parsed_value, expected);
+}
+
+/**
+ * @test
+ * @brief MAC address値の比較確認。
+ * @details 同じ6 byte値と異なる6
+ * byte値を比較し、等価/非等価演算子とoptional比較が同じ意味になることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetMacTest, ComparesAddressValues)
+{
+	const auto lhs = ket::mac::Address{{0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0xFFU}};
+	const auto same = ket::mac::Address{{0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0xFFU}};
+	const auto different = ket::mac::Address{{0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0x00U}};
+	const std::optional<ket::mac::Address> parsed = ket::mac::Parse("AA:BB:CC:DD:EE:FF");
+	const std::optional<ket::mac::Address> expected = same;
+
+	const auto values_match = lhs == same;
+	const auto values_do_not_differ = lhs != same;
+	const auto values_differ = lhs != different;
+	const auto optional_matches = parsed == expected;
+
+	EXPECT_TRUE(values_match);
+	EXPECT_FALSE(values_do_not_differ);
+	EXPECT_TRUE(values_differ);
+	EXPECT_TRUE(optional_matches);
 }
 
 /**
@@ -205,4 +224,20 @@ TEST(KetMacTest, RejectsMixedSeparators)
 
 	EXPECT_EQ(hyphen_after_colon, std::nullopt);
 	EXPECT_EQ(colon_after_hyphen, std::nullopt);
+}
+
+/**
+ * @test
+ * @brief 非対応区切り文字の拒否確認。
+ * @details byte数と位置は正しいが区切り文字だけが異なる入力を渡し、std::nulloptを返すことを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetMacTest, RejectsUnsupportedSeparator)
+{
+	const auto dot_separator = ket::mac::Parse("AA.BB.CC.DD.EE.FF");
+	const auto slash_separator = ket::mac::Parse("AA/BB/CC/DD/EE/FF");
+
+	EXPECT_EQ(dot_separator, std::nullopt);
+	EXPECT_EQ(slash_separator, std::nullopt);
 }

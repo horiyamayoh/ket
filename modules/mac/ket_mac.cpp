@@ -75,9 +75,28 @@ namespace ket
 {
 	namespace mac
 	{
+		bool operator==(Address lhs, Address rhs) noexcept
+		{
+			for (std::size_t index = 0; index < kAddressByteCount; ++index)
+			{
+				const auto byte_matches = lhs.bytes[index] == rhs.bytes[index];
+				if (!byte_matches)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		bool operator!=(Address lhs, Address rhs) noexcept
+		{
+			const auto values_are_equal = lhs == rhs;
+			return !values_are_equal;
+		}
+
 		std::optional<Address> Parse(std::string_view text) noexcept
 		{
-			// 入力長確認
 			const auto has_expected_length = text.size() == kFormattedLength;
 			if (!has_expected_length)
 			{
@@ -98,7 +117,6 @@ namespace ket
 				const auto text_index = index * kTextStride;
 				std::uint8_t byte = 0U;
 
-				// hex byte確認
 				const auto byte_is_decoded =
 					TryDecodeByte(text[text_index], text[text_index + 1U], byte);
 				if (!byte_is_decoded)
@@ -114,7 +132,6 @@ namespace ket
 					continue;
 				}
 
-				// 区切り文字確認
 				const auto actual_separator = text[text_index + kHexDigitsPerByte];
 				const auto separator_matches = actual_separator == separator;
 				if (!separator_matches)
