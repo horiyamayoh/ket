@@ -33,7 +33,7 @@ signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポイン
   `modules/<name>/ket_<name>.cpp`、`modules/<name>/ket_<name>_test.cpp`。
   header-only で十分な場合は `.cpp` を置かない。
 - 公開APIは module ごとの入れ子 `namespace ket::<module>` に置く。C++11/14 の drop-in を維持するため `namespace ket { namespace <module> { ... } }` の入れ子 block 形式で書き、C++17 短縮形は使わない。top-level の `namespace ket` は1つだけ。内部 helper は header 内なら `ket::<module>::detail`、
-  `.cpp` 内なら無名 namespace。
+  `.cpp` 内なら無名 namespace。内部 helper がない場合は file Doxygen に `内部実装：なし` と書く。
 - 各 module は原則として他の ket module に依存しない。小さい内部処理の重複は許容する。
 - 公開ヘッダは include what you use を守り、自分が必要な標準ヘッダを自分で include する。
 - 公開ヘッダは Doxygen `@file` コメント、公開API宣言、内部実装、公開API定義の順に書く。

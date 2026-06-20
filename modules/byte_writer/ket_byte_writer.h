@@ -24,7 +24,7 @@
  *
  * @par namespace
  * 公開API：ket::byte_writer
- * 内部実装：ket::byte_writer::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
