@@ -44,11 +44,11 @@ namespace ket
 
 		/**
 		 * @brief 10進文字列の符号付き整数変換。
-		 * @tparam T 変換後の符号付き整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし符号付き整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の文字列。
 		 * @param[out] out 変換後の値。成功時だけ更新。
 		 * @retval true `text`を完全消費し、`T`の範囲内で変換成功。
-		 * @retval false 空文字列、空白、部分消費、不正文字、または範囲外。
+		 * @retval false 空文字列、空白、部分消費、不正文字、先頭の`+`、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 成功時は`out`を変換結果へ更新。失敗時は`out`を入力時の値に保持。
 		 * @code
@@ -62,11 +62,11 @@ namespace ket
 
 		/**
 		 * @brief 10進文字列の符号なし整数変換。
-		 * @tparam T 変換後の符号なし整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし符号なし整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の文字列。
 		 * @param[out] out 変換後の値。成功時だけ更新。
 		 * @retval true `text`を完全消費し、`T`の範囲内で変換成功。
-		 * @retval false 空文字列、空白、部分消費、不正文字、負数、または範囲外。
+		 * @retval false 空文字列、空白、部分消費、不正文字、符号文字、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 成功時は`out`を変換結果へ更新。失敗時は`out`を入力時の値に保持。
 		 * @code
@@ -80,13 +80,14 @@ namespace ket
 
 		/**
 		 * @brief 16進文字列の整数変換。
-		 * @tparam T 変換後の整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の16進文字列。`0x`または`0X` prefixを許可。
 		 * @param[out] out 変換後の値。成功時だけ更新。
 		 * @retval true prefix除去後の文字列を完全消費し、`T`の範囲内で変換成功。
-		 * @retval false 空文字列、prefixのみ、空白、部分消費、不正hex、または範囲外。
+		 * @retval false 空文字列、prefixのみ、空白、符号文字、部分消費、不正hex、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 成功時は`out`を変換結果へ更新。失敗時は`out`を入力時の値に保持。
+		 * @note 16進表記は符号文字を扱わない。signed `T`でも非負のhex桁列だけを変換対象とする。
 		 * @code
 		 * std::uint32_t value = 0;
 		 * const auto ok = ket::parse::TryHex("0xff", value);
@@ -111,14 +112,14 @@ namespace ket
 		 * // ok == true, value == true
 		 * @endcode
 		 */
-		inline bool TryBool(std::string_view text, bool& out) noexcept;
+		constexpr bool TryBool(std::string_view text, bool& out) noexcept;
 
 		/**
 		 * @brief 10進文字列の符号付き整数変換。
-		 * @tparam T 変換後の符号付き整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし符号付き整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の文字列。
 		 * @retval value 変換後の値。
-		 * @retval std::nullopt 空文字列、空白、部分消費、不正文字、または範囲外。
+		 * @retval std::nullopt 空文字列、空白、部分消費、不正文字、先頭の`+`、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
@@ -131,10 +132,10 @@ namespace ket
 
 		/**
 		 * @brief 10進文字列の符号なし整数変換。
-		 * @tparam T 変換後の符号なし整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし符号なし整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の文字列。
 		 * @retval value 変換後の値。
-		 * @retval std::nullopt 空文字列、空白、部分消費、不正文字、負数、または範囲外。
+		 * @retval std::nullopt 空文字列、空白、部分消費、不正文字、符号文字、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
@@ -147,12 +148,14 @@ namespace ket
 
 		/**
 		 * @brief 16進文字列の整数変換。
-		 * @tparam T 変換後の整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の16進文字列。`0x`または`0X` prefixを許可。
 		 * @retval value 変換後の値。
-		 * @retval std::nullopt 空文字列、prefixのみ、空白、部分消費、不正hex、または範囲外。
+		 * @retval std::nullopt
+		 * 空文字列、prefixのみ、空白、符号文字、部分消費、不正hex、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @note 16進表記は符号文字を扱わない。signed `T`でも非負のhex桁列だけを変換対象とする。
 		 * @code
 		 * const auto value = ket::parse::Hex<unsigned>("0xff");
 		 * // value == std::optional<unsigned>(255U)
@@ -174,11 +177,11 @@ namespace ket
 		 * // value == std::optional<bool>(false)
 		 * @endcode
 		 */
-		inline std::optional<bool> Bool(std::string_view text) noexcept;
+		constexpr std::optional<bool> Bool(std::string_view text) noexcept;
 
 		/**
 		 * @brief 10進文字列の符号付き整数変換とfallback返却。
-		 * @tparam T 変換後の符号付き整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし符号付き整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の文字列。
 		 * @param[in] fallback 変換失敗時に返す値。
 		 * @retval value 変換成功時は変換後の値、失敗時は`fallback`。
@@ -194,7 +197,7 @@ namespace ket
 
 		/**
 		 * @brief 10進文字列の符号なし整数変換とfallback返却。
-		 * @tparam T 変換後の符号なし整数型。boolは対象外。
+		 * @tparam T 変換後のcv修飾なし符号なし整数型。boolとplain character型は対象外。
 		 * @param[in] text 変換対象の文字列。
 		 * @param[in] fallback 変換失敗時に返す値。
 		 * @retval value 変換成功時は変換後の値、失敗時は`fallback`。
@@ -215,31 +218,40 @@ namespace ket
 		namespace detail
 		{
 			/**
-			 * @brief boolを除く符号付き整数型の判定。
+			 * @brief plain character型の判定。
 			 * @tparam T 判定対象の型。
 			 * @note detail配下の値は公開APIではない。
 			 */
 			template <typename T>
-			inline constexpr bool kIsSignedIntegral = std::is_integral_v<T> &&
-				std::is_signed_v<T> && !std::is_same_v<std::remove_cv_t<T>, bool>;
+			inline constexpr bool kIsPlainCharacter =
+				std::is_same_v<T, char> || std::is_same_v<T, wchar_t> ||
+				std::is_same_v<T, char16_t> || std::is_same_v<T, char32_t>;
 
 			/**
-			 * @brief boolを除く符号なし整数型の判定。
-			 * @tparam T 判定対象の型。
-			 * @note detail配下の値は公開APIではない。
-			 */
-			template <typename T>
-			inline constexpr bool kIsUnsignedIntegral = std::is_integral_v<T> &&
-				std::is_unsigned_v<T> && !std::is_same_v<std::remove_cv_t<T>, bool>;
-
-			/**
-			 * @brief boolを除く整数型の判定。
+			 * @brief parse template API が受け付ける整数型の判定。
 			 * @tparam T 判定対象の型。
 			 * @note detail配下の値は公開APIではない。
 			 */
 			template <typename T>
 			inline constexpr bool kIsIntegral =
-				std::is_integral_v<T> && !std::is_same_v<std::remove_cv_t<T>, bool>;
+				std::is_integral_v<T> && std::is_same_v<T, std::remove_cv_t<T>> &&
+				!std::is_same_v<T, bool> && !kIsPlainCharacter<T>;
+
+			/**
+			 * @brief boolとplain character型を除く符号付き整数型の判定。
+			 * @tparam T 判定対象の型。
+			 * @note detail配下の値は公開APIではない。
+			 */
+			template <typename T>
+			inline constexpr bool kIsSignedIntegral = kIsIntegral<T> && std::is_signed_v<T>;
+
+			/**
+			 * @brief boolとplain character型を除く符号なし整数型の判定。
+			 * @tparam T 判定対象の型。
+			 * @note detail配下の値は公開APIではない。
+			 */
+			template <typename T>
+			inline constexpr bool kIsUnsignedIntegral = kIsIntegral<T> && std::is_unsigned_v<T>;
 
 			/**
 			 * @brief from_chars結果の成功判定。
@@ -279,6 +291,25 @@ namespace ket
 			}
 
 			/**
+			 * @brief 先頭の符号文字判定。
+			 * @param[in] text 判定対象の文字列。
+			 * @retval true 先頭文字が`+`または`-`。
+			 * @retval false 空文字列、または先頭文字が符号文字ではない。
+			 * @pre なし。空文字列はfalseとして扱う。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			constexpr bool HasLeadingSign(std::string_view text) noexcept
+			{
+				const auto text_is_empty = text.empty();
+				if (text_is_empty)
+				{
+					return false;
+				}
+
+				return text[0] == '+' || text[0] == '-';
+			}
+
+			/**
 			 * @brief 整数文字列のfrom_chars変換。
 			 * @tparam T 変換後の整数型。
 			 * @tparam Base 変換時の基数。
@@ -286,13 +317,16 @@ namespace ket
 			 * @param[out] out 変換後の値。成功時だけ更新。
 			 * @retval true `text`を完全消費し、`T`の範囲内で変換成功。
 			 * @retval false 空文字列、部分消費、不正文字、または範囲外。
-			 * @pre `T`はboolを除く整数型。`Base`は`std::from_chars`が受け付ける基数。
+			 * @pre `T`はcv修飾なしでboolとplain
+			 * character型を除く整数型。`Base`は`std::from_chars`が受け付ける基数。
 			 * @post 成功時は`out`を変換結果へ更新。失敗時は`out`を入力時の値に保持。
 			 */
 			template <typename T, int Base>
 			bool TryInteger(std::string_view text, T& out) noexcept
 			{
-				static_assert(kIsIntegral<T>, "ket::parse integer APIs require integral T.");
+				static_assert(kIsIntegral<T>,
+							  "ket::parse integer APIs require an integral T except bool and plain "
+							  "character types.");
 
 				const auto text_is_empty = text.empty();
 				if (text_is_empty)
@@ -324,7 +358,8 @@ namespace ket
 		bool TryInt(std::string_view text, T& out) noexcept
 		{
 			static_assert(detail::kIsSignedIntegral<T>,
-						  "ket::parse::TryInt requires a signed integral T other than bool.");
+						  "ket::parse::TryInt requires a signed integral T except bool and plain "
+						  "character types.");
 
 			return detail::TryInteger<T, 10>(text, out);
 		}
@@ -332,8 +367,10 @@ namespace ket
 		template <typename T>
 		bool TryUInt(std::string_view text, T& out) noexcept
 		{
-			static_assert(detail::kIsUnsignedIntegral<T>,
-						  "ket::parse::TryUInt requires an unsigned integral T other than bool.");
+			static_assert(
+				detail::kIsUnsignedIntegral<T>,
+				"ket::parse::TryUInt requires an unsigned integral T except bool and plain "
+				"character types.");
 
 			return detail::TryInteger<T, 10>(text, out);
 		}
@@ -342,13 +379,26 @@ namespace ket
 		bool TryHex(std::string_view text, T& out) noexcept
 		{
 			static_assert(detail::kIsIntegral<T>,
-						  "ket::parse::TryHex requires an integral T other than bool.");
+						  "ket::parse::TryHex requires an integral T except bool and plain "
+						  "character types.");
+
+			const auto text_has_sign = detail::HasLeadingSign(text);
+			if (text_has_sign)
+			{
+				return false;
+			}
 
 			const auto body = detail::StripHexPrefix(text);
+			const auto body_has_sign = detail::HasLeadingSign(body);
+			if (body_has_sign)
+			{
+				return false;
+			}
+
 			return detail::TryInteger<T, 16>(body, out);
 		}
 
-		inline bool TryBool(std::string_view text, bool& out) noexcept
+		constexpr bool TryBool(std::string_view text, bool& out) noexcept
 		{
 			if (text == "true" || text == "1")
 			{
@@ -404,7 +454,7 @@ namespace ket
 			return value;
 		}
 
-		inline std::optional<bool> Bool(std::string_view text) noexcept
+		constexpr std::optional<bool> Bool(std::string_view text) noexcept
 		{
 			bool value = false;
 			const auto parsed = TryBool(text, value);

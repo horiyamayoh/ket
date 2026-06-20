@@ -494,6 +494,8 @@ Failure / edge cases:
 - non-digit
 - overflow / underflow
 - hex prefix
+- leading `+` は10進parseで失敗
+- hex parse は符号文字を許可しない
 - bool は case-sensitive
 
 他のライブラリへの依存:
