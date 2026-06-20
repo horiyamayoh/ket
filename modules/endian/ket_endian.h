@@ -5,8 +5,9 @@
  * @brief byte orderを明示した固定幅整数の読み書きAPI。
  *
  * @details unaligned accessやstrict aliasingに頼らず、byte列と16/32/64bit整数を相互変換する。
- * drop-in時は宣言と実装を同じ単位で持ち出す。plain Load/Storeはpreconditionを満たす短い経路、
- * Try Load/Storeはnullとsize不足を失敗値で扱う経路。
+ * drop-in時は宣言と実装を同じ単位で持ち出す。外部入力、受信buffer、可変長sliceなど
+ * 呼び出し地点で長さ確認が残る境界ではTry Load/Storeを使う。plain Load/Storeは固定長protocolや
+ * 直前の検証で必要byte数を保証済みの内部経路向け。
  *
  * @par プロジェクトへの適用方法
  * `ket_endian.h` と `ket_endian.cpp` を対象プロジェクトへコピー。
@@ -16,7 +17,9 @@
  * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。
  * 推奨理由：endianとunaligned accessの意図を名前に出し、strict aliasing依存を避けられる。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
- * 非推奨理由：C++20 `std::endian` は判定であり、byte列読み書きの直接代替ではない。
+ * 非推奨理由：なし。
+ * 標準代替：C++20 `std::endian` はbyte orderの判定であり、byte列の固定幅整数読み書きや
+ * 失敗値付きTry APIの直接代替ではない。
  *
  * @par 他のライブラリへの依存
  * 標準ライブラリのみ。

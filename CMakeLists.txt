@@ -150,4 +150,5 @@ if(KET_BUILD_TESTS)
 			modules/endian/ket_endian.cpp
 			modules/endian/ket_endian.h
 	)
+	add_dependencies(ket_endian_test ket_endian_cxx11_check)
 endif()

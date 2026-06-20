@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <string> // NOLINT(misc-include-cleaner)
+// IWYU pragma: no_include <string>
 
 #include <gtest/gtest.h>
 
