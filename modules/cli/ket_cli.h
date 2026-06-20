@@ -6,7 +6,8 @@
  *
  * @details 小さい社内CLIで繰り返し書く`--key value`、`--key=value`、flag、positional
  * argument取得を短いAPIへ集約する。ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で
- * 持ち出す。戻り値のstd::string_viewはargvの文字列領域を参照し、所有しない。
+ * 持ち出す。bare `--`はoption終端として扱い、戻り値のstd::string_viewはargvまたはfallbackの
+ * 文字列領域を参照し、所有しない。
  *
  * @par プロジェクトへの適用方法
  * `ket_cli.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
@@ -14,7 +15,8 @@
  * @par C++バージョン要件
  * 最小要件：C++17。
  * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
- * 推奨理由：`std::string_view`で`argv` lifetimeに依存する値を明示しながら扱える。
+ * 推奨理由：`std::string_view`で`argv` lifetimeに依存する値を明示し、
+ * `std::optional`でoption値の不在を小さく扱える。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
  * 非推奨理由：なし。
  *
@@ -44,6 +46,7 @@ namespace ket
 		/**
 		 * @brief argc/argvのnon-owning view。
 		 * @note 各argumentはnull終端C文字列として扱う。`argv[i] == nullptr`は空argument。
+		 * @note `argv` pointer配列と各非null文字列は、viewと戻り値の利用中に有効なまま保持。
 		 */
 		class ArgvView
 		{
@@ -52,9 +55,10 @@ namespace ket
 			 * @brief argc/argv viewの構築。
 			 * @param[in] argc argv要素数。
 			 * @param[in] argv argv配列先頭。`argc > 0 && argv == nullptr`は空view。
-			 * @retval value 構築済みview。
-			 * @pre `argv`が非nullの場合、`argc`個のポインタを読み取り可能。
-			 * @post `argc < 0`または`argv == nullptr`の場合は空view。文字列領域の所有権は取得なし。
+			 * @pre
+			 * `argv`が非nullの場合、`argc`個のポインタを読み取り可能。各非null文字列はnull終端。
+			 * @post `argc < 0`または`argv == nullptr`の場合は空view。
+			 * 文字列領域とpointer配列の所有権は取得なし。
 			 * @code
 			 * const char* argv[] = {"tool", "--help"};
 			 * const auto args = ket::cli::ArgvView(2, argv);
@@ -71,9 +75,8 @@ namespace ket
 			/**
 			 * @brief argv viewのコピー構築。
 			 * @param[in] other コピー元view。
-			 * @retval value コピーされたview。
 			 * @pre なし。コピー元viewは有効なArgvView。
-			 * @post コピー元viewと外部状態の変更なし。文字列領域の所有権は取得なし。
+			 * @post コピー元viewと同じpointer配列を参照。コピー元viewと外部状態の変更なし。
 			 * @code
 			 * const char* argv[] = {"tool"};
 			 * const auto source = ket::cli::ArgvView(1, argv);
@@ -102,9 +105,8 @@ namespace ket
 			/**
 			 * @brief argv viewのmove構築。
 			 * @param[in] other move元view。
-			 * @retval value move構築されたview。
 			 * @pre なし。move元viewは有効なArgvView。
-			 * @post 文字列領域の所有権は取得なし。move元viewは破棄または再代入可能。
+			 * @post move前の`other`と同じpointer配列を参照。文字列領域の所有権は取得なし。
 			 * @code
 			 * const char* argv[] = {"tool"};
 			 * auto source = ket::cli::ArgvView(1, argv);
@@ -153,7 +155,7 @@ namespace ket
 			 * @retval value 指定indexのargument。
 			 * @retval empty 範囲外、空view、または`argv[index] == nullptr`。
 			 * @pre なし。範囲外とnull要素は空argumentとして扱う。
-			 * @post viewと外部状態の変更なし。戻り値はargv文字列領域を参照。
+			 * @post viewと外部状態の変更なし。戻り値は`argv[index]`の文字列領域を参照。
 			 * @code
 			 * const char* argv[] = {"tool", "input.txt"};
 			 * const auto args = ket::cli::ArgvView(2, argv);
@@ -204,10 +206,11 @@ namespace ket
 		/**
 		 * @brief optionの有無確認。
 		 * @param[in] args 検索対象argv view。
-		 * @param[in] name 検索するoption名。`"--"`で始まる名前のみ有効。
+		 * @param[in] name
+		 * 検索するoption名。`"--"`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。
 		 * @retval true `name`または`name=value`に一致するoptionが存在。
-		 * @retval false option不在、または`name`が`"--"`で始まらない。
-		 * @pre なし。program nameは検索対象外。
+		 * @retval false option不在、`name`不正、またはbare `--`より後ろにだけ存在。
+		 * @pre なし。program nameは検索対象外。bare `--`はoption終端。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const char* argv[] = {"tool", "--help"};
@@ -221,12 +224,15 @@ namespace ket
 		/**
 		 * @brief option値の取得。
 		 * @param[in] args 検索対象argv view。
-		 * @param[in] name 検索するoption名。`"--"`で始まる名前のみ有効。
+		 * @param[in] name
+		 * 検索するoption名。`"--"`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。
 		 * @retval value `--key value`または`--key=value`の値。
-		 * @retval std::nullopt option不在、`name`不正、値なし、または次要素が別option。
+		 * @retval std::nullopt option不在、`name`不正、値なし、次要素が別option、またはbare
+		 * `--`より後ろにだけ存在。
 		 * @pre なし。program nameは検索対象外。
 		 * @post 引数と外部状態の変更なし。戻り値はargv文字列領域を参照。
-		 * @note 重複optionは先に現れた値を返す。shell quote展開は扱わない。
+		 * @note 重複optionは先の出現を採用し、先の出現に値がない場合は後続の値を見ない。
+		 * @note inline値とseparate値は空文字列を有効な値として返す。shell quote展開は扱わない。
 		 * @code
 		 * const char* argv[] = {"tool", "--id", "123"};
 		 * const auto args = ket::cli::ArgvView(3, argv);
@@ -240,10 +246,12 @@ namespace ket
 		/**
 		 * @brief option値またはfallbackの取得。
 		 * @param[in] args 検索対象argv view。
-		 * @param[in] name 検索するoption名。`"--"`で始まる名前のみ有効。
-		 * @param[in] fallback option値が取得できない場合に返す値。
+		 * @param[in] name
+		 * 検索するoption名。`"--"`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。
+		 * @param[in] fallback option値が取得できない場合に返す値。戻り値の利用中は参照先を保持。
 		 * @retval value `--key value`または`--key=value`の値。
-		 * @retval fallback option不在、`name`不正、値なし、または次要素が別option。
+		 * @retval fallback option不在、`name`不正、値なし、次要素が別option、またはbare
+		 * `--`より後ろにだけ存在。
 		 * @pre なし。program nameは検索対象外。
 		 * @post 引数と外部状態の変更なし。戻り値はargv文字列領域またはfallbackを参照。
 		 * @code
@@ -257,12 +265,14 @@ namespace ket
 		OptionValueOr(ArgvView args, std::string_view name, std::string_view fallback) noexcept;
 
 		/**
-		 * @brief positional argumentの取得。
+		 * @brief schemaなしのpositional argument取得。
 		 * @param[in] args 取得対象argv view。
-		 * @retval value program nameを除く、`"--"`で始まらないargumentの列。
-		 * @pre なし。option schemaは持たず、`"--"`で始まるかどうかだけで判定。
+		 * @retval value program nameとoption形argumentを除くargumentの列。bare
+		 * `--`以降はすべて保持。
+		 * @pre なし。option schemaは持たず、separate option値はpositional候補として保持。
 		 * @post 引数と外部状態の変更なし。戻り値の各viewはargv文字列領域を参照。
-		 * @note 結果vectorの確保があるためnoexceptなし。
+		 * @note 結果vectorの確保があるためnoexceptなし。`--id 123`の`123`はschemaなしでは値か
+		 * positionalか判別しないため保持。
 		 * @code
 		 * const char* argv[] = {"tool", "input.txt", "--verbose", "output.txt"};
 		 * const auto args = ket::cli::ArgvView(4, argv);
@@ -300,29 +310,75 @@ namespace ket
 			}
 
 			/**
+			 * @brief 文字列内の文字有無判定。
+			 * @param[in] text 判定対象文字列。
+			 * @param[in] value 探す文字。
+			 * @retval true `text`が`value`を含む。
+			 * @retval false `text`が`value`を含まない。
+			 * @pre なし。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr bool Contains(std::string_view text, char value) noexcept
+			{
+				return text.find(value) != std::string_view::npos;
+			}
+
+			/**
+			 * @brief option終端argumentか判定。
+			 * @param[in] argument 判定対象argument。
+			 * @retval true `argument`がbare `--`。
+			 * @retval false `argument`がbare `--`ではない。
+			 * @pre なし。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr bool IsOptionTerminator(std::string_view argument) noexcept
+			{
+				return argument == "--";
+			}
+
+			/**
 			 * @brief option名として扱える文字列か判定。
 			 * @param[in] name 判定対象option名。
-			 * @retval true `name`が`"--"`で始まる。
-			 * @retval false `name`が`"--"`で始まらない。
+			 * @retval true `name`が`"--"`で始まり、名前部分が非空で、`=`を含まない。
+			 * @retval false `name`が不正、またはbare `--`。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
 			 */
 			[[nodiscard]] constexpr bool IsOptionName(std::string_view name) noexcept
 			{
-				return StartsWith(name, "--");
+				const auto has_prefix = StartsWith(name, "--");
+				if (!has_prefix)
+				{
+					return false;
+				}
+
+				const auto has_name_after_prefix = name.size() > 2U;
+				if (!has_name_after_prefix)
+				{
+					return false;
+				}
+
+				const auto has_separator = Contains(name, '=');
+				return !has_separator;
 			}
 
 			/**
 			 * @brief argv要素がoption形か判定。
 			 * @param[in] argument 判定対象argument。
-			 * @retval true `argument`が`"--"`で始まる。
-			 * @retval false `argument`が`"--"`で始まらない。
+			 * @retval true `argument`が`"--"`で始まり、bare `--`ではない。
+			 * @retval false `argument`がoption形ではない、またはbare `--`。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
 			 */
 			[[nodiscard]] constexpr bool IsOptionArgument(std::string_view argument) noexcept
 			{
-				return StartsWith(argument, "--");
+				const auto has_prefix = StartsWith(argument, "--");
+				if (!has_prefix)
+				{
+					return false;
+				}
+
+				return !IsOptionTerminator(argument);
 			}
 
 			/**
@@ -401,6 +457,12 @@ namespace ket
 			for (std::size_t index = 1U; index < size; ++index)
 			{
 				const auto argument = args.AtOrEmpty(index);
+				const auto is_terminator = detail::IsOptionTerminator(argument);
+				if (is_terminator)
+				{
+					break;
+				}
+
 				const auto matches = detail::MatchesOption(argument, name);
 				if (matches)
 				{
@@ -424,6 +486,11 @@ namespace ket
 			for (std::size_t index = 1U; index < size; ++index)
 			{
 				const auto argument = args.AtOrEmpty(index);
+				const auto is_terminator = detail::IsOptionTerminator(argument);
+				if (is_terminator)
+				{
+					break;
+				}
 
 				const auto has_inline_value = detail::IsInlineValueOption(argument, name);
 				if (has_inline_value)
@@ -442,8 +509,8 @@ namespace ket
 					}
 
 					const auto next_argument = args.AtOrEmpty(next_index);
-					const auto next_is_option = detail::IsOptionArgument(next_argument);
-					if (next_is_option)
+					const auto next_has_option_prefix = detail::StartsWith(next_argument, "--");
+					if (next_has_option_prefix)
 					{
 						return std::nullopt;
 					}
@@ -473,11 +540,25 @@ namespace ket
 			std::vector<std::string_view> result;
 
 			const auto size = args.Size();
+			const auto has_arguments = size > 1U;
+			if (has_arguments)
+			{
+				result.reserve(size - 1U);
+			}
+
+			bool after_option_terminator = false;
 			for (std::size_t index = 1U; index < size; ++index)
 			{
 				const auto argument = args.AtOrEmpty(index);
+				const auto is_terminator = detail::IsOptionTerminator(argument);
+				if (!after_option_terminator && is_terminator)
+				{
+					after_option_terminator = true;
+					continue;
+				}
+
 				const auto argument_is_option = detail::IsOptionArgument(argument);
-				if (argument_is_option)
+				if (!after_option_terminator && argument_is_option)
 				{
 					continue;
 				}
