@@ -59,6 +59,10 @@ namespace ket
 		 * @pre なし。任意のbyte列を判定対象として扱う。
 		 * @post 引数と外部状態の変更なし。
 		 * @note 空文字列はASCII限定byte列として扱う。
+		 * @code
+		 * const auto ascii = ket::utf8::IsAscii("abc");
+		 * // ascii == true
+		 * @endcode
 		 */
 		bool IsAscii(std::string_view text) noexcept;
 
@@ -70,6 +74,10 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note truncated sequenceは、そのsequenceの先頭byteを`error_offset`として返す。
 		 * @note overlong、surrogate、範囲外code point、単独continuation byteはinvalid。
+		 * @code
+		 * const auto result = ket::utf8::Validate("\xF0\x9F\x98\x80");
+		 * // result.valid == true, result.error_offset == 0
+		 * @endcode
 		 */
 		ValidationResult Validate(std::string_view text) noexcept;
 
@@ -81,6 +89,10 @@ namespace ket
 		 * @pre なし。任意のbyte列を判定対象として扱う。
 		 * @post 引数と外部状態の変更なし。
 		 * @note `Validate(text).valid`と同義。
+		 * @code
+		 * const auto valid = ket::utf8::IsValid("\xE3\x81\x82");
+		 * // valid == true
+		 * @endcode
 		 */
 		bool IsValid(std::string_view text) noexcept;
 
@@ -92,6 +104,10 @@ namespace ket
 		 * @pre なし。任意のbyte列を入力として扱い、不正UTF-8は失敗値として返す。
 		 * @post 引数と外部状態の変更なし。
 		 * @note grapheme cluster数ではなくUnicode code point数。
+		 * @code
+		 * const auto count = ket::utf8::CountCodePoints("a\xE3\x81\x82");
+		 * // count == std::optional<std::size_t>(2)
+		 * @endcode
 		 */
 		std::optional<std::size_t> CountCodePoints(std::string_view text) noexcept;
 
