@@ -5,8 +5,8 @@
  * @brief alignmentとobject representation読み取りの補助API。
  *
  * @details pointer alignmentの判定、aligned pointer計算、byte zeroing、object representationの
- * 読み取り入口を小さいAPIへ集約する。object lifetime操作やtype punningには踏み込まない。
- * ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。
+ * 読み取り入口を小さいAPIへ集約する。object lifetime操作、type punning、serializationには
+ * 踏み込まない。ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。
  *
  * @par プロジェクトへの適用方法
  * `ket_memory.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
@@ -15,11 +15,12 @@
  * 最小要件：C++11。
  * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。
  * 推奨理由：pointer alignmentとobject representationの意図を小さいAPIへ分離できる。
+ * `std::uintptr_t`を提供し、byte address alignmentを整数下位bitで判定できる処理系を前提とする。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
  * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
- * 標準ライブラリのみ。
+ * 標準ライブラリのみ。pointer alignment APIは`std::uintptr_t`を使用する。
  * 他のket moduleへの依存なし。
  *
  * @par namespace
@@ -29,6 +30,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <limits>
 #include <type_traits>
 
@@ -67,6 +69,7 @@ namespace ket
 		 * @pre `out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。
 		 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
 		 * @note pointer値は`std::uintptr_t`へ変換し、結果を`const void*`へ戻す。
+		 * 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。
 		 * @code
 		 * alignas(8) unsigned char buffer[16] = {};
 		 * const void* out = nullptr;
@@ -75,6 +78,48 @@ namespace ket
 		 * @endcode
 		 */
 		inline bool TryAlignUp(const void* ptr, std::size_t alignment, const void*& out) noexcept;
+
+		/**
+		 * @brief mutable pointerを指定alignment境界へ切り上げる。
+		 * @param[in] ptr 計算対象のmutable pointer。
+		 * @param[in] alignment 要求alignment。power-of-twoだけを有効値として扱う。
+		 * @param[out] out 成功時のaligned mutable pointer。失敗時は変更なし。
+		 * @retval true `ptr`が非nullで、`alignment`がpower-of-twoかつ切り上げ結果を表現可能。
+		 * @retval false `nullptr`、`alignment == 0`、非power-of-two、またはaddress計算overflow。
+		 * @pre `out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。
+		 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
+		 * @note pointer値は`std::uintptr_t`へ変換し、結果を`void*`へ戻す。
+		 * 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。
+		 * @code
+		 * alignas(8) unsigned char buffer[16] = {};
+		 * void* out = nullptr;
+		 * const auto ok = ket::memory::TryAlignUp(buffer + 1U, 8U, out);
+		 * // ok == true, out == buffer + 8
+		 * @endcode
+		 */
+		inline bool TryAlignUp(void* ptr, std::size_t alignment, void*& out) noexcept;
+
+		/**
+		 * @brief object pointerを指定alignment境界へ切り上げ、入力pointer型で返す。
+		 * @tparam T 計算対象pointerのpointee型。object型またはcv修飾voidだけを受け付ける。
+		 * @param[in] ptr 計算対象のtyped pointer。
+		 * @param[in] alignment 要求alignment。power-of-twoだけを有効値として扱う。
+		 * @param[out] out 成功時のaligned typed pointer。失敗時は変更なし。
+		 * @retval true `ptr`が非nullで、`alignment`がpower-of-twoかつ切り上げ結果を表現可能。
+		 * @retval false `nullptr`、`alignment == 0`、非power-of-two、またはaddress計算overflow。
+		 * @pre `out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。
+		 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
+		 * @note pointer値は`std::uintptr_t`へ変換し、結果を`T*`へ戻す。
+		 * 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。
+		 * @code
+		 * alignas(8) unsigned char buffer[16] = {};
+		 * unsigned char* out = nullptr;
+		 * const auto ok = ket::memory::TryAlignUp(buffer + 1U, 8U, out);
+		 * // ok == true, out == buffer + 8
+		 * @endcode
+		 */
+		template <typename T>
+		bool TryAlignUp(T* ptr, std::size_t alignment, T*& out) noexcept;
 
 		/**
 		 * @brief pointerを指定alignment境界へ切り下げる。
@@ -86,6 +131,7 @@ namespace ket
 		 * @pre `out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。
 		 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
 		 * @note pointer値は`std::uintptr_t`へ変換し、結果を`const void*`へ戻す。
+		 * 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。
 		 * @code
 		 * alignas(8) unsigned char buffer[16] = {};
 		 * const void* out = nullptr;
@@ -94,6 +140,48 @@ namespace ket
 		 * @endcode
 		 */
 		inline bool TryAlignDown(const void* ptr, std::size_t alignment, const void*& out) noexcept;
+
+		/**
+		 * @brief mutable pointerを指定alignment境界へ切り下げる。
+		 * @param[in] ptr 計算対象のmutable pointer。
+		 * @param[in] alignment 要求alignment。power-of-twoだけを有効値として扱う。
+		 * @param[out] out 成功時のaligned mutable pointer。失敗時は変更なし。
+		 * @retval true `ptr`が非nullで、`alignment`がpower-of-two。
+		 * @retval false `nullptr`、`alignment == 0`、または非power-of-two。
+		 * @pre `out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。
+		 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
+		 * @note pointer値は`std::uintptr_t`へ変換し、結果を`void*`へ戻す。
+		 * 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。
+		 * @code
+		 * alignas(8) unsigned char buffer[16] = {};
+		 * void* out = nullptr;
+		 * const auto ok = ket::memory::TryAlignDown(buffer + 7U, 8U, out);
+		 * // ok == true, out == buffer
+		 * @endcode
+		 */
+		inline bool TryAlignDown(void* ptr, std::size_t alignment, void*& out) noexcept;
+
+		/**
+		 * @brief object pointerを指定alignment境界へ切り下げ、入力pointer型で返す。
+		 * @tparam T 計算対象pointerのpointee型。object型またはcv修飾voidだけを受け付ける。
+		 * @param[in] ptr 計算対象のtyped pointer。
+		 * @param[in] alignment 要求alignment。power-of-twoだけを有効値として扱う。
+		 * @param[out] out 成功時のaligned typed pointer。失敗時は変更なし。
+		 * @retval true `ptr`が非nullで、`alignment`がpower-of-two。
+		 * @retval false `nullptr`、`alignment == 0`、または非power-of-two。
+		 * @pre `out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。
+		 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
+		 * @note pointer値は`std::uintptr_t`へ変換し、結果を`T*`へ戻す。
+		 * 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。
+		 * @code
+		 * alignas(8) unsigned char buffer[16] = {};
+		 * unsigned char* out = nullptr;
+		 * const auto ok = ket::memory::TryAlignDown(buffer + 7U, 8U, out);
+		 * // ok == true, out == buffer
+		 * @endcode
+		 */
+		template <typename T>
+		bool TryAlignDown(T* ptr, std::size_t alignment, T*& out) noexcept;
 
 		/**
 		 * @brief 指定byte範囲の通常zeroing。
@@ -105,6 +193,7 @@ namespace ket
 		 * @post `ptr != nullptr && size > 0`の場合、対象範囲のbyteを0へ変更。
 		 * `ptr == nullptr && size == 0`はno-op。
 		 * @note `std::memset`による通常のzeroing。最適化除去への対策は`SecureZero`を使用。
+		 * `ptr == nullptr && size > 0`は呼び出し側の契約違反で、`std::terminate`を呼ぶ。
 		 * @code
 		 * unsigned char bytes[4] = {1U, 2U, 3U, 4U};
 		 * ket::memory::Zero(bytes, 4U);
@@ -123,6 +212,7 @@ namespace ket
 		 * @post `ptr != nullptr && size > 0`の場合、対象範囲のbyteを0へ変更。
 		 * `ptr == nullptr && size == 0`はno-op。
 		 * @note `volatile unsigned char*`経由のwriteで最適化除去を防ぐbest-effort。
+		 * `ptr == nullptr && size > 0`は呼び出し側の契約違反で、`std::terminate`を呼ぶ。
 		 * 暗号学的な完全消去保証なし。
 		 * @code
 		 * unsigned char secret[4] = {1U, 2U, 3U, 4U};
@@ -140,6 +230,7 @@ namespace ket
 		 * @pre `T`はtrivially copyable。`object`のlifetime中だけ戻り値を利用可能。
 		 * @post 引数と外部状態の変更なし。object representationを読む入口だけを提供。
 		 * @note object lifetime操作、placement new、type punningは行わない。
+		 * padding、endianness、layoutを含む処理系依存のbyte列であり、serializationや安定比較には使わない。
 		 * @code
 		 * const auto value = std::uint32_t{0x01020304U};
 		 * const auto* bytes = ket::memory::ObjectBytes(value);
@@ -157,6 +248,7 @@ namespace ket
 		 * @pre `T`はtrivially copyable。
 		 * @post 引数と外部状態の変更なし。
 		 * @note 引数は型推論のために受け取り、値の読み取りなし。
+		 * byte列の意味はpadding、endianness、layoutに依存する。
 		 * @code
 		 * const auto value = std::uint32_t{0x01020304U};
 		 * const auto size = ket::memory::ObjectByteSize(value);
@@ -164,7 +256,7 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename T>
-		std::size_t ObjectByteSize(const T& object) noexcept;
+		constexpr std::size_t ObjectByteSize(const T& object) noexcept;
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -242,6 +334,68 @@ namespace ket
 			}
 
 			/**
+			 * @brief pointerのalignment切り上げaddress計算。
+			 * @param[in] ptr 計算対象pointer。
+			 * @param[in] alignment 要求alignment。
+			 * @param[out] out 成功時のaligned address。失敗時は変更なし。
+			 * @retval true 入力がalignment計算可能で、切り上げ結果を表現可能。
+			 * @retval false null pointer、不正alignment、またはaddress計算overflow。
+			 * @pre `out`は有効な参照。
+			 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
+			 * @note detail配下の関数は公開APIではない。
+			 */
+			inline bool
+			TryAlignUpAddress(const void* ptr, std::size_t alignment, std::uintptr_t& out) noexcept
+			{
+				const auto input_can_be_aligned = CanAlignPointer(ptr, alignment);
+				if (!input_can_be_aligned)
+				{
+					return false;
+				}
+
+				const auto address = PointerToAddress(ptr);
+				const auto alignment_value = static_cast<std::uintptr_t>(alignment);
+				const auto mask = alignment_value - std::uintptr_t{1U};
+				const auto max_address = (std::numeric_limits<std::uintptr_t>::max)();
+				const auto address_overflows = address > (max_address - mask);
+				if (address_overflows)
+				{
+					return false;
+				}
+
+				out = (address + mask) & ~mask;
+				return true;
+			}
+
+			/**
+			 * @brief pointerのalignment切り下げaddress計算。
+			 * @param[in] ptr 計算対象pointer。
+			 * @param[in] alignment 要求alignment。
+			 * @param[out] out 成功時のaligned address。失敗時は変更なし。
+			 * @retval true 入力がalignment計算可能。
+			 * @retval false null pointer、または不正alignment。
+			 * @pre `out`は有効な参照。
+			 * @post 成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。
+			 * @note detail配下の関数は公開APIではない。
+			 */
+			inline bool TryAlignDownAddress(const void* ptr,
+											std::size_t alignment,
+											std::uintptr_t& out) noexcept
+			{
+				const auto input_can_be_aligned = CanAlignPointer(ptr, alignment);
+				if (!input_can_be_aligned)
+				{
+					return false;
+				}
+
+				const auto address = PointerToAddress(ptr);
+				const auto alignment_value = static_cast<std::uintptr_t>(alignment);
+				const auto mask = alignment_value - std::uintptr_t{1U};
+				out = address & ~mask;
+				return true;
+			}
+
+			/**
 			 * @brief address整数のpointer変換。
 			 * @param[in] address 変換対象address。
 			 * @retval value `address`の`const void*`表現。
@@ -255,6 +409,48 @@ namespace ket
 			}
 
 			/**
+			 * @brief address整数のmutable pointer変換。
+			 * @param[in] address 変換対象address。
+			 * @retval value `address`の`void*`表現。
+			 * @pre `address`はpointer値から得たaddressと同じaddress空間の値。
+			 * @post 引数と外部状態の変更なし。
+			 * @note detail配下の関数は公開APIではない。
+			 */
+			inline void* AddressToMutablePointer(std::uintptr_t address) noexcept
+			{
+				return reinterpret_cast<void*>(address); // NOLINT(performance-no-int-to-ptr)
+			}
+
+			/**
+			 * @brief address整数のtyped pointer変換。
+			 * @tparam T 変換後pointerのpointee型。
+			 * @param[in] address 変換対象address。
+			 * @retval value `address`の`T*`表現。
+			 * @pre `address`はpointer値から得たaddressと同じaddress空間の値。
+			 * @post 引数と外部状態の変更なし。
+			 * @note detail配下の関数は公開APIではない。
+			 */
+			template <typename T>
+			T* AddressToTypedPointer(std::uintptr_t address) noexcept
+			{
+				return reinterpret_cast<T*>(address); // NOLINT(performance-no-int-to-ptr)
+			}
+
+			/**
+			 * @brief typed pointer alignment対象型の判定。
+			 * @tparam T 判定対象pointee型。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <typename T>
+			struct IsPointerAlignableTarget
+			{
+				using Unqualified =
+					typename std::remove_cv<T>::type; // NOLINT(modernize-type-traits)
+				static const bool kValue =
+					std::is_object<Unqualified>() || std::is_void<Unqualified>();
+			};
+
+			/**
 			 * @brief object representation読み取り対象型の判定。
 			 * @tparam T 判定対象型。
 			 * @note detail配下の型は公開APIではない。
@@ -262,7 +458,7 @@ namespace ket
 			template <typename T>
 			struct IsObjectByteReadable
 			{
-				static const bool kValue = std::is_trivially_copyable<T>{};
+				static const bool kValue = std::is_trivially_copyable<T>();
 			};
 
 		} // namespace detail
@@ -288,42 +484,98 @@ namespace ket
 
 		inline bool TryAlignUp(const void* ptr, std::size_t alignment, const void*& out) noexcept
 		{
-			const auto input_can_be_aligned = detail::CanAlignPointer(ptr, alignment);
-			if (!input_can_be_aligned)
+			std::uintptr_t aligned_address = 0U;
+			const auto address_aligned = detail::TryAlignUpAddress(ptr, alignment, aligned_address);
+			if (!address_aligned)
 			{
 				return false;
 			}
 
-			const auto address = detail::PointerToAddress(ptr);
-			const auto alignment_value = static_cast<std::uintptr_t>(alignment);
-			const auto mask = alignment_value - std::uintptr_t{1U};
-			const auto max_address = (std::numeric_limits<std::uintptr_t>::max)();
-			const auto address_overflows = address > (max_address - mask);
-			if (address_overflows)
-			{
-				return false;
-			}
-
-			const auto aligned_address = (address + mask) & ~mask;
 			out = detail::AddressToPointer(aligned_address);
 			return true;
 		}
+
+		// cppcheck-suppress constParameterPointer
+		inline bool TryAlignUp(void* ptr, std::size_t alignment, void*& out) noexcept
+		{
+			std::uintptr_t aligned_address = 0U;
+			const auto address_aligned = detail::TryAlignUpAddress(ptr, alignment, aligned_address);
+			if (!address_aligned)
+			{
+				return false;
+			}
+
+			out = detail::AddressToMutablePointer(aligned_address);
+			return true;
+		}
+
+		// cppcheck-suppress-begin constParameterPointer
+		template <typename T>
+		bool TryAlignUp(T* ptr, std::size_t alignment, T*& out) noexcept
+		{
+			static_assert(detail::IsPointerAlignableTarget<T>::kValue,
+						  "ket::memory::TryAlignUp requires object pointer or void pointer.");
+
+			std::uintptr_t aligned_address = 0U;
+			const auto address_aligned = detail::TryAlignUpAddress(ptr, alignment, aligned_address);
+			if (!address_aligned)
+			{
+				return false;
+			}
+
+			out = detail::AddressToTypedPointer<T>(aligned_address);
+			return true;
+		}
+		// cppcheck-suppress-end constParameterPointer
 
 		inline bool TryAlignDown(const void* ptr, std::size_t alignment, const void*& out) noexcept
 		{
-			const auto input_can_be_aligned = detail::CanAlignPointer(ptr, alignment);
-			if (!input_can_be_aligned)
+			std::uintptr_t aligned_address = 0U;
+			const auto address_aligned =
+				detail::TryAlignDownAddress(ptr, alignment, aligned_address);
+			if (!address_aligned)
 			{
 				return false;
 			}
 
-			const auto address = detail::PointerToAddress(ptr);
-			const auto alignment_value = static_cast<std::uintptr_t>(alignment);
-			const auto mask = alignment_value - std::uintptr_t{1U};
-			const auto aligned_address = address & ~mask;
 			out = detail::AddressToPointer(aligned_address);
 			return true;
 		}
+
+		// cppcheck-suppress constParameterPointer
+		inline bool TryAlignDown(void* ptr, std::size_t alignment, void*& out) noexcept
+		{
+			std::uintptr_t aligned_address = 0U;
+			const auto address_aligned =
+				detail::TryAlignDownAddress(ptr, alignment, aligned_address);
+			if (!address_aligned)
+			{
+				return false;
+			}
+
+			out = detail::AddressToMutablePointer(aligned_address);
+			return true;
+		}
+
+		// cppcheck-suppress-begin constParameterPointer
+		template <typename T>
+		bool TryAlignDown(T* ptr, std::size_t alignment, T*& out) noexcept
+		{
+			static_assert(detail::IsPointerAlignableTarget<T>::kValue,
+						  "ket::memory::TryAlignDown requires object pointer or void pointer.");
+
+			std::uintptr_t aligned_address = 0U;
+			const auto address_aligned =
+				detail::TryAlignDownAddress(ptr, alignment, aligned_address);
+			if (!address_aligned)
+			{
+				return false;
+			}
+
+			out = detail::AddressToTypedPointer<T>(aligned_address);
+			return true;
+		}
+		// cppcheck-suppress-end constParameterPointer
 
 		inline void Zero(void* ptr, std::size_t size) noexcept
 		{
@@ -336,6 +588,7 @@ namespace ket
 			const auto ptr_is_null = ptr == nullptr;
 			if (ptr_is_null)
 			{
+				std::terminate();
 				return;
 			}
 
@@ -353,6 +606,7 @@ namespace ket
 			const auto ptr_is_null = ptr == nullptr;
 			if (ptr_is_null)
 			{
+				std::terminate();
 				return;
 			}
 
@@ -373,13 +627,12 @@ namespace ket
 		}
 
 		template <typename T>
-		std::size_t ObjectByteSize(const T& object) noexcept
+		constexpr std::size_t ObjectByteSize(const T& object) noexcept
 		{
 			static_assert(detail::IsObjectByteReadable<T>::kValue,
 						  "ket::memory::ObjectByteSize requires trivially copyable T.");
 
-			static_cast<void>(object);
-			return sizeof(T);
+			return sizeof(object);
 		}
 
 	} // namespace memory

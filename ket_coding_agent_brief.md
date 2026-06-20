@@ -947,6 +947,8 @@ ket::memory::ObjectByteSize(obj)
 
 - C++20の `std::construct_at` と重なる
 - object representation と object lifetime は危険領域なので、API名とコメントで用途を限定する
+- pointer alignment の戻り値は address-level の結果で、object bounds や dereference 可能性は保証しない
+- `ObjectBytes` は padding/endian/layout を含むため、serialization や安定比較には使わない
 
 ---
 
