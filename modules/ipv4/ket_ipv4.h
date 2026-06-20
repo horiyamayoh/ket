@@ -16,7 +16,7 @@
  * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
  * 推奨理由：`std::string_view`と`std::optional`でdotted decimalの失敗条件を明確に扱える。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
- * 非推奨理由：標準ライブラリにIPv4 dotted decimal parse/formatの直接APIなし。
+ * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
  * 標準ライブラリのみ。
@@ -24,7 +24,7 @@
  *
  * @par namespace
  * 公開API：ket::ipv4
- * 内部実装：ket::ipv4::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstdint>
@@ -43,6 +43,7 @@ namespace ket
 		/**
 		 * @brief IPv4 addressの4 octet値。
 		 * @note `octets[0]`がdotted decimalの先頭要素、またはBE 32bit表現の最上位octet。
+		 * 既定値は`0.0.0.0`。
 		 */
 		struct Address
 		{
@@ -82,42 +83,56 @@ namespace ket
 		/**
 		 * @brief IPv4 addressのBE 32bit整数変換。
 		 * @param[in] value 変換対象のIPv4 address。
-		 * @retval value network byte orderの32bit整数表現。
+		 * @retval value `octets[0]`を上位8bitへ置く32bit整数表現。
 		 * @pre なし。`octets[0]`を最上位octetとして扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @note host/network byte order変換ではなく、IPv4 addressをbig-endian順の数値へ詰める処理。
 		 * @code
 		 * const ket::ipv4::Address address = {{192, 168, 0, 1}};
 		 * const auto value = ket::ipv4::ToBe32(address);
 		 * // value == 0xC0A80001
 		 * @endcode
 		 */
-		std::uint32_t ToBe32(Address value) noexcept;
+		constexpr std::uint32_t ToBe32(Address value) noexcept;
 
 		/**
 		 * @brief BE 32bit整数のIPv4 address変換。
-		 * @param[in] value network byte orderの32bit整数表現。
+		 * @param[in] value `octets[0]`を上位8bitに置いた32bit整数表現。
 		 * @retval value 変換後のIPv4 address。
 		 * @pre なし。最上位byteを`octets[0]`へ展開する。
 		 * @post 引数と外部状態の変更なし。
+		 * @note host/network byte order変換ではなく、big-endian順の32bit数値表現から4
+		 * octetへ展開する処理。
 		 * @code
 		 * const auto address = ket::ipv4::FromBe32(0xC0A80001U);
 		 * // address.octets == {192, 168, 0, 1}
 		 * @endcode
 		 */
-		Address FromBe32(std::uint32_t value) noexcept;
+		constexpr Address FromBe32(std::uint32_t value) noexcept;
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
 		// -----------------------------------------------------------------------------
 
-		namespace detail
-		{
-
-		} // namespace detail
-
 		// -----------------------------------------------------------------------------
 		// Public API definitions
 		// -----------------------------------------------------------------------------
+
+		constexpr std::uint32_t ToBe32(Address value) noexcept
+		{
+			return (static_cast<std::uint32_t>(value.octets[0]) << 24U) |
+				(static_cast<std::uint32_t>(value.octets[1]) << 16U) |
+				(static_cast<std::uint32_t>(value.octets[2]) << 8U) |
+				static_cast<std::uint32_t>(value.octets[3]);
+		}
+
+		constexpr Address FromBe32(std::uint32_t value) noexcept
+		{
+			return Address{{static_cast<std::uint8_t>((value >> 24U) & 0xFFU),
+							static_cast<std::uint8_t>((value >> 16U) & 0xFFU),
+							static_cast<std::uint8_t>((value >> 8U) & 0xFFU),
+							static_cast<std::uint8_t>(value & 0xFFU)}};
+		}
 
 	} // namespace ipv4
 

@@ -140,25 +140,6 @@ namespace ket
 			return result;
 		}
 
-		std::uint32_t ToBe32(Address value) noexcept
-		{
-			return (static_cast<std::uint32_t>(value.octets[0]) << 24U) |
-				(static_cast<std::uint32_t>(value.octets[1]) << 16U) |
-				(static_cast<std::uint32_t>(value.octets[2]) << 8U) |
-				static_cast<std::uint32_t>(value.octets[3]);
-		}
-
-		Address FromBe32(std::uint32_t value) noexcept
-		{
-			Address result;
-			result.octets[0] = static_cast<std::uint8_t>((value >> 24U) & 0xFFU);
-			result.octets[1] = static_cast<std::uint8_t>((value >> 16U) & 0xFFU);
-			result.octets[2] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
-			result.octets[3] = static_cast<std::uint8_t>(value & 0xFFU);
-
-			return result;
-		}
-
 	} // namespace ipv4
 
 } // namespace ket
