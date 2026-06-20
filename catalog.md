@@ -1333,6 +1333,8 @@ Failure / edge cases:
 - predicate exception
 - out 不変
 - const / non-const element reference
+- ADL begin/end
+- callable / predicate をAPI内でcopyしない
 
 他のライブラリへの依存:
 
@@ -1347,6 +1349,7 @@ Tests:
 - first match
 - not found out unchanged
 - predicate exception propagation
+- C++11 compile-only
 
 ## Idea: Memory
 

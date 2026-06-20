@@ -41,14 +41,16 @@ namespace ket
 
 		/**
 		 * @brief range要素へのindex付き順次処理。
-		 * @param[in] range `std::begin`と`std::end`で走査するrange object。
-		 * @param[in] f 各要素へ適用するcallable。`f(index, element)`の形で呼び出す。
+		 * @param[in] range `begin`と`end`で走査するrange object。ADLによるfree functionも対象。
+		 * @param[in,out] f 各要素へ適用するcallable。`f(index,
+		 * element)`の形で同じobjectを呼び出す。
 		 * @retval void 戻り値なし。
 		 * @pre `range`は走査中に有効なbegin/endを提供する。走査中にiteratorを無効化する変更は
-		 * 呼び出し側の責任。
+		 * 呼び出し側の責任。走査する要素数は`std::size_t`で表現可能。
 		 * @post `f`の副作用を除き、module側では`range`と外部状態を変更しない。
 		 * @note indexは0から始まり、要素順に1ずつ増加。
-		 * @note `element`は`*it`の参照性とconst性を保持。`f`の例外は捕捉せず伝播。
+		 * @note
+		 * `element`は`*it`の参照性とconst性を保持。`f`の例外は捕捉せず伝播。`f`はAPI内でcopyしない。
 		 * @code
 		 * std::vector<int> values = {10, 20};
 		 * ket::ranges::ForEachWithIndex(values, [](std::size_t index, int& value) {
@@ -58,19 +60,21 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename Range, typename F>
-		void ForEachWithIndex(Range&& range, F f);
+		void ForEachWithIndex(Range&& range, F&& f);
 
 		/**
 		 * @brief 条件を満たす最初の要素index取得。
-		 * @param[in] range `std::begin`と`std::end`で走査するrange object。
-		 * @param[in] predicate 各要素へ適用する述語。`predicate(element)`の形で呼び出す。
+		 * @param[in] range `begin`と`end`で走査するrange object。ADLによるfree functionも対象。
+		 * @param[in,out] predicate
+		 * 各要素へ適用する述語。`predicate(element)`の形で同じobjectを呼び出す。
 		 * @param[out] out 最初に条件を満たした要素の0始まりindex。
 		 * @retval true 条件を満たす要素が見つかり、`out`へindexを書き込み。
 		 * @retval false 条件を満たす要素なし。`out`は入力時の値を保持。
 		 * @pre `range`は走査中に有効なbegin/endを提供する。走査中にiteratorを無効化する変更は
-		 * 呼び出し側の責任。
-		 * @post 成功時のみ`out`を変更。not found時と例外伝播時は`out`を変更しない。
-		 * @note 最初の一致で短絡。`predicate`の例外は捕捉せず伝播。
+		 * 呼び出し側の責任。走査する要素数は`std::size_t`で表現可能。
+		 * @post `predicate`の副作用を除き、module側は成功時のみ`out`を変更。not
+		 * found時と例外伝播時は`out`を変更しない。
+		 * @note 最初の一致で短絡。`predicate`の例外は捕捉せず伝播。`predicate`はAPI内でcopyしない。
 		 * @code
 		 * const std::vector<int> values = {10, 20, 30};
 		 * std::size_t index = 0U;
@@ -81,7 +85,7 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename Range, typename Predicate>
-		bool FindIndexIf(Range&& range, Predicate predicate, std::size_t& out);
+		bool FindIndexIf(Range&& range, Predicate&& predicate, std::size_t& out);
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -89,32 +93,37 @@ namespace ket
 
 		namespace detail
 		{
+			using std::begin;
+			using std::end;
+
 			/**
 			 * @brief range先頭iterator取得。
-			 * @param[in] range `std::begin`で先頭を取得するrange object。
+			 * @param[in] range `begin`で先頭を取得するrange object。
 			 * @retval iterator `range`の先頭iterator。
-			 * @pre `std::begin(range)`が有効。
+			 * @pre `begin(range)`が有効。
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
 			template <typename Range>
-			auto Begin(Range& range) -> decltype(std::begin(range))
+			auto Begin(Range& range) -> decltype(begin(range))
 			{
-				return std::begin(range);
+				using std::begin;
+				return begin(range);
 			}
 
 			/**
 			 * @brief range終端iterator取得。
-			 * @param[in] range `std::end`で終端を取得するrange object。
+			 * @param[in] range `end`で終端を取得するrange object。
 			 * @retval iterator `range`の終端iterator。
-			 * @pre `std::end(range)`が有効。
+			 * @pre `end(range)`が有効。
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
 			template <typename Range>
-			auto End(Range& range) -> decltype(std::end(range))
+			auto End(Range& range) -> decltype(end(range))
 			{
-				return std::end(range);
+				using std::end;
+				return end(range);
 			}
 
 		} // namespace detail
@@ -124,7 +133,7 @@ namespace ket
 		// -----------------------------------------------------------------------------
 
 		template <typename Range, typename F>
-		void ForEachWithIndex(Range&& range, F f)
+		void ForEachWithIndex(Range&& range, F&& f)
 		{
 			std::size_t index = 0U;
 			auto it = detail::Begin(range);
@@ -138,7 +147,7 @@ namespace ket
 		}
 
 		template <typename Range, typename Predicate>
-		bool FindIndexIf(Range&& range, Predicate predicate, std::size_t& out)
+		bool FindIndexIf(Range&& range, Predicate&& predicate, std::size_t& out)
 		{
 			std::size_t index = 0U;
 			auto it = detail::Begin(range);
@@ -146,7 +155,7 @@ namespace ket
 
 			for (; it != end; ++it)
 			{
-				const auto matches = predicate(*it);
+				const bool matches = static_cast<bool>(predicate(*it));
 				if (matches)
 				{
 					out = index;

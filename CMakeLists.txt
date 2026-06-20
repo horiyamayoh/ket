@@ -136,34 +136,11 @@ if(KET_BUILD_TESTS)
 			modules/string/ket_string_test.cpp
 	)
 
-	set(ket_ranges_cxx11_check_source "${CMAKE_CURRENT_BINARY_DIR}/ket_ranges_cxx11_check.cpp")
-	file(
-		WRITE
-		"${ket_ranges_cxx11_check_source}"
-		"#include \"${CMAKE_CURRENT_SOURCE_DIR}/modules/ranges/ket_ranges.h\"\n"
-		"\n"
-		"#include <cstddef>\n"
-		"#include <vector>\n"
-		"\n"
-		"void KetRangesCxx11Check()\n"
-		"{\n"
-		"\tstd::vector<int> values = {1, 2};\n"
-		"\tket::ranges::ForEachWithIndex(values, [](std::size_t index, int& value) {\n"
-		"\t\tvalue += static_cast<int>(index);\n"
-		"\t});\n"
-		"\tstd::size_t found_index = 0U;\n"
-		"\tconst auto found = ket::ranges::FindIndexIf(values, [](int value) {\n"
-		"\t\treturn value == 3;\n"
-		"\t}, found_index);\n"
-		"\tstatic_cast<void>(found);\n"
-		"}\n"
-	)
-
 	ket_add_compile_check(
 		ket_ranges_cxx11_check
 		CXX_STANDARD 11
 		SOURCES
-			"${ket_ranges_cxx11_check_source}"
+			modules/ranges/ket_ranges_cxx11_check.cpp
 	)
 
 	ket_add_module_test(
