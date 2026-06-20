@@ -1,5 +1,7 @@
 #include "ket_scope.h"
 
+#include <cstdlib>
+#include <exception>
 #include <stdexcept>
 #include <string> // NOLINT(misc-include-cleaner)
 #include <utility>
@@ -8,6 +10,13 @@
 
 namespace
 {
+	constexpr int kTerminateExitCode = 86;
+
+	void ExitFromTerminate() noexcept
+	{
+		std::_Exit(kTerminateExitCode);
+	}
+
 	int ReturnAfterScopeExit(int& count)
 	{
 		const auto guard = ket::scope::MakeExit(
@@ -125,8 +134,12 @@ TEST(KetScopeTest, MoveTransfersExitResponsibility)
 				++count;
 			});
 		auto destination = std::move(source);
+		// cppcheck-suppress accessMoved
+		// NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
+		const auto source_is_active = source.Active();
 		const auto destination_is_active = destination.Active();
 
+		EXPECT_FALSE(source_is_active);
 		EXPECT_TRUE(destination_is_active);
 	}
 
@@ -189,8 +202,9 @@ TEST(KetScopeTest, RunsExitCallbackDuringEarlyReturn)
  */
 TEST(KetScopeTest, TerminatesWhenExitCallbackThrows)
 {
-	EXPECT_DEATH(
+	EXPECT_EXIT(
 		{
+			std::set_terminate(ExitFromTerminate);
 			const auto guard = ket::scope::MakeExit(
 				[]
 				{
@@ -198,6 +212,7 @@ TEST(KetScopeTest, TerminatesWhenExitCallbackThrows)
 				});
 			static_cast<void>(guard);
 		},
+		::testing::ExitedWithCode(kTerminateExitCode),
 		"");
 }
 
@@ -236,6 +251,9 @@ TEST(KetScopeTest, DismissPreventsRestore)
 		auto restore = ket::scope::MakeRestore(value);
 		value = 9;
 		restore.Dismiss();
+		const auto restore_is_active = restore.Active();
+
+		EXPECT_FALSE(restore_is_active);
 	}
 
 	EXPECT_EQ(value, 9);
@@ -258,8 +276,14 @@ TEST(KetScopeTest, MoveTransfersRestoreResponsibility)
 		value = 9;
 		EXPECT_EQ(value, 9);
 		auto destination = std::move(source);
-		static_cast<void>(destination);
+		// cppcheck-suppress accessMoved
+		// NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
+		const auto source_is_active = source.Active();
+		const auto destination_is_active = destination.Active();
 		value = 12;
+
+		EXPECT_FALSE(source_is_active);
+		EXPECT_TRUE(destination_is_active);
 	}
 
 	EXPECT_EQ(value, 3);
@@ -292,11 +316,13 @@ TEST(KetScopeTest, RestoresValueDuringEarlyReturn)
  */
 TEST(KetScopeTest, TerminatesWhenRestoreAssignmentThrows)
 {
-	EXPECT_DEATH(
+	EXPECT_EXIT(
 		{
+			std::set_terminate(ExitFromTerminate);
 			ThrowingAssignment value(1);
 			const auto restore = ket::scope::MakeRestore(value);
 			static_cast<void>(restore);
 		},
+		::testing::ExitedWithCode(kTerminateExitCode),
 		"");
 }

@@ -29,10 +29,13 @@
 #include <exception>
 #include <utility>
 
+#ifndef KET_SCOPE_NODISCARD
 #if __cplusplus >= 201703L
 #define KET_SCOPE_NODISCARD [[nodiscard]]
 #else
 #define KET_SCOPE_NODISCARD
+#endif
+#define KET_SCOPE_NODISCARD_DEFINED_BY_KET_SCOPE 1
 #endif
 
 namespace ket
@@ -56,6 +59,8 @@ namespace ket
 		 * @param[in] f scope exit 時に呼び出す callback。
 		 * @retval value active 状態の `Exit<F>`。
 		 * @pre `f` は引数なしで呼び出し可能。callback 例外は destructor 内で `std::terminate`。
+		 * `F` は nothrow move constructible。callback の参照先は active guard
+		 * の破棄まで生存するか、 その前に `Dismiss()` されている必要がある。
 		 * @post `f` から move 構築した guard を返す。外部状態の変更は callback 実行時までなし。
 		 * @code
 		 * bool cleaned = false;
@@ -64,7 +69,7 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename F>
-		Exit<F> MakeExit(F f);
+		KET_SCOPE_NODISCARD Exit<F> MakeExit(F f) noexcept;
 
 		/**
 		 * @brief scope exit 時に対象値を構築時の値へ復元する guard。
@@ -79,7 +84,9 @@ namespace ket
 		 * @param[in,out] target scope exit 時に構築時の値へ戻す対象。
 		 * @retval value active 状態の `Restore<T>`。
 		 * @pre `target` は guard より長く生存し、`T` は構築時の値保存と復元代入が可能。
+		 * `T` の copy 構築例外はこの関数から伝播。
 		 * @post `target` の現在値を保存した guard を返す。`target` の値は構築時点では変更なし。
+		 * 例外送出時は guard を返さない。
 		 * @code
 		 * int mode = 1;
 		 * auto restore = ket::scope::MakeRestore(mode);
@@ -88,7 +95,8 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename T>
-		Restore<T> MakeRestore(T& target);
+		KET_SCOPE_NODISCARD Restore<T>
+		MakeRestore(T& target) noexcept(noexcept(T(std::declval<const T&>())));
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -118,6 +126,17 @@ namespace ket
 			}
 
 			/**
+			 * @brief Exit move constructor の noexcept 条件。
+			 * @tparam F callback 型。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <typename F>
+			struct ExitMoveNoexcept
+			{
+				static const bool value = noexcept(F(std::declval<F&&>()));
+			};
+
+			/**
 			 * @brief 保存値による復元代入。
 			 * @tparam T 復元対象の型。
 			 * @param[in,out] target 復元先。
@@ -141,12 +160,12 @@ namespace ket
 			}
 
 			/**
-			 * @brief Restore move constructor の noexcept 条件。
+			 * @brief Restore の保存値 copy に対する noexcept 条件。
 			 * @tparam T 復元対象の型。
 			 * @note detail配下の型は公開APIではない。
 			 */
 			template <typename T>
-			struct RestoreMoveNoexcept
+			struct RestoreValueCopyNoexcept
 			{
 				static const bool value = noexcept(T(std::declval<const T&>()));
 			};
@@ -168,8 +187,9 @@ namespace ket
 			/**
 			 * @brief callback を保持して active guard を構築。
 			 * @param[in] f scope exit 時に呼び出す callback。
-			 * @retval void 戻り値なし。
 			 * @pre `f` は引数なしで呼び出し可能。callback 例外は destructor 内で `std::terminate`。
+			 * `F` は nothrow move constructible。callback の参照先は active guard の破棄まで
+			 * 生存するか、その前に `Dismiss()` されている必要がある。
 			 * @post guard は active。callback は value として保持。
 			 * @code
 			 * bool cleaned = false;
@@ -178,13 +198,16 @@ namespace ket
 			 * // guard.Active() == true
 			 * @endcode
 			 */
-			explicit Exit(F f) : callback_(std::move(f)) {}
+			explicit Exit(F f) noexcept : callback_(std::move(f))
+			{
+				static_assert(detail::ExitMoveNoexcept<F>::value,
+							  "ket::scope::Exit callback must be nothrow move constructible.");
+			}
 
 			/**
 			 * @brief guard の所有権を move。
 			 * @param[in,out] other move 元 guard。
-			 * @retval void 戻り値なし。
-			 * @pre `F` は move 構築可能。`F` の move 例外は `noexcept` により `std::terminate`。
+			 * @pre `F` は nothrow move constructible。
 			 * @post move 先は move 前の `other` と同じ active 状態。`other` は inactive。
 			 * @code
 			 * auto guard = ket::scope::MakeExit([] {});
@@ -192,17 +215,17 @@ namespace ket
 			 * // moved.Active() == true, guard.Active() == false
 			 * @endcode
 			 */
-			// clang-format off
-			Exit(Exit&& other) noexcept : callback_(std::move(other.callback_)), active_(other.active_)
-			// clang-format on
+			Exit(Exit&& other) noexcept
+				: callback_(std::move(other.callback_)), active_(other.active_)
 			{
+				static_assert(detail::ExitMoveNoexcept<F>::value,
+							  "ket::scope::Exit callback must be nothrow move constructible.");
 				other.active_ = false;
 			}
 
 			/**
 			 * @brief copy 構築禁止。
 			 * @param[in] other copy 元 guard。
-			 * @retval void 戻り値なし。
 			 * @pre copy は許可しない。
 			 * @post この関数は利用不可。
 			 * @code
@@ -244,7 +267,6 @@ namespace ket
 
 			/**
 			 * @brief active guard 破棄時の callback 実行。
-			 * @retval void 戻り値なし。
 			 * @pre active 状態では callback が引数なしで呼び出し可能。
 			 * @post active なら callback を1回実行。inactive なら callback 実行なし。
 			 * @code
@@ -306,7 +328,7 @@ namespace ket
 		};
 
 		template <typename F>
-		Exit<F> MakeExit(F f)
+		KET_SCOPE_NODISCARD Exit<F> MakeExit(F f) noexcept
 		{
 			return Exit<F>(std::move(f));
 		}
@@ -322,9 +344,10 @@ namespace ket
 			/**
 			 * @brief 対象値の現在値を保存して active guard を構築。
 			 * @param[in,out] target scope exit 時に構築時の値へ戻す対象。
-			 * @retval void 戻り値なし。
 			 * @pre `target` は guard より長く生存し、`T` は構築時の値保存と復元代入が可能。
-			 * @post `target` の値は変更せず、guard 内に構築時の値を保存。
+			 * `T` の copy 構築例外はこの constructor から伝播。
+			 * @post `target` の値は変更せず、guard 内に構築時の値を保存。例外送出時は guard
+			 * を構築しない。
 			 * @code
 			 * int value = 1;
 			 * ket::scope::Restore<int> restore(value);
@@ -332,16 +355,18 @@ namespace ket
 			 * // restore破棄時にvalue == 1
 			 * @endcode
 			 */
-			explicit Restore(T& target) : target_(target), value_(target) {}
+			explicit Restore(T& target) noexcept(detail::RestoreValueCopyNoexcept<T>::value)
+				: target_(target), value_(target)
+			{
+			}
 
 			/**
 			 * @brief 復元責務を move。
 			 * @param[in,out] other move 元 guard。
-			 * @retval void 戻り値なし。
 			 * @pre `T` は copy 構築可能。C++11で`MakeRestore`の戻り値を実用にするための移送。
-			 * @post move 先は move 前の `other` と同じ active 状態。`other` は inactive。
-			 * @note
-			 * 仕様カードに列挙のない補正。C++11で非copyable/nonmovable戻り値を返せないため追加。
+			 * @post move 先は move 前の `other` と同じ active 状態。`other` は
+			 * inactive。例外送出時の `other` は active のまま。
+			 * @note C++11で`MakeRestore`の戻り値を実用にするための責務移送。
 			 * @code
 			 * int value = 1;
 			 * auto restore = ket::scope::MakeRestore(value);
@@ -350,9 +375,8 @@ namespace ket
 			 * // moved破棄時にvalue == 1
 			 * @endcode
 			 */
-			// clang-format off
-			Restore(Restore&& other) noexcept(detail::RestoreMoveNoexcept<T>::value) : target_(other.target_), value_(other.value_), active_(other.active_)
-			// clang-format on
+			Restore(Restore&& other) noexcept(detail::RestoreValueCopyNoexcept<T>::value)
+				: target_(other.target_), value_(other.value_), active_(other.active_)
 			{
 				other.active_ = false;
 			}
@@ -360,7 +384,6 @@ namespace ket
 			/**
 			 * @brief copy 構築禁止。
 			 * @param[in] other copy 元 guard。
-			 * @retval void 戻り値なし。
 			 * @pre copy は許可しない。
 			 * @post この関数は利用不可。
 			 * @code
@@ -387,8 +410,22 @@ namespace ket
 			Restore& operator=(const Restore& other) = delete;
 
 			/**
+			 * @brief move 代入禁止。
+			 * @param[in] other move 元 guard。
+			 * @retval value 代入結果は提供しない。
+			 * @pre move 代入は許可しない。
+			 * @post この関数は利用不可。
+			 * @code
+			 * int value = 1;
+			 * auto restore = ket::scope::MakeRestore(value);
+			 * auto other = ket::scope::MakeRestore(value);
+			 * // restore = std::move(other);  // compile error
+			 * @endcode
+			 */
+			Restore& operator=(Restore&& other) = delete;
+
+			/**
 			 * @brief active guard 破棄時の値復元。
-			 * @retval void 戻り値なし。
 			 * @pre active 状態では保存値の復元代入が有効。
 			 * @post active なら対象値を構築時の値へ復元。inactive なら対象値を変更しない。
 			 * @code
@@ -429,6 +466,27 @@ namespace ket
 				active_ = false;
 			}
 
+			// NOLINTBEGIN(readability-redundant-inline-specifier)
+			/**
+			 * @brief 値復元予定の有無を取得。
+			 * @retval true destructor で対象値を構築時の値へ戻す状態。
+			 * @retval false dismiss 済み、または move 後の inactive 状態。
+			 * @pre guard は有効な object。
+			 * @post guard と対象値の変更なし。
+			 * @code
+			 * int value = 1;
+			 * auto restore = ket::scope::MakeRestore(value);
+			 * const auto active = restore.Active();
+			 * // active == true
+			 * @endcode
+			 */
+			KET_SCOPE_NODISCARD inline bool
+			Active() const noexcept // NOLINT(readability-redundant-inline-specifier)
+			{
+				return active_;
+			}
+			// NOLINTEND(readability-redundant-inline-specifier)
+
 		  private:
 			T& target_;
 			T value_;
@@ -436,7 +494,8 @@ namespace ket
 		};
 
 		template <typename T>
-		Restore<T> MakeRestore(T& target)
+		KET_SCOPE_NODISCARD Restore<T>
+		MakeRestore(T& target) noexcept(noexcept(T(std::declval<const T&>())))
 		{
 			return Restore<T>(target);
 		}
@@ -445,4 +504,7 @@ namespace ket
 
 } // namespace ket
 
+#ifdef KET_SCOPE_NODISCARD_DEFINED_BY_KET_SCOPE
 #undef KET_SCOPE_NODISCARD
+#undef KET_SCOPE_NODISCARD_DEFINED_BY_KET_SCOPE
+#endif
