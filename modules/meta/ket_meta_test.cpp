@@ -40,6 +40,10 @@ namespace
 				  "rvalue reference is normalized");
 	static_assert(TraitValue<std::is_same<ket::meta::RemoveCvref<const int* const&>, const int*>>(),
 				  "top-level cv is removed without changing pointee cv");
+	static_assert(TraitValue<std::is_same<ket::meta::RemoveCvref<const int (&)[3]>, int[3]>>(),
+				  "array references are not decayed to pointers");
+	static_assert(TraitValue<std::is_same<ket::meta::RemoveCvref<int (&)(double)>, int(double)>>(),
+				  "function references are not decayed to function pointers");
 
 	static_assert(TraitValue<std::is_same<ket::meta::TypeIdentity<const int&>::type, const int&>>(),
 				  "TypeIdentity preserves references and cv-qualification");
@@ -74,11 +78,17 @@ TEST(KetMetaTest, RemovesCvAndReferences)
 		TraitValue<std::is_same<ket::meta::RemoveCvref<int&&>, int>>();
 	const auto pointer_pointee_cv_is_preserved =
 		TraitValue<std::is_same<ket::meta::RemoveCvref<const int* const&>, const int*>>();
+	const auto array_type_is_not_decayed =
+		TraitValue<std::is_same<ket::meta::RemoveCvref<const int(&)[3]>, int[3]>>();
+	const auto function_type_is_not_decayed =
+		TraitValue<std::is_same<ket::meta::RemoveCvref<int (&)(double)>, int(double)>>();
 
 	EXPECT_TRUE(plain_type_is_unchanged);
 	EXPECT_TRUE(cv_reference_is_normalized);
 	EXPECT_TRUE(rvalue_reference_is_normalized);
 	EXPECT_TRUE(pointer_pointee_cv_is_preserved);
+	EXPECT_TRUE(array_type_is_not_decayed);
+	EXPECT_TRUE(function_type_is_not_decayed);
 }
 
 /**

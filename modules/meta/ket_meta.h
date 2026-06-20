@@ -41,6 +41,10 @@ namespace ket
 		 * @brief `T`から参照とtop-level cv修飾を取り除いた型。
 		 * @tparam T 変換対象の型。
 		 * @note C++20 `std::remove_cvref` の小さいC++11/14向け補助。
+		 * @code
+		 * using Value = ket::meta::RemoveCvref<const int&>;
+		 * // Value == int
+		 * @endcode
 		 */
 		template <typename T>
 		// NOLINTNEXTLINE(modernize-type-traits): C++11最小要件の公開signature。
@@ -50,6 +54,10 @@ namespace ket
 		 * @brief `T`を`type`としてそのまま返すidentity type trait。
 		 * @tparam T 保持する型。
 		 * @note C++20 `std::type_identity` の小さいC++11/14向け補助。
+		 * @code
+		 * using Value = ket::meta::TypeIdentity<const int&>::type;
+		 * // Value == const int&
+		 * @endcode
 		 */
 		template <typename T>
 		struct TypeIdentity
@@ -61,19 +69,49 @@ namespace ket
 		 * @brief 任意のtemplate引数に対して常にfalseとなるtype trait。
 		 * @tparam Types 診断対象のtemplate引数列。
 		 * @note dependent falseが必要なstatic_assertでtemplate diagnosticsを保つための補助。
+		 * @code
+		 * static_assert(!ket::meta::AlwaysFalse<int>::value, "not instantiated failure");
+		 * @endcode
 		 */
 		template <typename... Types>
 		struct AlwaysFalse : std::false_type
 		{
 		};
 
+		// -----------------------------------------------------------------------------
+		// Internal implementation details
+		// -----------------------------------------------------------------------------
+
+		namespace detail
+		{
+			/**
+			 * @brief C++11 alias template SFINAE互換性を保つvoid写像。
+			 * @tparam Types SFINAEで検査する型列。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <typename... Types>
+			struct MakeVoid
+			{
+				using type = void;
+			};
+
+		} // namespace detail
+
+		// -----------------------------------------------------------------------------
+		// Public API definitions
+		// -----------------------------------------------------------------------------
+
 		/**
 		 * @brief 任意のtemplate引数列を`void`へ写像するalias。
 		 * @tparam Types SFINAEで検査する型列。
 		 * @note C++17 `std::void_t` のC++11/14向け補助。
+		 * @code
+		 * using Value = ket::meta::VoidT<int, double>;
+		 * // Value == void
+		 * @endcode
 		 */
 		template <typename... Types>
-		using VoidT = void;
+		using VoidT = typename detail::MakeVoid<Types...>::type;
 
 	} // namespace meta
 

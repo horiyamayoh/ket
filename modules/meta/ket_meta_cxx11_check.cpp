@@ -1,6 +1,8 @@
-#include <type_traits>
-
+// clang-format off
 #include "ket_meta.h"
+
+#include <type_traits>
+// clang-format on
 
 namespace
 {
@@ -37,6 +39,10 @@ namespace
 				  "rvalue reference is normalized");
 	static_assert(TraitValue<std::is_same<ket::meta::RemoveCvref<const int* const&>, const int*>>(),
 				  "top-level cv is removed without changing pointee cv");
+	static_assert(TraitValue<std::is_same<ket::meta::RemoveCvref<const int (&)[3]>, int[3]>>(),
+				  "array references are not decayed to pointers");
+	static_assert(TraitValue<std::is_same<ket::meta::RemoveCvref<int (&)(double)>, int(double)>>(),
+				  "function references are not decayed to function pointers");
 
 	static_assert(TraitValue<std::is_same<ket::meta::TypeIdentity<const int&>::type, const int&>>(),
 				  "TypeIdentity preserves references and cv-qualification");

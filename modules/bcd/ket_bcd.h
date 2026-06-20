@@ -293,33 +293,33 @@ namespace ket
 				static constexpr int kNibbleCount = 0;
 			};
 
+			template <>
 			/**
 			 * @brief 2桁固定幅パックBCD出力型のtraits。
 			 * @note detail配下の型は公開APIではない。
 			 */
-			template <>
 			struct PackedBcdTraits<std::uint8_t>
 			{
 				static constexpr bool kSupported = true;
 				static constexpr int kNibbleCount = 2;
 			};
 
+			template <>
 			/**
 			 * @brief 4桁固定幅パックBCD出力型のtraits。
 			 * @note detail配下の型は公開APIではない。
 			 */
-			template <>
 			struct PackedBcdTraits<std::uint16_t>
 			{
 				static constexpr bool kSupported = true;
 				static constexpr int kNibbleCount = 4;
 			};
 
+			template <>
 			/**
 			 * @brief 8桁固定幅パックBCD出力型のtraits。
 			 * @note detail配下の型は公開APIではない。
 			 */
-			template <>
 			struct PackedBcdTraits<std::uint32_t>
 			{
 				static constexpr bool kSupported = true;
