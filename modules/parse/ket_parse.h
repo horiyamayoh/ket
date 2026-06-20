@@ -121,6 +121,10 @@ namespace ket
 		 * @retval std::nullopt 空文字列、空白、部分消費、不正文字、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto value = ket::parse::Int<int>("-42");
+		 * // value == std::optional<int>(-42)
+		 * @endcode
 		 */
 		template <typename T>
 		std::optional<T> Int(std::string_view text) noexcept;
@@ -133,6 +137,10 @@ namespace ket
 		 * @retval std::nullopt 空文字列、空白、部分消費、不正文字、負数、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto value = ket::parse::UInt<unsigned>("42");
+		 * // value == std::optional<unsigned>(42U)
+		 * @endcode
 		 */
 		template <typename T>
 		std::optional<T> UInt(std::string_view text) noexcept;
@@ -145,6 +153,10 @@ namespace ket
 		 * @retval std::nullopt 空文字列、prefixのみ、空白、部分消費、不正hex、または範囲外。
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto value = ket::parse::Hex<unsigned>("0xff");
+		 * // value == std::optional<unsigned>(255U)
+		 * @endcode
 		 */
 		template <typename T>
 		std::optional<T> Hex(std::string_view text) noexcept;
@@ -157,6 +169,10 @@ namespace ket
 		 * @pre なし。失敗条件は戻り値で扱う。
 		 * @post 引数と外部状態の変更なし。
 		 * @note bool文字列はcase-sensitive。`yes`、`no`、`on`、`off`は扱わない。
+		 * @code
+		 * const auto value = ket::parse::Bool("false");
+		 * // value == std::optional<bool>(false)
+		 * @endcode
 		 */
 		inline std::optional<bool> Bool(std::string_view text) noexcept;
 
@@ -168,6 +184,10 @@ namespace ket
 		 * @retval value 変換成功時は変換後の値、失敗時は`fallback`。
 		 * @pre なし。失敗条件はfallback返却で扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto value = ket::parse::IntOr<int>("bad", -1);
+		 * // value == -1
+		 * @endcode
 		 */
 		template <typename T>
 		T IntOr(std::string_view text, T fallback) noexcept;
@@ -180,6 +200,10 @@ namespace ket
 		 * @retval value 変換成功時は変換後の値、失敗時は`fallback`。
 		 * @pre なし。失敗条件はfallback返却で扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto value = ket::parse::UIntOr<unsigned>("bad", 7U);
+		 * // value == 7U
+		 * @endcode
 		 */
 		template <typename T>
 		T UIntOr(std::string_view text, T fallback) noexcept;
