@@ -11,7 +11,7 @@ static_assert(ket::bits::HighNibble(static_cast<std::uint8_t>(0xABU)) ==
 static_assert(ket::bits::LowNibble(static_cast<std::uint8_t>(0xABU)) ==
 				  static_cast<std::uint8_t>(0x0BU),
 			  "LowNibble is C++11 constexpr");
-static_assert(ket::bits::BitWidth<std::uint8_t>() == 8U, "BitWidth is C++11 constexpr");
+static_assert(ket::bits::TypeBitWidth<std::uint8_t>() == 8U, "TypeBitWidth is C++11 constexpr");
 static_assert(ket::bits::HasBit<std::uint8_t>(static_cast<std::uint8_t>(0x80U), 7U),
 			  "HasBit is C++11 constexpr");
 static_assert(!ket::bits::HasBit<std::uint8_t>(static_cast<std::uint8_t>(0x80U), 8U),
@@ -29,5 +29,13 @@ static_assert(ket::bits::Rotr<std::uint8_t>(static_cast<std::uint8_t>(0x81U), 9U
 static_assert(!ket::bits::detail::IsSupportedUnsignedIntegral<int>::kValue,
 			  "signed integral types are rejected");
 static_assert(!ket::bits::detail::IsSupportedUnsignedIntegral<bool>::kValue, "bool is rejected");
+static_assert(!ket::bits::detail::IsSupportedUnsignedIntegral<char>::kValue,
+			  "plain char is rejected");
+static_assert(!ket::bits::detail::IsSupportedUnsignedIntegral<wchar_t>::kValue,
+			  "wide character types are rejected");
+static_assert(!ket::bits::detail::IsSupportedUnsignedIntegral<char16_t>::kValue,
+			  "UTF character types are rejected");
+static_assert(!ket::bits::detail::IsSupportedUnsignedIntegral<char32_t>::kValue,
+			  "UTF character types are rejected");
 static_assert(ket::bits::detail::IsSupportedUnsignedIntegral<std::uint64_t>::kValue,
 			  "unsigned integral types are accepted");

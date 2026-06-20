@@ -92,35 +92,39 @@ namespace ket
 		 * @post 成功時だけ`out`を`(high << 4) | low`へ更新。失敗時は引数と外部状態の変更なし。
 		 * @code
 		 * std::uint8_t value = 0x00U;
-		 * const auto ok = ket::bits::TryPackByte(0x0AU, 0x0BU, value);
+		 * const auto ok = ket::bits::TryPackNibbles(0x0AU, 0x0BU, value);
 		 * // ok == true
 		 * // value == 0xAB
 		 * @endcode
 		 */
-		inline bool TryPackByte(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept;
+		inline bool TryPackNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept;
 
 		/**
 		 * @brief unsigned integral 型のbit幅取得。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @retval value `T`の値bit数。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 外部状態の変更なし。
 		 * @code
-		 * const auto width = ket::bits::BitWidth<std::uint8_t>();
+		 * const auto width = ket::bits::TypeBitWidth<std::uint8_t>();
 		 * // width == 8
 		 * @endcode
 		 */
 		template <typename T>
-		constexpr unsigned BitWidth() noexcept;
+		constexpr unsigned TypeBitWidth() noexcept;
 
 		/**
 		 * @brief 指定bitが立っているか判定。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value 判定対象の値。
 		 * @param[in] bit_index 判定する0始まりbit index。
 		 * @retval true `bit_index`が範囲内で、指定bitが1。
 		 * @retval false `bit_index`が範囲外、または指定bitが0。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto high_set = ket::bits::HasBit<std::uint8_t>(0x80U, 7U);
@@ -134,13 +138,15 @@ namespace ket
 
 		/**
 		 * @brief 指定bitを立てた値の生成。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value 入力値。
 		 * @param[in] bit_index 立てる0始まりbit index。
 		 * @param[out] out 成功時の生成値。失敗時は変更なし。
 		 * @retval true `bit_index`が範囲内で、`out`を更新。
 		 * @retval false `bit_index`が範囲外。`out`は入力時の値を保持。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 成功時だけ`out`を`value`の指定bitが1の値へ更新。失敗時は引数と外部状態の変更なし。
 		 * @code
 		 * std::uint8_t value = 0x00U;
@@ -154,13 +160,15 @@ namespace ket
 
 		/**
 		 * @brief 指定bitを落とした値の生成。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value 入力値。
 		 * @param[in] bit_index 落とす0始まりbit index。
 		 * @param[out] out 成功時の生成値。失敗時は変更なし。
 		 * @retval true `bit_index`が範囲内で、`out`を更新。
 		 * @retval false `bit_index`が範囲外。`out`は入力時の値を保持。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 成功時だけ`out`を`value`の指定bitが0の値へ更新。失敗時は引数と外部状態の変更なし。
 		 * @code
 		 * std::uint8_t value = 0xFFU;
@@ -174,13 +182,15 @@ namespace ket
 
 		/**
 		 * @brief 指定bitを反転した値の生成。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value 入力値。
 		 * @param[in] bit_index 反転する0始まりbit index。
 		 * @param[out] out 成功時の生成値。失敗時は変更なし。
 		 * @retval true `bit_index`が範囲内で、`out`を更新。
 		 * @retval false `bit_index`が範囲外。`out`は入力時の値を保持。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post
 		 * 成功時だけ`out`を`value`の指定bitが反転した値へ更新。失敗時は引数と外部状態の変更なし。
 		 * @code
@@ -195,13 +205,16 @@ namespace ket
 
 		/**
 		 * @brief 下位`width` bitが1のmask生成。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] width 1にする下位bit数。
 		 * @param[out] out 成功時のmask値。失敗時は変更なし。
-		 * @retval true `width`が`BitWidth<T>()`以下で、`out`を更新。
-		 * @retval false `width`が`BitWidth<T>()`を超過。`out`は入力時の値を保持。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
-		 * @post 成功時だけ`out`をmask値へ更新。`width == 0`は0、`width == BitWidth<T>()`は全bit 1。
+		 * @retval true `width`が`TypeBitWidth<T>()`以下で、`out`を更新。
+		 * @retval false `width`が`TypeBitWidth<T>()`を超過。`out`は入力時の値を保持。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
+		 * @post 成功時だけ`out`をmask値へ更新。`width == 0`は0、`width == TypeBitWidth<T>()`は全bit
+		 * 1。
 		 * @code
 		 * std::uint8_t mask = 0xEEU;
 		 * const auto ok = ket::bits::TryMask<std::uint8_t>(4U, mask);
@@ -214,10 +227,12 @@ namespace ket
 
 		/**
 		 * @brief 立っているbit数の取得。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value bit数を数える値。
 		 * @retval value `value`内で1のbit数。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto count = ket::bits::PopCount<std::uint8_t>(0x81U);
@@ -229,11 +244,13 @@ namespace ket
 
 		/**
 		 * @brief 2の累乗値の判定。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value 判定対象の値。
 		 * @retval true `value`が1bitだけ立つ値。
 		 * @retval false `value`が0、または複数bitが立つ値。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto single = ket::bits::IsPowerOfTwo<std::uint8_t>(0x80U);
@@ -247,11 +264,13 @@ namespace ket
 
 		/**
 		 * @brief 左rotateした値の取得。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value rotate対象の値。
 		 * @param[in] count 左rotateするbit数。bit幅で剰余化。
 		 * @retval value `value`を左rotateした値。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto value = ket::bits::Rotl<std::uint8_t>(0x81U, 1U);
@@ -263,11 +282,13 @@ namespace ket
 
 		/**
 		 * @brief 右rotateした値の取得。
-		 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+		 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型のみ対応。
 		 * @param[in] value rotate対象の値。
 		 * @param[in] count 右rotateするbit数。bit幅で剰余化。
 		 * @retval value `value`を右rotateした値。
-		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
+		 * @pre `T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned
+		 * integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto value = ket::bits::Rotr<std::uint8_t>(0x81U, 1U);
@@ -293,16 +314,21 @@ namespace ket
 			{
 				using ValueType = typename std::remove_cv<T>::type; // NOLINT(modernize-type-traits)
 
+				static const bool kIsPlainCharacter = std::is_same<ValueType, char>() ||
+					std::is_same<ValueType, wchar_t>() || std::is_same<ValueType, char16_t>() ||
+					std::is_same<ValueType, char32_t>();
 				static const bool kValue = std::is_integral<ValueType>() &&
-					std::is_unsigned<ValueType>() && !std::is_same<ValueType, bool>();
+					std::is_unsigned<ValueType>() && !std::is_same<ValueType, bool>() &&
+					!kIsPlainCharacter;
 			};
 
 			/**
 			 * @brief 1bitだけ立つ値の生成。
-			 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+			 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+			 * integral型のみ対応。
 			 * @param[in] bit_index 立てる0始まりbit index。
 			 * @retval value 指定bitだけが1の値。
-			 * @pre `bit_index < BitWidth<T>()`。未対応型はcompile error。
+			 * @pre `bit_index < TypeBitWidth<T>()`。未対応型はcompile error。
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
@@ -310,18 +336,20 @@ namespace ket
 			constexpr T SingleBit(unsigned bit_index) noexcept
 			{
 				static_assert(IsSupportedUnsignedIntegral<T>::kValue,
-							  "ket::bits requires an unsigned integral type except bool.");
+							  "ket::bits requires an unsigned integral type except bool and plain "
+							  "character types.");
 
 				return static_cast<T>(T(1) << bit_index);
 			}
 
 			/**
 			 * @brief 正規化済みcountによる左rotate。
-			 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+			 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+			 * integral型のみ対応。
 			 * @param[in] value rotate対象の値。
-			 * @param[in] count `BitWidth<T>()`未満へ正規化済みのrotate数。
+			 * @param[in] count `TypeBitWidth<T>()`未満へ正規化済みのrotate数。
 			 * @retval value 左rotate後の値。
-			 * @pre `count < BitWidth<T>()`。未対応型はcompile error。
+			 * @pre `count < TypeBitWidth<T>()`。未対応型はcompile error。
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
@@ -329,21 +357,23 @@ namespace ket
 			constexpr T RotlNormalized(T value, unsigned count) noexcept
 			{
 				static_assert(IsSupportedUnsignedIntegral<T>::kValue,
-							  "ket::bits requires an unsigned integral type except bool.");
+							  "ket::bits requires an unsigned integral type except bool and plain "
+							  "character types.");
 
 				return count == 0U
 					? value
 					: static_cast<T>(static_cast<T>(value << count) |
-									 static_cast<T>(value >> (BitWidth<T>() - count)));
+									 static_cast<T>(value >> (TypeBitWidth<T>() - count)));
 			}
 
 			/**
 			 * @brief 正規化済みcountによる右rotate。
-			 * @tparam T 対象型。boolを除くunsigned integral型のみ対応。
+			 * @tparam T 対象型。bool、char、wchar_t、char16_t、char32_tを除くunsigned
+			 * integral型のみ対応。
 			 * @param[in] value rotate対象の値。
-			 * @param[in] count `BitWidth<T>()`未満へ正規化済みのrotate数。
+			 * @param[in] count `TypeBitWidth<T>()`未満へ正規化済みのrotate数。
 			 * @retval value 右rotate後の値。
-			 * @pre `count < BitWidth<T>()`。未対応型はcompile error。
+			 * @pre `count < TypeBitWidth<T>()`。未対応型はcompile error。
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
@@ -351,12 +381,13 @@ namespace ket
 			constexpr T RotrNormalized(T value, unsigned count) noexcept
 			{
 				static_assert(IsSupportedUnsignedIntegral<T>::kValue,
-							  "ket::bits requires an unsigned integral type except bool.");
+							  "ket::bits requires an unsigned integral type except bool and plain "
+							  "character types.");
 
 				return count == 0U
 					? value
 					: static_cast<T>(static_cast<T>(value >> count) |
-									 static_cast<T>(value << (BitWidth<T>() - count)));
+									 static_cast<T>(value << (TypeBitWidth<T>() - count)));
 			}
 
 		} // namespace detail
@@ -380,7 +411,7 @@ namespace ket
 			return static_cast<std::uint8_t>(value & 0x0FU);
 		}
 
-		inline bool TryPackByte(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept
+		inline bool TryPackNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept
 		{
 			const auto high_is_nibble = IsNibble(high);
 			const auto low_is_nibble = IsNibble(low);
@@ -395,10 +426,11 @@ namespace ket
 		}
 
 		template <typename T>
-		constexpr unsigned BitWidth() noexcept
+		constexpr unsigned TypeBitWidth() noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
 			return static_cast<unsigned>(
 				std::numeric_limits<
@@ -409,18 +441,21 @@ namespace ket
 		constexpr bool HasBit(T value, unsigned bit_index) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
-			return bit_index < BitWidth<T>() && (value & detail::SingleBit<T>(bit_index)) != T(0);
+			return bit_index < TypeBitWidth<T>() &&
+				(value & detail::SingleBit<T>(bit_index)) != T(0);
 		}
 
 		template <typename T>
 		bool TrySetBit(T value, unsigned bit_index, T& out) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
-			const auto bit_width = BitWidth<T>();
+			const auto bit_width = TypeBitWidth<T>();
 			const auto bit_is_in_range = bit_index < bit_width;
 			if (!bit_is_in_range)
 			{
@@ -436,9 +471,10 @@ namespace ket
 		bool TryClearBit(T value, unsigned bit_index, T& out) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
-			const auto bit_width = BitWidth<T>();
+			const auto bit_width = TypeBitWidth<T>();
 			const auto bit_is_in_range = bit_index < bit_width;
 			if (!bit_is_in_range)
 			{
@@ -454,9 +490,10 @@ namespace ket
 		bool TryToggleBit(T value, unsigned bit_index, T& out) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
-			const auto bit_width = BitWidth<T>();
+			const auto bit_width = TypeBitWidth<T>();
 			const auto bit_is_in_range = bit_index < bit_width;
 			if (!bit_is_in_range)
 			{
@@ -472,9 +509,10 @@ namespace ket
 		bool TryMask(unsigned width, T& out) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
-			const auto bit_width = BitWidth<T>();
+			const auto bit_width = TypeBitWidth<T>();
 			const auto width_is_too_large = width > bit_width;
 			if (width_is_too_large)
 			{
@@ -504,7 +542,8 @@ namespace ket
 		constexpr unsigned PopCount(T value) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
 			return value == T(0) ? 0U
 								 : static_cast<unsigned>((value & T(1)) != T(0)) +
@@ -516,7 +555,8 @@ namespace ket
 		constexpr bool IsPowerOfTwo(T value) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
 			return value != T(0) && (value & static_cast<T>(value - T(1))) == T(0);
 		}
@@ -525,18 +565,20 @@ namespace ket
 		constexpr T Rotl(T value, unsigned count) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
-			return detail::RotlNormalized(value, count % BitWidth<T>());
+			return detail::RotlNormalized(value, count % TypeBitWidth<T>());
 		}
 
 		template <typename T>
 		constexpr T Rotr(T value, unsigned count) noexcept
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::kValue,
-						  "ket::bits requires an unsigned integral type except bool.");
+						  "ket::bits requires an unsigned integral type except bool and plain "
+						  "character types.");
 
-			return detail::RotrNormalized(value, count % BitWidth<T>());
+			return detail::RotrNormalized(value, count % TypeBitWidth<T>());
 		}
 
 	} // namespace bits

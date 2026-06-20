@@ -18,10 +18,10 @@ namespace
 	static_assert(ket::bits::LowNibble(static_cast<std::uint8_t>(0xABU)) ==
 					  static_cast<std::uint8_t>(0x0BU),
 				  "low nibble is constexpr");
-	static_assert(ket::bits::BitWidth<std::uint8_t>() == 8U, "uint8_t bit width");
-	static_assert(ket::bits::BitWidth<std::uint16_t>() == 16U, "uint16_t bit width");
-	static_assert(ket::bits::BitWidth<std::uint32_t>() == 32U, "uint32_t bit width");
-	static_assert(ket::bits::BitWidth<std::uint64_t>() == 64U, "uint64_t bit width");
+	static_assert(ket::bits::TypeBitWidth<std::uint8_t>() == 8U, "uint8_t bit width");
+	static_assert(ket::bits::TypeBitWidth<std::uint16_t>() == 16U, "uint16_t bit width");
+	static_assert(ket::bits::TypeBitWidth<std::uint32_t>() == 32U, "uint32_t bit width");
+	static_assert(ket::bits::TypeBitWidth<std::uint64_t>() == 64U, "uint64_t bit width");
 	static_assert(ket::bits::HasBit<std::uint8_t>(static_cast<std::uint8_t>(0x80U), 7U),
 				  "high bit is constexpr");
 	static_assert(!ket::bits::HasBit<std::uint8_t>(static_cast<std::uint8_t>(0x80U), 8U),
@@ -77,9 +77,9 @@ TEST(KetBitsTest, PacksByteOnlyFromValidNibbles)
 	std::uint8_t invalid_high = 0xEEU;
 	std::uint8_t invalid_low = 0xEEU;
 
-	const auto packed_ok = ket::bits::TryPackByte(0x0AU, 0x0BU, packed);
-	const auto invalid_high_ok = ket::bits::TryPackByte(0x10U, 0x00U, invalid_high);
-	const auto invalid_low_ok = ket::bits::TryPackByte(0x00U, 0x10U, invalid_low);
+	const auto packed_ok = ket::bits::TryPackNibbles(0x0AU, 0x0BU, packed);
+	const auto invalid_high_ok = ket::bits::TryPackNibbles(0x10U, 0x00U, invalid_high);
+	const auto invalid_low_ok = ket::bits::TryPackNibbles(0x00U, 0x10U, invalid_low);
 
 	EXPECT_TRUE(packed_ok);
 	EXPECT_EQ(packed, static_cast<std::uint8_t>(0xABU));
@@ -96,10 +96,10 @@ TEST(KetBitsTest, PacksByteOnlyFromValidNibbles)
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
-TEST(KetBitsTest, ReportsBitWidthAndHasBitBoundaries)
+TEST(KetBitsTest, ReportsTypeBitWidthAndHasBitBoundaries)
 {
-	const auto uint8_width = ket::bits::BitWidth<std::uint8_t>();
-	const auto uint16_width = ket::bits::BitWidth<std::uint16_t>();
+	const auto uint8_width = ket::bits::TypeBitWidth<std::uint8_t>();
+	const auto uint16_width = ket::bits::TypeBitWidth<std::uint16_t>();
 	const auto has_low_bit = ket::bits::HasBit<std::uint8_t>(0x81U, 0U);
 	const auto has_high_bit = ket::bits::HasBit<std::uint8_t>(0x81U, 7U);
 	const auto has_clear_bit = ket::bits::HasBit<std::uint8_t>(0x81U, 1U);

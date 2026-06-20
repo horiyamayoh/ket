@@ -240,6 +240,7 @@ Candidate API:
 ket::bits::HighNibble(value)
 ket::bits::LowNibble(value)
 ket::bits::TryPackNibbles(high, low, out)
+ket::bits::TypeBitWidth<T>()
 ket::bits::HasBit(value, bit_index)
 ket::bits::TryMask(width, out)
 ket::bits::Rotl(value, count)
@@ -264,7 +265,7 @@ Failure / edge cases:
 - bit index 範囲外
 - width 0 / bit幅 full / bit幅超過
 - 不正 nibble
-- signed integral は対象外
+- signed integral、bool、char、wchar_t、char16_t、char32_t は対象外
 
 他のライブラリへの依存:
 
@@ -367,7 +368,12 @@ C++バージョン要件:
 - 推奨理由：endian と unaligned access の意図を名前に出し、strict aliasing 依存を避けられる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：C++20 `std::endian` は判定であり、byte列読み書きの直接代替ではない
+- 標準代替：C++20 `std::endian` は byte order の判定であり、byte列の固定幅整数読み書きや失敗値付き Try API の直接代替ではない
+
+使い分け:
+
+- 外部入力、受信 buffer、可変長 slice など長さ確認が境界に残る箇所は TryLoad/TryStore
+- 固定長 protocol や直前の検証で必要 byte 数を保証済みの内部経路は Load/Store
 
 Failure / edge cases:
 
@@ -741,6 +747,7 @@ Failure / edge cases:
 
 - null + 非0 size は invalid reader
 - empty
+- invalid reader は empty として扱わない
 - size不足
 - 成功時だけ offset 更新
 - 失敗時 out 不変
@@ -851,7 +858,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - allocation 例外
+- 固定幅 append は一時配列を単一 insert で追記し strong exception guarantee（失敗時 dst 無変更）
 - null + 非0 size は precondition
+- self-append 未対応（data は dst / 内部 buffer と非 overlap）
+- AppendAscii は検査なしの byte copy（ASCII は precondition）
 - BE/LE fixed width
 - reserve size
 - Build 後の moved-from state
@@ -1044,6 +1054,7 @@ ket::byte_view::View
 ket::byte_view::MutableView
 view.TryAt(index, out)
 view.TrySlice(offset, count, out)
+// default constructor, Data, Size, Empty は constexpr
 ```
 
 C++バージョン要件:
@@ -1060,6 +1071,7 @@ Failure / edge cases:
 - lifetime は呼び出し側責任
 - nullptr + 0 は空 view
 - nullptr + 非0 は invalid view
+- copy / move は non-owning pointer と size だけを複製
 - bounds overrun
 - slice 失敗時 out 不変
 
