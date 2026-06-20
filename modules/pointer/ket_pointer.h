@@ -53,6 +53,11 @@ namespace ket
 			 * @retval void 構築成功。
 			 * @pre `ptr`はraw pointer。`nullptr`はstd::invalid_argumentとして扱う。
 			 * @post 構築成功時、`Get()`は`ptr`と同じpointer値を返す。
+			 * @code
+			 * int value = 42;
+			 * ket::pointer::NotNull<int> ptr(&value);
+			 * // *ptr == 42
+			 * @endcode
 			 */
 			explicit NotNull(T* ptr);
 
@@ -61,6 +66,11 @@ namespace ket
 			 * @retval ptr 構築時に渡したnon-null raw pointer。
 			 * @pre 構築でnullを拒否済み。
 			 * @post objectと参照先の状態変更なし。
+			 * @code
+			 * int value = 42;
+			 * ket::pointer::NotNull<int> ptr(&value);
+			 * // ptr.Get() == &value
+			 * @endcode
 			 */
 			T* Get() const noexcept // NOLINT(modernize-use-nodiscard): C++11 signature.
 			{
@@ -72,6 +82,12 @@ namespace ket
 			 * @retval reference 保持中のraw pointerが指すobject。
 			 * @pre 参照先objectのlifetimeが有効。
 			 * @post wrapperの状態変更なし。参照先の変更可否は`T`に従う。
+			 * @code
+			 * int value = 42;
+			 * ket::pointer::NotNull<int> ptr(&value);
+			 * *ptr = 7;
+			 * // value == 7
+			 * @endcode
 			 */
 			T& operator*() const noexcept
 			{
@@ -83,6 +99,15 @@ namespace ket
 			 * @retval ptr 構築時に渡したnon-null raw pointer。
 			 * @pre 参照先objectのlifetimeが有効。
 			 * @post wrapperと参照先の状態変更なし。
+			 * @code
+			 * struct Entry
+			 * {
+			 *     int value;
+			 * };
+			 * Entry entry{42};
+			 * ket::pointer::NotNull<Entry> ptr(&entry);
+			 * // ptr->value == 42
+			 * @endcode
 			 */
 			T* operator->() const noexcept
 			{
