@@ -856,7 +856,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - allocation 例外
+- 固定幅 append は一時配列を単一 insert で追記し strong exception guarantee（失敗時 dst 無変更）
 - null + 非0 size は precondition
+- self-append 未対応（data は dst / 内部 buffer と非 overlap）
+- AppendAscii は検査なしの byte copy（ASCII は precondition）
 - BE/LE fixed width
 - reserve size
 - Build 後の moved-from state

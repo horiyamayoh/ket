@@ -760,9 +760,12 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Behavior: fluent API は `*this` を返す。free function は既存 vector へ追加する。`AppendAscii` は
   ASCII byte列として扱う文字列片を追加し、encoding 変換はしない。`Buffer()` は構築途中の
   内部 vector への const 参照を返す。`Build() &&` は内部 vector を move して返す。
-- Failure/edge cases: allocation があるため `noexcept` なし。`Append(nullptr, 0)` は no-op。
-  `Append(nullptr, size > 0)` は precondition 違反。`AppendAscii` の入力は ASCII byte列であることを
-  precondition とし、UTF-8 validation や変換はしない。
+- Failure/edge cases: allocation があるため `noexcept` なし。固定幅 append（`AppendBe16/Be32/Le16/Le32`）は
+  一時配列を単一 insert で追記し、allocation 失敗時は `dst` を変更しない strong exception guarantee。
+  `Append(nullptr, 0)` は no-op。`Append(nullptr, size > 0)` は precondition 違反。raw `Append` と
+  `AppendAscii` の入力は `dst`（builder では内部 buffer）と重ならない（self-append 未対応、重なる場合は未定義）。
+  `AppendAscii` の入力は ASCII byte列であることを precondition とし、検査せず byte copy のみで
+  UTF-8 validation や変換はしない。
 - Complexity/performance: 各 append は追加 byte 数に比例し、vector 再確保は amortized O(1)。
   `reserve_size` で再確保を抑制。`Build() &&` は move で O(1)。
 - Tests: U8/BE/LE append、reserve constructor、Clear、Buffer、Build move、null+0、ASCII append。
@@ -1902,7 +1905,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 [ ] 他の ket module に依存していない
 [ ] 公開ヘッダが必要な標準ヘッダを自分で include している
 [ ] 公開ヘッダの section banner が規約通り
-[ ] 公開API関数 Doxygen に @brief / @param / @retval / @pre / @post / @code がある
+[ ] 公開API関数 Doxygen に @brief / @param / @retval / @pre / @post / @code がある（constructor/destructorは @retval なし）
 [ ] struct / class / enum の Doxygen に @brief がある
 [ ] 失敗条件を戻り値・precondition・例外のどれで扱うか固定した
 [ ] null / empty / overflow / size不足 / invalid input のテストがある
