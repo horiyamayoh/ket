@@ -2,7 +2,7 @@
 
 /**
  * @file ket_container.h
- * @brief 標準コンテナの小さいlookup、生成、削除補助API。
+ * @brief 標準コンテナの小さいlookup、生成、sequence削除補助API。
  *
  * @details `find`、`end`、erase-remove、default値取得など標準コンテナ利用時の
  * 反復的な手順を短い名前へ集約する。ヘッダオンリーmoduleのため、drop-in時は
@@ -31,6 +31,7 @@
 #include <algorithm> // IWYU pragma: keep
 #include <cstddef>
 #include <iterator>
+#include <utility> // IWYU pragma: keep
 
 namespace ket
 {
@@ -125,7 +126,7 @@ namespace ket
 		 * @param[in] key 検索key。
 		 * @param[in] default_value `key`が無い場合に返す値。
 		 * @retval value `key`があればmap内要素のcopy、無ければ`default_value`。
-		 * @pre `map.find(key)`が有効。`Map::mapped_type`はcopyまたはmoveで戻り値化可能。
+		 * @pre `map.find(key)`が有効。`Map::mapped_type`はcopy constructible。
 		 * @post 引数と外部状態の変更なし。lookupやcopy/moveの例外は呼び出し元へ伝播。
 		 * @code
 		 * const std::map<std::string, int> values = {{"one", 1}};
@@ -146,9 +147,10 @@ namespace ket
 		 * @param[in] key 検索key。
 		 * @param[in] factory `key`が無い場合だけ呼ぶ生成処理。
 		 * @retval value 既存または新規挿入されたmap内要素への参照。
-		 * @pre `map.find(key)`と`map.emplace(key, factory())`が有効。
-		 * @post 既存keyではmap構造を変更せず、factory呼び出しなし。keyが無い場合は生成値を挿入。
-		 * 生成、lookup、挿入の例外は呼び出し元へ伝播。
+		 * @pre `map.find(key)`、`Map::key_type`の`key`からの構築、factory結果の`Map::mapped_type`
+		 * 化、`map.emplace(...)`が有効。factoryは`map`を変更しない。
+		 * @post 既存keyではmap構造を変更せず、factory呼び出しなし。keyが無い場合はkeyをmaterialize
+		 * してからfactoryを呼び、生成値を挿入。生成、lookup、挿入の例外は呼び出し元へ伝播。
 		 * @code
 		 * std::map<std::string, int> values;
 		 * int& value = ket::container::AtOrCreate(values, std::string("one"), [] { return 1; });
@@ -165,9 +167,10 @@ namespace ket
 		 * @param[in,out] sequence 削除対象のsequence。
 		 * @param[in] predicate 削除対象ならtrueを返す述語。
 		 * @retval value 削除した要素数。
-		 * @pre `std::remove_if`と`sequence.erase(first, last)`が有効。
-		 * @post `predicate`がtrueを返した要素を削除し、相対順序は標準erase-removeの性質に従う。
-		 * 述語や要素移動の例外は呼び出し元へ伝播。
+		 * @pre `std::remove_if`と`sequence.erase(first, last)`が有効。associative
+		 * containerは対象外。
+		 * @post 成功時は条件一致要素を削除し、相対順序は標準erase-removeの性質に従う。
+		 * 述語や要素移動の例外は呼び出し元へ伝播し、例外時のsequence状態は標準アルゴリズムの規則に従う。
 		 * @code
 		 * std::vector<int> values = {1, 2, 3, 4};
 		 * const auto removed = ket::container::EraseIf(values, [](int value) {
@@ -184,7 +187,8 @@ namespace ket
 		 * @tparam Vector random access iterator、`erase`、`value_type`比較を持つvector-like型。
 		 * @param[in,out] values sortと重複削除の対象。
 		 * @retval void 戻り値なし。
-		 * @pre `std::sort`、`std::unique`、`values.erase(first, last)`が有効。
+		 * @pre `std::sort`、`std::unique`、`values.erase(first, last)`が有効。`operator<`
+		 * の同値関係と`operator==`が同じ重複集合を表す。
 		 * @post `values`は昇順に並び、等値の重複要素は1つだけ残る。
 		 * 比較、移動、eraseの例外は呼び出し元へ伝播。
 		 * @code
@@ -318,7 +322,8 @@ namespace ket
 				return found->second;
 			}
 
-			const auto insertion = map.emplace(key, factory());
+			typename Map::key_type insertion_key = key;
+			const auto insertion = map.emplace(std::move(insertion_key), factory());
 
 			return insertion.first->second;
 		}

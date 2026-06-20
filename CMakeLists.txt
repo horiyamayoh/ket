@@ -148,6 +148,11 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			tests/ket_container_cxx11_check.cpp
 	)
+	target_include_directories(
+		ket_container_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/container"
+	)
 	add_dependencies(ket_container_test ket_container_cxx11_check)
 
 	ket_add_module_test(

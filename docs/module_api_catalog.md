@@ -562,13 +562,16 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   - `template <typename Vector> void SortUnique(Vector& values)`
 - Behavior: `AtOrNull` は copy を避ける pointer API で const/非const の 2 overload。返却 pointer は
   map 内要素を指し、container の erase、rehash、破棄、値移動など標準コンテナ規則に従って invalidation される。
-  `AtOr` は値を返す。`AtOrCreate` は key が無い場合だけ factory を呼ぶ。`EraseIf` は削除件数を返す。
-  全 API は `std::optional` を使わず C++11 で成立させる。
+  `AtOr` は copy constructible な `mapped_type` 向けに値を返す。move-only 値は `AtOrNull` を使う。
+  `AtOrCreate` は key が無い場合だけ key を materialize してから factory を呼ぶ。`EraseIf` は sequence 専用の
+  erase-remove wrapper として削除件数を返す。全 API は `std::optional` を使わず C++11 で成立させる。
 - Failure/edge cases: keyなし、空container、factory例外、重複値。`AtOrNull` は無い key で nullptr。
   `find`、hash、equality、less-than、factory、copy/move が投げる例外は呼び出し元へ伝播する。
+  `EraseIf` の例外時状態は標準 erase-remove の規則に従う。`SortUnique` は `<` と `==` が同じ重複集合を表す型向け。
 - Complexity/performance: `Contains` は sequence で O(n)、`ContainsKey`/`AtOrNull` は map 種別の lookup
-  コスト。`AtOrCreate` は挿入 amortized。`EraseIf` は O(n)、`SortUnique` は O(n log n)。
-- Tests: keyあり/なし、factory呼び出し回数、EraseIf削除件数、SortUnique、AtOrNull null。
+  コスト。`AtOrCreate` の missing key は lookup 後に key materialize、factory、挿入を行う。`EraseIf` は O(n)、
+  `SortUnique` は O(n log n)。
+- Tests: keyあり/なし、factory呼び出し回数、EraseIf削除件数、SortUnique、AtOrNull null、例外伝播。
 - Do not implement: 独自container、range framework、`std::erase_if`/`contains` 完全互換の追求、
   `IndexOf`（optional で C++11 baseline を崩す）、`Append`（self append が footgun で `insert` と等価）。
 
