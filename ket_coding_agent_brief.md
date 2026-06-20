@@ -1669,12 +1669,9 @@ ket::version::Compare(a, b)
 候補:
 
 ```cpp
-ket::Transition<State, Event>
-ket::TransitionTable<State, Event>
-ket::IsValidTransition(current, event, table)
-ket::NextState(current, event, table)
-ket::StateName(state, table)
-ket::EventName(event, table)
+ket::state::Transition<State, Event>
+ket::state::IsAllowed(current, event, table)
+ket::state::Next(current, event, table)
 ```
 
 注意:
