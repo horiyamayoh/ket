@@ -403,7 +403,8 @@ namespace ket
 			 * @param[in] data 追記するbyte列の先頭。`size == 0`の場合だけnullptr可。
 			 * @param[in] size 追記するbyte数。
 			 * @retval void 戻り値なし。
-			 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`size == 0`ではno-op。
+			 * @pre `size == 0`では`data`はnullptr可でno-op。
+			 * `size > 0`では`data`は`size`バイト以上読み取り可能な配列を指す。
 			 * `data[0..size)`は`dst`の内部storageと重ならない。
 			 * @post `dst`の既存内容を保持し、`size`が0でなければ末尾にbyte列を追加。
 			 */
