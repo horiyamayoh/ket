@@ -23,7 +23,7 @@
  *
  * @par namespace
  * 公開API：ket::deadline
- * 内部実装：ket::deadline::detail
+ * 内部実装：なし
  */
 
 #include <chrono> // IWYU pragma: export
