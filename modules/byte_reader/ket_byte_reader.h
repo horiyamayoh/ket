@@ -50,8 +50,8 @@ namespace ket
 			 * @brief non-owning buffer readerの構築。
 			 * @param[in] data 読み取り対象buffer先頭。`size == 0`の場合のみnullptr可。
 			 * @param[in] size `data`のbyte数。
-			 * @pre `data`は`size`byte以上読み取り可能な配列を指す。
-			 * `data == nullptr && size > 0`はinvalid readerとして保持。
+			 * @pre `data != nullptr`の場合、`data`は`size`byte以上読み取り可能な配列を指す。
+			 * `data == nullptr && size > 0`はprecondition違反ではなくinvalid readerとして保持。
 			 * @post `Offset()`は0。入力pointerとsizeを保持。
 			 * @code
 			 * const std::uint8_t data[] = {0x12U, 0x34U};

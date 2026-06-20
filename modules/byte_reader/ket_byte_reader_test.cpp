@@ -209,6 +209,34 @@ TEST(KetByteReaderTest, ReturnsNonOwningBytesAtCurrentOffset)
 
 /**
  * @test
+ * @brief 非空readerの0byte範囲読み取り確認。
+ * @details Skip後に0byteのReadBytesを行い、現在offsetのpointerを返し、offsetを進めないことを確認。
+ * @pre C++17以降。
+ * @post reader offsetは0byte読み取り前の値を保持。外部bufferの変更なし。
+ */
+TEST(KetByteReaderTest, ReadsZeroBytesAtCurrentOffsetWithoutAdvancing)
+{
+	const auto data = std::array<std::uint8_t, 3>{{0x10U, 0x20U, 0x30U}};
+	ket::byte_reader::Reader reader(data.data(), data.size());
+
+	const auto skipped = reader.Skip(1U);
+	const auto offset_before_read = reader.Offset();
+
+	const std::uint8_t* bytes = nullptr;
+	const auto bytes_read = reader.ReadBytes(0U, bytes);
+	const auto offset_after_read = reader.Offset();
+	const auto remaining_after_read = reader.Remaining();
+
+	EXPECT_TRUE(skipped);
+	EXPECT_EQ(offset_before_read, 1U);
+	EXPECT_TRUE(bytes_read);
+	EXPECT_EQ(bytes, data.data() + 1U);
+	EXPECT_EQ(offset_after_read, 1U);
+	EXPECT_EQ(remaining_after_read, 2U);
+}
+
+/**
+ * @test
  * @brief invalid readerの失敗確認。
  * @details nullptrかつ非0 sizeのreaderをinvalid
  * readerとして扱い、読み取りとskipが失敗することを確認。
