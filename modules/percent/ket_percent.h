@@ -50,6 +50,10 @@ namespace ket
 			 * @retval value 0%のPercent値。
 			 * @pre なし。
 			 * @post 構築後のBasisPoints()は0。
+			 * @code
+			 * constexpr ket::percent::Percent value;
+			 * // value.BasisPoints() == 0
+			 * @endcode
 			 */
 			constexpr Percent() noexcept;
 
@@ -122,6 +126,12 @@ namespace ket
 			 * @retval value 0から10000のbasis points値。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * ket::percent::Percent value;
+			 * const auto ok = ket::percent::Percent::TryFromBasisPoints(1234U, value);
+			 * const auto basis_points = value.BasisPoints();
+			 * // ok == true, basis_points == 1234
+			 * @endcode
 			 */
 			constexpr std::uint16_t BasisPoints() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -130,6 +140,12 @@ namespace ket
 			 * @retval value `BasisPoints() / 100.0`。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * ket::percent::Percent value;
+			 * const auto ok = ket::percent::Percent::TryFromBasisPoints(1234U, value);
+			 * const auto percent = value.ToPercent();
+			 * // ok == true, percent == 12.34
+			 * @endcode
 			 */
 			constexpr double ToPercent() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -138,6 +154,12 @@ namespace ket
 			 * @retval value `BasisPoints() / 10000.0`。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * ket::percent::Percent value;
+			 * const auto ok = ket::percent::Percent::TryFromBasisPoints(1234U, value);
+			 * const auto ratio = value.ToRatio();
+			 * // ok == true, ratio == 0.1234
+			 * @endcode
 			 */
 			constexpr double ToRatio() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -162,6 +184,12 @@ namespace ket
 		 * @retval false 両辺のbasis pointsが不一致。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto a = ket::percent::Percent::FromPercentClamped(12.34);
+		 * const auto b = ket::percent::Percent::FromPercentClamped(12.34);
+		 * const auto same = a == b;
+		 * // same == true
+		 * @endcode
 		 */
 		constexpr bool operator==(Percent a, Percent b) noexcept;
 
@@ -173,6 +201,12 @@ namespace ket
 		 * @retval false 両辺のbasis pointsが一致。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto a = ket::percent::Percent::FromPercentClamped(12.34);
+		 * const auto b = ket::percent::Percent::FromPercentClamped(56.78);
+		 * const auto different = a != b;
+		 * // different == true
+		 * @endcode
 		 */
 		constexpr bool operator!=(Percent a, Percent b) noexcept;
 
@@ -184,6 +218,12 @@ namespace ket
 		 * @retval false 左辺のbasis pointsが右辺以上。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto low = ket::percent::Percent::FromPercentClamped(12.34);
+		 * const auto high = ket::percent::Percent::FromPercentClamped(56.78);
+		 * const auto ordered = low < high;
+		 * // ordered == true
+		 * @endcode
 		 */
 		constexpr bool operator<(Percent a, Percent b) noexcept;
 
@@ -195,6 +235,12 @@ namespace ket
 		 * @retval false 左辺のbasis pointsが右辺より大きい。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto low = ket::percent::Percent::FromPercentClamped(12.34);
+		 * const auto high = ket::percent::Percent::FromPercentClamped(56.78);
+		 * const auto ordered = low <= high;
+		 * // ordered == true
+		 * @endcode
 		 */
 		constexpr bool operator<=(Percent a, Percent b) noexcept;
 
@@ -206,6 +252,12 @@ namespace ket
 		 * @retval false 左辺のbasis pointsが右辺以下。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto low = ket::percent::Percent::FromPercentClamped(12.34);
+		 * const auto high = ket::percent::Percent::FromPercentClamped(56.78);
+		 * const auto ordered = high > low;
+		 * // ordered == true
+		 * @endcode
 		 */
 		constexpr bool operator>(Percent a, Percent b) noexcept;
 
@@ -217,6 +269,12 @@ namespace ket
 		 * @retval false 左辺のbasis pointsが右辺より小さい。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto low = ket::percent::Percent::FromPercentClamped(12.34);
+		 * const auto high = ket::percent::Percent::FromPercentClamped(56.78);
+		 * const auto ordered = high >= low;
+		 * // ordered == true
+		 * @endcode
 		 */
 		constexpr bool operator>=(Percent a, Percent b) noexcept;
 
