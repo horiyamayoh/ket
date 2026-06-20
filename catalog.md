@@ -240,6 +240,7 @@ Candidate API:
 ket::bits::HighNibble(value)
 ket::bits::LowNibble(value)
 ket::bits::TryPackNibbles(high, low, out)
+ket::bits::TypeBitWidth<T>()
 ket::bits::HasBit(value, bit_index)
 ket::bits::TryMask(width, out)
 ket::bits::Rotl(value, count)
@@ -264,7 +265,7 @@ Failure / edge cases:
 - bit index 範囲外
 - width 0 / bit幅 full / bit幅超過
 - 不正 nibble
-- signed integral は対象外
+- signed integral、bool、char、wchar_t、char16_t、char32_t は対象外
 
 他のライブラリへの依存:
 
@@ -298,11 +299,13 @@ ket::numeric::Clamp(value, min_value, max_value)
 ket::numeric::AbsDiff(a, b)
 ket::numeric::TryDivideRoundUp(value, divisor, out)
 ket::numeric::TryAlignUp(value, alignment, out)
+ket::numeric::TryAlignDown(value, alignment, out)
 ket::numeric::TryAdd(a, b, out)
 ket::numeric::TrySub(a, b, out)
 ket::numeric::TryMul(a, b, out)
 ket::numeric::TryCast<To>(value, out)
 ket::numeric::SaturatingAdd(a, b)
+ket::numeric::SaturatingSub(a, b)
 ```
 
 C++バージョン要件:
@@ -320,7 +323,8 @@ Failure / edge cases:
 - divisor == 0
 - signed / unsigned overflow
 - signed 最小値を含む AbsDiff
-- bool / character 型の不採用
+- bool / text character 型の不採用
+- `std::int8_t` / `std::uint8_t` alias の採用
 - cast 範囲外
 
 他のライブラリへの依存:
@@ -332,12 +336,15 @@ Tests:
 
 - TryAlignUp(0, 4) == 0
 - TryAlignUp(max, 2) fails when overflow
+- TryAlignDown(5, 4) == 4
 - TryAdd(max, 1) fails
 - TrySub(min, 1) fails
 - TryMul boundary cases
+- SaturatingSub(min, 1) == min
 - TryCast<std::uint8_t>(255) succeeds
 - TryCast<std::uint8_t>(256) fails
 - bool / char の compile-only 不採用確認
+- std::int8_t / std::uint8_t の compile-only 採用確認
 
 ## Idea: Endian
 
@@ -537,7 +544,7 @@ Failure / edge cases:
 - unknown enum
 - unknown text
 - duplicate table entry は先勝ち
-- flags の underlying 演算
+- flags の unsigned underlying 演算
 - case-sensitive parse
 
 他のライブラリへの依存:
@@ -746,6 +753,7 @@ Failure / edge cases:
 
 - null + 非0 size は invalid reader
 - empty
+- invalid reader は empty として扱わない
 - size不足
 - 成功時だけ offset 更新
 - 失敗時 out 不変
@@ -1052,6 +1060,7 @@ ket::byte_view::View
 ket::byte_view::MutableView
 view.TryAt(index, out)
 view.TrySlice(offset, count, out)
+// default constructor, Data, Size, Empty は constexpr
 ```
 
 C++バージョン要件:
@@ -1068,6 +1077,7 @@ Failure / edge cases:
 - lifetime は呼び出し側責任
 - nullptr + 0 は空 view
 - nullptr + 非0 は invalid view
+- copy / move は non-owning pointer と size だけを複製
 - bounds overrun
 - slice 失敗時 out 不変
 

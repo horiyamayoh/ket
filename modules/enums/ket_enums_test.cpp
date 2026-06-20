@@ -19,6 +19,14 @@ namespace
 		kUnknown = 99,
 	};
 
+	enum class SignedCode : std::int8_t
+	{
+		kNegative = -1,
+		kZero = 0,
+		kPositive = 1,
+		kUnknown = 9,
+	};
+
 	enum class Permission : std::uint8_t
 	{
 		kNone = 0U,
@@ -42,12 +50,32 @@ namespace
 		ket::enums::Entry{Mode::kDuplicateName, "first"},
 	};
 
+	constexpr ket::enums::Entry<SignedCode> kSignedCodeTable[] = {
+		ket::enums::Entry{SignedCode::kNegative, "-1"},
+		ket::enums::Entry{SignedCode::kZero, "0"},
+		ket::enums::Entry{SignedCode::kPositive, "1"},
+	};
+
 	static_assert(
 		std::is_same_v<decltype(ket::enums::Entry{Mode::kIdle, "idle"}), ket::enums::Entry<Mode>>,
 		"Entry deduction guide deduces enum type");
 	static_assert(ket::enums::ToUnderlying(Mode::kRun) == 1, "ToUnderlying is constexpr");
 	static_assert(ket::enums::ToUnderlying(Permission::kExecute) == 4U,
 				  "ToUnderlying keeps underlying value");
+	static_assert(ket::enums::ToUnderlying(SignedCode::kNegative) == -1,
+				  "ToUnderlying keeps signed underlying value");
+	static_assert(ket::enums::Name(Mode::kRun, kModeTable).has_value(), "Name is constexpr");
+	static_assert(*ket::enums::Name(Mode::kRun, kModeTable) == std::string_view("run"),
+				  "Name returns matching string_view");
+	static_assert(ket::enums::NameOr(Mode::kUnknown, kModeTable, "unknown") ==
+					  std::string_view("unknown"),
+				  "NameOr is constexpr");
+	static_assert(ket::enums::Parse<Mode>("run", kModeTable).has_value(), "Parse is constexpr");
+	static_assert(*ket::enums::Parse<Mode>("run", kModeTable) == Mode::kRun,
+				  "Parse returns matching enum value");
+	static_assert(ket::enums::IsValid(Mode::kRun, kModeTable), "IsValid is constexpr");
+	static_assert(!ket::enums::IsValid(Mode::kUnknown, kModeTable),
+				  "IsValid rejects unknown enum values");
 	static_assert(ket::enums::SetFlag(Permission::kRead, Permission::kWrite) ==
 					  Permission::kReadWrite,
 				  "SetFlag is constexpr");
@@ -186,6 +214,33 @@ TEST(KetEnumsTest, ChecksValueValidity)
 
 /**
  * @test
+ * @brief 符号付きunderlying enumのtable変換確認。
+ * @details
+ * 負値を持つenum値に対して名前取得、parse、存在判定がunderlying符号に依存せず動くことを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetEnumsTest, HandlesSignedUnderlyingEnumLookup)
+{
+	const auto negative_name = ket::enums::Name(SignedCode::kNegative, kSignedCodeTable);
+	const auto zero_name = ket::enums::Name(SignedCode::kZero, kSignedCodeTable);
+	const auto negative_value = ket::enums::Parse<SignedCode>("-1", kSignedCodeTable);
+	const auto positive_value = ket::enums::Parse<SignedCode>("1", kSignedCodeTable);
+	const auto unknown_value = ket::enums::Parse<SignedCode>("9", kSignedCodeTable);
+	const auto negative_is_valid = ket::enums::IsValid(SignedCode::kNegative, kSignedCodeTable);
+	const auto unknown_is_valid = ket::enums::IsValid(SignedCode::kUnknown, kSignedCodeTable);
+
+	EXPECT_EQ(negative_name, std::optional<std::string_view>(std::string_view("-1")));
+	EXPECT_EQ(zero_name, std::optional<std::string_view>(std::string_view("0")));
+	EXPECT_EQ(negative_value, std::optional<SignedCode>(SignedCode::kNegative));
+	EXPECT_EQ(positive_value, std::optional<SignedCode>(SignedCode::kPositive));
+	EXPECT_EQ(unknown_value, std::nullopt);
+	EXPECT_TRUE(negative_is_valid);
+	EXPECT_FALSE(unknown_is_valid);
+}
+
+/**
+ * @test
  * @brief flagsのset、clear、has確認。
  * @details
  * read/write/executeのbitを操作し、単一flagとmaskの判定がunderlying値で行われることを確認。
@@ -214,6 +269,33 @@ TEST(KetEnumsTest, ManipulatesFlags)
 	EXPECT_FALSE(has_execute_before_set);
 	EXPECT_TRUE(has_execute_after_clear);
 	EXPECT_FALSE(has_read_after_clear);
+}
+
+/**
+ * @test
+ * @brief flags操作のno-op境界確認。
+ * @details 0 mask、既存flagのset、存在しないflagのclearが入力flag集合を変えないことを確認。
+ * @pre C++17以降。flag enumはunsigned underlying typeを持つ。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetEnumsTest, KeepsFlagsUnchangedForNoOpMutations)
+{
+	const auto flags = Permission::kReadWrite;
+
+	const auto set_none = ket::enums::SetFlag(flags, Permission::kNone);
+	const auto set_existing = ket::enums::SetFlag(flags, Permission::kRead);
+	const auto clear_none = ket::enums::ClearFlag(flags, Permission::kNone);
+	const auto clear_absent = ket::enums::ClearFlag(flags, Permission::kExecute);
+
+	const auto set_none_value = ket::enums::ToUnderlying(set_none);
+	const auto set_existing_value = ket::enums::ToUnderlying(set_existing);
+	const auto clear_none_value = ket::enums::ToUnderlying(clear_none);
+	const auto clear_absent_value = ket::enums::ToUnderlying(clear_absent);
+
+	EXPECT_EQ(set_none_value, 3U);
+	EXPECT_EQ(set_existing_value, 3U);
+	EXPECT_EQ(clear_none_value, 3U);
+	EXPECT_EQ(clear_absent_value, 3U);
 }
 
 /**

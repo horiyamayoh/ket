@@ -2,11 +2,12 @@
 
 /**
  * @file ket_enums.h
- * @brief enum classのtable-based変換API。
+ * @brief enum型のtable-based変換API。
  *
- * @details 利用者が明示したtableを正として、enum classの名前変換、文字列parse、
+ * @details 利用者が明示したtableを正として、enum型の名前変換、文字列parse、
  * underlying値取得、flags操作を短いAPIへ集約する。reflectionや登録frameworkは持たず、
- * drop-in時はヘッダ単体で持ち出す。
+ * drop-in時はヘッダ単体で持ち出す。flags操作はunsigned underlying typeのbit mask
+ * enumを対象にする。
  *
  * @par プロジェクトへの適用方法
  * `ket_enums.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
@@ -49,7 +50,7 @@ namespace ket
 		 * @pre `E`はenum型。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
-		 * enum class Mode : std::uint8_t { kRun = 1U };
+		 * enum class Mode : unsigned { kRun = 1U };
 		 * const auto value = ket::enums::ToUnderlying(Mode::kRun);
 		 * // value == 1
 		 * @endcode
@@ -84,13 +85,14 @@ namespace ket
 		 * @pre `table`の各`name`は参照中に有効な文字列を指す。
 		 * @post 引数と外部状態の変更なし。重複valueでは先頭entryを返す。
 		 * @code
-		 * const ket::enums::Entry table[] = {{Mode::kRun, "run"}};
+		 * const ket::enums::Entry<Mode> table[] = {ket::enums::Entry{Mode::kRun, "run"}};
 		 * const auto name = ket::enums::Name(Mode::kRun, table);
 		 * // name == std::optional<std::string_view>("run")
 		 * @endcode
 		 */
 		template <typename E, std::size_t N>
-		std::optional<std::string_view> Name(E value, const Entry<E> (&table)[N]) noexcept;
+		constexpr std::optional<std::string_view> Name(E value,
+													   const Entry<E> (&table)[N]) noexcept;
 
 		/**
 		 * @brief enum値に対応する名前またはfallback取得。
@@ -105,13 +107,13 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。重複valueでは先頭entryを返す。
 		 * @code
 		 * enum class Mode { kRun, kUnknown };
-		 * const ket::enums::Entry table[] = {ket::enums::Entry{Mode::kRun, "run"}};
+		 * const ket::enums::Entry<Mode> table[] = {ket::enums::Entry{Mode::kRun, "run"}};
 		 * const auto name = ket::enums::NameOr(Mode::kUnknown, table, "unknown");
 		 * // name == "unknown"
 		 * @endcode
 		 */
 		template <typename E, std::size_t N>
-		std::string_view
+		constexpr std::string_view
 		NameOr(E value, const Entry<E> (&table)[N], std::string_view fallback) noexcept;
 
 		/**
@@ -126,13 +128,14 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。重複nameでは先頭entryを返す。
 		 * @note 比較はcase-sensitiveかつ完全一致。
 		 * @code
-		 * const ket::enums::Entry table[] = {{Mode::kRun, "run"}};
+		 * const ket::enums::Entry<Mode> table[] = {ket::enums::Entry{Mode::kRun, "run"}};
 		 * const auto value = ket::enums::Parse<Mode>("run", table);
 		 * // value == std::optional<Mode>(Mode::kRun)
 		 * @endcode
 		 */
 		template <typename E, std::size_t N>
-		std::optional<E> Parse(std::string_view text, const Entry<E> (&table)[N]) noexcept;
+		constexpr std::optional<E> Parse(std::string_view text,
+										 const Entry<E> (&table)[N]) noexcept;
 
 		/**
 		 * @brief enum値がtableに存在するか判定。
@@ -146,13 +149,13 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * enum class Mode { kRun };
-		 * const ket::enums::Entry table[] = {ket::enums::Entry{Mode::kRun, "run"}};
+		 * const ket::enums::Entry<Mode> table[] = {ket::enums::Entry{Mode::kRun, "run"}};
 		 * const auto valid = ket::enums::IsValid(Mode::kRun, table);
 		 * // valid == true
 		 * @endcode
 		 */
 		template <typename E, std::size_t N>
-		bool IsValid(E value, const Entry<E> (&table)[N]) noexcept;
+		constexpr bool IsValid(E value, const Entry<E> (&table)[N]) noexcept;
 
 		/**
 		 * @brief 指定flagがすべて立っているか判定。
@@ -161,8 +164,9 @@ namespace ket
 		 * @param[in] flag 判定するflag。
 		 * @retval true `flag`の全bitが`flags`に含まれる。
 		 * @retval false `flag`の少なくとも1bitが`flags`に含まれない。
-		 * @pre `E`はbit maskとして扱うenum型。
-		 * @post 引数と外部状態の変更なし。
+		 * @pre `E`はunsigned underlying typeを持つbit mask enum型。
+		 * @post 引数と外部状態の変更なし。`flag`が0の場合はtrueを返す。
+		 * @note 0 maskは全bitが含まれる状態として扱う。
 		 * @code
 		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
 		 * const auto has_write = ket::enums::HasFlag(Permission::kReadWrite, Permission::kWrite);
@@ -178,7 +182,7 @@ namespace ket
 		 * @param[in] flags 入力flag集合。
 		 * @param[in] flag 立てるflag。
 		 * @retval value `flags`に`flag`のbitを加えた値。
-		 * @pre `E`はbit maskとして扱うenum型。
+		 * @pre `E`はunsigned underlying typeを持つbit mask enum型。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
@@ -195,7 +199,7 @@ namespace ket
 		 * @param[in] flags 入力flag集合。
 		 * @param[in] flag 下ろすflag。
 		 * @retval value `flags`から`flag`のbitを除いた値。
-		 * @pre `E`はbit maskとして扱うenum型。
+		 * @pre `E`はunsigned underlying typeを持つbit mask enum型。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
@@ -213,8 +217,9 @@ namespace ket
 		 * @param[in] mask 判定するflag mask。
 		 * @retval true `mask`の少なくとも1bitが`flags`に含まれる。
 		 * @retval false `mask`のbitが`flags`に含まれない。
-		 * @pre `E`はbit maskとして扱うenum型。
-		 * @post 引数と外部状態の変更なし。
+		 * @pre `E`はunsigned underlying typeを持つbit mask enum型。
+		 * @post 引数と外部状態の変更なし。`mask`が0の場合はfalseを返す。
+		 * @note 0 maskは「いずれかのflag」の対象bitを持たない状態として扱う。
 		 * @code
 		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
 		 * const auto any = ket::enums::HasAnyFlag(Permission::kReadWrite, Permission::kWrite);
@@ -231,8 +236,9 @@ namespace ket
 		 * @param[in] mask 判定するflag mask。
 		 * @retval true `mask`の全bitが`flags`に含まれる。
 		 * @retval false `mask`の少なくとも1bitが`flags`に含まれない。
-		 * @pre `E`はbit maskとして扱うenum型。
-		 * @post 引数と外部状態の変更なし。
+		 * @pre `E`はunsigned underlying typeを持つbit mask enum型。
+		 * @post 引数と外部状態の変更なし。`mask`が0の場合はtrueを返す。
+		 * @note 0 maskは全bitが含まれる状態として扱う。
 		 * @code
 		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
 		 * const auto all = ket::enums::HasAllFlags(Permission::kReadWrite, Permission::kReadWrite);
@@ -262,6 +268,20 @@ namespace ket
 			};
 
 			/**
+			 * @brief flag操作対象enum型の制約確認。
+			 * @tparam E 対象enum型。
+			 * @note detail配下の型は公開APIではない。
+			 */
+			template <typename E>
+			struct FlagTraits
+			{
+				using Underlying = typename EnumTraits<E>::Underlying;
+
+				static_assert(std::is_unsigned_v<Underlying>,
+							  "ket::enums flag helpers require an unsigned underlying type.");
+			};
+
+			/**
 			 * @brief enum値のunderlying値取得。
 			 * @tparam E 変換対象のenum型。
 			 * @param[in] value 変換対象のenum値。
@@ -274,6 +294,41 @@ namespace ket
 			constexpr typename EnumTraits<E>::Underlying ToUnderlyingUnchecked(E value) noexcept
 			{
 				return static_cast<typename EnumTraits<E>::Underlying>(value);
+			}
+
+			/**
+			 * @brief flag操作用のunderlying値取得。
+			 * @tparam E 対象enum型。
+			 * @param[in] value 変換対象のenum値。
+			 * @retval value `value`をunsigned underlying typeへ変換した値。
+			 * @pre `E`はunsigned underlying typeを持つbit mask enum型。
+			 * @post 引数と外部状態の変更なし。
+			 * @note detail配下の関数は公開APIではない。
+			 */
+			template <typename E>
+			constexpr typename FlagTraits<E>::Underlying ToFlagBits(E value) noexcept
+			{
+				return static_cast<typename FlagTraits<E>::Underlying>(value);
+			}
+
+			/**
+			 * @brief mask内のすべてのflagが立っているか判定。
+			 * @tparam E 対象enum型。
+			 * @param[in] flags 判定対象のflag集合。
+			 * @param[in] mask 判定するflag mask。
+			 * @retval true `mask`の全bitが`flags`に含まれる。
+			 * @retval false `mask`の少なくとも1bitが`flags`に含まれない。
+			 * @pre `E`はunsigned underlying typeを持つbit mask enum型。
+			 * @post 引数と外部状態の変更なし。
+			 * @note detail配下の関数は公開APIではない。
+			 */
+			template <typename E>
+			constexpr bool ContainsAllFlagBits(E flags, E mask) noexcept
+			{
+				const auto flags_value = ToFlagBits(flags);
+				const auto mask_value = ToFlagBits(mask);
+
+				return (flags_value & mask_value) == mask_value;
 			}
 
 		} // namespace detail
@@ -289,7 +344,7 @@ namespace ket
 		}
 
 		template <typename E, std::size_t N>
-		std::optional<std::string_view> Name(E value, const Entry<E> (&table)[N]) noexcept
+		constexpr std::optional<std::string_view> Name(E value, const Entry<E> (&table)[N]) noexcept
 		{
 			for (const auto& entry : table)
 			{
@@ -304,7 +359,7 @@ namespace ket
 		}
 
 		template <typename E, std::size_t N>
-		std::string_view
+		constexpr std::string_view
 		NameOr(E value, const Entry<E> (&table)[N], std::string_view fallback) noexcept
 		{
 			const auto name = Name(value, table);
@@ -318,7 +373,7 @@ namespace ket
 		}
 
 		template <typename E, std::size_t N>
-		std::optional<E> Parse(std::string_view text, const Entry<E> (&table)[N]) noexcept
+		constexpr std::optional<E> Parse(std::string_view text, const Entry<E> (&table)[N]) noexcept
 		{
 			for (const auto& entry : table)
 			{
@@ -333,7 +388,7 @@ namespace ket
 		}
 
 		template <typename E, std::size_t N>
-		bool IsValid(E value, const Entry<E> (&table)[N]) noexcept
+		constexpr bool IsValid(E value, const Entry<E> (&table)[N]) noexcept
 		{
 			const auto name = Name(value, table);
 			return name.has_value();
@@ -342,17 +397,14 @@ namespace ket
 		template <typename E>
 		constexpr bool HasFlag(E flags, E flag) noexcept
 		{
-			const auto flags_value = detail::ToUnderlyingUnchecked(flags);
-			const auto flag_value = detail::ToUnderlyingUnchecked(flag);
-
-			return (flags_value & flag_value) == flag_value;
+			return detail::ContainsAllFlagBits(flags, flag);
 		}
 
 		template <typename E>
 		constexpr E SetFlag(E flags, E flag) noexcept
 		{
-			const auto flags_value = detail::ToUnderlyingUnchecked(flags);
-			const auto flag_value = detail::ToUnderlyingUnchecked(flag);
+			const auto flags_value = detail::ToFlagBits(flags);
+			const auto flag_value = detail::ToFlagBits(flag);
 
 			return static_cast<E>(flags_value | flag_value);
 		}
@@ -360,8 +412,8 @@ namespace ket
 		template <typename E>
 		constexpr E ClearFlag(E flags, E flag) noexcept
 		{
-			const auto flags_value = detail::ToUnderlyingUnchecked(flags);
-			const auto flag_value = detail::ToUnderlyingUnchecked(flag);
+			const auto flags_value = detail::ToFlagBits(flags);
+			const auto flag_value = detail::ToFlagBits(flag);
 
 			return static_cast<E>(flags_value & ~flag_value);
 		}
@@ -369,8 +421,8 @@ namespace ket
 		template <typename E>
 		constexpr bool HasAnyFlag(E flags, E mask) noexcept
 		{
-			const auto flags_value = detail::ToUnderlyingUnchecked(flags);
-			const auto mask_value = detail::ToUnderlyingUnchecked(mask);
+			const auto flags_value = detail::ToFlagBits(flags);
+			const auto mask_value = detail::ToFlagBits(mask);
 
 			return (flags_value & mask_value) != 0;
 		}
@@ -378,10 +430,7 @@ namespace ket
 		template <typename E>
 		constexpr bool HasAllFlags(E flags, E mask) noexcept
 		{
-			const auto flags_value = detail::ToUnderlyingUnchecked(flags);
-			const auto mask_value = detail::ToUnderlyingUnchecked(mask);
-
-			return (flags_value & mask_value) == mask_value;
+			return detail::ContainsAllFlagBits(flags, mask);
 		}
 
 	} // namespace enums
