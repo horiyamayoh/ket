@@ -43,12 +43,66 @@ class CheckLayoutTest(unittest.TestCase):
 			)
 		)
 
+	def header_with_detail_namespace(self) -> str:
+		return self.header_preamble() + "\n".join(
+			(
+				"namespace ket",
+				"{",
+				"\tnamespace bcd",
+				"\t{",
+				"\t\tnamespace detail",
+				"\t\t{",
+				"\t\t\tconstexpr int kValue = 1;",
+				"",
+				"\t\t} // namespace detail",
+				"",
+				"\t} // namespace bcd",
+				"",
+				"} // namespace ket",
+				"",
+			)
+		)
+
+	def header_without_detail_namespace(self) -> str:
+		return self.header_preamble() + "\n".join(
+			(
+				"namespace ket",
+				"{",
+				"\tnamespace bcd",
+				"\t{",
+				"",
+				"\t} // namespace bcd",
+				"",
+				"} // namespace ket",
+				"",
+			)
+		)
+
+	def source_with_anonymous_namespace(self) -> str:
+		return "\n".join(
+			(
+				'#include "ket_bcd.h"',
+				"",
+				"namespace",
+				"{",
+				"\tconstexpr int kValue = 1;",
+				"",
+				"} // namespace",
+				"",
+				"int KetBcdAnchor()",
+				"{",
+				"\treturn kValue;",
+				"}",
+				"",
+			)
+		)
+
 	def make_repo(self) -> tempfile.TemporaryDirectory[str]:
 		repository = tempfile.TemporaryDirectory()
 		root = Path(repository.name)
 		(root / "modules" / "bcd").mkdir(parents=True)
 		(root / "modules" / "bcd" / "ket_bcd.h").write_text(
-			self.header_preamble(),
+			self.header_with_detail_namespace(),
 			encoding="utf-8",
 		)
 		(root / "modules" / "bcd" / "ket_bcd.cpp").write_text(
@@ -82,6 +136,42 @@ class CheckLayoutTest(unittest.TestCase):
 	def test_valid_module_layout_has_no_errors(self) -> None:
 		with self.make_repo() as root_name:
 			root = Path(root_name)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertEqual(errors, [])
+
+	def test_source_file_anonymous_namespace_layout_has_no_errors(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = root / "modules" / "bcd" / "ket_bcd.h"
+			header.write_text(
+				self.header_without_detail_namespace().replace(
+					"内部実装：ket::bcd::detail",
+					"内部実装：.cpp の無名 namespace",
+				),
+				encoding="utf-8",
+			)
+			(root / "modules" / "bcd" / "ket_bcd.cpp").write_text(
+				self.source_with_anonymous_namespace(),
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertEqual(errors, [])
+
+	def test_no_internal_implementation_layout_has_no_errors(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = root / "modules" / "bcd" / "ket_bcd.h"
+			header.write_text(
+				self.header_without_detail_namespace().replace(
+					"内部実装：ket::bcd::detail",
+					"内部実装：なし",
+				),
+				encoding="utf-8",
+			)
 
 			errors = check_layout.collect_layout_errors(root)
 
@@ -230,7 +320,7 @@ class CheckLayoutTest(unittest.TestCase):
 				errors,
 			)
 			self.assertIn(
-				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket detail implementation.",
+				"modules/bcd/ket_bcd.h: header preamble must describe internal implementation namespace.",
 				errors,
 			)
 
@@ -345,7 +435,54 @@ class CheckLayoutTest(unittest.TestCase):
 			errors = check_layout.collect_layout_errors(root)
 
 			self.assertIn(
-				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket detail implementation.",
+				"modules/bcd/ket_bcd.h: header preamble must describe internal implementation namespace.",
+				errors,
+			)
+
+	def test_detail_namespace_description_requires_header_detail_namespace(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(
+				self.header_without_detail_namespace(),
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble says ket detail implementation, but header has no namespace detail.",
+				errors,
+			)
+
+	def test_anonymous_namespace_description_requires_source_anonymous_namespace(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_without_detail_namespace().replace(
+				"内部実装：ket::bcd::detail",
+				"内部実装：.cpp の無名 namespace",
+			)
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble says .cpp anonymous namespace, but source has no anonymous namespace.",
+				errors,
+			)
+
+	def test_no_internal_implementation_rejects_existing_helpers(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = self.header_with_detail_namespace().replace(
+				"内部実装：ket::bcd::detail",
+				"内部実装：なし",
+			)
+			(root / "modules" / "bcd" / "ket_bcd.h").write_text(header, encoding="utf-8")
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/bcd/ket_bcd.h: header preamble says no internal implementation, but header has namespace detail.",
 				errors,
 			)
 

@@ -273,7 +273,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `state_table`       | P2   | C++17    | 小さい状態遷移表                 | `NextState`, `IsValidTransition`                   |
 | `cache_once`        | P2   | C++11    | once/lazy value                  | `OnceValue`, `Lazy`, `GetOrCreate`                 |
 | `serialization_tlv` | P2   | C++17    | length-prefix/TLV                | `EncodeTlv`, `TryDecodeTlv`                        |
-| `tuple`             | P2   | C++17    | tuple/pair の小さい補助          | `TupleForEach`, `TupleTransform`                   |
+| `tuple`             | P2   | C++17    | tuple/pair の小さい補助          | `ForEach`, `Transform`                             |
 | `build_config`      | P2   | C++11    | feature detection                | `KET_HAS_STD_OPTIONAL`                             |
 | `math_small`        | P2   | C++11    | 単位・補間など小さい数学         | `Lerp`, `MapRange`, `DegreesToRadians`             |
 | `meta`              | P3   | C++11/17 | type traits 補助                 | `RemoveCvref`, `AlwaysFalse`                       |
@@ -300,60 +300,65 @@ Dependencies: Standard library only, no ket dependencies
 ```cpp
 namespace ket
 {
-	constexpr bool IsNibble(std::uint8_t value) noexcept;
-	constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept;
-	constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept;
-	constexpr bool TryMakeByteFromNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t* out) noexcept;
+	namespace bits
+	{
+		constexpr bool IsNibble(std::uint8_t value) noexcept;
+		constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept;
+		constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept;
+		bool TryPackNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept;
 
-	template <typename T>
-	constexpr unsigned BitWidth() noexcept;
+		template <typename T>
+		constexpr unsigned TypeBitWidth() noexcept;
 
-	template <typename T>
-	constexpr bool HasBit(T value, unsigned bit_index) noexcept;
+		template <typename T>
+		constexpr bool HasBit(T value, unsigned bit_index) noexcept;
 
-	template <typename T>
-	constexpr bool TrySetBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TrySetBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryClearBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TryClearBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryToggleBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TryToggleBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryMask(unsigned width, T* out) noexcept;
+		template <typename T>
+		bool TryMask(unsigned width, T& out) noexcept;
 
-	template <typename T>
-	constexpr unsigned PopCount(T value) noexcept;
+		template <typename T>
+		constexpr unsigned PopCount(T value) noexcept;
 
-	template <typename T>
-	constexpr bool IsPowerOfTwo(T value) noexcept;
+		template <typename T>
+		constexpr bool IsPowerOfTwo(T value) noexcept;
 
-	template <typename T>
-	constexpr T Rotl(T value, unsigned count) noexcept;
+		template <typename T>
+		constexpr T Rotl(T value, unsigned count) noexcept;
 
-	template <typename T>
-	constexpr T Rotr(T value, unsigned count) noexcept;
+		template <typename T>
+		constexpr T Rotr(T value, unsigned count) noexcept;
+
+	} // namespace bits
 
 } // namespace ket
 ```
 
 仕様メモ:
 
-- `HasBit(value, bit_index)` は `bit_index >= BitWidth<T>()` の場合 `false`。
-- `TrySetBit` / `TryClearBit` / `TryToggleBit` は `out == nullptr` または index 範囲外なら `false`。
-- `TryMask<T>(0, &out)` は `out = 0` で成功。
-- `TryMask<T>(BitWidth<T>(), &out)` は全bit 1 で成功。
-- `TryMask<T>(width, &out)` は `width > BitWidth<T>()` なら失敗。
+- `HasBit(value, bit_index)` は `bit_index >= TypeBitWidth<T>()` の場合 `false`。
+- `TrySetBit` / `TryClearBit` / `TryToggleBit` は index 範囲外なら `false`。
+- `TryMask<T>(0, out)` は `out = 0` で成功。
+- `TryMask<T>(TypeBitWidth<T>(), out)` は全bit 1 で成功。
+- `TryMask<T>(width, out)` は `width > TypeBitWidth<T>()` なら失敗。
 - `Rotl` / `Rotr` は count を bit 幅で剰余化し、shift 幅 overflow を起こさない。
-- まず unsigned integral 対象に絞る。signed 対応は入れないか、内部で unsigned 化して明示する。
+- まず bool、char、wchar_t、char16_t、char32_t を除く unsigned integral 対象に絞る。
+  signed 対応は入れないか、内部で unsigned 化して明示する。
 
 テスト観点:
 
 - `HighNibble(0xAB) == 0x0A`
 - `LowNibble(0xAB) == 0x0B`
-- `TryMakeByteFromNibbles(0x0A, 0x0B) == 0xAB`
-- `TryMakeByteFromNibbles(0x10, 0x00)` は失敗。
+- `TryPackNibbles(0x0A, 0x0B) == 0xAB`
+- `TryPackNibbles(0x10, 0x00)` は失敗。
 - `HasBit(0b1000, 3)` は true。
 - `HasBit(0b1000, 8)` は false。
 - `TryMask<std::uint8_t>(0) == 0x00`
@@ -929,24 +934,28 @@ Dependencies: Standard library only, no ket dependencies
 ```cpp
 namespace ket
 {
-	class ByteReader
+	namespace byte_reader
 	{
-	public:
-		ByteReader(const std::uint8_t* data, std::size_t size) noexcept;
+		class Reader
+		{
+		public:
+			Reader(const std::uint8_t* data, std::size_t size) noexcept;
 
-		std::size_t Size() const noexcept;
-		std::size_t Offset() const noexcept;
-		std::size_t Remaining() const noexcept;
-		bool Empty() const noexcept;
+			std::size_t Size() const noexcept;
+			std::size_t Offset() const noexcept;
+			std::size_t Remaining() const noexcept;
+			bool Empty() const noexcept;
 
-		bool Skip(std::size_t size) noexcept;
-		bool ReadU8(std::uint8_t* out) noexcept;
-		bool ReadBe16(std::uint16_t* out) noexcept;
-		bool ReadBe32(std::uint32_t* out) noexcept;
-		bool ReadLe16(std::uint16_t* out) noexcept;
-		bool ReadLe32(std::uint32_t* out) noexcept;
-		bool ReadBytes(const std::uint8_t** out_data, std::size_t size) noexcept;
-	};
+			bool Skip(std::size_t size) noexcept;
+			bool ReadU8(std::uint8_t& out) noexcept;
+			bool ReadBe16(std::uint16_t& out) noexcept;
+			bool ReadBe32(std::uint32_t& out) noexcept;
+			bool ReadLe16(std::uint16_t& out) noexcept;
+			bool ReadLe32(std::uint32_t& out) noexcept;
+			bool ReadBytes(std::size_t size, const std::uint8_t*& out_data) noexcept;
+		};
+
+	} // namespace byte_reader
 
 } // namespace ket
 ```
@@ -955,6 +964,7 @@ namespace ket
 
 - `data == nullptr && size == 0` は有効な空 reader。
 - `data == nullptr && size > 0` は invalid reader とし、全 read を失敗させる。
+- `Empty()` は valid reader が末尾に到達した場合だけ true を返す。
 - `ReadXxx` は成功時のみ offset を進める。
 - 失敗時は offset を変えない。
 - `ReadBytes` は non-owning pointer を返す。reader の元 buffer lifetime が必要。
@@ -1599,6 +1609,10 @@ namespace ket
 
 ### 8.2 `modules/variant_match/ket_variant_match.h`
 
+この案は `docs/module_api_catalog.md` の `variant` moduleで置き換え済み。実装済みAPIは
+`modules/variant/ket_variant.h` の `ket::variant::Match` のみで、`Holds` と `GetIf` は初回APIに
+含めない。
+
 ```cpp
 namespace ket
 {
@@ -1821,11 +1835,15 @@ namespace ket
 ```cpp
 namespace ket
 {
-	template <typename Tuple, typename F>
-	void TupleForEach(Tuple&& tuple, F f);
+	namespace tuple
+	{
+		template <typename Tuple, typename F>
+		void ForEach(Tuple&& tuple, F&& f);
 
-	template <typename Tuple, typename F>
-	auto TupleTransform(Tuple&& tuple, F f);
+		template <typename Tuple, typename F>
+		auto Transform(Tuple&& tuple, F&& f);
+
+	} // namespace tuple
 
 } // namespace ket
 ```
@@ -2201,7 +2219,7 @@ ket::endian::LoadLe32(data)
 [ ] 公開APIは namespace ket
 [ ] 他の ket module に依存していない
 [ ] 公開ヘッダが必要な標準ヘッダを自分で include している
-[ ] Doxygen に @brief / @param / @retval / @pre / @post がある
+[ ] Doxygen に @brief / @param / @retval / @pre / @post がある（constructor/destructorは @retval なし）
 [ ] 失敗条件を戻り値・precondition・例外のどれで扱うか固定した
 [ ] null / empty / overflow / size不足 / invalid input のテストがある
 [ ] format / static analysis / conventions / CTest が通る

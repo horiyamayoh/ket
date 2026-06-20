@@ -6,7 +6,8 @@
  *
  * @details `std::visit`へ渡すoverload helperをmodule内に閉じ、variantのalternativeへ短く
  * dispatchする。ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。
- * `std::variant`の標準動作を置き換えず、visitor束ね処理だけを薄く包む。
+ * `std::variant`の標準動作を置き換えず、visitor束ね処理だけを薄く包む。lvalue handlerは
+ * 内部visitorへcopyし、rvalue handlerはmoveする。
  *
  * @par プロジェクトへの適用方法
  * `ket_variant.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
@@ -45,13 +46,16 @@ namespace ket
 		 * @tparam Handlers alternativeごとの呼び出し可能型。
 		 * @param[in,out] variant dispatch対象のvariant値。constnessとvalue
 		 * categoryはstd::visitへ保持。
-		 * @param[in] handlers alternativeごとのhandler。rvalue handlerは内部visitorへmoveされる。
+		 * @param[in] handlers alternativeごとのhandler。lvalue handlerは内部visitorへcopyされ、
+		 * rvalue handlerはmoveされる。
 		 * @retval value 選択されたhandlerの戻り値。
 		 * @retval void 選択されたhandlerがvoidを返す場合は戻り値なし。
 		 * @pre `variant`はstd::visitへ渡せるvariant値。handler集合は全alternativeを受け付け、
 		 * 戻り型はstd::visitの要件を満たす。
 		 * @post handlerの副作用を除き、外部状態の追加変更なし。handler例外は呼び出し元へ伝播。
-		 * @note valueless_by_exceptionの扱いはstd::visitの仕様に従う。
+		 * @note valueless_by_exceptionではstd::visitと同じくstd::bad_variant_accessを送出。
+		 * @note lvalue handlerはcopyされるため、handler自身の内部状態への参照を返す用途には
+		 * 適さない。variant alternativeや外部objectへの参照返却は通常のlifetime規則に従う。
 		 * @code
 		 * std::variant<int, std::string> value = 42;
 		 * const auto text = ket::variant::Match(
@@ -62,7 +66,7 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename Variant, typename... Handlers>
-		decltype(auto) Match(Variant&& variant, Handlers&&... handlers);
+		constexpr decltype(auto) Match(Variant&& variant, Handlers&&... handlers);
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -81,6 +85,12 @@ namespace ket
 				using Bases::operator()...;
 
 				template <typename... Handlers>
+				/**
+				 * @brief handler baseを保持する内部visitor生成。
+				 * @param[in] handlers visitorへ保持するhandler群。
+				 * @pre 各handlerは対応するbase型を構築できる。
+				 * @post 各baseは対応handlerから構築される。
+				 */
 				constexpr explicit Overload(Handlers&&... handlers)
 					: Bases(std::forward<Handlers>(handlers))...
 				{
@@ -107,10 +117,10 @@ namespace ket
 		// -----------------------------------------------------------------------------
 
 		template <typename Variant, typename... Handlers>
-		decltype(auto) Match(Variant&& variant, Handlers&&... handlers)
+		constexpr decltype(auto) Match(Variant&& variant, Handlers&&... handlers)
 		{
-			return std::visit(detail::MakeOverload(std::forward<Handlers>(handlers)...),
-							  std::forward<Variant>(variant));
+			auto visitor = detail::MakeOverload(std::forward<Handlers>(handlers)...);
+			return std::visit(visitor, std::forward<Variant>(variant));
 		}
 
 	} // namespace variant
