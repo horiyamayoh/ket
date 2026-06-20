@@ -1,9 +1,12 @@
 #include "ket_tuple.h"
 
+#include <array>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -21,6 +24,41 @@ namespace
 		{
 			return std::string{value};
 		}
+	};
+
+	class NonCopyableAccumulator
+	{
+	  public:
+		explicit NonCopyableAccumulator(int& total_ref) : total(total_ref) {}
+
+		NonCopyableAccumulator(const NonCopyableAccumulator&) = delete;
+		NonCopyableAccumulator& operator=(const NonCopyableAccumulator&) = delete;
+
+		void operator()(int value)
+		{
+			total += value;
+		}
+
+	  private:
+		int& total;
+	};
+
+	class NonCopyableTransformer
+	{
+	  public:
+		explicit NonCopyableTransformer(int& call_count_ref) : call_count(call_count_ref) {}
+
+		NonCopyableTransformer(const NonCopyableTransformer&) = delete;
+		NonCopyableTransformer& operator=(const NonCopyableTransformer&) = delete;
+
+		int operator()(int value)
+		{
+			++call_count;
+			return value * 3;
+		}
+
+	  private:
+		int& call_count;
 	};
 
 } // namespace
@@ -176,6 +214,90 @@ TEST(KetTupleTest, HandlesReferenceElements)
 				  "reference-returning transform keeps tuple reference elements");
 	EXPECT_EQ(first, 42);
 	EXPECT_EQ(second, 16);
+}
+
+/**
+ * @test
+ * @brief 非copy callableの直接呼び出し確認。
+ * @details
+ * copy不能なstateful
+ * callableをlvalueで渡し、ForEachとTransformがAPI内でcallableをcopyせず同じobjectを呼ぶことを確認。
+ * @pre C++17以降。
+ * @post
+ * totalとcall_countは各APIの呼び出し回数と入力値を反映した値へ変化。テスト対象tupleの変更なし。
+ */
+TEST(KetTupleTest, InvokesNonCopyableStatefulCallableWithoutCopy)
+{
+	auto values = std::make_tuple(1, 2, 3);
+	int total = 0;
+	NonCopyableAccumulator accumulator(total);
+
+	ket::tuple::ForEach(values, accumulator);
+
+	EXPECT_EQ(total, 6);
+
+	int call_count = 0;
+	NonCopyableTransformer transformer(call_count);
+
+	auto transformed = ket::tuple::Transform(values, transformer);
+	const auto expected_transformed = std::make_tuple(3, 6, 9);
+
+	EXPECT_EQ(call_count, 3);
+	EXPECT_EQ(transformed, expected_transformed);
+}
+
+/**
+ * @test
+ * @brief tuple-like objectの反復と変換確認。
+ * @details std::pairとstd::arrayを入力し、std::apply互換のtuple-like objectを扱えることを確認。
+ * @pre C++17以降。
+ * @post pair_sumはpair要素の合計へ変化。array入力の各要素から変換tupleを生成。
+ */
+TEST(KetTupleTest, HandlesPairAndArrayTupleLikeObjects)
+{
+	auto pair_values = std::pair<int, int>{4, 9};
+	int pair_sum = 0;
+
+	ket::tuple::ForEach(pair_values,
+						[&pair_sum](int value)
+						{
+							pair_sum += value;
+						});
+
+	const auto values = std::array<int, 3>{{1, 2, 3}};
+	auto transformed = ket::tuple::Transform(values,
+											 [](int value)
+											 {
+												 return value * 10;
+											 });
+	const auto expected_transformed = std::make_tuple(10, 20, 30);
+
+	static_assert(std::is_same_v<decltype(transformed), std::tuple<int, int, int>>,
+				  "array transform returns tuple with one result per element");
+	EXPECT_EQ(pair_sum, 13);
+	EXPECT_EQ(transformed, expected_transformed);
+}
+
+/**
+ * @test
+ * @brief rvalue tuple要素のmove forwarding確認。
+ * @details
+ * move-only要素を持つrvalue
+ * tupleをTransformへ渡し、要素がcallableへrvalueとして転送されることを確認。
+ * @pre C++17以降。
+ * @post temporary tupleのunique_ptrはcallableへmoveされる。戻りtupleはcallableの戻り値を保持。
+ */
+TEST(KetTupleTest, ForwardsRvalueElementsToCallable)
+{
+	auto transformed = ket::tuple::Transform(std::make_tuple(std::make_unique<int>(8)),
+											 [](std::unique_ptr<int> value)
+											 {
+												 return *value + 2;
+											 });
+
+	static_assert(std::is_same_v<decltype(transformed), std::tuple<int>>,
+				  "move-only element transform returns callable result tuple");
+	EXPECT_EQ(std::get<0>(transformed), 10);
 }
 
 /**

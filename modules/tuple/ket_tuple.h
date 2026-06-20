@@ -13,14 +13,9 @@
  *
  * @par C++バージョン要件
  * 最小要件：C++17。
- *
  * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
- *
- * 推奨理由：`std::apply` と fold expression
- * を利用でき、tuple走査を標準ライブラリのみで小さく表現できる。
- *
+ * 推奨理由：`std::apply` と fold expression でtuple走査を小さく表現可能。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
- *
  * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
@@ -47,12 +42,16 @@ namespace ket
 
 		/**
 		 * @brief tuple要素へのindex順の副作用呼び出し。
-		 * @param[in] tuple 走査対象のtuple-like object。
-		 * @param[in] f 各要素を1引数で受け取るcallable。呼び出し対象はこの引数から作ったcopy。
+		 * @param[in,out] tuple 走査対象のtuple-like
+		 * object。non-const要素やrvalue要素は`f`により変更またはmoveされ得る。
+		 * @param[in,out] f 各要素を1引数で受け取るcallable。渡されたcallable
+		 * objectを直接呼び出し、API内でcopyしない。
 		 * @retval void 戻り値なし。
-		 * @pre `tuple`はstd::applyで展開可能。`f`は各要素型で呼び出し可能。
+		 * @pre
+		 * `tuple`はstd::applyで展開可能。`f`はlvalue callable
+		 * objectとして各転送済み要素型で呼び出し可能。
 		 * @post
-		 * `f`はtuple要素のindex昇順に最大1回ずつ呼び出される。callable例外は呼び出し元へ伝播。
+		 * `f`はtuple要素のindex昇順に最大1回ずつ同じobjectとして呼び出される。callable例外は呼び出し元へ伝播。
 		 * @note `f`の戻り値は破棄。tuple要素のvalue categoryとcv修飾はstd::applyの規則に従う。
 		 * @code
 		 * auto values = std::make_tuple(1, 2, 3);
@@ -62,19 +61,24 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename Tuple, typename F>
-		void ForEach(Tuple&& tuple, F f);
+		void ForEach(Tuple&& tuple, F&& f);
 
 		/**
 		 * @brief tuple要素のindex順変換。
-		 * @param[in] tuple 変換対象のtuple-like object。
-		 * @param[in] f
-		 * 各要素を1引数で受け取り、変換後の要素を返すcallable。呼び出し対象はこの引数から作ったcopy。
+		 * @param[in,out] tuple 変換対象のtuple-like
+		 * object。non-const要素やrvalue要素は`f`により変更またはmoveされ得る。
+		 * @param[in,out] f
+		 * 各要素を1引数で受け取り、変換後の要素を返すcallable。渡されたcallable
+		 * objectを直接呼び出し、API内でcopyしない。
 		 * @retval value 各要素への`f`の戻り値を同じindex順に格納したstd::tuple。
 		 * @pre
-		 * `tuple`はstd::applyで展開可能。`f`は各要素型で呼び出し可能で、戻り値はstd::tuple要素として構成可能。
+		 * `tuple`はstd::applyで展開可能。`f`はlvalue callable
+		 * objectとして各転送済み要素型で呼び出し可能で、戻り値はstd::tuple要素として構成可能。戻りtupleの参照要素を使う場合、参照先は戻りtupleの利用中に有効。
 		 * @post
-		 * `f`はtuple要素のindex昇順に最大1回ずつ呼び出される。引数と外部状態は`f`の副作用以外で変更なし。
-		 * @note callable例外は呼び出し元へ伝播。`f`が参照を返す場合、戻り値は参照要素を持つtuple。
+		 * `f`はtuple要素のindex昇順に最大1回ずつ同じobjectとして呼び出される。引数と外部状態は`f`の副作用以外で変更なし。
+		 * @note
+		 * callable例外は呼び出し元へ伝播。`f`が参照を返す場合、戻り値は参照要素を持つtuple。rvalue
+		 * tuple要素への参照を返すcallableではdangling referenceに注意。
 		 * @code
 		 * const auto values = std::make_tuple(1, 2, 3);
 		 * const auto doubled = ket::tuple::Transform(values, [](int value) { return value * 2; });
@@ -82,7 +86,7 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename Tuple, typename F>
-		auto Transform(Tuple&& tuple, F f);
+		auto Transform(Tuple&& tuple, F&& f);
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -129,7 +133,7 @@ namespace ket
 		// -----------------------------------------------------------------------------
 
 		template <typename Tuple, typename F>
-		void ForEach(Tuple&& tuple, F f)
+		void ForEach(Tuple&& tuple, F&& f)
 		{
 			std::apply(
 				[&f](auto&&... elements)
@@ -140,7 +144,7 @@ namespace ket
 		}
 
 		template <typename Tuple, typename F>
-		auto Transform(Tuple&& tuple, F f)
+		auto Transform(Tuple&& tuple, F&& f)
 		{
 			return std::apply(
 				[&f](auto&&... elements)
