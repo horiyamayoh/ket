@@ -156,6 +156,20 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_bits_test ket_bits_cxx11_check)
 
 	ket_add_module_test(
+		ket_numeric_test
+		SOURCES
+			modules/numeric/ket_numeric_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_numeric_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/numeric/ket_numeric_cxx11_check.cpp
+	)
+	add_dependencies(ket_numeric_test ket_numeric_cxx11_check)
+
+	ket_add_module_test(
 		ket_byte_reader_test
 		SOURCES
 			modules/byte_reader/ket_byte_reader.cpp

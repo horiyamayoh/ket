@@ -373,8 +373,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   - `template <typename T> constexpr T SaturatingAdd(T a, T b) noexcept`
   - `template <typename T> constexpr T SaturatingSub(T a, T b) noexcept`
   - `template <typename To, typename From> bool TryCast(From value, To& out) noexcept`
-- Behavior: arithmetic API は integral 型を対象にし、`bool` と character 型（`char`、`signed char`、
-  `unsigned char`、`wchar_t`、`char16_t`、`char32_t`）は対象外。対象外型は `static_assert` または SFINAE で
+- Behavior: arithmetic API は integral 型を対象にし、`bool` と text character 型（`char`、`wchar_t`、
+  `char16_t`、`char32_t`）は対象外。`signed char` と `unsigned char` は
+  `std::int8_t` / `std::uint8_t` の実装aliasを壊さないため対象。対象外型は `static_assert` または SFINAE で
   compile error にする。alignment と divide-round-up は unsigned integral のみ。checked arithmetic は
   `std::numeric_limits<T>` による事前比較で成否を判定し、signed overflow を起こす式を評価しない。
   `AbsDiff` は signed 最小値を単純に符号反転せず、unsigned 変換と範囲比較で min/max 差を表す。
@@ -386,7 +387,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Complexity/performance: 全API定数時間。`constexpr` query はコンパイル時評価可。allocation・例外なし。
 - Tests: align 0/1/exact/overflow、divide 0/1/exact、checked add/sub/mul の min/max、
   `std::numeric_limits<T>::min()` を含む `AbsDiff`、saturating の上下限、cast 255/256、signed境界、
-  `bool`/character型の不採用 compile-only。
+  `bool`/text character型の不採用 compile-only、`std::int8_t`/`std::uint8_t` の採用 compile-only。
 - Do not implement: arbitrary precision、numeric framework、C++17 optional convenience の初回追加。
 
 ### endian Module
