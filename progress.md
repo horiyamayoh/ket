@@ -19,6 +19,7 @@ Statusは次の値を使います。
 | date        | date             | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定         |
 | deadline    | time             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定  |
 | string      | string           | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記  |
+| byte_reader | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 固定bufferからoffset保持で逐次読み取り  |
 | endian      | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | byte orderを明示した16/32/64bit読み書き |
 | bytes       | binary           | verified | C++17   | GoogleTest                         | checked | 可変長byte payloadの構築                |
 | byte_writer | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | fixed bufferへの逐次書き込み            |

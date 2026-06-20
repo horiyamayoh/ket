@@ -929,24 +929,28 @@ Dependencies: Standard library only, no ket dependencies
 ```cpp
 namespace ket
 {
-	class ByteReader
+	namespace byte_reader
 	{
-	public:
-		ByteReader(const std::uint8_t* data, std::size_t size) noexcept;
+		class Reader
+		{
+		public:
+			Reader(const std::uint8_t* data, std::size_t size) noexcept;
 
-		std::size_t Size() const noexcept;
-		std::size_t Offset() const noexcept;
-		std::size_t Remaining() const noexcept;
-		bool Empty() const noexcept;
+			std::size_t Size() const noexcept;
+			std::size_t Offset() const noexcept;
+			std::size_t Remaining() const noexcept;
+			bool Empty() const noexcept;
 
-		bool Skip(std::size_t size) noexcept;
-		bool ReadU8(std::uint8_t* out) noexcept;
-		bool ReadBe16(std::uint16_t* out) noexcept;
-		bool ReadBe32(std::uint32_t* out) noexcept;
-		bool ReadLe16(std::uint16_t* out) noexcept;
-		bool ReadLe32(std::uint32_t* out) noexcept;
-		bool ReadBytes(const std::uint8_t** out_data, std::size_t size) noexcept;
-	};
+			bool Skip(std::size_t size) noexcept;
+			bool ReadU8(std::uint8_t& out) noexcept;
+			bool ReadBe16(std::uint16_t& out) noexcept;
+			bool ReadBe32(std::uint32_t& out) noexcept;
+			bool ReadLe16(std::uint16_t& out) noexcept;
+			bool ReadLe32(std::uint32_t& out) noexcept;
+			bool ReadBytes(std::size_t size, const std::uint8_t*& out_data) noexcept;
+		};
+
+	} // namespace byte_reader
 
 } // namespace ket
 ```
@@ -955,6 +959,7 @@ namespace ket
 
 - `data == nullptr && size == 0` は有効な空 reader。
 - `data == nullptr && size > 0` は invalid reader とし、全 read を失敗させる。
+- `Empty()` は valid reader が末尾に到達した場合だけ true を返す。
 - `ReadXxx` は成功時のみ offset を進める。
 - 失敗時は offset を変えない。
 - `ReadBytes` は non-owning pointer を返す。reader の元 buffer lifetime が必要。
