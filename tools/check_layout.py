@@ -212,14 +212,15 @@ def check_header_preamble(root: Path, layout: ModuleLayout, errors: list[str]) -
 		if marker not in preamble:
 			add_error(errors, root, layout.header, message)
 
-	# 公開APIと内部実装のnamespaceはmodule毎の入れ子namespace (ket::<module>) を要求
+	# 公開APIはmodule毎の入れ子namespace (ket::<module>) を要求
 	public_namespace = f"公開API：ket::{layout.name}"
 	if public_namespace not in preamble:
 		add_error(errors, root, layout.header, "header preamble must describe namespace ket public API.")
 
 	detail_namespace = f"内部実装：ket::{layout.name}::detail"
-	if detail_namespace not in preamble:
-		add_error(errors, root, layout.header, "header preamble must describe namespace ket detail implementation.")
+	cpp_anonymous_namespace = "内部実装：.cpp の無名 namespace"
+	if detail_namespace not in preamble and cpp_anonymous_namespace not in preamble:
+		add_error(errors, root, layout.header, "header preamble must describe internal implementation namespace.")
 
 
 def collect_layout_errors(root: Path = ket_tooling.ROOT) -> list[str]:

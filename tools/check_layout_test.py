@@ -87,6 +87,22 @@ class CheckLayoutTest(unittest.TestCase):
 
 			self.assertEqual(errors, [])
 
+	def test_source_file_anonymous_namespace_layout_has_no_errors(self) -> None:
+		with self.make_repo() as root_name:
+			root = Path(root_name)
+			header = root / "modules" / "bcd" / "ket_bcd.h"
+			header.write_text(
+				self.header_preamble().replace(
+					"内部実装：ket::bcd::detail",
+					"内部実装：.cpp の無名 namespace",
+				),
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertEqual(errors, [])
+
 	def test_header_only_module_layout_has_no_errors(self) -> None:
 		with self.make_repo() as root_name:
 			root = Path(root_name)
@@ -230,7 +246,7 @@ class CheckLayoutTest(unittest.TestCase):
 				errors,
 			)
 			self.assertIn(
-				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket detail implementation.",
+				"modules/bcd/ket_bcd.h: header preamble must describe internal implementation namespace.",
 				errors,
 			)
 
@@ -345,7 +361,7 @@ class CheckLayoutTest(unittest.TestCase):
 			errors = check_layout.collect_layout_errors(root)
 
 			self.assertIn(
-				"modules/bcd/ket_bcd.h: header preamble must describe namespace ket detail implementation.",
+				"modules/bcd/ket_bcd.h: header preamble must describe internal implementation namespace.",
 				errors,
 			)
 

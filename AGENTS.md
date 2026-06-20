@@ -39,7 +39,7 @@ modules/<name>/ket_<name>_test.cpp
 - 小さい内部処理の重複は許容します。drop-in性を優先します。
 - ヘッダ先頭にDoxygen `@file`コメントを書き、`@brief`、`@details`、`@par プロジェクトへの適用方法`、`@par C++バージョン要件`、`@par 他のライブラリへの依存`、`@par namespace` を含めてください。
 - `@par C++バージョン要件` には `最小要件：`、`本ライブラリの適用を推奨する C++ バージョン：`、`推奨理由：`、`本ライブラリの適用を推奨しない C++ バージョン：`、`非推奨理由：` を書いてください。非推奨がない場合は `本ライブラリの適用を推奨しない C++ バージョン：なし。` と `非推奨理由：なし。` を書いてください。
-- `@par namespace` には `公開API：ket::<module>` と `内部実装：ket::<module>::detail` を書いてください。
+- `@par namespace` には `公開API：ket::<module>` と内部helperの配置を書いてください。header内helperがある場合は `内部実装：ket::<module>::detail`、`.cpp` 内helperだけの場合は `内部実装：.cpp の無名 namespace` と書いてください。
 - ヘッダのinclude guardには `#pragma once` を使ってください。
 - 公開ヘッダは include what you use を守り、自分が必要な標準ヘッダを自分でincludeしてください。
 - `.cpp` 内helperは無名namespace、header内helperは `ket::<module>::detail` に置いてください。

@@ -24,7 +24,7 @@
  *
  * @par namespace
  * 公開API：ket::byte_reader
- * 内部実装：ket::byte_reader::detail（ヘッダ内helper用。本moduleのhelperは.cppの無名 namespace）
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
