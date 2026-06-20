@@ -46,45 +46,38 @@ namespace
 		return std::make_error_code(std::errc::io_error);
 	}
 
-	bool TryGetStreamSize(std::size_t size, std::streamsize& out, std::error_code* error) noexcept
+	std::error_code MakeIsDirectoryError()
+	{
+		return std::make_error_code(std::errc::is_a_directory);
+	}
+
+	std::error_code MakeNoSuchFileError()
+	{
+		return std::make_error_code(std::errc::no_such_file_or_directory);
+	}
+
+	std::optional<std::streamsize> TryGetStreamSize(std::uintmax_t size,
+													std::error_code* error) noexcept
 	{
 		const auto max_stream_size =
 			static_cast<std::uintmax_t>((std::numeric_limits<std::streamsize>::max)());
-		const auto size_as_uintmax = static_cast<std::uintmax_t>(size);
-		const auto size_too_large = size_as_uintmax > max_stream_size;
+		const auto size_too_large = size > max_stream_size;
 		if (size_too_large)
 		{
 			SetError(error, MakeFileTooLargeError());
-			return false;
+			return std::nullopt;
 		}
 
-		out = static_cast<std::streamsize>(size);
-		return true;
+		return static_cast<std::streamsize>(size);
 	}
 
-	bool TryGetFileSize(const std::filesystem::path& path,
-						std::uintmax_t& out,
-						std::error_code* error) noexcept
-	{
-		std::error_code file_size_error;
-		const auto file_size = std::filesystem::file_size(path, file_size_error);
-		const auto query_failed = static_cast<bool>(file_size_error);
-		if (query_failed)
-		{
-			SetError(error, file_size_error);
-			return false;
-		}
-
-		out = file_size;
-		return true;
-	}
-
-	bool FileSizeFitsString(std::uintmax_t file_size,
-							const std::string& buffer,
+	template <typename Buffer>
+	bool FileSizeFitsBuffer(std::uintmax_t file_size,
+							const Buffer& buffer,
 							std::error_code* error) noexcept
 	{
-		const auto exceeds_string_size = file_size > buffer.max_size();
-		if (exceeds_string_size)
+		const auto exceeds_buffer_size = file_size > buffer.max_size();
+		if (exceeds_buffer_size)
 		{
 			SetError(error, MakeFileTooLargeError());
 			return false;
@@ -93,36 +86,121 @@ namespace
 		return true;
 	}
 
-	bool FileSizeFitsVector(std::uintmax_t file_size,
-							const std::vector<std::uint8_t>& buffer,
-							std::error_code* error) noexcept
+	void SetOpenError(const std::filesystem::path& path, std::error_code* error) noexcept
 	{
-		const auto exceeds_vector_size = file_size > buffer.max_size();
-		if (exceeds_vector_size)
+		std::error_code status_error;
+		const auto status = std::filesystem::status(path, status_error);
+		const auto status_failed = static_cast<bool>(status_error);
+		if (status_failed)
 		{
-			SetError(error, MakeFileTooLargeError());
+			SetError(error, status_error);
+			return;
+		}
+
+		const auto path_exists = std::filesystem::exists(status);
+		if (!path_exists)
+		{
+			SetError(error, MakeNoSuchFileError());
+			return;
+		}
+
+		const auto path_is_directory = std::filesystem::is_directory(status);
+		if (path_is_directory)
+		{
+			SetError(error, MakeIsDirectoryError());
+			return;
+		}
+
+		SetError(error, MakeIoError());
+	}
+
+	bool TryCheckReadableFilePath(const std::filesystem::path& path,
+								  std::error_code* error) noexcept
+	{
+		std::error_code status_error;
+		const auto status = std::filesystem::status(path, status_error);
+		const auto status_failed = static_cast<bool>(status_error);
+		if (status_failed)
+		{
+			SetError(error, status_error);
+			return false;
+		}
+
+		const auto path_exists = std::filesystem::exists(status);
+		if (!path_exists)
+		{
+			SetError(error, MakeNoSuchFileError());
+			return false;
+		}
+
+		const auto path_is_directory = std::filesystem::is_directory(status);
+		if (path_is_directory)
+		{
+			SetError(error, MakeIsDirectoryError());
 			return false;
 		}
 
 		return true;
 	}
 
-	bool TryReadExact(std::ifstream& stream, char* data, std::size_t size, std::error_code* error)
+	bool TryOpenInputAtEnd(const std::filesystem::path& path,
+						   std::ifstream& stream,
+						   std::uintmax_t& out,
+						   std::error_code* error)
 	{
-		const auto input_is_empty = size == 0U;
+		const auto path_can_be_read = TryCheckReadableFilePath(path, error);
+		if (!path_can_be_read)
+		{
+			return false;
+		}
+
+		stream.open(path, std::ios::binary | std::ios::ate);
+		const auto stream_is_open = stream.is_open();
+		if (!stream_is_open)
+		{
+			SetOpenError(path, error);
+			return false;
+		}
+
+		const auto end_position = stream.tellg();
+		const auto tell_failed = end_position == std::ifstream::pos_type(-1);
+		if (tell_failed)
+		{
+			SetError(error, MakeIoError());
+			return false;
+		}
+
+		const auto end_offset = static_cast<std::streamoff>(end_position);
+		const auto negative_size = end_offset < 0;
+		if (negative_size)
+		{
+			SetError(error, MakeIoError());
+			return false;
+		}
+
+		out = static_cast<std::uintmax_t>(end_offset);
+
+		stream.seekg(0, std::ios::beg);
+		const auto seek_failed = !stream;
+		if (seek_failed)
+		{
+			SetError(error, MakeIoError());
+			return false;
+		}
+
+		return true;
+	}
+
+	bool
+	TryReadExact(std::ifstream& stream, char* data, std::streamsize size, std::error_code* error)
+	{
+		const auto input_is_empty = size == 0;
 		if (input_is_empty)
 		{
 			return true;
 		}
 
-		std::streamsize stream_size = 0;
-		const auto stream_size_available = TryGetStreamSize(size, stream_size, error);
-		if (!stream_size_available)
-		{
-			return false;
-		}
-
-		stream.read(data, stream_size);
+		stream.read(data, size);
 		const auto read_failed = !stream;
 		if (read_failed)
 		{
@@ -133,23 +211,38 @@ namespace
 		return true;
 	}
 
-	bool
-	TryWriteExact(std::ofstream& stream, const char* data, std::size_t size, std::error_code* error)
+	bool TryReadEof(std::ifstream& stream, std::error_code* error)
 	{
-		const auto input_is_empty = size == 0U;
+		const auto next = stream.peek();
+		const auto read_failed = stream.bad();
+		if (read_failed)
+		{
+			SetError(error, MakeIoError());
+			return false;
+		}
+
+		const auto reached_end = next == std::char_traits<char>::eof();
+		if (reached_end)
+		{
+			return true;
+		}
+
+		SetError(error, MakeIoError());
+		return false;
+	}
+
+	bool TryWriteExact(std::ofstream& stream,
+					   const char* data,
+					   std::streamsize size,
+					   std::error_code* error)
+	{
+		const auto input_is_empty = size == 0;
 		if (input_is_empty)
 		{
 			return true;
 		}
 
-		std::streamsize stream_size = 0;
-		const auto stream_size_available = TryGetStreamSize(size, stream_size, error);
-		if (!stream_size_available)
-		{
-			return false;
-		}
-
-		stream.write(data, stream_size);
+		stream.write(data, size);
 		const auto write_failed = !stream;
 		if (write_failed)
 		{
@@ -174,15 +267,22 @@ namespace
 			return false;
 		}
 
+		const auto stream_size = TryGetStreamSize(static_cast<std::uintmax_t>(size), error);
+		const auto stream_size_available = stream_size.has_value();
+		if (!stream_size_available)
+		{
+			return false;
+		}
+
 		std::ofstream stream(path, std::ios::binary | std::ios::trunc);
 		const auto stream_is_open = stream.is_open();
 		if (!stream_is_open)
 		{
-			SetError(error, MakeIoError());
+			SetOpenError(path, error);
 			return false;
 		}
 
-		const auto write_succeeded = TryWriteExact(stream, data, size, error);
+		const auto write_succeeded = TryWriteExact(stream, data, *stream_size, error);
 		if (!write_succeeded)
 		{
 			return false;
@@ -211,15 +311,23 @@ namespace ket
 		{
 			ClearError(error);
 
+			std::ifstream stream;
 			std::uintmax_t file_size = 0;
-			const auto file_size_available = TryGetFileSize(path, file_size, error);
+			const auto file_size_available = TryOpenInputAtEnd(path, stream, file_size, error);
 			if (!file_size_available)
 			{
 				return false;
 			}
 
+			const auto stream_size = TryGetStreamSize(file_size, error);
+			const auto stream_size_available = stream_size.has_value();
+			if (!stream_size_available)
+			{
+				return false;
+			}
+
 			std::string buffer;
-			const auto file_size_fits = FileSizeFitsString(file_size, buffer, error);
+			const auto file_size_fits = FileSizeFitsBuffer(file_size, buffer, error);
 			if (!file_size_fits)
 			{
 				return false;
@@ -227,16 +335,14 @@ namespace ket
 
 			buffer.resize(static_cast<std::size_t>(file_size));
 
-			std::ifstream stream(path, std::ios::binary);
-			const auto stream_is_open = stream.is_open();
-			if (!stream_is_open)
+			const auto read_succeeded = TryReadExact(stream, buffer.data(), *stream_size, error);
+			if (!read_succeeded)
 			{
-				SetError(error, MakeIoError());
 				return false;
 			}
 
-			const auto read_succeeded = TryReadExact(stream, buffer.data(), buffer.size(), error);
-			if (!read_succeeded)
+			const auto reached_end = TryReadEof(stream, error);
+			if (!reached_end)
 			{
 				return false;
 			}
@@ -252,15 +358,23 @@ namespace ket
 		{
 			ClearError(error);
 
+			std::ifstream stream;
 			std::uintmax_t file_size = 0;
-			const auto file_size_available = TryGetFileSize(path, file_size, error);
+			const auto file_size_available = TryOpenInputAtEnd(path, stream, file_size, error);
 			if (!file_size_available)
 			{
 				return false;
 			}
 
+			const auto stream_size = TryGetStreamSize(file_size, error);
+			const auto stream_size_available = stream_size.has_value();
+			if (!stream_size_available)
+			{
+				return false;
+			}
+
 			std::vector<std::uint8_t> buffer;
-			const auto file_size_fits = FileSizeFitsVector(file_size, buffer, error);
+			const auto file_size_fits = FileSizeFitsBuffer(file_size, buffer, error);
 			if (!file_size_fits)
 			{
 				return false;
@@ -268,17 +382,15 @@ namespace ket
 
 			buffer.resize(static_cast<std::size_t>(file_size));
 
-			std::ifstream stream(path, std::ios::binary);
-			const auto stream_is_open = stream.is_open();
-			if (!stream_is_open)
+			auto* const data = reinterpret_cast<char*>(buffer.data());
+			const auto read_succeeded = TryReadExact(stream, data, *stream_size, error);
+			if (!read_succeeded)
 			{
-				SetError(error, MakeIoError());
 				return false;
 			}
 
-			auto* const data = reinterpret_cast<char*>(buffer.data());
-			const auto read_succeeded = TryReadExact(stream, data, buffer.size(), error);
-			if (!read_succeeded)
+			const auto reached_end = TryReadEof(stream, error);
+			if (!reached_end)
 			{
 				return false;
 			}

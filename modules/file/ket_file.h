@@ -4,8 +4,9 @@
  * @file ket_file.h
  * @brief ファイル全読み、全書き、基本query API。
  *
- * @details 小さいファイルI/Oの定型処理を、全体読み込み、全体書き込み、存在確認、サイズ取得へ
- * 集約する。text encoding変換、path正規化、再帰処理は扱わず、標準ライブラリのfilesystemと
+ * @details 小さいファイルI/Oの定型処理を、全体読み込み、全体書き込み、存在確認、directory判定、
+ * サイズ取得へ集約する。queryはpath存在やdirectory判定を扱い、通常ファイルだけに限定しない。
+ * text encoding変換、path正規化、atomic write、再帰処理は扱わず、標準ライブラリのfilesystemと
  * streamを薄く包む。
  *
  * @par プロジェクトへの適用方法
@@ -24,7 +25,7 @@
  *
  * @par namespace
  * 公開API：ket::file
- * 内部実装：ket::file::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
@@ -50,11 +51,16 @@ namespace ket
 		 * @param[out] out 読み込んだbytesを格納する文字列。
 		 * @param[out] error 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。
 		 * @retval true ファイル全体を読み込み、`out`を更新。
-		 * @retval false path不在、directory指定、permission、短いread、またはサイズ過大。
+		 * @retval false
+		 * path不在、directory指定、permission、短いread、読み込み中の内容増加、またはサイズ過大。
 		 * @pre `out`は有効なstd::string。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
 		 * 成功時だけ`out`を置換。失敗時は`out`不変。成功時は`error`をclearし、失敗時は可能な範囲で原因を設定。
 		 * @note text encoding変換なし。ファイルbytesをそのままstd::stringへ保持。
+		 * @note
+		 * 読み込み中の同時更新に対するsnapshot保証なし。open後の終端を基準にし、余剰byteを検出した場合は失敗。
+		 * @note
+		 * stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。
 		 * @note std::stringのallocation例外は呼び出し側へ伝播。
 		 * @code
 		 * std::string text;
@@ -72,11 +78,16 @@ namespace ket
 		 * @param[out] out 読み込んだbytesを格納するvector。
 		 * @param[out] error 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。
 		 * @retval true ファイル全体を読み込み、`out`を更新。
-		 * @retval false path不在、directory指定、permission、短いread、またはサイズ過大。
+		 * @retval false
+		 * path不在、directory指定、permission、短いread、読み込み中の内容増加、またはサイズ過大。
 		 * @pre `out`は有効なstd::vector。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
 		 * 成功時だけ`out`を置換。失敗時は`out`不変。成功時は`error`をclearし、失敗時は可能な範囲で原因を設定。
 		 * @note binary/textを区別せず、ファイルbytesをそのままstd::uint8_t列へ保持。
+		 * @note
+		 * 読み込み中の同時更新に対するsnapshot保証なし。open後の終端を基準にし、余剰byteを検出した場合は失敗。
+		 * @note
+		 * stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。
 		 * @note std::vectorのallocation例外は呼び出し側へ伝播。
 		 * @code
 		 * std::vector<std::uint8_t> bytes;
@@ -98,7 +109,10 @@ namespace ket
 		 * `text`は`text.size()`バイト以上読み取り可能な範囲を指す。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
 		 * 成功時は対象pathの内容を`text`で置換。失敗時の部分書き込み有無はplatformとstream状態に従う。
+		 * fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。
 		 * @note text encoding変換なし。`text`のbytesをそのまま書き込む。
+		 * @note
+		 * stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。
 		 * @code
 		 * std::error_code error;
 		 * const auto ok = ket::file::TryWriteAllText("config.txt", "mode=run", &error);
@@ -121,7 +135,10 @@ namespace ket
 		 * 0`の場合、`data`は`size`バイト以上読み取り可能な配列を指す。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
 		 * 成功時は対象pathの内容を入力bytesで置換。失敗時の部分書き込み有無はplatformとstream状態に従う。
+		 * fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。
 		 * @note raw pointerはbytes列のC API境界として扱うため採用。
+		 * @note
+		 * stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。
 		 * @code
 		 * const std::uint8_t payload[] = {0x01U, 0x02U};
 		 * const auto ok = ket::file::TryWriteAllBytes("payload.bin", payload, 2U);
@@ -167,6 +184,7 @@ namespace ket
 		 * @retval std::nullopt path不在、directory指定、またはfilesystem query失敗。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
+		 * @note 失敗詳細は公開しない。原因が必要な場合はstd::filesystem::file_sizeの直接利用対象。
 		 * @code
 		 * const auto size = ket::file::Size("payload.bin");
 		 * // size == std::optional<std::uintmax_t>(file byte count)

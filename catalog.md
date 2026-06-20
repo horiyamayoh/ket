@@ -1164,6 +1164,8 @@ ket::file::TryReadAllText(path, out, error)
 ket::file::TryReadAllBytes(path, out, error)
 ket::file::TryWriteAllText(path, text, error)
 ket::file::TryWriteAllBytes(path, data, size, error)
+ket::file::Exists(path)
+ket::file::IsDirectory(path)
 ket::file::Size(path)
 ```
 
@@ -1181,8 +1183,13 @@ Failure / edge cases:
 - not found
 - permission
 - directory path
+- invalid path
 - huge file
+- read target changed while reading
 - short write
+- null data with nonzero size
+- overwrite truncates existing file
+- write is not atomic and can leave a partial/truncated file after open/write/close failure
 - error_code\* は optional detail
 
 他のライブラリへの依存:
@@ -1197,6 +1204,12 @@ Tests:
 - binary
 - missing file
 - directory path
+- invalid path
+- permission denied if enforced by environment
+- embedded NUL text
+- empty bytes
+- overwrite/truncate
+- null data with nonzero size
 - error_code set / ignored
 
 ## Idea: IoStream
