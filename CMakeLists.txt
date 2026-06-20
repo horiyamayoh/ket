@@ -137,6 +137,20 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_meta_test
+		SOURCES
+			modules/meta/ket_meta_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_meta_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/meta/ket_meta_cxx11_check.cpp
+	)
+	add_dependencies(ket_meta_test ket_meta_cxx11_check)
+
+	ket_add_module_test(
 		ket_bits_test
 		SOURCES
 			modules/bits/ket_bits_test.cpp
