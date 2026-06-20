@@ -812,6 +812,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
     - `std::chrono::steady_clock::duration Remaining() const noexcept;`
     - `std::chrono::steady_clock::time_point TimePoint() const noexcept;`
 - Behavior: `steady_clock` のみ。`Remaining()` は期限切れなら zero を返す。負 timeout は即 expired。
+  表現上限を超える正 timeout は `steady_clock::time_point::max()` に飽和。
 - Failure/edge cases: clock差し替えは初回なし。sleep依存テストは許容誤差を持たせる。
 - Complexity/performance: 全 query は clock 1回参照の O(1)。allocation・例外なし。
 - Tests: zero timeout、future deadline、Remaining非負、Restart、At。
@@ -1897,7 +1898,7 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 [ ] 他の ket module に依存していない
 [ ] 公開ヘッダが必要な標準ヘッダを自分で include している
 [ ] 公開ヘッダの section banner が規約通り
-[ ] 関数 Doxygen に @brief / @param / @retval / @pre / @post がある
+[ ] 公開API関数 Doxygen に @brief / @param / @retval / @pre / @post / @code がある
 [ ] struct / class / enum の Doxygen に @brief がある
 [ ] 失敗条件を戻り値・precondition・例外のどれで扱うか固定した
 [ ] null / empty / overflow / size不足 / invalid input のテストがある

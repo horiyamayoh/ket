@@ -115,6 +115,22 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_deadline_test
+		SOURCES
+			modules/deadline/ket_deadline.cpp
+			modules/deadline/ket_deadline_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_deadline_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/deadline/ket_deadline.cpp
+			modules/deadline/ket_deadline.h
+	)
+	add_dependencies(ket_deadline_test ket_deadline_cxx11_check)
+
+	ket_add_module_test(
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp
