@@ -68,6 +68,11 @@ namespace ket
 		 * @retval false `key`に対応する要素なし。
 		 * @pre `map.find(key)`が有効。
 		 * @post 引数と外部状態の変更なし。lookup時の例外は呼び出し元へ伝播。
+		 * @code
+		 * const std::map<std::string, int> values = {{"one", 1}};
+		 * const auto found = ket::container::ContainsKey(values, std::string("one"));
+		 * // found == true
+		 * @endcode
 		 */
 		template <typename Map, typename Key>
 		bool ContainsKey(const Map& map, const Key& key);
@@ -83,6 +88,11 @@ namespace ket
 		 * @pre `map.find(key)`が有効。
 		 * @post map構造の変更なし。返却pointerは標準コンテナ規則に従ってinvalidation。
 		 * @note copyを避け、不在をnullptrで表すためpointerを返す。
+		 * @code
+		 * std::map<std::string, int> values = {{"one", 1}};
+		 * int* const value = ket::container::AtOrNull(values, std::string("one"));
+		 * // value != nullptr && *value == 1
+		 * @endcode
 		 */
 		template <typename Map, typename Key>
 		typename Map::mapped_type* AtOrNull(Map& map, const Key& key);
@@ -98,6 +108,11 @@ namespace ket
 		 * @pre `map.find(key)`が有効。
 		 * @post map構造の変更なし。返却pointerは標準コンテナ規則に従ってinvalidation。
 		 * @note copyを避け、不在をnullptrで表すためpointerを返す。
+		 * @code
+		 * const std::map<std::string, int> values = {{"one", 1}};
+		 * const int* const value = ket::container::AtOrNull(values, std::string("two"));
+		 * // value == nullptr
+		 * @endcode
 		 */
 		template <typename Map, typename Key>
 		const typename Map::mapped_type* AtOrNull(const Map& map, const Key& key);
@@ -112,6 +127,11 @@ namespace ket
 		 * @retval value `key`があればmap内要素のcopy、無ければ`default_value`。
 		 * @pre `map.find(key)`が有効。`Map::mapped_type`はcopyまたはmoveで戻り値化可能。
 		 * @post 引数と外部状態の変更なし。lookupやcopy/moveの例外は呼び出し元へ伝播。
+		 * @code
+		 * const std::map<std::string, int> values = {{"one", 1}};
+		 * const auto value = ket::container::AtOr(values, std::string("missing"), 7);
+		 * // value == 7
+		 * @endcode
 		 */
 		template <typename Map, typename Key>
 		typename Map::mapped_type
@@ -129,6 +149,11 @@ namespace ket
 		 * @pre `map.find(key)`と`map.emplace(key, factory())`が有効。
 		 * @post 既存keyではmap構造を変更せず、factory呼び出しなし。keyが無い場合は生成値を挿入。
 		 * 生成、lookup、挿入の例外は呼び出し元へ伝播。
+		 * @code
+		 * std::map<std::string, int> values;
+		 * int& value = ket::container::AtOrCreate(values, std::string("one"), [] { return 1; });
+		 * // value == 1 && values.size() == 1
+		 * @endcode
 		 */
 		template <typename Map, typename Key, typename Factory>
 		typename Map::mapped_type& AtOrCreate(Map& map, const Key& key, Factory factory);
@@ -143,6 +168,13 @@ namespace ket
 		 * @pre `std::remove_if`と`sequence.erase(first, last)`が有効。
 		 * @post `predicate`がtrueを返した要素を削除し、相対順序は標準erase-removeの性質に従う。
 		 * 述語や要素移動の例外は呼び出し元へ伝播。
+		 * @code
+		 * std::vector<int> values = {1, 2, 3, 4};
+		 * const auto removed = ket::container::EraseIf(values, [](int value) {
+		 *     return value % 2 == 0;
+		 * });
+		 * // removed == 2 && values == {1, 3}
+		 * @endcode
 		 */
 		template <typename Sequence, typename Predicate>
 		std::size_t EraseIf(Sequence& sequence, Predicate predicate);
@@ -155,6 +187,11 @@ namespace ket
 		 * @pre `std::sort`、`std::unique`、`values.erase(first, last)`が有効。
 		 * @post `values`は昇順に並び、等値の重複要素は1つだけ残る。
 		 * 比較、移動、eraseの例外は呼び出し元へ伝播。
+		 * @code
+		 * std::vector<int> values = {3, 1, 3, 2};
+		 * ket::container::SortUnique(values);
+		 * // values == {1, 2, 3}
+		 * @endcode
 		 */
 		template <typename Vector>
 		void SortUnique(Vector& values);
