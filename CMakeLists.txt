@@ -137,6 +137,12 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_optional_test
+		SOURCES
+			modules/optional/ket_optional_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_meta_test
 		SOURCES
 			modules/meta/ket_meta_test.cpp
