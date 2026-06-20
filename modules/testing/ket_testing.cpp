@@ -21,6 +21,12 @@ namespace
 		return kHexDigits[value & 0x0FU];
 	}
 
+	constexpr bool IsAsciiWhitespace(char value) noexcept
+	{
+		return value == ' ' || value == '\t' || value == '\n' || value == '\r' || value == '\f' ||
+			value == '\v';
+	}
+
 	constexpr int HexDigitValue(char value) noexcept
 	{
 		const auto is_decimal = value >= '0' && value <= '9';
@@ -44,16 +50,20 @@ namespace
 		return -1;
 	}
 
-	std::string ByteHex(std::uint8_t value)
+	std::size_t CountHexDigits(std::string_view hex) noexcept
 	{
-		std::string result;
-		result.reserve(2U);
+		auto result = std::size_t{0U};
 
-		const auto unsigned_value = static_cast<unsigned int>(value);
-		const auto high = static_cast<std::uint8_t>((unsigned_value >> 4U) & 0x0FU);
-		const auto low = static_cast<std::uint8_t>(unsigned_value & 0x0FU);
-		result.push_back(HexDigitChar(high));
-		result.push_back(HexDigitChar(low));
+		for (const auto digit : hex)
+		{
+			const auto digit_is_whitespace = IsAsciiWhitespace(digit);
+			if (digit_is_whitespace)
+			{
+				continue;
+			}
+
+			++result;
+		}
 
 		return result;
 	}
@@ -63,9 +73,17 @@ namespace
 		const auto unsigned_value = static_cast<unsigned int>(value);
 		const auto high = static_cast<std::uint8_t>((unsigned_value >> 4U) & 0x0FU);
 		const auto low = static_cast<std::uint8_t>(unsigned_value & 0x0FU);
-
 		output.push_back(HexDigitChar(high));
 		output.push_back(HexDigitChar(low));
+	}
+
+	std::string ByteHex(std::uint8_t value)
+	{
+		std::string result;
+		result.reserve(2U);
+		AppendByteHex(result, value);
+
+		return result;
 	}
 
 	std::string BytesHex(const std::uint8_t* data, std::size_t size)
@@ -95,30 +113,63 @@ namespace
 
 	std::string NormalizeHex(std::string_view hex)
 	{
-		const auto input_is_empty = hex.empty();
-		if (input_is_empty)
-		{
-			return "<empty>";
-		}
-
 		std::string result;
 		result.reserve(hex.size());
 
 		for (const auto digit : hex)
 		{
+			const auto digit_is_whitespace = IsAsciiWhitespace(digit);
+			if (digit_is_whitespace)
+			{
+				continue;
+			}
+
 			const auto value = static_cast<std::uint8_t>(HexDigitValue(digit));
 			result.push_back(HexDigitChar(value));
+		}
+
+		const auto input_is_empty = result.empty();
+		if (input_is_empty)
+		{
+			return "<empty>";
 		}
 
 		return result;
 	}
 
-	constexpr std::uint8_t HexByteAt(std::string_view hex, std::size_t offset) noexcept
+	constexpr std::uint8_t HexByteAt(std::string_view hex, std::size_t byte_offset) noexcept
 	{
-		const auto high = HexDigitValue(hex[offset * 2U]);
-		const auto low = HexDigitValue(hex[(offset * 2U) + 1U]);
+		auto byte_index = std::size_t{0U};
+		auto has_high = false;
+		auto high = 0;
 
-		return static_cast<std::uint8_t>((high << 4U) | low);
+		for (const auto digit : hex)
+		{
+			const auto digit_is_whitespace = IsAsciiWhitespace(digit);
+			if (digit_is_whitespace)
+			{
+				continue;
+			}
+
+			const auto value = HexDigitValue(digit);
+			if (!has_high)
+			{
+				high = value;
+				has_high = true;
+				continue;
+			}
+
+			const auto byte_matches_offset = byte_index == byte_offset;
+			if (byte_matches_offset)
+			{
+				return static_cast<std::uint8_t>((high << 4U) | value);
+			}
+
+			++byte_index;
+			has_high = false;
+		}
+
+		return 0U;
 	}
 
 	std::size_t FirstBytesMismatchOffset(const std::uint8_t* expected,
@@ -177,16 +228,30 @@ namespace
 		return failure;
 	}
 
-	::testing::AssertionResult InvalidHexDigitFailure(std::size_t digit_index, char digit)
+	std::string InvalidHexDigitText(char digit)
 	{
+		const auto unsigned_digit = static_cast<unsigned char>(digit);
+		const auto digit_is_printable = unsigned_digit >= 0x20U && unsigned_digit <= 0x7EU;
+		if (digit_is_printable)
+		{
+			return std::string("'") + digit + "'";
+		}
+
+		return std::string("0x") + ByteHex(static_cast<std::uint8_t>(unsigned_digit));
+	}
+
+	::testing::AssertionResult InvalidHexDigitFailure(std::size_t character_index, char digit)
+	{
+		const auto digit_text = InvalidHexDigitText(digit);
+
 		return ::testing::AssertionFailure()
-			<< "invalid expected hex at digit " << digit_index << ": '" << digit << "'.";
+			<< "invalid expected hex at character " << character_index << ": " << digit_text << ".";
 	}
 
 	::testing::AssertionResult InvalidHexLengthFailure(std::size_t digit_count)
 	{
 		return ::testing::AssertionFailure()
-			<< "invalid expected hex: odd digit count " << digit_count << ".";
+			<< "invalid expected hex: odd hex digit count " << digit_count << ".";
 	}
 
 	::testing::AssertionResult HexMismatchFailure(std::string_view expected_hex,
@@ -196,7 +261,7 @@ namespace
 	{
 		const auto normalized_expected_hex = NormalizeHex(expected_hex);
 		const auto actual_hex = BytesHex(actual, actual_size);
-		const auto expected_size = expected_hex.size() / 2U;
+		const auto expected_size = CountHexDigits(expected_hex) / 2U;
 		const auto offset_has_expected_byte = offset < expected_size;
 		const auto offset_has_actual_byte = offset < actual_size;
 
@@ -233,7 +298,6 @@ namespace ket
 											  const std::uint8_t* actual,
 											  std::size_t actual_size)
 		{
-			// pointer妥当性確認
 			const auto expected_pointer_invalid = HasInvalidBytePointer(expected, expected_size);
 			if (expected_pointer_invalid)
 			{
@@ -246,7 +310,6 @@ namespace ket
 				return InvalidPointerFailure("actual", actual_size);
 			}
 
-			// 差分offset取得
 			const auto mismatch_offset =
 				FirstBytesMismatchOffset(expected, expected_size, actual, actual_size);
 			const auto bytes_are_equal =
@@ -263,42 +326,77 @@ namespace ket
 		::testing::AssertionResult
 		HexEqual(std::string_view expected_hex, const std::uint8_t* actual, std::size_t actual_size)
 		{
-			// hex構文確認
 			const auto expected_hex_size = expected_hex.size();
-			const auto expected_hex_has_odd_length = (expected_hex_size % 2U) != 0U;
-			if (expected_hex_has_odd_length)
-			{
-				return InvalidHexLengthFailure(expected_hex_size);
-			}
+			auto expected_hex_digit_count = std::size_t{0U};
 
-			for (std::size_t digit_index = 0; digit_index < expected_hex_size; ++digit_index)
+			for (std::size_t character_index = 0U; character_index < expected_hex_size;
+				 ++character_index)
 			{
-				const auto digit_value = HexDigitValue(expected_hex[digit_index]);
+				const auto digit = expected_hex[character_index];
+				const auto digit_is_whitespace = IsAsciiWhitespace(digit);
+				if (digit_is_whitespace)
+				{
+					continue;
+				}
+
+				const auto digit_value = HexDigitValue(digit);
 				const auto digit_is_valid = digit_value >= 0;
 				if (!digit_is_valid)
 				{
-					return InvalidHexDigitFailure(digit_index, expected_hex[digit_index]);
+					return InvalidHexDigitFailure(character_index, digit);
 				}
+
+				++expected_hex_digit_count;
 			}
 
-			// pointer妥当性確認
+			const auto expected_hex_has_odd_length = (expected_hex_digit_count % 2U) != 0U;
+			if (expected_hex_has_odd_length)
+			{
+				return InvalidHexLengthFailure(expected_hex_digit_count);
+			}
+
 			const auto actual_pointer_invalid = HasInvalidBytePointer(actual, actual_size);
 			if (actual_pointer_invalid)
 			{
 				return InvalidPointerFailure("actual", actual_size);
 			}
 
-			// 差分offset取得
-			const auto expected_size = expected_hex_size / 2U;
+			const auto expected_size = expected_hex_digit_count / 2U;
 			const auto common_size = expected_size < actual_size ? expected_size : actual_size;
-			for (std::size_t offset = 0; offset < common_size; ++offset)
+			auto offset = std::size_t{0U};
+			auto has_high = false;
+			auto high = 0;
+			for (const auto digit : expected_hex)
 			{
-				const auto expected_byte = HexByteAt(expected_hex, offset);
+				const auto digit_is_whitespace = IsAsciiWhitespace(digit);
+				if (digit_is_whitespace)
+				{
+					continue;
+				}
+
+				const auto value = HexDigitValue(digit);
+				if (!has_high)
+				{
+					high = value;
+					has_high = true;
+					continue;
+				}
+
+				const auto expected_byte = static_cast<std::uint8_t>((high << 4U) | value);
+				const auto offset_is_common = offset < common_size;
+				if (!offset_is_common)
+				{
+					break;
+				}
+
 				const auto bytes_match = expected_byte == actual[offset];
 				if (!bytes_match)
 				{
 					return HexMismatchFailure(expected_hex, actual, actual_size, offset);
 				}
+
+				++offset;
+				has_high = false;
 			}
 
 			const auto sizes_match = expected_size == actual_size;

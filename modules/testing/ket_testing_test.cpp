@@ -32,6 +32,14 @@ namespace
 		EXPECT_TRUE(message_contains_part) << message;
 	}
 
+	void ExpectMessageEmpty(const ::testing::AssertionResult& result)
+	{
+		const auto message = std::string(result.message());
+		const auto message_is_empty = message.empty();
+
+		EXPECT_TRUE(message_is_empty) << message;
+	}
+
 } // namespace
 
 /**
@@ -50,6 +58,7 @@ TEST(KetTestingTest, BytesEqualAcceptsEqualBytes)
 		ket::testing::BytesEqual(expected.data(), expected.size(), actual.data(), actual.size());
 
 	ExpectAssertionSucceeded(result);
+	ExpectMessageEmpty(result);
 }
 
 /**
@@ -64,16 +73,58 @@ TEST(KetTestingTest, BytesEqualReportsDifferentSize)
 {
 	const auto expected = std::array<std::uint8_t, 3>{{0x01U, 0x02U, 0x03U}};
 	const auto actual = std::array<std::uint8_t, 2>{{0x01U, 0x02U}};
+	const auto shorter_expected = std::array<std::uint8_t, 1>{{0xAAU}};
+	const auto longer_actual = std::array<std::uint8_t, 2>{{0xAAU, 0xBBU}};
 
 	const auto result =
 		ket::testing::BytesEqual(expected.data(), expected.size(), actual.data(), actual.size());
+	const auto actual_longer = ket::testing::BytesEqual(shorter_expected.data(),
+														shorter_expected.size(),
+														longer_actual.data(),
+														longer_actual.size());
 
 	ExpectAssertionFailed(result);
+	ExpectAssertionFailed(actual_longer);
 	ExpectMessageContains(result, "offset 2");
 	ExpectMessageContains(result, "expected size 3");
 	ExpectMessageContains(result, "actual size 2");
 	ExpectMessageContains(result, "expected hex: 010203");
 	ExpectMessageContains(result, "actual hex: 0102");
+	ExpectMessageContains(actual_longer, "offset 1");
+	ExpectMessageContains(actual_longer, "expected size 1");
+	ExpectMessageContains(actual_longer, "actual size 2");
+	ExpectMessageContains(actual_longer, "expected hex: aa");
+	ExpectMessageContains(actual_longer, "actual hex: aabb");
+}
+
+/**
+ * @test
+ * @brief 空byte列と非空byte列のfailure message確認。
+ * @details 空byte列と非空byte列を比較し、offset 0、片側終了、empty表記を含むfailure
+ * messageを返すことを確認。
+ * @pre C++17以降、GoogleTest利用可能。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetTestingTest, BytesEqualReportsEmptyAndNonEmptyDifference)
+{
+	const auto actual = std::array<std::uint8_t, 1>{{0x00U}};
+	const auto expected = std::array<std::uint8_t, 1>{{0xFFU}};
+
+	const auto actual_non_empty =
+		ket::testing::BytesEqual(nullptr, 0U, actual.data(), actual.size());
+	const auto expected_non_empty =
+		ket::testing::BytesEqual(expected.data(), expected.size(), nullptr, 0U);
+
+	ExpectAssertionFailed(actual_non_empty);
+	ExpectAssertionFailed(expected_non_empty);
+	ExpectMessageContains(actual_non_empty, "offset 0");
+	ExpectMessageContains(actual_non_empty, "one sequence ended");
+	ExpectMessageContains(actual_non_empty, "expected hex: <empty>");
+	ExpectMessageContains(actual_non_empty, "actual hex: 00");
+	ExpectMessageContains(expected_non_empty, "offset 0");
+	ExpectMessageContains(expected_non_empty, "one sequence ended");
+	ExpectMessageContains(expected_non_empty, "expected hex: ff");
+	ExpectMessageContains(expected_non_empty, "actual hex: <empty>");
 }
 
 /**
@@ -112,6 +163,7 @@ TEST(KetTestingTest, BytesEqualAcceptsNullEmptyBytes)
 	const auto result = ket::testing::BytesEqual(nullptr, 0U, nullptr, 0U);
 
 	ExpectAssertionSucceeded(result);
+	ExpectMessageEmpty(result);
 }
 
 /**
@@ -138,7 +190,8 @@ TEST(KetTestingTest, BytesEqualRejectsNullNonEmptyBytes)
  * @test
  * @brief hex文字列とbyte列の比較成功確認。
  * @details
- * 大文字小文字を混ぜたhex文字列と同じ内容のbyte列を渡し、HexEqualがsuccessを返すことを確認。
+ * 大文字小文字とASCII whitespaceを混ぜたhex文字列と同じ内容のbyte列を渡し、HexEqualがsuccessを
+ * 返すことを確認。
  * @pre C++17以降、GoogleTest利用可能。
  * @post テスト対象APIと外部状態の変更なし。
  */
@@ -146,23 +199,29 @@ TEST(KetTestingTest, HexEqualAcceptsMatchingHex)
 {
 	const auto actual = std::array<std::uint8_t, 3>{{0x0AU, 0x1BU, 0xFFU}};
 
-	const auto result = ket::testing::HexEqual("0a1BfF", actual.data(), actual.size());
+	const auto result = ket::testing::HexEqual("0a 1B\tfF\n", actual.data(), actual.size());
 
 	ExpectAssertionSucceeded(result);
+	ExpectMessageEmpty(result);
 }
 
 /**
  * @test
- * @brief 空hex文字列と空byte列の比較成功確認。
- * @details 空hex文字列とnullptr+0のactualを渡し、空byte列としてsuccessを返すことを確認。
+ * @brief 空hex文字列と空白だけのhex文字列の比較成功確認。
+ * @details 空hex文字列または空白だけのhex文字列とnullptr+0のactualを渡し、空byte列としてsuccess
+ * を返すことを確認。
  * @pre C++17以降、GoogleTest利用可能。
  * @post テスト対象APIと外部状態の変更なし。
  */
 TEST(KetTestingTest, HexEqualAcceptsEmptyHexAndNullEmptyActual)
 {
 	const auto result = ket::testing::HexEqual("", nullptr, 0U);
+	const auto whitespace = ket::testing::HexEqual(" \t\n", nullptr, 0U);
 
 	ExpectAssertionSucceeded(result);
+	ExpectAssertionSucceeded(whitespace);
+	ExpectMessageEmpty(result);
+	ExpectMessageEmpty(whitespace);
 }
 
 /**
@@ -176,15 +235,51 @@ TEST(KetTestingTest, HexEqualAcceptsEmptyHexAndNullEmptyActual)
 TEST(KetTestingTest, HexEqualReportsDifferentSize)
 {
 	const auto actual = std::array<std::uint8_t, 1>{{0x12U}};
+	const auto longer_actual = std::array<std::uint8_t, 2>{{0x12U, 0x34U}};
 
-	const auto result = ket::testing::HexEqual("1234", actual.data(), actual.size());
+	const auto result = ket::testing::HexEqual("12 34", actual.data(), actual.size());
+	const auto actual_longer =
+		ket::testing::HexEqual("1 2", longer_actual.data(), longer_actual.size());
 
 	ExpectAssertionFailed(result);
+	ExpectAssertionFailed(actual_longer);
 	ExpectMessageContains(result, "offset 1");
 	ExpectMessageContains(result, "expected size 2");
 	ExpectMessageContains(result, "actual size 1");
 	ExpectMessageContains(result, "expected hex: 1234");
 	ExpectMessageContains(result, "actual hex: 12");
+	ExpectMessageContains(actual_longer, "offset 1");
+	ExpectMessageContains(actual_longer, "expected size 1");
+	ExpectMessageContains(actual_longer, "actual size 2");
+	ExpectMessageContains(actual_longer, "expected hex: 12");
+	ExpectMessageContains(actual_longer, "actual hex: 1234");
+}
+
+/**
+ * @test
+ * @brief 空hex文字列と非空byte列のfailure message確認。
+ * @details 空hex文字列と非空byte列、非空hex文字列と空byte列を比較し、offset 0、
+ * 片側終了、empty表記を含むfailure messageを返すことを確認。
+ * @pre C++17以降、GoogleTest利用可能。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetTestingTest, HexEqualReportsEmptyAndNonEmptyDifference)
+{
+	const auto actual = std::array<std::uint8_t, 1>{{0x00U}};
+
+	const auto actual_non_empty = ket::testing::HexEqual(" \n", actual.data(), actual.size());
+	const auto expected_non_empty = ket::testing::HexEqual("ff", nullptr, 0U);
+
+	ExpectAssertionFailed(actual_non_empty);
+	ExpectAssertionFailed(expected_non_empty);
+	ExpectMessageContains(actual_non_empty, "offset 0");
+	ExpectMessageContains(actual_non_empty, "one sequence ended");
+	ExpectMessageContains(actual_non_empty, "expected hex: <empty>");
+	ExpectMessageContains(actual_non_empty, "actual hex: 00");
+	ExpectMessageContains(expected_non_empty, "offset 0");
+	ExpectMessageContains(expected_non_empty, "one sequence ended");
+	ExpectMessageContains(expected_non_empty, "expected hex: ff");
+	ExpectMessageContains(expected_non_empty, "actual hex: <empty>");
 }
 
 /**
@@ -199,7 +294,7 @@ TEST(KetTestingTest, HexEqualReportsDifferentByte)
 {
 	const auto actual = std::array<std::uint8_t, 2>{{0x12U, 0xFFU}};
 
-	const auto result = ket::testing::HexEqual("1234", actual.data(), actual.size());
+	const auto result = ket::testing::HexEqual("12 34", actual.data(), actual.size());
 
 	ExpectAssertionFailed(result);
 	ExpectMessageContains(result, "offset 1");
@@ -227,7 +322,7 @@ TEST(KetTestingTest, HexEqualRejectsNullNonEmptyActual)
 /**
  * @test
  * @brief HexEqualの不正hex拒否確認。
- * @details 奇数桁とhex以外の文字を渡し、どちらもfailureを返すことを確認。
+ * @details 奇数桁、hex以外の文字、NULを渡し、いずれもfailureを返すことを確認。
  * @pre C++17以降、GoogleTest利用可能。
  * @post テスト対象APIと外部状態の変更なし。
  */
@@ -235,11 +330,17 @@ TEST(KetTestingTest, HexEqualRejectsInvalidHex)
 {
 	const auto actual = std::array<std::uint8_t, 1>{{0x12U}};
 
-	const auto odd_length = ket::testing::HexEqual("123", actual.data(), actual.size());
+	const auto odd_length = ket::testing::HexEqual("1 23", actual.data(), actual.size());
 	const auto invalid_digit = ket::testing::HexEqual("1g", actual.data(), actual.size());
+	const auto nul =
+		ket::testing::HexEqual(std::string_view("1\0", 2U), actual.data(), actual.size());
 
 	ExpectAssertionFailed(odd_length);
 	ExpectAssertionFailed(invalid_digit);
-	ExpectMessageContains(odd_length, "odd digit count 3");
-	ExpectMessageContains(invalid_digit, "invalid expected hex at digit 1");
+	ExpectAssertionFailed(nul);
+	ExpectMessageContains(odd_length, "odd hex digit count 3");
+	ExpectMessageContains(invalid_digit, "invalid expected hex at character 1");
+	ExpectMessageContains(invalid_digit, "'g'");
+	ExpectMessageContains(nul, "invalid expected hex at character 1");
+	ExpectMessageContains(nul, "0x00");
 }

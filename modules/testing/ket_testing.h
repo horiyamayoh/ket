@@ -25,7 +25,7 @@
  *
  * @par namespace
  * 公開API：ket::testing
- * 内部実装：ket::testing::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
@@ -50,8 +50,9 @@ namespace ket
 		 * @param[in] actual 実際のbyte列。`actual_size == 0` の場合はnullptrを空列として許容。
 		 * @param[in] actual_size `actual`のバイト数。
 		 * @retval success byte列の長さと内容が一致。
-		 * @retval failure nullptr+非0サイズ、長さ差、または内容差。failure messageに差分offsetと
-		 * expected/actual hexを含む。
+		 * @retval failure nullptr+非0サイズ、長さ差、または内容差。長さ差と内容差のfailure
+		 * messageに差分offsetとexpected/actual hexを含む。nullptr+非0サイズのfailure
+		 * messageには不正な引数名とsizeを含む。
 		 * @pre `expected`と`actual`は、それぞれのsizeが0でない場合にsizeバイト以上読み取り可能な
 		 * 配列を指す。nullptr+非0サイズはfailureとして扱う。
 		 * @post 引数と外部状態の変更なし。成功時は診断用stringを生成しない。
@@ -68,19 +69,19 @@ namespace ket
 
 		/**
 		 * @brief hex文字列で表した期待byte列と実際のbyte列をGoogleTest assertionとして比較。
-		 * @param[in] expected_hex 期待するbyte列の連続hex文字列。大文字小文字を許容し、区切り文字は
-		 * 許容なし。
+		 * @param[in] expected_hex 期待するbyte列のhex文字列。大文字小文字を許容し、ASCII
+		 * whitespaceは読み飛ばす。
 		 * @param[in] actual 実際のbyte列。`actual_size == 0` の場合はnullptrを空列として許容。
 		 * @param[in] actual_size `actual`のバイト数。
 		 * @retval success `expected_hex`が妥当なhexで、復号後の長さと内容が`actual`と一致。
 		 * @retval failure 不正hex、nullptr+非0サイズ、長さ差、または内容差。failure messageに
-		 * 差分offsetとexpected/actual hexを含む。
+		 * 不正hexの位置、nullptr引数名、または差分offsetとexpected/actual hexを含む。
 		 * @pre `expected_hex`は呼び出し中有効な文字列範囲。`actual`は`actual_size`が0でない場合に
 		 * `actual_size`バイト以上読み取り可能な配列を指す。nullptr+非0サイズはfailureとして扱う。
 		 * @post 引数と外部状態の変更なし。成功時は診断用stringを生成しない。
 		 * @code
 		 * const std::uint8_t actual[] = {0x12U, 0x34U};
-		 * EXPECT_TRUE(ket::testing::HexEqual("1234", actual, 2U));
+		 * EXPECT_TRUE(ket::testing::HexEqual("12 34", actual, 2U));
 		 * @endcode
 		 */
 		::testing::AssertionResult HexEqual(std::string_view expected_hex,
