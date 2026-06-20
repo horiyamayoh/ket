@@ -61,8 +61,10 @@ namespace ket
 		 * @note callableのcopy/move制約は型に従い、呼び出し例外はhandlerから伝播。
 		 * @code
 		 * const auto visitor = ket::function::MakeOverload(
-		 *     [](int value) { return value + 1; },
-		 *     [](double value) { return static_cast<int>(value); });
+		 *     [](int value) { return std::to_string(value); },
+		 *     [](const std::string& value) { return value; });
+		 * const auto text = std::visit(visitor, std::variant<int, std::string>(42));
+		 * // text == "42"
 		 * @endcode
 		 */
 		template <typename... Fs>
@@ -80,6 +82,10 @@ namespace ket
 			 * @pre なし。任意の引数個数と型を受け付ける。
 			 * @post 引数と外部状態の変更なし。
 			 * @note 引数評価後の破棄のみを行い、operator自体は例外を送出しない。
+			 * @code
+			 * const auto noop = ket::function::Noop{};
+			 * noop(1, "ignored");
+			 * @endcode
 			 */
 			template <typename... Args>
 			void operator()(Args&&... args) const noexcept
