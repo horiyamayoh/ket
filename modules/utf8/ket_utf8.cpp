@@ -37,10 +37,9 @@ namespace
 		return {ValidResult(), code_point_count};
 	}
 
-	constexpr ScanResult InvalidScanResult(std::size_t error_offset,
-										   std::size_t code_point_count) noexcept
+	constexpr ScanResult InvalidScanResult(std::size_t error_offset) noexcept
 	{
-		return {InvalidResult(error_offset), code_point_count};
+		return {InvalidResult(error_offset), 0U};
 	}
 
 	constexpr std::size_t RemainingBytes(std::size_t size, std::size_t index) noexcept
@@ -73,14 +72,14 @@ namespace
 				const auto sequence_is_truncated = remaining < 2U;
 				if (sequence_is_truncated)
 				{
-					return InvalidScanResult(index, code_point_count);
+					return InvalidScanResult(index);
 				}
 
 				const auto second = ToByte(text[index + 1U]);
 				const auto second_is_continuation = IsContinuationByte(second);
 				if (!second_is_continuation)
 				{
-					return InvalidScanResult(index + 1U, code_point_count);
+					return InvalidScanResult(index + 1U);
 				}
 
 				index += 2U;
@@ -92,14 +91,13 @@ namespace
 			if (first_is_three_byte_lead)
 			{
 				const auto remaining = RemainingBytes(size, index);
-				const auto sequence_is_truncated = remaining < 3U;
-				if (sequence_is_truncated)
+				const auto second_is_missing = remaining < 2U;
+				if (second_is_missing)
 				{
-					return InvalidScanResult(index, code_point_count);
+					return InvalidScanResult(index);
 				}
 
 				const auto second = ToByte(text[index + 1U]);
-				const auto third = ToByte(text[index + 2U]);
 				const auto first_is_overlong_boundary = first == 0xE0U;
 				const auto first_is_surrogate_boundary = first == 0xEDU;
 				const auto second_matches_e0_range = second >= 0xA0U && second <= 0xBFU;
@@ -110,25 +108,32 @@ namespace
 				{
 					if (!second_matches_e0_range)
 					{
-						return InvalidScanResult(index + 1U, code_point_count);
+						return InvalidScanResult(index + 1U);
 					}
 				}
 				else if (first_is_surrogate_boundary)
 				{
 					if (!second_matches_ed_range)
 					{
-						return InvalidScanResult(index + 1U, code_point_count);
+						return InvalidScanResult(index + 1U);
 					}
 				}
 				else if (!second_is_continuation)
 				{
-					return InvalidScanResult(index + 1U, code_point_count);
+					return InvalidScanResult(index + 1U);
 				}
 
+				const auto third_is_missing = remaining < 3U;
+				if (third_is_missing)
+				{
+					return InvalidScanResult(index);
+				}
+
+				const auto third = ToByte(text[index + 2U]);
 				const auto third_is_continuation = IsContinuationByte(third);
 				if (!third_is_continuation)
 				{
-					return InvalidScanResult(index + 2U, code_point_count);
+					return InvalidScanResult(index + 2U);
 				}
 
 				index += 3U;
@@ -140,15 +145,13 @@ namespace
 			if (first_is_four_byte_lead)
 			{
 				const auto remaining = RemainingBytes(size, index);
-				const auto sequence_is_truncated = remaining < 4U;
-				if (sequence_is_truncated)
+				const auto second_is_missing = remaining < 2U;
+				if (second_is_missing)
 				{
-					return InvalidScanResult(index, code_point_count);
+					return InvalidScanResult(index);
 				}
 
 				const auto second = ToByte(text[index + 1U]);
-				const auto third = ToByte(text[index + 2U]);
-				const auto fourth = ToByte(text[index + 3U]);
 				const auto first_is_overlong_boundary = first == 0xF0U;
 				const auto first_is_max_boundary = first == 0xF4U;
 				const auto second_matches_f0_range = second >= 0x90U && second <= 0xBFU;
@@ -159,31 +162,45 @@ namespace
 				{
 					if (!second_matches_f0_range)
 					{
-						return InvalidScanResult(index + 1U, code_point_count);
+						return InvalidScanResult(index + 1U);
 					}
 				}
 				else if (first_is_max_boundary)
 				{
 					if (!second_matches_f4_range)
 					{
-						return InvalidScanResult(index + 1U, code_point_count);
+						return InvalidScanResult(index + 1U);
 					}
 				}
 				else if (!second_is_continuation)
 				{
-					return InvalidScanResult(index + 1U, code_point_count);
+					return InvalidScanResult(index + 1U);
 				}
 
+				const auto third_is_missing = remaining < 3U;
+				if (third_is_missing)
+				{
+					return InvalidScanResult(index);
+				}
+
+				const auto third = ToByte(text[index + 2U]);
 				const auto third_is_continuation = IsContinuationByte(third);
 				if (!third_is_continuation)
 				{
-					return InvalidScanResult(index + 2U, code_point_count);
+					return InvalidScanResult(index + 2U);
 				}
 
+				const auto fourth_is_missing = remaining < 4U;
+				if (fourth_is_missing)
+				{
+					return InvalidScanResult(index);
+				}
+
+				const auto fourth = ToByte(text[index + 3U]);
 				const auto fourth_is_continuation = IsContinuationByte(fourth);
 				if (!fourth_is_continuation)
 				{
-					return InvalidScanResult(index + 3U, code_point_count);
+					return InvalidScanResult(index + 3U);
 				}
 
 				index += 4U;
@@ -191,7 +208,7 @@ namespace
 				continue;
 			}
 
-			return InvalidScanResult(index, code_point_count);
+			return InvalidScanResult(index);
 		}
 
 		return ValidScanResult(code_point_count);

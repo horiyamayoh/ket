@@ -14,7 +14,8 @@
  * @par C++バージョン要件
  * 最小要件：C++17。
  * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
- * 推奨理由：`std::string_view` と `std::optional` でUTF-8検査結果と失敗位置を小さく扱える。
+ * 推奨理由：`std::string_view`でbyte列を非所有参照し、`std::optional`でcode point数取得の失敗を
+ * 小さく表せる。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
  * 非推奨理由：なし。
  *
@@ -24,7 +25,7 @@
  *
  * @par namespace
  * 公開API：ket::utf8
- * 内部実装：ket::utf8::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
@@ -42,8 +43,10 @@ namespace ket
 		/**
 		 * @brief UTF-8検査結果。
 		 *
-		 * @details `valid`がtrueの場合、入力byte列は妥当なUTF-8。
-		 * `valid`がfalseの場合、`error_offset`は最初に不正と判定したbyte位置。
+		 * @details `valid`がtrueの場合、入力byte列は妥当なUTF-8で、`error_offset`は0。
+		 * `valid`がfalseの場合、`error_offset`は存在するbyteがUTF-8構文または範囲制約に
+		 * 最初に反した位置。妥当なprefixのまま入力末尾へ達したtruncated
+		 * sequenceでは、そのsequenceの先頭位置。
 		 */
 		struct ValidationResult
 		{
@@ -72,7 +75,10 @@ namespace ket
 		 * @retval result UTF-8検査結果。妥当な場合は`valid == true`。
 		 * @pre なし。任意のbyte列を検査対象として扱う。
 		 * @post 引数と外部状態の変更なし。
-		 * @note truncated sequenceは、そのsequenceの先頭byteを`error_offset`として返す。
+		 * @note
+		 * 存在するbyteがUTF-8構文または範囲制約に反した場合、そのbyte位置を`error_offset`として返す。
+		 * @note 妥当なprefixのまま入力末尾へ達したtruncated
+		 * sequenceは、そのsequenceの先頭byteを返す。
 		 * @note overlong、surrogate、範囲外code point、単独continuation byteはinvalid。
 		 * @code
 		 * const auto result = ket::utf8::Validate("\xF0\x9F\x98\x80");
