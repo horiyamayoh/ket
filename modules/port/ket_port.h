@@ -75,7 +75,7 @@ namespace ket
 		 * @note 入力はtrimしない。10進数字だけを完全消費し、`"0"`以外のleading zeroは失敗値。
 		 * @code
 		 * const auto port = ket::port::Parse("8080");
-		 * // port == std::optional<ket::port::Port>({8080})
+		 * // port.has_value() == true, port->value == 8080
 		 * @endcode
 		 */
 		std::optional<Port> Parse(std::string_view text) noexcept;
