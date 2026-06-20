@@ -105,6 +105,11 @@ namespace ket
 		 * @post `ptr != nullptr && size > 0`の場合、対象範囲のbyteを0へ変更。
 		 * `ptr == nullptr && size == 0`はno-op。
 		 * @note `std::memset`による通常のzeroing。最適化除去への対策は`SecureZero`を使用。
+		 * @code
+		 * unsigned char bytes[4] = {1U, 2U, 3U, 4U};
+		 * ket::memory::Zero(bytes, 4U);
+		 * // bytes == {0, 0, 0, 0}
+		 * @endcode
 		 */
 		inline void Zero(void* ptr, std::size_t size) noexcept;
 
@@ -119,6 +124,11 @@ namespace ket
 		 * `ptr == nullptr && size == 0`はno-op。
 		 * @note `volatile unsigned char*`経由のwriteで最適化除去を防ぐbest-effort。
 		 * 暗号学的な完全消去保証なし。
+		 * @code
+		 * unsigned char secret[4] = {1U, 2U, 3U, 4U};
+		 * ket::memory::SecureZero(secret, 4U);
+		 * // secret == {0, 0, 0, 0}
+		 * @endcode
 		 */
 		inline void SecureZero(void* ptr, std::size_t size) noexcept;
 
@@ -147,6 +157,11 @@ namespace ket
 		 * @pre `T`はtrivially copyable。
 		 * @post 引数と外部状態の変更なし。
 		 * @note 引数は型推論のために受け取り、値の読み取りなし。
+		 * @code
+		 * const auto value = std::uint32_t{0x01020304U};
+		 * const auto size = ket::memory::ObjectByteSize(value);
+		 * // size == sizeof(std::uint32_t)
+		 * @endcode
 		 */
 		template <typename T>
 		std::size_t ObjectByteSize(const T& object) noexcept;
