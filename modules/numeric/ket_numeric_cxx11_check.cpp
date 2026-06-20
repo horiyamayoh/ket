@@ -39,3 +39,29 @@ namespace
 				  "SaturatingSub is constexpr in C++11");
 
 } // namespace
+
+void KetNumericCxx11Check()
+{
+	unsigned unsigned_out = 0U;
+	int int_out = 0;
+	short short_out = 0;
+
+	const bool divided = ket::numeric::TryDivideRoundUp(7U, 3U, unsigned_out);
+	const bool aligned_up = ket::numeric::TryAlignUp(7U, 4U, unsigned_out);
+	const bool aligned_down = ket::numeric::TryAlignDown(7U, 4U, unsigned_out);
+	const bool added = ket::numeric::TryAdd(1, 2, int_out);
+	const bool subtracted = ket::numeric::TrySub(3, 1, int_out);
+	const bool multiplied = ket::numeric::TryMul(3, 4, int_out);
+	const bool casted = ket::numeric::TryCast(42, short_out);
+
+	static_cast<void>(divided);
+	static_cast<void>(aligned_up);
+	static_cast<void>(aligned_down);
+	static_cast<void>(added);
+	static_cast<void>(subtracted);
+	static_cast<void>(multiplied);
+	static_cast<void>(casted);
+	static_cast<void>(unsigned_out);
+	static_cast<void>(int_out);
+	static_cast<void>(short_out);
+}

@@ -169,22 +169,22 @@ TEST(KetNumericTest, ChecksAdditionOverflow)
 	const auto min_int = std::numeric_limits<int>::min();
 	int signed_out = 123;
 
-	const auto signed_success = ket::numeric::TryCheckedAdd(40, 2, signed_out);
+	const auto signed_success = ket::numeric::TryAdd(40, 2, signed_out);
 	EXPECT_TRUE(signed_success);
 	EXPECT_EQ(signed_out, 42);
 
 	signed_out = 123;
-	const auto signed_upper_overflow = ket::numeric::TryCheckedAdd(max_int, 1, signed_out);
+	const auto signed_upper_overflow = ket::numeric::TryAdd(max_int, 1, signed_out);
 	EXPECT_FALSE(signed_upper_overflow);
 	EXPECT_EQ(signed_out, 123);
 
-	const auto signed_lower_overflow = ket::numeric::TryCheckedAdd(min_int, -1, signed_out);
+	const auto signed_lower_overflow = ket::numeric::TryAdd(min_int, -1, signed_out);
 	EXPECT_FALSE(signed_lower_overflow);
 	EXPECT_EQ(signed_out, 123);
 
 	unsigned unsigned_out = 123U;
 	const auto unsigned_overflow =
-		ket::numeric::TryCheckedAdd(std::numeric_limits<unsigned>::max(), 1U, unsigned_out);
+		ket::numeric::TryAdd(std::numeric_limits<unsigned>::max(), 1U, unsigned_out);
 	EXPECT_FALSE(unsigned_overflow);
 	EXPECT_EQ(unsigned_out, 123U);
 }
@@ -202,21 +202,21 @@ TEST(KetNumericTest, ChecksSubtractionOverflow)
 	const auto min_int = std::numeric_limits<int>::min();
 	int signed_out = 123;
 
-	const auto signed_success = ket::numeric::TryCheckedSub(40, 2, signed_out);
+	const auto signed_success = ket::numeric::TrySub(40, 2, signed_out);
 	EXPECT_TRUE(signed_success);
 	EXPECT_EQ(signed_out, 38);
 
 	signed_out = 123;
-	const auto signed_lower_overflow = ket::numeric::TryCheckedSub(min_int, 1, signed_out);
+	const auto signed_lower_overflow = ket::numeric::TrySub(min_int, 1, signed_out);
 	EXPECT_FALSE(signed_lower_overflow);
 	EXPECT_EQ(signed_out, 123);
 
-	const auto signed_upper_overflow = ket::numeric::TryCheckedSub(max_int, -1, signed_out);
+	const auto signed_upper_overflow = ket::numeric::TrySub(max_int, -1, signed_out);
 	EXPECT_FALSE(signed_upper_overflow);
 	EXPECT_EQ(signed_out, 123);
 
 	unsigned unsigned_out = 123U;
-	const auto unsigned_underflow = ket::numeric::TryCheckedSub(0U, 1U, unsigned_out);
+	const auto unsigned_underflow = ket::numeric::TrySub(0U, 1U, unsigned_out);
 	EXPECT_FALSE(unsigned_underflow);
 	EXPECT_EQ(unsigned_out, 123U);
 }
@@ -235,22 +235,22 @@ TEST(KetNumericTest, ChecksMultiplicationOverflow)
 	const auto min_int = std::numeric_limits<int>::min();
 	int signed_out = 123;
 
-	const auto signed_success = ket::numeric::TryCheckedMul(6, 7, signed_out);
+	const auto signed_success = ket::numeric::TryMul(6, 7, signed_out);
 	EXPECT_TRUE(signed_success);
 	EXPECT_EQ(signed_out, 42);
 
 	signed_out = 123;
-	const auto signed_positive_overflow = ket::numeric::TryCheckedMul(max_int, 2, signed_out);
+	const auto signed_positive_overflow = ket::numeric::TryMul(max_int, 2, signed_out);
 	EXPECT_FALSE(signed_positive_overflow);
 	EXPECT_EQ(signed_out, 123);
 
-	const auto signed_min_negated = ket::numeric::TryCheckedMul(min_int, -1, signed_out);
+	const auto signed_min_negated = ket::numeric::TryMul(min_int, -1, signed_out);
 	EXPECT_FALSE(signed_min_negated);
 	EXPECT_EQ(signed_out, 123);
 
 	unsigned unsigned_out = 123U;
 	const auto unsigned_overflow =
-		ket::numeric::TryCheckedMul(std::numeric_limits<unsigned>::max(), 2U, unsigned_out);
+		ket::numeric::TryMul(std::numeric_limits<unsigned>::max(), 2U, unsigned_out);
 	EXPECT_FALSE(unsigned_overflow);
 	EXPECT_EQ(unsigned_out, 123U);
 }
@@ -292,32 +292,31 @@ TEST(KetNumericTest, SaturatesAtIntegralBounds)
 TEST(KetNumericTest, ChecksCastRange)
 {
 	unsigned unsigned_out = 99U;
-	const auto signed_to_unsigned = ket::numeric::TryCheckedCast(-1, unsigned_out);
+	const auto signed_to_unsigned = ket::numeric::TryCast(-1, unsigned_out);
 	EXPECT_FALSE(signed_to_unsigned);
 	EXPECT_EQ(unsigned_out, 99U);
 
-	const auto signed_zero_to_unsigned = ket::numeric::TryCheckedCast(0, unsigned_out);
+	const auto signed_zero_to_unsigned = ket::numeric::TryCast(0, unsigned_out);
 	EXPECT_TRUE(signed_zero_to_unsigned);
 	EXPECT_EQ(unsigned_out, 0U);
 
 	short short_out = 123;
-	const auto int_to_short =
-		ket::numeric::TryCheckedCast(std::numeric_limits<int>::max(), short_out);
+	const auto int_to_short = ket::numeric::TryCast(std::numeric_limits<int>::max(), short_out);
 	EXPECT_FALSE(int_to_short);
 	EXPECT_EQ(short_out, 123);
 
 	const auto max_short_to_short =
-		ket::numeric::TryCheckedCast(std::numeric_limits<short>::max(), short_out);
+		ket::numeric::TryCast(std::numeric_limits<short>::max(), short_out);
 	EXPECT_TRUE(max_short_to_short);
 	EXPECT_EQ(short_out, std::numeric_limits<short>::max());
 
 	unsigned short unsigned_short_out = 123U;
-	const auto unsigned_boundary = ket::numeric::TryCheckedCast(
-		std::numeric_limits<unsigned short>::max(), unsigned_short_out);
+	const auto unsigned_boundary =
+		ket::numeric::TryCast(std::numeric_limits<unsigned short>::max(), unsigned_short_out);
 	EXPECT_TRUE(unsigned_boundary);
 	EXPECT_EQ(unsigned_short_out, std::numeric_limits<unsigned short>::max());
 
-	const auto unsigned_overflow = ket::numeric::TryCheckedCast(
+	const auto unsigned_overflow = ket::numeric::TryCast(
 		static_cast<unsigned>(std::numeric_limits<unsigned short>::max()) + 1U, unsigned_short_out);
 	EXPECT_FALSE(unsigned_overflow);
 	EXPECT_EQ(unsigned_short_out, std::numeric_limits<unsigned short>::max());

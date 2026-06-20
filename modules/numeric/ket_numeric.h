@@ -163,12 +163,12 @@ namespace ket
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * int out = 0;
-		 * const auto ok = ket::numeric::TryCheckedAdd(40, 2, out);
+		 * const auto ok = ket::numeric::TryAdd(40, 2, out);
 		 * // ok == true, out == 42
 		 * @endcode
 		 */
 		template <typename T>
-		bool TryCheckedAdd(T a, T b, T& out) noexcept;
+		bool TryAdd(T a, T b, T& out) noexcept;
 
 		/**
 		 * @brief overflowを検出する整数減算。
@@ -182,12 +182,12 @@ namespace ket
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * int out = 0;
-		 * const auto ok = ket::numeric::TryCheckedSub(40, 2, out);
+		 * const auto ok = ket::numeric::TrySub(40, 2, out);
 		 * // ok == true, out == 38
 		 * @endcode
 		 */
 		template <typename T>
-		bool TryCheckedSub(T a, T b, T& out) noexcept;
+		bool TrySub(T a, T b, T& out) noexcept;
 
 		/**
 		 * @brief overflowを検出する整数乗算。
@@ -201,12 +201,12 @@ namespace ket
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * int out = 0;
-		 * const auto ok = ket::numeric::TryCheckedMul(6, 7, out);
+		 * const auto ok = ket::numeric::TryMul(6, 7, out);
 		 * // ok == true, out == 42
 		 * @endcode
 		 */
 		template <typename T>
-		bool TryCheckedMul(T a, T b, T& out) noexcept;
+		bool TryMul(T a, T b, T& out) noexcept;
 
 		/**
 		 * @brief 整数加算を上下限で飽和させる。
@@ -252,12 +252,12 @@ namespace ket
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * unsigned out = 0;
-		 * const auto ok = ket::numeric::TryCheckedCast(42, out);
+		 * const auto ok = ket::numeric::TryCast(42, out);
 		 * // ok == true, out == 42U
 		 * @endcode
 		 */
 		template <typename To, typename From>
-		bool TryCheckedCast(From value, To& out) noexcept;
+		bool TryCast(From value, To& out) noexcept;
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -1018,30 +1018,30 @@ namespace ket
 		}
 
 		template <typename T>
-		bool TryCheckedAdd(T a, T b, T& out) noexcept
+		bool TryAdd(T a, T b, T& out) noexcept
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
-						  "ket::numeric::TryCheckedAdd requires an integral type except bool "
+						  "ket::numeric::TryAdd requires an integral type except bool "
 						  "and character types.");
 
 			return detail::CheckedAddImpl<T, detail::IsSigned<T>::value>::Run(a, b, out);
 		}
 
 		template <typename T>
-		bool TryCheckedSub(T a, T b, T& out) noexcept
+		bool TrySub(T a, T b, T& out) noexcept
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
-						  "ket::numeric::TryCheckedSub requires an integral type except bool "
+						  "ket::numeric::TrySub requires an integral type except bool "
 						  "and character types.");
 
 			return detail::CheckedSubImpl<T, detail::IsSigned<T>::value>::Run(a, b, out);
 		}
 
 		template <typename T>
-		bool TryCheckedMul(T a, T b, T& out) noexcept
+		bool TryMul(T a, T b, T& out) noexcept
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
-						  "ket::numeric::TryCheckedMul requires an integral type except bool "
+						  "ket::numeric::TryMul requires an integral type except bool "
 						  "and character types.");
 
 			return detail::CheckedMulImpl<T, detail::IsSigned<T>::value>::Run(a, b, out);
@@ -1068,13 +1068,13 @@ namespace ket
 		}
 
 		template <typename To, typename From>
-		bool TryCheckedCast(From value, To& out) noexcept
+		bool TryCast(From value, To& out) noexcept
 		{
 			static_assert(detail::IsSupportedIntegral<To>::value,
-						  "ket::numeric::TryCheckedCast requires an integral destination type "
+						  "ket::numeric::TryCast requires an integral destination type "
 						  "except bool and character types.");
 			static_assert(detail::IsSupportedIntegral<From>::value,
-						  "ket::numeric::TryCheckedCast requires an integral source type except "
+						  "ket::numeric::TryCast requires an integral source type except "
 						  "bool and character types.");
 
 			const auto value_is_in_range = InRange<To>(value);
