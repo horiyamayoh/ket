@@ -367,7 +367,12 @@ C++バージョン要件:
 - 推奨理由：endian と unaligned access の意図を名前に出し、strict aliasing 依存を避けられる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：C++20 `std::endian` は判定であり、byte列読み書きの直接代替ではない
+- 標準代替：C++20 `std::endian` は byte order の判定であり、byte列の固定幅整数読み書きや失敗値付き Try API の直接代替ではない
+
+使い分け:
+
+- 外部入力、受信 buffer、可変長 slice など長さ確認が境界に残る箇所は TryLoad/TryStore
+- 固定長 protocol や直前の検証で必要 byte 数を保証済みの内部経路は Load/Store
 
 Failure / edge cases:
 

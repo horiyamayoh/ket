@@ -394,7 +394,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Purpose: byte order の読み書きを unaligned access や strict aliasing に頼らず安全に行う。
 - C++ version: 最小要件 C++11。推奨版 C++11以降。推奨理由:
   endian と unaligned access の意図を名前に出し、strict aliasing 依存を避けられる。
-  非推奨版 なし。非推奨理由: C++20 `std::endian` は判定であり、byte列読み書きの直接代替ではない。
+  非推奨版 なし。非推奨理由: なし。
+  標準代替: C++20 `std::endian` は byte order の判定であり、byte列の固定幅整数読み書きや
+  失敗値付き Try API の直接代替ではない。
 - Drop-in files: `modules/endian/ket_endian.h`、`modules/endian/ket_endian.cpp`、
   `modules/endian/ket_endian_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
@@ -427,7 +429,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   - `bool TryStoreLe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept`
   - `bool TryStoreLe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept`
 - Behavior: `LoadXxx`/`StoreXxx` は pointer が十分な長さの buffer を指すことを precondition。
-  `TryXxx` は null、size不足を `false` で扱う。plain と `Try` は 16/32/64 すべてで対称に揃える。
+  呼び出し境界で長さ確認が残る入力は `TryXxx` を優先し、plain Load/Store は固定長 protocol や
+  直前検証で必要 byte 数を保証済みの内部経路向け。`TryXxx` は null、size不足を `false` で扱う。
+  plain と `Try` は 16/32/64 すべてで対称に揃える。
   実装は byte 単位の shift/or で組み立て、`reinterpret_cast` と unaligned access をしない。
 - Failure/edge cases: `TryLoadXxx` は失敗時に出力不変。`TryStoreXxx` は失敗時に buffer 不変。
 - Complexity/performance: 各 Load/Store は語幅分の定数 byte のみ触る O(1)。`ByteSwap` は `constexpr` で
