@@ -80,6 +80,10 @@ namespace ket
 		 * @retval value `GetLastError()`が返すWindows error code。
 		 * @pre なし。呼び出し前にWindows APIが設定したlast-error codeを対象とする。
 		 * @post last-error codeを変更しない。
+		 * @code
+		 * const auto code = ket::platform::GetLastErrorCode();
+		 * // code は現在threadのWindows last-error code
+		 * @endcode
 		 */
 		WindowsErrorCode GetLastErrorCode() noexcept;
 
@@ -90,6 +94,10 @@ namespace ket
 		 * @pre なし。未知のWindows error codeはfallback文字列として扱う。
 		 * @post 引数と外部状態の変更なし。戻り値は空文字列にしない。
 		 * @note UTF-8変換に失敗した場合は`Unknown Windows error <n>`形式を返す。
+		 * @code
+		 * const auto text = ket::platform::FormatWindowsError(ERROR_FILE_NOT_FOUND);
+		 * // !text.empty()
+		 * @endcode
 		 */
 		std::string FormatWindowsError(WindowsErrorCode code);
 #endif
