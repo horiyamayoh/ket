@@ -57,7 +57,7 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。成功時は診断用stringを生成しない。
 		 * @code
 		 * const std::uint8_t expected[] = {0x12U, 0x34U};
-		 * const std::uint8_t actual[] = {0x12U, 0x35U};
+		 * const std::uint8_t actual[] = {0x12U, 0x34U};
 		 * EXPECT_TRUE(ket::testing::BytesEqual(expected, 2U, actual, 2U));
 		 * @endcode
 		 */
