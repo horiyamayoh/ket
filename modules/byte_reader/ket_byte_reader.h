@@ -169,9 +169,9 @@ namespace ket
 			std::size_t Remaining() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
-			 * @brief 読み取り可能byteの空判定。
-			 * @retval true 読み取り可能な残りbyteなし。
-			 * @retval false 1byte以上の読み取り可能byteあり。
+			 * @brief valid readerのoffsetが末尾に到達したかの判定。
+			 * @retval true readerがvalidで残りbyte数が0。
+			 * @retval false invalid reader、内部不整合、または残りbyte数が1以上。
 			 * @pre なし。
 			 * @post reader状態と外部状態の変更なし。
 			 * @code
@@ -286,8 +286,8 @@ namespace ket
 
 			/**
 			 * @brief 指定byte数のnon-owning範囲読み取り。
-			 * @param[out] out_data 読み取り開始位置を指すnon-owning pointer。
 			 * @param[in] size 取り出すbyte数。
+			 * @param[out] out_data 読み取り開始位置を指すnon-owning pointer。
 			 * @retval true `size`byteの範囲読み取り成功。
 			 * @retval false invalid reader、または残りbyte不足。
 			 * @pre `out_data`は有効な参照。返されたpointerのlifetimeは元bufferに従う。
@@ -298,11 +298,11 @@ namespace ket
 			 * const std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
 			 * ket::byte_reader::Reader reader(data, 3U);
 			 * const std::uint8_t* bytes = nullptr;
-			 * const auto ok = reader.ReadBytes(bytes, 2U);
+			 * const auto ok = reader.ReadBytes(2U, bytes);
 			 * // ok == true, bytes == data, reader.Offset() == 2
 			 * @endcode
 			 */
-			bool ReadBytes(const std::uint8_t*& out_data, std::size_t size) noexcept;
+			bool ReadBytes(std::size_t size, const std::uint8_t*& out_data) noexcept;
 
 		  private:
 			const std::uint8_t* data_ = nullptr;

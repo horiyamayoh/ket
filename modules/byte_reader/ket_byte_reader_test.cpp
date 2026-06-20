@@ -30,7 +30,7 @@ TEST(KetByteReaderTest, HandlesEmptyReader)
 
 	const auto sentinel = std::array<std::uint8_t, 1>{{0xFFU}};
 	const std::uint8_t* bytes = sentinel.data();
-	const auto zero_read = reader.ReadBytes(bytes, 0U);
+	const auto zero_read = reader.ReadBytes(0U, bytes);
 	const auto zero_offset = reader.Offset();
 
 	EXPECT_TRUE(zero_read);
@@ -121,7 +121,7 @@ TEST(KetByteReaderTest, KeepsOffsetAndOutputOnFailure)
 	const auto offset_before_failure = reader.Offset();
 
 	const std::uint8_t* bytes = data.data();
-	const auto bytes_read = reader.ReadBytes(bytes, 2U);
+	const auto bytes_read = reader.ReadBytes(2U, bytes);
 	const auto offset_after_failure = reader.Offset();
 	const auto remaining_after_failure = reader.Remaining();
 
@@ -194,7 +194,7 @@ TEST(KetByteReaderTest, ReturnsNonOwningBytesAtCurrentOffset)
 
 	const auto skipped = reader.Skip(1U);
 	const std::uint8_t* bytes = nullptr;
-	const auto bytes_read = reader.ReadBytes(bytes, 2U);
+	const auto bytes_read = reader.ReadBytes(2U, bytes);
 	const auto offset = reader.Offset();
 	const auto remaining = reader.Remaining();
 
@@ -228,14 +228,14 @@ TEST(KetByteReaderTest, RejectsInvalidReader)
 
 	const auto sentinel = std::array<std::uint8_t, 1>{{0xFFU}};
 	const std::uint8_t* bytes = sentinel.data();
-	const auto bytes_read = reader.ReadBytes(bytes, 0U);
+	const auto bytes_read = reader.ReadBytes(0U, bytes);
 
 	const auto skipped = reader.Skip(0U);
 	const auto offset = reader.Offset();
 
 	EXPECT_EQ(size, 1U);
 	EXPECT_EQ(remaining, 0U);
-	EXPECT_TRUE(is_empty);
+	EXPECT_FALSE(is_empty);
 	EXPECT_FALSE(value_read);
 	EXPECT_EQ(value, 0xAAU);
 	EXPECT_FALSE(bytes_read);

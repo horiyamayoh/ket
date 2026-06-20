@@ -91,8 +91,13 @@ namespace ket
 
 		bool Reader::Empty() const noexcept
 		{
-			const auto remaining = Remaining();
-			return remaining == 0U;
+			const auto can_consume_zero = CanConsume(data_, size_, offset_, 0U);
+			if (!can_consume_zero)
+			{
+				return false;
+			}
+
+			return offset_ == size_;
 		}
 
 		bool Reader::Skip(std::size_t size) noexcept
@@ -110,7 +115,7 @@ namespace ket
 		bool Reader::ReadU8(std::uint8_t& out) noexcept
 		{
 			const std::uint8_t* data = nullptr;
-			const auto read_succeeded = ReadBytes(data, 1U);
+			const auto read_succeeded = ReadBytes(1U, data);
 			if (!read_succeeded)
 			{
 				return false;
@@ -123,7 +128,7 @@ namespace ket
 		bool Reader::ReadBe16(std::uint16_t& out) noexcept
 		{
 			const std::uint8_t* data = nullptr;
-			const auto read_succeeded = ReadBytes(data, 2U);
+			const auto read_succeeded = ReadBytes(2U, data);
 			if (!read_succeeded)
 			{
 				return false;
@@ -136,7 +141,7 @@ namespace ket
 		bool Reader::ReadBe32(std::uint32_t& out) noexcept
 		{
 			const std::uint8_t* data = nullptr;
-			const auto read_succeeded = ReadBytes(data, 4U);
+			const auto read_succeeded = ReadBytes(4U, data);
 			if (!read_succeeded)
 			{
 				return false;
@@ -149,7 +154,7 @@ namespace ket
 		bool Reader::ReadLe16(std::uint16_t& out) noexcept
 		{
 			const std::uint8_t* data = nullptr;
-			const auto read_succeeded = ReadBytes(data, 2U);
+			const auto read_succeeded = ReadBytes(2U, data);
 			if (!read_succeeded)
 			{
 				return false;
@@ -162,7 +167,7 @@ namespace ket
 		bool Reader::ReadLe32(std::uint32_t& out) noexcept
 		{
 			const std::uint8_t* data = nullptr;
-			const auto read_succeeded = ReadBytes(data, 4U);
+			const auto read_succeeded = ReadBytes(4U, data);
 			if (!read_succeeded)
 			{
 				return false;
@@ -172,7 +177,7 @@ namespace ket
 			return true;
 		}
 
-		bool Reader::ReadBytes(const std::uint8_t*& out_data, std::size_t size) noexcept
+		bool Reader::ReadBytes(std::size_t size, const std::uint8_t*& out_data) noexcept
 		{
 			const auto can_consume = CanConsume(data_, size_, offset_, size);
 			if (!can_consume)

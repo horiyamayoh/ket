@@ -741,6 +741,7 @@ Failure / edge cases:
 
 - null + 非0 size は invalid reader
 - empty
+- invalid reader は empty として扱わない
 - size不足
 - 成功時だけ offset 更新
 - 失敗時 out 不変

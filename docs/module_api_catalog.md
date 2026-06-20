@@ -669,13 +669,13 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
       bool ReadBe32(std::uint32_t& out) noexcept;
       bool ReadLe16(std::uint16_t& out) noexcept;
       bool ReadLe32(std::uint32_t& out) noexcept;
-      bool ReadBytes(const std::uint8_t*& out_data, std::size_t size) noexcept;
+      bool ReadBytes(std::size_t size, const std::uint8_t*& out_data) noexcept;
   };
   ```
 
 - Behavior: `data == nullptr && size == 0` は有効な空 reader。`data == nullptr && size > 0` は
-  invalid reader。copy/move は non-owning pointer、size、offset をそのまま複製/移動する。成功時だけ offset を進める。
-  `ReadBytes` は non-owning pointer を返す。
+  invalid reader。`Empty()` は valid reader が末尾に到達したときだけ true を返す。copy/move は non-owning
+  pointer、size、offset をそのまま複製/移動する。成功時だけ offset を進める。`ReadBytes` は non-owning pointer を返す。
 - Failure/edge cases: 失敗時は offset と出力不変。元 buffer lifetime は利用者責任。
 - Complexity/performance: 各 Read/Skip は読み取る byte 数に比例する O(k)。reader は buffer を所有せず
   allocation なし。
