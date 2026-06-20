@@ -7,6 +7,7 @@
 この文書は、ket の module/API 製造依頼に使う正本である。
 [`module_api_proposal.md`](proposals/module_api_proposal.md) を入力資料として整理し、
 実装依頼時に必要な API、境界条件、テスト観点、禁止事項を module 単位で固定する。
+`docs/proposals/module_api_proposal.md` は履歴資料であり、この文書を上書きする根拠として使わない。
 
 この文書は `catalog.md` の置き換えではない。`catalog.md` は候補APIの保管場所、
 `progress.md` は実装状況、各 module header の Doxygen は実装済みAPIの詳細仕様を管理する。

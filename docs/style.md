@@ -179,6 +179,7 @@ constexpr bool OptionalIsEmpty(std::optional<T> value) noexcept;
 3. inline、constexpr、templateなど、ヘッダ内に必要な公開API定義
 
 各sectionには次のdashed banner形式のコメントを置きます。該当sectionが存在しない場合は、そのbannerも置きません。
+`tools/check_conventions.py` も同じ方針で、存在するsectionだけを要求します。
 
 ```cpp
 	// -----------------------------------------------------------------------------

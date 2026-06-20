@@ -66,7 +66,9 @@ ket_add_module_test(
 )
 ```
 
-C++11/14などの最低標準確認はcompile-only checkで追加します。
+C++11/14などの最低標準確認はcompile-only checkで追加します。static_assert、未対応型のcompile確認、
+include pathの個別指定が必要な場合は専用の `*_compile_check.cpp` を置きます。単純な最低標準確認だけなら、
+対象moduleの `.h` と、実装がある場合は `.cpp` を直接 `SOURCES` に登録して構いません。
 
 ```cmake
 ket_add_compile_check(

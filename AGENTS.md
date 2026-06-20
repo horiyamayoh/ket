@@ -6,7 +6,11 @@
 
 - 設計思想の原典は `ket_coding_agent_brief.md` です。
 - 日常の入口は `README.md`、運用ルールは `docs/` を参照してください。
+- 未実装moduleの公開API、C++要件、失敗方針、境界条件は `docs/module_api_catalog.md` のmodule別仕様カードを正とします。
+- `Existing` moduleを変更する場合は、既存module headerのDoxygenと実装を正とします。`docs/module_api_catalog.md` の記述と矛盾する場合も、勝手に既存仕様を書き換えないでください。
+- coding ruleは `docs/style.md`、test ruleは `docs/testing.md` を正とします。
 - 候補APIは `catalog.md`、実装状況は `progress.md` で管理します。
+- `docs/proposals/module_api_proposal.md` は履歴資料です。`docs/module_api_catalog.md` を上書きする根拠として使わないでください。
 
 ## Project direction
 
@@ -32,7 +36,7 @@ modules/<name>/ket_<name>_test.cpp
 - module名はfolder名と一致させます。冗長なfolder名は短い別名にします（`parse_numeric`→`parse`、`string_ascii`→`ascii`、`semantic_version`→`version` など）。
 - namespaceで対象moduleが明らかになるため、API名からmodule tokenと型tokenを落とします（`ParseIpv4Address`→`ket::ipv4::Parse`、`Ipv4Address`→`ket::ipv4::Address`）。正準動詞とfallback接尾辞の詳細は `docs/style.md` に従ってください。
 - 公開ヘッダでは、公開APIのDoxygen付き宣言を先に並べ、header内helperが必要な場合はその後に `ket::<module>::detail` の内部helper、最後にinline、constexpr、templateなどの公開API定義を書いてください。
-- 公開ヘッダの各sectionには、`Public API declarations`、`Internal implementation details`、`Public API definitions` のdashed bannerコメントを置いてください。
+- 公開ヘッダの各sectionには、`Public API declarations`、`Internal implementation details`、`Public API definitions` のdashed bannerコメントを置いてください。該当sectionが存在しない場合は、そのbannerも置かないでください。
 - 命名規則はGoogle C++ Styleに従ってください。enum値も `kUpperCamelCase` にします。
 - 非optionalの出力引数と入出力引数は参照型で受けてください。`nullptr` が意味を持つoptional出力やC API境界だけポインタ型を使い、その理由をDoxygenに書いてください。
 - 各moduleは原則として他のket moduleに依存しないでください。
@@ -80,7 +84,7 @@ python3 tools/format.py
 
 ## Before finishing a change
 
-変更を終える前に次を確認してください。
+変更を終える前のフル確認は `python3 tools/check_repository.py` を主とします。下記の個別コマンドは、失敗時の切り分け、手動再実行、またはwrapperを完走できない環境で使ってください。
 
 - `python3 tools/check_repository.py`
 - `python3 tools/check_python.py`

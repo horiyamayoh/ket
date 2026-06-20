@@ -7,6 +7,7 @@
 この文書は、C++ utility catalog `ket` を次に大きく育てるための module 候補と API 仕様案である。
 この文書は旧案を含む履歴資料であり、canonical name は
 `docs/module_api_catalog.md` を正とする。
+公開API、namespace、失敗方針、境界条件の古い記述は、`docs/module_api_catalog.md` を上書きしない。
 
 ここでの目的は「module 数を増やすこと」ではない。目的は、ket の価値である **小さい正解を、持ち出しやすい `.h/.cpp` 単位で増やすこと** である。
 
@@ -44,7 +45,7 @@ const auto name = ket::container::AtOr(names, id, "unknown");
 
 この文書では、既存方針に合わせて次を重視する。
 
-- 公開APIは `namespace ket`。
+- 公開APIは module ごとの入れ子 `namespace ket::<module>`。
 - API名は UpperCamelCase。
 - 各moduleは原則として他の ket module に依存しない。
 - 小さい重複は許容し、drop-in 性を優先する。
