@@ -85,6 +85,11 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * const std::uint8_t data[] = {0x12U, 0x34U};
+		 * const auto value = ket::endian::LoadBe16(data);
+		 * // value == 0x1234
+		 * @endcode
 		 */
 		std::uint16_t LoadBe16(const std::uint8_t* data) noexcept;
 
@@ -96,6 +101,11 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+		 * const auto value = ket::endian::LoadBe32(data);
+		 * // value == 0x12345678
+		 * @endcode
 		 */
 		std::uint32_t LoadBe32(const std::uint8_t* data) noexcept;
 
@@ -107,6 +117,11 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * const std::uint8_t data[] = {0x01U, 0x23U, 0x45U, 0x67U, 0x89U, 0xABU, 0xCDU, 0xEFU};
+		 * const auto value = ket::endian::LoadBe64(data);
+		 * // value == 0x0123456789ABCDEF
+		 * @endcode
 		 */
 		std::uint64_t LoadBe64(const std::uint8_t* data) noexcept;
 
@@ -118,6 +133,11 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * const std::uint8_t data[] = {0x34U, 0x12U};
+		 * const auto value = ket::endian::LoadLe16(data);
+		 * // value == 0x1234
+		 * @endcode
 		 */
 		std::uint16_t LoadLe16(const std::uint8_t* data) noexcept;
 
@@ -129,6 +149,11 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * const std::uint8_t data[] = {0x78U, 0x56U, 0x34U, 0x12U};
+		 * const auto value = ket::endian::LoadLe32(data);
+		 * // value == 0x12345678
+		 * @endcode
 		 */
 		std::uint32_t LoadLe32(const std::uint8_t* data) noexcept;
 
@@ -140,6 +165,11 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * const std::uint8_t data[] = {0xEFU, 0xCDU, 0xABU, 0x89U, 0x67U, 0x45U, 0x23U, 0x01U};
+		 * const auto value = ket::endian::LoadLe64(data);
+		 * // value == 0x0123456789ABCDEF
+		 * @endcode
 		 */
 		std::uint64_t LoadLe64(const std::uint8_t* data) noexcept;
 
@@ -152,6 +182,11 @@ namespace ket
 		 * @post `data[0]`と`data[1]`に`value`のbig-endian表現を書き込む。
 		 * @note 実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * std::uint8_t data[2] = {};
+		 * ket::endian::StoreBe16(data, static_cast<std::uint16_t>(0x1234U));
+		 * // data[0] == 0x12 && data[1] == 0x34
+		 * @endcode
 		 */
 		void StoreBe16(std::uint8_t* data, std::uint16_t value) noexcept;
 
@@ -164,6 +199,11 @@ namespace ket
 		 * @post `data[0]`から`data[3]`に`value`のbig-endian表現を書き込む。
 		 * @note 実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * std::uint8_t data[4] = {};
+		 * ket::endian::StoreBe32(data, std::uint32_t{0x12345678U});
+		 * // data[0] == 0x12 && data[3] == 0x78
+		 * @endcode
 		 */
 		void StoreBe32(std::uint8_t* data, std::uint32_t value) noexcept;
 
@@ -176,6 +216,11 @@ namespace ket
 		 * @post `data[0]`から`data[7]`に`value`のbig-endian表現を書き込む。
 		 * @note 実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * std::uint8_t data[8] = {};
+		 * ket::endian::StoreBe64(data, std::uint64_t{0x0123456789ABCDEFULL});
+		 * // data[0] == 0x01 && data[7] == 0xEF
+		 * @endcode
 		 */
 		void StoreBe64(std::uint8_t* data, std::uint64_t value) noexcept;
 
@@ -188,6 +233,11 @@ namespace ket
 		 * @post `data[0]`と`data[1]`に`value`のlittle-endian表現を書き込む。
 		 * @note 実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * std::uint8_t data[2] = {};
+		 * ket::endian::StoreLe16(data, static_cast<std::uint16_t>(0x1234U));
+		 * // data[0] == 0x34 && data[1] == 0x12
+		 * @endcode
 		 */
 		void StoreLe16(std::uint8_t* data, std::uint16_t value) noexcept;
 
@@ -200,6 +250,11 @@ namespace ket
 		 * @post `data[0]`から`data[3]`に`value`のlittle-endian表現を書き込む。
 		 * @note 実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * std::uint8_t data[4] = {};
+		 * ket::endian::StoreLe32(data, std::uint32_t{0x12345678U});
+		 * // data[0] == 0x78 && data[3] == 0x12
+		 * @endcode
 		 */
 		void StoreLe32(std::uint8_t* data, std::uint32_t value) noexcept;
 
@@ -212,6 +267,11 @@ namespace ket
 		 * @post `data[0]`から`data[7]`に`value`のlittle-endian表現を書き込む。
 		 * @note 実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned
 		 * accessに依存しない。
+		 * @code
+		 * std::uint8_t data[8] = {};
+		 * ket::endian::StoreLe64(data, std::uint64_t{0x0123456789ABCDEFULL});
+		 * // data[0] == 0xEF && data[7] == 0x01
+		 * @endcode
 		 */
 		void StoreLe64(std::uint8_t* data, std::uint64_t value) noexcept;
 
@@ -224,6 +284,12 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 2`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。
 		 * @post 成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0x12U, 0x34U};
+		 * std::uint16_t value = 0U;
+		 * const auto ok = ket::endian::TryLoadBe16(data, sizeof(data), value);
+		 * // ok == true && value == 0x1234
+		 * @endcode
 		 */
 		bool TryLoadBe16(const std::uint8_t* data, std::size_t size, std::uint16_t& out) noexcept;
 
@@ -236,6 +302,12 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 4`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。
 		 * @post 成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+		 * std::uint32_t value = 0U;
+		 * const auto ok = ket::endian::TryLoadBe32(data, sizeof(data), value);
+		 * // ok == true && value == 0x12345678
+		 * @endcode
 		 */
 		bool TryLoadBe32(const std::uint8_t* data, std::size_t size, std::uint32_t& out) noexcept;
 
@@ -248,6 +320,12 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 8`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。
 		 * @post 成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0x01U, 0x23U, 0x45U, 0x67U, 0x89U, 0xABU, 0xCDU, 0xEFU};
+		 * std::uint64_t value = 0U;
+		 * const auto ok = ket::endian::TryLoadBe64(data, sizeof(data), value);
+		 * // ok == true && value == 0x0123456789ABCDEF
+		 * @endcode
 		 */
 		bool TryLoadBe64(const std::uint8_t* data, std::size_t size, std::uint64_t& out) noexcept;
 
@@ -260,6 +338,12 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 2`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。
 		 * @post 成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0x34U, 0x12U};
+		 * std::uint16_t value = 0U;
+		 * const auto ok = ket::endian::TryLoadLe16(data, sizeof(data), value);
+		 * // ok == true && value == 0x1234
+		 * @endcode
 		 */
 		bool TryLoadLe16(const std::uint8_t* data, std::size_t size, std::uint16_t& out) noexcept;
 
@@ -272,6 +356,12 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 4`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。
 		 * @post 成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0x78U, 0x56U, 0x34U, 0x12U};
+		 * std::uint32_t value = 0U;
+		 * const auto ok = ket::endian::TryLoadLe32(data, sizeof(data), value);
+		 * // ok == true && value == 0x12345678
+		 * @endcode
 		 */
 		bool TryLoadLe32(const std::uint8_t* data, std::size_t size, std::uint32_t& out) noexcept;
 
@@ -284,6 +374,12 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 8`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。
 		 * @post 成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0xEFU, 0xCDU, 0xABU, 0x89U, 0x67U, 0x45U, 0x23U, 0x01U};
+		 * std::uint64_t value = 0U;
+		 * const auto ok = ket::endian::TryLoadLe64(data, sizeof(data), value);
+		 * // ok == true && value == 0x0123456789ABCDEF
+		 * @endcode
 		 */
 		bool TryLoadLe64(const std::uint8_t* data, std::size_t size, std::uint64_t& out) noexcept;
 
@@ -296,6 +392,11 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 2`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。
 		 * @post 成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[2] = {};
+		 * const auto ok = ket::endian::TryStoreBe16(data, sizeof(data), 0x1234U);
+		 * // ok == true && data[0] == 0x12 && data[1] == 0x34
+		 * @endcode
 		 */
 		bool TryStoreBe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept;
 
@@ -308,6 +409,11 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 4`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。
 		 * @post 成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[4] = {};
+		 * const auto ok = ket::endian::TryStoreBe32(data, sizeof(data), 0x12345678U);
+		 * // ok == true && data[0] == 0x12 && data[3] == 0x78
+		 * @endcode
 		 */
 		bool TryStoreBe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept;
 
@@ -320,6 +426,11 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 8`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。
 		 * @post 成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[8] = {};
+		 * const auto ok = ket::endian::TryStoreBe64(data, sizeof(data), 0x0123456789ABCDEFULL);
+		 * // ok == true && data[0] == 0x01 && data[7] == 0xEF
+		 * @endcode
 		 */
 		bool TryStoreBe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept;
 
@@ -332,6 +443,11 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 2`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。
 		 * @post 成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[2] = {};
+		 * const auto ok = ket::endian::TryStoreLe16(data, sizeof(data), 0x1234U);
+		 * // ok == true && data[0] == 0x34 && data[1] == 0x12
+		 * @endcode
 		 */
 		bool TryStoreLe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept;
 
@@ -344,6 +460,11 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 4`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。
 		 * @post 成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[4] = {};
+		 * const auto ok = ket::endian::TryStoreLe32(data, sizeof(data), 0x12345678U);
+		 * // ok == true && data[0] == 0x78 && data[3] == 0x12
+		 * @endcode
 		 */
 		bool TryStoreLe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept;
 
@@ -356,6 +477,11 @@ namespace ket
 		 * @retval false `data`がnullptr、または`size < 8`。
 		 * @pre `data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。
 		 * @post 成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[8] = {};
+		 * const auto ok = ket::endian::TryStoreLe64(data, sizeof(data), 0x0123456789ABCDEFULL);
+		 * // ok == true && data[0] == 0xEF && data[7] == 0x01
+		 * @endcode
 		 */
 		bool TryStoreLe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept;
 
