@@ -2143,6 +2143,9 @@ Failure / edge cases:
 - heterogeneous types
 - const tuple
 - reference elements
+- tuple-like objects
+- rvalue / move-only elements
+- non-copyable callable
 - callable exception propagation
 - evaluation order
 
@@ -2159,6 +2162,9 @@ Tests:
 - reference preservation
 - transform return tuple type
 - call order
+- tuple-like objects
+- non-copyable callable
+- rvalue forwarding
 
 ## Idea: BuildConfig
 

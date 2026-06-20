@@ -1581,13 +1581,15 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Drop-in files: `modules/tuple/ket_tuple.h`、`modules/tuple/ket_tuple_test.cpp`。
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API Signatures（`namespace ket::tuple`）:
-  - `template <typename Tuple, typename F> void ForEach(Tuple&& tuple, F f);`
-  - `template <typename Tuple, typename F> auto Transform(Tuple&& tuple, F f);`
-- Behavior: `ForEach` は index順に callable を呼ぶ。`Transform` は各要素に callable を適用した
+  - `template <typename Tuple, typename F> void ForEach(Tuple&& tuple, F&& f);`
+  - `template <typename Tuple, typename F> auto Transform(Tuple&& tuple, F&& f);`
+- Behavior: `ForEach` は index順に同じ callable object をcopyせず呼ぶ。`Transform` は各要素に callable を適用した
   tuple を返す。
-- Failure/edge cases: callable 例外は伝播。empty tuple、const tuple、reference要素を扱う。
+- Failure/edge cases: callable 例外は伝播。empty tuple、const tuple、reference要素、tuple-like object、
+  rvalue要素を扱う。`Transform` が返す参照要素のlifetimeは呼び出し側責任。
 - Complexity/performance: 要素数 N に対し compile-time 展開で O(N) 回呼び出し。実行時 allocation なし。
-- Tests: empty、heterogeneous、const、reference、戻りtuple型、呼び出し順。
+- Tests: empty、heterogeneous、const、reference、戻りtuple型、呼び出し順、非copy callable、
+  tuple-like object、rvalue要素。
 - Do not implement: pair helper、tuple DSL、reflection。
 
 ### build_config Module
