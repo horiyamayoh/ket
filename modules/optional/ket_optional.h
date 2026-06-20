@@ -52,7 +52,8 @@ namespace ket
 		 * @note 参照を保持したい場合は、mapperが`std::reference_wrapper<T>`を明示的に返す。
 		 * @note C++23以降では`std::optional::transform`が標準代替。
 		 * @code
-		 * const auto value = ket::optional::Map(std::optional<int>(2), [](int x) { return x * 3;
+		 * const auto value = ket::optional::Map(std::optional<int>(2), [](int x) {
+		 *     return x * 3;
 		 * });
 		 * // value == std::optional<int>(6)
 		 * @endcode
