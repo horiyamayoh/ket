@@ -4,6 +4,7 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <limits>
 #include <optional>
 #include <string>
@@ -83,7 +84,7 @@ namespace
 		const auto conversion_failed = converted.ec != std::errc();
 		if (conversion_failed)
 		{
-			return result;
+			std::terminate();
 		}
 
 		result.size = static_cast<std::size_t>(converted.ptr - begin);

@@ -1652,6 +1652,7 @@ ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
 ket::version::Parse(text)
+ket::version::Format(value)
 ket::version::Compare(a, b)
 ```
 

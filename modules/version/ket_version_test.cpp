@@ -203,7 +203,8 @@ TEST(KetVersionTest, RejectsLeadingZeroComponents)
 /**
  * @test
  * @brief 不正なtriplet形状の拒否確認。
- * @details 空、要素不足/過多、空要素、非数字、符号、空白を含む入力がstd::nulloptになることを確認。
+ * @details 空、要素不足/過多、空要素、非数字、符号、空白、SemVer metadata
+ * を含む入力がstd::nulloptになることを確認。
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
@@ -218,6 +219,10 @@ TEST(KetVersionTest, RejectsMalformedTriplets)
 	const auto alphabet = ket::version::Parse("1.a.3");
 	const auto sign = ket::version::Parse("1.-2.3");
 	const auto space = ket::version::Parse("1. 2.3");
+	const auto leading_space = ket::version::Parse(" 1.2.3");
+	const auto trailing_space = ket::version::Parse("1.2.3 ");
+	const auto prerelease = ket::version::Parse("1.2.3-alpha");
+	const auto build_metadata = ket::version::Parse("1.2.3+build");
 
 	const auto empty_is_empty = OptionalTripletIsEmpty(empty);
 	const auto missing_component_is_empty = OptionalTripletIsEmpty(missing_component);
@@ -228,6 +233,10 @@ TEST(KetVersionTest, RejectsMalformedTriplets)
 	const auto alphabet_is_empty = OptionalTripletIsEmpty(alphabet);
 	const auto sign_is_empty = OptionalTripletIsEmpty(sign);
 	const auto space_is_empty = OptionalTripletIsEmpty(space);
+	const auto leading_space_is_empty = OptionalTripletIsEmpty(leading_space);
+	const auto trailing_space_is_empty = OptionalTripletIsEmpty(trailing_space);
+	const auto prerelease_is_empty = OptionalTripletIsEmpty(prerelease);
+	const auto build_metadata_is_empty = OptionalTripletIsEmpty(build_metadata);
 
 	EXPECT_TRUE(empty_is_empty);
 	EXPECT_TRUE(missing_component_is_empty);
@@ -238,4 +247,8 @@ TEST(KetVersionTest, RejectsMalformedTriplets)
 	EXPECT_TRUE(alphabet_is_empty);
 	EXPECT_TRUE(sign_is_empty);
 	EXPECT_TRUE(space_is_empty);
+	EXPECT_TRUE(leading_space_is_empty);
+	EXPECT_TRUE(trailing_space_is_empty);
+	EXPECT_TRUE(prerelease_is_empty);
+	EXPECT_TRUE(build_metadata_is_empty);
 }

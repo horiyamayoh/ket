@@ -24,7 +24,7 @@
  *
  * @par namespace
  * 公開API：ket::version
- * 内部実装：ket::version::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstdint>
@@ -55,7 +55,8 @@ namespace ket
 		 * @brief `major.minor.patch`形式のnumeric version triplet parse。
 		 * @param[in] text parse対象の文字列。
 		 * @retval value parse済みの数値3要素。
-		 * @retval std::nullopt 空、要素不足/過多、非数字、overflow、または複数桁のleading zero。
+		 * @retval std::nullopt 空、要素不足/過多、空要素、非数字、符号、空白、overflow、
+		 * 複数桁のleading zero、またはprerelease/build metadata。
 		 * @pre なし。不正入力は失敗値として扱う。
 		 * @post 引数と外部状態の変更なし。
 		 * @note 各要素は`std::uint32_t`範囲の10進ASCII数字列。`0`単体は許可。
@@ -65,6 +66,9 @@ namespace ket
 		 * // value->major == 1U
 		 * // value->minor == 20U
 		 * // value->patch == 300U
+		 *
+		 * const auto invalid = ket::version::Parse("1.2.3-alpha");
+		 * // invalid == std::nullopt
 		 * @endcode
 		 */
 		std::optional<Triplet> Parse(std::string_view text) noexcept;
@@ -84,7 +88,7 @@ namespace ket
 		std::string Format(Triplet version);
 
 		/**
-		 * @brief numeric version tripletの辞書順比較。
+		 * @brief numeric version tripletの要素順比較。
 		 * @param[in] a 比較左辺の数値3要素。
 		 * @param[in] b 比較右辺の数値3要素。
 		 * @retval negative `a`が`b`より小さい。
@@ -99,6 +103,14 @@ namespace ket
 		 * @endcode
 		 */
 		int Compare(Triplet a, Triplet b) noexcept;
+
+		// -----------------------------------------------------------------------------
+		// Internal implementation details
+		// -----------------------------------------------------------------------------
+
+		// -----------------------------------------------------------------------------
+		// Public API definitions
+		// -----------------------------------------------------------------------------
 
 	} // namespace version
 
