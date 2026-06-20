@@ -61,7 +61,10 @@ namespace ket
 		 * @note 各要素は`std::uint32_t`範囲の10進ASCII数字列。`0`単体は許可。
 		 * @code
 		 * const auto value = ket::version::Parse("1.20.300");
-		 * // value == std::optional<ket::version::Triplet>({1, 20, 300})
+		 * // value.has_value() == true
+		 * // value->major == 1U
+		 * // value->minor == 20U
+		 * // value->patch == 300U
 		 * @endcode
 		 */
 		std::optional<Triplet> Parse(std::string_view text) noexcept;
