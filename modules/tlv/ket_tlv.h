@@ -75,7 +75,7 @@ namespace ket
 		 * @code
 		 * const std::uint8_t value[] = {0xAAU};
 		 * const auto record = ket::tlv::Encode(0x1234U, value, 1U);
-		 * // record == {0x12, 0x34, 0x00, 0x00, 0x00, 0x01, 0xAA}
+		 * // record.size() == 7, record[0] == 0x12, record[6] == 0xAA
 		 * @endcode
 		 */
 		std::vector<std::uint8_t>
@@ -92,6 +92,12 @@ namespace ket
 		 * 読み取り可能な配列を指す。`value == nullptr && value_size > 0`はprecondition違反。
 		 * @post `dst`の既存内容を保持し、末尾にTLV recordを追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @code
+		 * std::vector<std::uint8_t> output;
+		 * const std::uint8_t value[] = {0xAAU};
+		 * ket::tlv::Append(output, 0x1234U, value, 1U);
+		 * // output.size() == 7, output[0] == 0x12, output[6] == 0xAA
+		 * @endcode
 		 */
 		void Append(std::vector<std::uint8_t>& dst,
 					std::uint16_t type,
@@ -111,6 +117,12 @@ namespace ket
 		 * @post 成功時だけ`out`を更新。失敗時は`out`を変更なし。
 		 * @note `out.view.value`は入力bufferを指すnon-owning pointer。
 		 * decode後の参照有効性は入力buffer lifetimeに依存。
+		 * @code
+		 * const std::uint8_t record[] = {0x12U, 0x34U, 0x00U, 0x00U, 0x00U, 0x01U, 0xAAU};
+		 * ket::tlv::DecodeResult result{};
+		 * const auto ok = ket::tlv::TryDecode(record, sizeof(record), result);
+		 * // ok == true, result.view.type == 0x1234, result.view.value_size == 1
+		 * @endcode
 		 */
 		bool TryDecode(const std::uint8_t* data, std::size_t size, DecodeResult& out) noexcept;
 
