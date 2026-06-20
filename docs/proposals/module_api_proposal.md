@@ -273,7 +273,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `state_table`       | P2   | C++17    | 小さい状態遷移表                 | `NextState`, `IsValidTransition`                   |
 | `cache_once`        | P2   | C++11    | once/lazy value                  | `OnceValue`, `Lazy`, `GetOrCreate`                 |
 | `serialization_tlv` | P2   | C++17    | length-prefix/TLV                | `EncodeTlv`, `TryDecodeTlv`                        |
-| `tuple`             | P2   | C++17    | tuple/pair の小さい補助          | `TupleForEach`, `TupleTransform`                   |
+| `tuple`             | P2   | C++17    | tuple/pair の小さい補助          | `ForEach`, `Transform`                             |
 | `build_config`      | P2   | C++11    | feature detection                | `KET_HAS_STD_OPTIONAL`                             |
 | `math_small`        | P2   | C++11    | 単位・補間など小さい数学         | `Lerp`, `MapRange`, `DegreesToRadians`             |
 | `meta`              | P3   | C++11/17 | type traits 補助                 | `RemoveCvref`, `AlwaysFalse`                       |
@@ -1831,11 +1831,15 @@ namespace ket
 ```cpp
 namespace ket
 {
-	template <typename Tuple, typename F>
-	void TupleForEach(Tuple&& tuple, F f);
+	namespace tuple
+	{
+		template <typename Tuple, typename F>
+		void ForEach(Tuple&& tuple, F&& f);
 
-	template <typename Tuple, typename F>
-	auto TupleTransform(Tuple&& tuple, F f);
+		template <typename Tuple, typename F>
+		auto Transform(Tuple&& tuple, F&& f);
+
+	} // namespace tuple
 
 } // namespace ket
 ```
