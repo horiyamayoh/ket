@@ -240,6 +240,7 @@ Candidate API:
 ket::bits::HighNibble(value)
 ket::bits::LowNibble(value)
 ket::bits::TryPackNibbles(high, low, out)
+ket::bits::TypeBitWidth<T>()
 ket::bits::HasBit(value, bit_index)
 ket::bits::TryMask(width, out)
 ket::bits::Rotl(value, count)
@@ -264,7 +265,7 @@ Failure / edge cases:
 - bit index 範囲外
 - width 0 / bit幅 full / bit幅超過
 - 不正 nibble
-- signed integral は対象外
+- signed integral、bool、char、wchar_t、char16_t、char32_t は対象外
 
 他のライブラリへの依存:
 

@@ -300,60 +300,65 @@ Dependencies: Standard library only, no ket dependencies
 ```cpp
 namespace ket
 {
-	constexpr bool IsNibble(std::uint8_t value) noexcept;
-	constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept;
-	constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept;
-	constexpr bool TryMakeByteFromNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t* out) noexcept;
+	namespace bits
+	{
+		constexpr bool IsNibble(std::uint8_t value) noexcept;
+		constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept;
+		constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept;
+		bool TryPackNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept;
 
-	template <typename T>
-	constexpr unsigned BitWidth() noexcept;
+		template <typename T>
+		constexpr unsigned TypeBitWidth() noexcept;
 
-	template <typename T>
-	constexpr bool HasBit(T value, unsigned bit_index) noexcept;
+		template <typename T>
+		constexpr bool HasBit(T value, unsigned bit_index) noexcept;
 
-	template <typename T>
-	constexpr bool TrySetBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TrySetBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryClearBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TryClearBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryToggleBit(T value, unsigned bit_index, T* out) noexcept;
+		template <typename T>
+		bool TryToggleBit(T value, unsigned bit_index, T& out) noexcept;
 
-	template <typename T>
-	constexpr bool TryMask(unsigned width, T* out) noexcept;
+		template <typename T>
+		bool TryMask(unsigned width, T& out) noexcept;
 
-	template <typename T>
-	constexpr unsigned PopCount(T value) noexcept;
+		template <typename T>
+		constexpr unsigned PopCount(T value) noexcept;
 
-	template <typename T>
-	constexpr bool IsPowerOfTwo(T value) noexcept;
+		template <typename T>
+		constexpr bool IsPowerOfTwo(T value) noexcept;
 
-	template <typename T>
-	constexpr T Rotl(T value, unsigned count) noexcept;
+		template <typename T>
+		constexpr T Rotl(T value, unsigned count) noexcept;
 
-	template <typename T>
-	constexpr T Rotr(T value, unsigned count) noexcept;
+		template <typename T>
+		constexpr T Rotr(T value, unsigned count) noexcept;
+
+	} // namespace bits
 
 } // namespace ket
 ```
 
 仕様メモ:
 
-- `HasBit(value, bit_index)` は `bit_index >= BitWidth<T>()` の場合 `false`。
-- `TrySetBit` / `TryClearBit` / `TryToggleBit` は `out == nullptr` または index 範囲外なら `false`。
-- `TryMask<T>(0, &out)` は `out = 0` で成功。
-- `TryMask<T>(BitWidth<T>(), &out)` は全bit 1 で成功。
-- `TryMask<T>(width, &out)` は `width > BitWidth<T>()` なら失敗。
+- `HasBit(value, bit_index)` は `bit_index >= TypeBitWidth<T>()` の場合 `false`。
+- `TrySetBit` / `TryClearBit` / `TryToggleBit` は index 範囲外なら `false`。
+- `TryMask<T>(0, out)` は `out = 0` で成功。
+- `TryMask<T>(TypeBitWidth<T>(), out)` は全bit 1 で成功。
+- `TryMask<T>(width, out)` は `width > TypeBitWidth<T>()` なら失敗。
 - `Rotl` / `Rotr` は count を bit 幅で剰余化し、shift 幅 overflow を起こさない。
-- まず unsigned integral 対象に絞る。signed 対応は入れないか、内部で unsigned 化して明示する。
+- まず bool、char、wchar_t、char16_t、char32_t を除く unsigned integral 対象に絞る。
+  signed 対応は入れないか、内部で unsigned 化して明示する。
 
 テスト観点:
 
 - `HighNibble(0xAB) == 0x0A`
 - `LowNibble(0xAB) == 0x0B`
-- `TryMakeByteFromNibbles(0x0A, 0x0B) == 0xAB`
-- `TryMakeByteFromNibbles(0x10, 0x00)` は失敗。
+- `TryPackNibbles(0x0A, 0x0B) == 0xAB`
+- `TryPackNibbles(0x10, 0x00)` は失敗。
 - `HasBit(0b1000, 3)` は true。
 - `HasBit(0b1000, 8)` は false。
 - `TryMask<std::uint8_t>(0) == 0x00`
