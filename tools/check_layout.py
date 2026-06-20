@@ -12,6 +12,8 @@ import ket_tooling
 
 MODULE_NAME_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 INCLUDE_PATTERN = re.compile(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]')
+DETAIL_NAMESPACE_PATTERN = re.compile(r"^\s*namespace\s+detail\s*(?:\{|$)")
+ANONYMOUS_NAMESPACE_PATTERN = re.compile(r"^\s*namespace\s*(?:\{|$)")
 HEADER_PREAMBLE_LINE_LIMIT = 80
 HEADER_PREAMBLE_MARKERS = (
 	("@file", "header preamble must use Doxygen @file."),
@@ -137,6 +139,31 @@ def source_has_real_implementation(path: Path) -> bool:
 	return False
 
 
+def uncommented_code_lines(path: Path) -> list[str]:
+	if not path.exists():
+		return []
+
+	code_lines: list[str] = []
+	in_block_comment = False
+
+	for line in path.read_text(encoding="utf-8").splitlines():
+		content, in_block_comment = remove_block_comment_content(line, in_block_comment)
+		content = content.split("//", 1)[0]
+		stripped = content.strip()
+		if stripped:
+			code_lines.append(stripped)
+
+	return code_lines
+
+
+def header_has_detail_namespace(path: Path) -> bool:
+	return any(DETAIL_NAMESPACE_PATTERN.match(line) is not None for line in uncommented_code_lines(path))
+
+
+def source_has_anonymous_namespace(path: Path) -> bool:
+	return any(ANONYMOUS_NAMESPACE_PATTERN.match(line) is not None for line in uncommented_code_lines(path))
+
+
 def check_no_placeholder_source(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
 	if not layout.source.exists():
 		return
@@ -212,14 +239,38 @@ def check_header_preamble(root: Path, layout: ModuleLayout, errors: list[str]) -
 		if marker not in preamble:
 			add_error(errors, root, layout.header, message)
 
-	# 公開APIと内部実装のnamespaceはmodule毎の入れ子namespace (ket::<module>) を要求
+	# 公開APIはmodule毎の入れ子namespace (ket::<module>) を要求
 	public_namespace = f"公開API：ket::{layout.name}"
 	if public_namespace not in preamble:
 		add_error(errors, root, layout.header, "header preamble must describe namespace ket public API.")
 
 	detail_namespace = f"内部実装：ket::{layout.name}::detail"
-	if detail_namespace not in preamble:
-		add_error(errors, root, layout.header, "header preamble must describe namespace ket detail implementation.")
+	cpp_anonymous_namespace = "内部実装：.cpp の無名 namespace"
+	no_internal_implementation = "内部実装：なし"
+	internal_descriptions = (
+		detail_namespace in preamble,
+		cpp_anonymous_namespace in preamble,
+		no_internal_implementation in preamble,
+	)
+	if not any(internal_descriptions):
+		add_error(errors, root, layout.header, "header preamble must describe internal implementation namespace.")
+		return
+
+	if sum(1 for description_is_present in internal_descriptions if description_is_present) > 1:
+		add_error(errors, root, layout.header, "header preamble must describe exactly one internal implementation location.")
+		return
+
+	has_header_detail = header_has_detail_namespace(layout.header)
+	has_source_anonymous_namespace = source_has_anonymous_namespace(layout.source)
+	if detail_namespace in preamble and not has_header_detail:
+		add_error(errors, root, layout.header, "header preamble says ket detail implementation, but header has no namespace detail.")
+	if cpp_anonymous_namespace in preamble and not has_source_anonymous_namespace:
+		add_error(errors, root, layout.header, "header preamble says .cpp anonymous namespace, but source has no anonymous namespace.")
+	if no_internal_implementation in preamble:
+		if has_header_detail:
+			add_error(errors, root, layout.header, "header preamble says no internal implementation, but header has namespace detail.")
+		if has_source_anonymous_namespace:
+			add_error(errors, root, layout.header, "header preamble says no internal implementation, but source has anonymous namespace.")
 
 
 def collect_layout_errors(root: Path = ket_tooling.ROOT) -> list[str]:
