@@ -240,6 +240,7 @@ Candidate API:
 ket::bits::HighNibble(value)
 ket::bits::LowNibble(value)
 ket::bits::TryPackNibbles(high, low, out)
+ket::bits::TypeBitWidth<T>()
 ket::bits::HasBit(value, bit_index)
 ket::bits::TryMask(width, out)
 ket::bits::Rotl(value, count)
@@ -264,7 +265,7 @@ Failure / edge cases:
 - bit index 範囲外
 - width 0 / bit幅 full / bit幅超過
 - 不正 nibble
-- signed integral は対象外
+- signed integral、bool、char、wchar_t、char16_t、char32_t は対象外
 
 他のライブラリへの依存:
 
@@ -746,6 +747,7 @@ Failure / edge cases:
 
 - null + 非0 size は invalid reader
 - empty
+- invalid reader は empty として扱わない
 - size不足
 - 成功時だけ offset 更新
 - 失敗時 out 不変
@@ -1052,6 +1054,7 @@ ket::byte_view::View
 ket::byte_view::MutableView
 view.TryAt(index, out)
 view.TrySlice(offset, count, out)
+// default constructor, Data, Size, Empty は constexpr
 ```
 
 C++バージョン要件:
@@ -1068,6 +1071,7 @@ Failure / edge cases:
 - lifetime は呼び出し側責任
 - nullptr + 0 は空 view
 - nullptr + 非0 は invalid view
+- copy / move は non-owning pointer と size だけを複製
 - bounds overrun
 - slice 失敗時 out 不変
 
