@@ -19,4 +19,4 @@ Statusは次の値を使います。
 | date     | date             | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定        |
 | deadline | time             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定 |
 | string   | string           | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記 |
-| bits   | numeric / binary | verified | C++11   | GoogleTest + C++11 compile-only | checked | bit/nibble/mask/rotateの境界処理       |
+| bits     | numeric / binary | verified | C++11   | GoogleTest + C++11 compile-only    | checked | bit/nibble/mask/rotateの境界処理       |

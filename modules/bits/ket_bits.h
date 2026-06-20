@@ -46,6 +46,12 @@ namespace ket
 		 * @retval false `value`がnibble範囲外。
 		 * @pre なし。任意のstd::uint8_t値を判定対象として扱う。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto ok = ket::bits::IsNibble(static_cast<std::uint8_t>(0x0FU));
+		 * const auto too_large = ket::bits::IsNibble(static_cast<std::uint8_t>(0x10U));
+		 * // ok == true
+		 * // too_large == false
+		 * @endcode
 		 */
 		constexpr bool IsNibble(std::uint8_t value) noexcept;
 
@@ -84,6 +90,12 @@ namespace ket
 		 * @retval false `high`または`low`がnibble範囲外。`out`は入力時の値を保持。
 		 * @pre `out`は有効なstd::uint8_t参照。
 		 * @post 成功時だけ`out`を`(high << 4) | low`へ更新。失敗時は引数と外部状態の変更なし。
+		 * @code
+		 * std::uint8_t value = 0x00U;
+		 * const auto ok = ket::bits::TryPackByte(0x0AU, 0x0BU, value);
+		 * // ok == true
+		 * // value == 0xAB
+		 * @endcode
 		 */
 		inline bool TryPackByte(std::uint8_t high, std::uint8_t low, std::uint8_t& out) noexcept;
 
@@ -93,6 +105,10 @@ namespace ket
 		 * @retval value `T`の値bit数。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 外部状態の変更なし。
+		 * @code
+		 * const auto width = ket::bits::BitWidth<std::uint8_t>();
+		 * // width == 8
+		 * @endcode
 		 */
 		template <typename T>
 		constexpr unsigned BitWidth() noexcept;
@@ -106,6 +122,12 @@ namespace ket
 		 * @retval false `bit_index`が範囲外、または指定bitが0。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto high_set = ket::bits::HasBit<std::uint8_t>(0x80U, 7U);
+		 * const auto out_of_range = ket::bits::HasBit<std::uint8_t>(0x80U, 8U);
+		 * // high_set == true
+		 * // out_of_range == false
+		 * @endcode
 		 */
 		template <typename T>
 		constexpr bool HasBit(T value, unsigned bit_index) noexcept;
@@ -120,6 +142,12 @@ namespace ket
 		 * @retval false `bit_index`が範囲外。`out`は入力時の値を保持。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 成功時だけ`out`を`value`の指定bitが1の値へ更新。失敗時は引数と外部状態の変更なし。
+		 * @code
+		 * std::uint8_t value = 0x00U;
+		 * const auto ok = ket::bits::TrySetBit<std::uint8_t>(value, 7U, value);
+		 * // ok == true
+		 * // value == 0x80
+		 * @endcode
 		 */
 		template <typename T>
 		bool TrySetBit(T value, unsigned bit_index, T& out) noexcept;
@@ -134,6 +162,12 @@ namespace ket
 		 * @retval false `bit_index`が範囲外。`out`は入力時の値を保持。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 成功時だけ`out`を`value`の指定bitが0の値へ更新。失敗時は引数と外部状態の変更なし。
+		 * @code
+		 * std::uint8_t value = 0xFFU;
+		 * const auto ok = ket::bits::TryClearBit<std::uint8_t>(value, 7U, value);
+		 * // ok == true
+		 * // value == 0x7F
+		 * @endcode
 		 */
 		template <typename T>
 		bool TryClearBit(T value, unsigned bit_index, T& out) noexcept;
@@ -149,6 +183,12 @@ namespace ket
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post
 		 * 成功時だけ`out`を`value`の指定bitが反転した値へ更新。失敗時は引数と外部状態の変更なし。
+		 * @code
+		 * std::uint8_t value = 0x80U;
+		 * const auto ok = ket::bits::TryToggleBit<std::uint8_t>(value, 7U, value);
+		 * // ok == true
+		 * // value == 0x00
+		 * @endcode
 		 */
 		template <typename T>
 		bool TryToggleBit(T value, unsigned bit_index, T& out) noexcept;
@@ -162,6 +202,12 @@ namespace ket
 		 * @retval false `width`が`BitWidth<T>()`を超過。`out`は入力時の値を保持。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 成功時だけ`out`をmask値へ更新。`width == 0`は0、`width == BitWidth<T>()`は全bit 1。
+		 * @code
+		 * std::uint8_t mask = 0xEEU;
+		 * const auto ok = ket::bits::TryMask<std::uint8_t>(4U, mask);
+		 * // ok == true
+		 * // mask == 0x0F
+		 * @endcode
 		 */
 		template <typename T>
 		bool TryMask(unsigned width, T& out) noexcept;
@@ -173,6 +219,10 @@ namespace ket
 		 * @retval value `value`内で1のbit数。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto count = ket::bits::PopCount<std::uint8_t>(0x81U);
+		 * // count == 2
+		 * @endcode
 		 */
 		template <typename T>
 		constexpr unsigned PopCount(T value) noexcept;
@@ -185,6 +235,12 @@ namespace ket
 		 * @retval false `value`が0、または複数bitが立つ値。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto single = ket::bits::IsPowerOfTwo<std::uint8_t>(0x80U);
+		 * const auto mixed = ket::bits::IsPowerOfTwo<std::uint8_t>(0x81U);
+		 * // single == true
+		 * // mixed == false
+		 * @endcode
 		 */
 		template <typename T>
 		constexpr bool IsPowerOfTwo(T value) noexcept;
@@ -197,6 +253,10 @@ namespace ket
 		 * @retval value `value`を左rotateした値。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto value = ket::bits::Rotl<std::uint8_t>(0x81U, 1U);
+		 * // value == 0x03
+		 * @endcode
 		 */
 		template <typename T>
 		constexpr T Rotl(T value, unsigned count) noexcept;
@@ -209,6 +269,10 @@ namespace ket
 		 * @retval value `value`を右rotateした値。
 		 * @pre `T`はboolを除くunsigned integral型。未対応型はcompile error。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto value = ket::bits::Rotr<std::uint8_t>(0x81U, 1U);
+		 * // value == 0xC0
+		 * @endcode
 		 */
 		template <typename T>
 		constexpr T Rotr(T value, unsigned count) noexcept;
