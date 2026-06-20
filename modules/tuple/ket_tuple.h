@@ -78,7 +78,7 @@ namespace ket
 		 * @code
 		 * const auto values = std::make_tuple(1, 2, 3);
 		 * const auto doubled = ket::tuple::Transform(values, [](int value) { return value * 2; });
-		 * // doubled == std::tuple<int, int, int>(2, 4, 6)
+		 * // std::get<0>(doubled) == 2, std::get<2>(doubled) == 6
 		 * @endcode
 		 */
 		template <typename Tuple, typename F>
