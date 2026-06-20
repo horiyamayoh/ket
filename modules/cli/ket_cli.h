@@ -55,6 +55,12 @@ namespace ket
 			 * @retval value 構築済みview。
 			 * @pre `argv`が非nullの場合、`argc`個のポインタを読み取り可能。
 			 * @post `argc < 0`または`argv == nullptr`の場合は空view。文字列領域の所有権は取得なし。
+			 * @code
+			 * const char* argv[] = {"tool", "--help"};
+			 * const auto args = ket::cli::ArgvView(2, argv);
+			 * // args.Size() == 2
+			 * // args.ProgramNameOrEmpty() == "tool"
+			 * @endcode
 			 */
 			ArgvView(int argc, const char* const* argv) noexcept
 				: size_(argc > 0 && argv != nullptr ? static_cast<std::size_t>(argc) : 0U),
@@ -68,6 +74,12 @@ namespace ket
 			 * @retval value コピーされたview。
 			 * @pre なし。コピー元viewは有効なArgvView。
 			 * @post コピー元viewと外部状態の変更なし。文字列領域の所有権は取得なし。
+			 * @code
+			 * const char* argv[] = {"tool"};
+			 * const auto source = ket::cli::ArgvView(1, argv);
+			 * const auto copied = ket::cli::ArgvView(source);
+			 * // copied.ProgramNameOrEmpty() == "tool"
+			 * @endcode
 			 */
 			ArgvView(const ArgvView& other) noexcept = default;
 
@@ -77,6 +89,13 @@ namespace ket
 			 * @retval value コピー代入後の`*this`。
 			 * @pre なし。コピー元viewは有効なArgvView。
 			 * @post コピー元viewと外部状態の変更なし。文字列領域の所有権は取得なし。
+			 * @code
+			 * const char* argv[] = {"tool"};
+			 * const auto source = ket::cli::ArgvView(1, argv);
+			 * auto assigned = ket::cli::ArgvView(0, nullptr);
+			 * assigned = source;
+			 * // assigned.ProgramNameOrEmpty() == "tool"
+			 * @endcode
 			 */
 			ArgvView& operator=(const ArgvView& other) noexcept = default;
 
@@ -86,6 +105,12 @@ namespace ket
 			 * @retval value move構築されたview。
 			 * @pre なし。move元viewは有効なArgvView。
 			 * @post 文字列領域の所有権は取得なし。move元viewは破棄または再代入可能。
+			 * @code
+			 * const char* argv[] = {"tool"};
+			 * auto source = ket::cli::ArgvView(1, argv);
+			 * const auto moved = ket::cli::ArgvView(static_cast<ket::cli::ArgvView&&>(source));
+			 * // moved.ProgramNameOrEmpty() == "tool"
+			 * @endcode
 			 */
 			ArgvView(ArgvView&& other) noexcept = default;
 
@@ -95,6 +120,13 @@ namespace ket
 			 * @retval value move代入後の`*this`。
 			 * @pre なし。move元viewは有効なArgvView。
 			 * @post 文字列領域の所有権は取得なし。move元viewは破棄または再代入可能。
+			 * @code
+			 * const char* argv[] = {"tool"};
+			 * auto source = ket::cli::ArgvView(1, argv);
+			 * auto assigned = ket::cli::ArgvView(0, nullptr);
+			 * assigned = static_cast<ket::cli::ArgvView&&>(source);
+			 * // assigned.ProgramNameOrEmpty() == "tool"
+			 * @endcode
 			 */
 			ArgvView& operator=(ArgvView&& other) noexcept = default;
 
@@ -103,6 +135,12 @@ namespace ket
 			 * @retval value view内のargv要素数。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。
+			 * @code
+			 * const char* argv[] = {"tool", "input.txt"};
+			 * const auto args = ket::cli::ArgvView(2, argv);
+			 * const auto size = args.Size();
+			 * // size == 2
+			 * @endcode
 			 */
 			[[nodiscard]] std::size_t Size() const noexcept
 			{
@@ -116,6 +154,12 @@ namespace ket
 			 * @retval empty 範囲外、空view、または`argv[index] == nullptr`。
 			 * @pre なし。範囲外とnull要素は空argumentとして扱う。
 			 * @post viewと外部状態の変更なし。戻り値はargv文字列領域を参照。
+			 * @code
+			 * const char* argv[] = {"tool", "input.txt"};
+			 * const auto args = ket::cli::ArgvView(2, argv);
+			 * const auto value = args.AtOrEmpty(1U);
+			 * // value == "input.txt"
+			 * @endcode
 			 */
 			[[nodiscard]] std::string_view AtOrEmpty(std::size_t index) const noexcept
 			{
@@ -140,6 +184,12 @@ namespace ket
 			 * @retval empty 空view、または`argv[0] == nullptr`。
 			 * @pre なし。
 			 * @post viewと外部状態の変更なし。戻り値はargv文字列領域を参照。
+			 * @code
+			 * const char* argv[] = {"tool"};
+			 * const auto args = ket::cli::ArgvView(1, argv);
+			 * const auto program = args.ProgramNameOrEmpty();
+			 * // program == "tool"
+			 * @endcode
 			 */
 			[[nodiscard]] std::string_view ProgramNameOrEmpty() const noexcept
 			{
@@ -196,6 +246,12 @@ namespace ket
 		 * @retval fallback option不在、`name`不正、値なし、または次要素が別option。
 		 * @pre なし。program nameは検索対象外。
 		 * @post 引数と外部状態の変更なし。戻り値はargv文字列領域またはfallbackを参照。
+		 * @code
+		 * const char* argv[] = {"tool", "--id"};
+		 * const auto args = ket::cli::ArgvView(2, argv);
+		 * const auto id = ket::cli::OptionValueOr(args, "--id", "fallback");
+		 * // id == "fallback"
+		 * @endcode
 		 */
 		[[nodiscard]] inline std::string_view
 		OptionValueOr(ArgvView args, std::string_view name, std::string_view fallback) noexcept;
@@ -207,6 +263,12 @@ namespace ket
 		 * @pre なし。option schemaは持たず、`"--"`で始まるかどうかだけで判定。
 		 * @post 引数と外部状態の変更なし。戻り値の各viewはargv文字列領域を参照。
 		 * @note 結果vectorの確保があるためnoexceptなし。
+		 * @code
+		 * const char* argv[] = {"tool", "input.txt", "--verbose", "output.txt"};
+		 * const auto args = ket::cli::ArgvView(4, argv);
+		 * const auto positional = ket::cli::PositionalArguments(args);
+		 * // positional == {"input.txt", "output.txt"}
+		 * @endcode
 		 */
 		[[nodiscard]] inline std::vector<std::string_view> PositionalArguments(ArgvView args);
 
