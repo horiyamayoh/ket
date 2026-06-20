@@ -120,6 +120,10 @@ class CheckConventionsTest(unittest.TestCase):
 					"\t * @retval value Doubled value.",
 					"\t * @pre Caller provides an integer value.",
 					"\t * @post No external state changes.",
+					"\t * @code",
+					"\t * const auto value = Double(2);",
+					"\t * // value == 4",
+					"\t * @endcode",
 					"\t */",
 					"\tconstexpr int Double(int value) noexcept;",
 					"",
@@ -159,6 +163,89 @@ class CheckConventionsTest(unittest.TestCase):
 		)
 
 		self.assertEqual(errors, [])
+
+	def test_public_api_function_requires_code_example(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"namespace ket",
+					"{",
+					"\t// -----------------------------------------------------------------------------",
+					"\t// Public API declarations",
+					"\t// -----------------------------------------------------------------------------",
+					"",
+					"\t/**",
+					"\t * @brief Value doubling.",
+					"\t * @param[in] value Input value.",
+					"\t * @retval value Doubled value.",
+					"\t * @pre Caller provides an integer value.",
+					"\t * @post No external state changes.",
+					"\t */",
+					"\tconstexpr int Double(int value) noexcept;",
+					"",
+					"} // namespace ket",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(
+			any(
+				"public API function Doxygen comment requires @code and @endcode." in error
+				for error in errors
+			)
+		)
+
+	def test_private_member_in_public_section_does_not_require_code_example(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"namespace ket",
+					"{",
+					"\t// -----------------------------------------------------------------------------",
+					"\t// Public API declarations",
+					"\t// -----------------------------------------------------------------------------",
+					"",
+					"\t/**",
+					"\t * @brief Sample value.",
+					"\t */",
+					"\tclass Value",
+					"\t{",
+					"\t  public:",
+					"\t\t/**",
+					"\t\t * @brief Value doubling.",
+					"\t\t * @param[in] value Input value.",
+					"\t\t * @retval value Doubled value.",
+					"\t\t * @pre Caller provides an integer value.",
+					"\t\t * @post No external state changes.",
+					"\t\t * @code",
+					"\t\t * const auto value = Value::Double(2);",
+					"\t\t * // value == 4",
+					"\t\t * @endcode",
+					"\t\t */",
+					"\t\tstatic int Double(int value) noexcept;",
+					"",
+					"\t  private:",
+					"\t\t/**",
+					"\t\t * @brief Private construction.",
+					"\t\t * @retval value Constructed value.",
+					"\t\t * @pre Internal caller only.",
+					"\t\t * @post No external state changes.",
+					"\t\t */",
+					"\t\tValue() noexcept;",
+					"\t};",
+					"",
+					"} // namespace ket",
+					"",
+				)
+			),
+		)
+
+		self.assertFalse(
+			any("public API function Doxygen comment requires @code and @endcode." in error for error in errors)
+		)
 
 	def test_missing_header_section_banner_is_reported(self) -> None:
 		errors = self.check_text(

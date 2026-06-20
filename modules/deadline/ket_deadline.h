@@ -39,6 +39,12 @@ namespace ket
 
 		/**
 		 * @brief steady_clockで経過時間を測る小さいstopwatch。
+		 * @details 開始時刻だけを保持するvalue object。待機、timer
+		 * thread、同期制御は行わない。同一objectを複数threadからRestartしながら読む場合は呼び出し側で同期。
+		 * @code
+		 * auto stopwatch = ket::deadline::Stopwatch::StartNew();
+		 * const auto elapsed = stopwatch.Elapsed();
+		 * @endcode
 		 */
 		class Stopwatch
 		{
@@ -48,6 +54,10 @@ namespace ket
 			 * @retval value 開始点を現在の`std::chrono::steady_clock::now()`にしたstopwatch。
 			 * @pre なし。
 			 * @post 外部状態の変更なし。
+			 * @code
+			 * auto stopwatch = ket::deadline::Stopwatch::StartNew();
+			 * const auto elapsed = stopwatch.Elapsed();
+			 * @endcode
 			 */
 			static Stopwatch StartNew() noexcept;
 
@@ -56,24 +66,39 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post 以後の`Elapsed()`はrestart後の経過時間を返す。
+			 * @code
+			 * auto stopwatch = ket::deadline::Stopwatch::StartNew();
+			 * stopwatch.Restart();
+			 * const auto elapsed = stopwatch.Elapsed();
+			 * @endcode
 			 */
 			void Restart() noexcept;
 
 			/**
 			 * @brief 開始点から現在までの経過時間取得。
 			 * @retval value `std::chrono::steady_clock::duration`で表す経過時間。
-			 * @pre `StartNew()`で生成済みのobject。
+			 * @pre 生成済みの有効な`Stopwatch` object。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * const auto stopwatch = ket::deadline::Stopwatch::StartNew();
+			 * const auto elapsed = stopwatch.Elapsed();
+			 * @endcode
 			 */
-			std::chrono::steady_clock::duration Elapsed() const noexcept; // NOLINT
+			std::chrono::steady_clock::duration // NOLINT(modernize-use-nodiscard)
+			Elapsed() const noexcept;
 
 			/**
 			 * @brief 開始点から現在までの経過時間をmilliseconds単位で取得。
 			 * @retval value `std::chrono::milliseconds`へ切り捨て変換した経過時間。
-			 * @pre `StartNew()`で生成済みのobject。
+			 * @pre 生成済みの有効な`Stopwatch` object。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * const auto stopwatch = ket::deadline::Stopwatch::StartNew();
+			 * const auto elapsed = stopwatch.ElapsedMilliseconds();
+			 * @endcode
 			 */
-			std::chrono::milliseconds ElapsedMilliseconds() const noexcept; // NOLINT
+			std::chrono::milliseconds // NOLINT(modernize-use-nodiscard)
+			ElapsedMilliseconds() const noexcept;
 
 		  private:
 			/**
@@ -90,6 +115,13 @@ namespace ket
 
 		/**
 		 * @brief steady_clockで表す期限時刻。
+		 * @details `std::chrono::steady_clock::time_point`だけを保持するvalue
+		 * object。待機、timer thread、同期制御は行わない。const member
+		 * functionはobjectを変更しない。同一objectを複数threadで代入・参照する場合は呼び出し側で同期。
+		 * @code
+		 * const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(5));
+		 * const auto expired = deadline.Expired();
+		 * @endcode
 		 */
 		class Deadline
 		{
@@ -98,8 +130,17 @@ namespace ket
 			 * @brief 現在時刻からtimeout後のdeadline生成。
 			 * @param[in] timeout 現在時刻へ加算する`steady_clock` duration。
 			 * @retval value timeout後のdeadline。zero以下のtimeoutは即時期限切れ。
+			 * 正timeoutが`std::chrono::steady_clock::time_point::max()`を超える場合は
+			 * `std::chrono::steady_clock::time_point::max()`へ飽和。
 			 * @pre なし。負timeoutは即時期限切れとして扱う。
-			 * @post 引数と外部状態の変更なし。
+			 * @post
+			 * 引数と外部状態の変更なし。正timeoutでは生成時に取得した現在時刻以後の期限を保持。
+			 * zero以下のtimeoutでは生成直後から期限切れ。
+			 * @code
+			 * const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(60));
+			 * const auto expired = deadline.Expired();
+			 * // expired == false
+			 * @endcode
 			 */
 			static Deadline After(std::chrono::steady_clock::duration timeout) noexcept;
 
@@ -109,6 +150,10 @@ namespace ket
 			 * @retval value `time_point`を期限にしたdeadline。
 			 * @pre `time_point`は`std::chrono::steady_clock`由来の時刻。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * const auto time_point = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+			 * const auto deadline = ket::deadline::Deadline::At(time_point);
+			 * @endcode
 			 */
 			static Deadline At(std::chrono::steady_clock::time_point time_point) noexcept;
 
@@ -118,25 +163,40 @@ namespace ket
 			 * @retval false 現在時刻がdeadline未満。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(1));
+			 * const auto expired = deadline.Expired();
+			 * @endcode
 			 */
-			bool Expired() const noexcept; // NOLINT
+			bool Expired() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
 			 * @brief 期限までの残り時間取得。
 			 * @retval value 現在時刻からdeadlineまでのduration。
 			 * @retval zero 期限切れ、または期限ちょうど。
 			 * @pre なし。
-			 * @post 引数と外部状態の変更なし。戻り値は負にならない。
+			 * @post 引数と外部状態の変更なし。戻り値は負にならず、期限切れではzero。
+			 * @code
+			 * const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(5));
+			 * const auto remaining = deadline.Remaining();
+			 * // remainingはwait_forなどに渡す残りtimeout
+			 * @endcode
 			 */
-			std::chrono::steady_clock::duration Remaining() const noexcept; // NOLINT
+			std::chrono::steady_clock::duration // NOLINT(modernize-use-nodiscard)
+			Remaining() const noexcept;
 
 			/**
 			 * @brief 保持している期限時刻取得。
 			 * @retval value `std::chrono::steady_clock::time_point`の期限時刻。
 			 * @pre なし。
 			 * @post 引数と外部状態の変更なし。
+			 * @code
+			 * const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(5));
+			 * const auto time_point = deadline.TimePoint();
+			 * @endcode
 			 */
-			std::chrono::steady_clock::time_point TimePoint() const noexcept; // NOLINT
+			std::chrono::steady_clock::time_point // NOLINT(modernize-use-nodiscard)
+			TimePoint() const noexcept;
 
 		  private:
 			/**

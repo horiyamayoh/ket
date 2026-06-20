@@ -48,6 +48,14 @@ namespace ket
 				return Deadline(now);
 			}
 
+			const auto max_time_point = std::chrono::steady_clock::time_point::max();
+			const auto latest_start_without_saturation = max_time_point - timeout;
+			const auto timeout_overflows_time_point = latest_start_without_saturation < now;
+			if (timeout_overflows_time_point)
+			{
+				return Deadline(max_time_point);
+			}
+
 			return Deadline(now + timeout);
 		}
 

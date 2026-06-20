@@ -26,6 +26,9 @@ MACRO_PREFIXES = ("TEST", "EXPECT_", "ASSERT_")
 TYPE_DECLARATION_PATTERN = re.compile(
 	r"^(?:template\s*<[^>]*>\s*)?(?:(?:struct|class)\s+[A-Za-z_][A-Za-z0-9_]*|enum(?:\s+class)?\s+[A-Za-z_][A-Za-z0-9_]*)\b"
 )
+CLASS_OR_STRUCT_PATTERN = re.compile(
+	r"^(?:template\s*<[^>]*>\s*)?(struct|class)\s+[A-Za-z_][A-Za-z0-9_]*\b"
+)
 
 
 def read_lines(path: Path) -> list[str]:
@@ -226,6 +229,60 @@ def doxygen_has_documented_param(comment: str) -> bool:
 	return any(pattern.search(line) for line in comment.splitlines())
 
 
+def doxygen_has_code_example(comment: str) -> bool:
+	return "@code" in comment and "@endcode" in comment
+
+
+def member_access_before(lines: list[str], index: int) -> str | None:
+	cursor = index - 1
+	while cursor >= 0:
+		stripped = lines[cursor].strip()
+		if stripped in ("public:", "private:", "protected:"):
+			return stripped.rstrip(":")
+		if stripped == "};":
+			return None
+
+		match = CLASS_OR_STRUCT_PATTERN.match(stripped)
+		if match is not None:
+			return "public" if match.group(1) == "struct" else "private"
+
+		cursor -= 1
+
+	return None
+
+
+def public_api_declaration_bounds(lines: list[str]) -> tuple[int, int] | None:
+	public_indices = section_title_indices(lines, "Public API declarations")
+	if not public_indices:
+		return None
+
+	start = public_indices[0]
+	next_section_indices = [
+		index
+		for title in HEADER_SECTIONS
+		for index in section_title_indices(lines, title)
+		if index > start
+	]
+	end = min(next_section_indices) if next_section_indices else len(lines)
+	return start, end
+
+
+def is_public_api_function(path: Path, lines: list[str], index: int) -> bool:
+	if not is_module_public_header(path):
+		return False
+
+	bounds = public_api_declaration_bounds(lines)
+	if bounds is None:
+		return False
+
+	start, end = bounds
+	if not start < index < end:
+		return False
+
+	access = member_access_before(lines, index)
+	return access in (None, "public")
+
+
 def check_header_function_comments(path: Path, lines: list[str], errors: list[str]) -> None:
 	index = 0
 	documented_signatures: set[str] = set()
@@ -268,6 +325,14 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 				path,
 				index + 1,
 				"function Doxygen comment requires @param[in], @param[out], or @param[in,out].",
+			)
+
+		if is_public_api_function(path, lines, index) and not doxygen_has_code_example(comment):
+			add_error(
+				errors,
+				path,
+				index + 1,
+				"public API function Doxygen comment requires @code and @endcode.",
 			)
 
 		documented_signatures.add(signature_key)

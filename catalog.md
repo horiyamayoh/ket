@@ -955,6 +955,7 @@ C++バージョン要件:
 Failure / edge cases:
 
 - negative timeout は期限切れ
+- 表現上限を超える positive timeout は `steady_clock::time_point::max()` に飽和
 - zero timeout
 - future deadline
 - remaining の下限 0

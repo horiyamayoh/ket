@@ -84,6 +84,28 @@ TEST(KetDeadlineTest, NegativeTimeoutExpiresImmediately)
 
 /**
  * @test
+ * @brief 巨大timeoutのdeadlineが最大time_pointへ飽和することの確認。
+ * @details
+ * `duration::max()`でAfterを呼び出し、保持時刻が`time_point::max()`になり期限切れにならないことを確認。
+ * @pre C++17以降。`steady_clock::now()`がepochより後の通常環境。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetDeadlineTest, HugeTimeoutSaturatesAtMaxTimePoint)
+{
+	const auto deadline =
+		ket::deadline::Deadline::After(std::chrono::steady_clock::duration::max());
+
+	const auto stored_time_point = deadline.TimePoint();
+	const auto expired = deadline.Expired();
+	const auto remaining = deadline.Remaining();
+
+	EXPECT_EQ(stored_time_point, std::chrono::steady_clock::time_point::max());
+	EXPECT_FALSE(expired);
+	EXPECT_GT(remaining, std::chrono::steady_clock::duration::zero());
+}
+
+/**
+ * @test
  * @brief future deadlineが期限切れではないことの確認。
  * @details
  * 十分に長いtimeoutでAfterを呼び出し、ExpiredがfalseでRemainingが正値かつtimeout以下になることを確認。
