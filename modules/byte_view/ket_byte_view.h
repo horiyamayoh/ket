@@ -47,7 +47,6 @@ namespace ket
 		  public:
 			/**
 			 * @brief 空の読み取り専用byte view構築。
-			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post `Data() == nullptr`、`Size() == 0`、`Empty() == true`。
 			 * @code
@@ -57,13 +56,12 @@ namespace ket
 			 * // view.Empty() == true
 			 * @endcode
 			 */
-			View() noexcept : data_(nullptr), size_(0U) {}
+			constexpr View() noexcept : data_(nullptr), size_(0U) {}
 
 			/**
 			 * @brief 読み取り専用byte列を参照するview構築。
 			 * @param[in] data 参照対象bufferの先頭。`nullptr`は`size == 0`の場合のみ空view。
 			 * @param[in] size 参照対象bufferのbyte数。
-			 * @retval void 戻り値なし。
 			 * @pre `data`は`size`byte以上読み取り可能な配列を指す。`nullptr + 非0`はinvalid
 			 * viewとして保持。
 			 * @post `data`と`size`を保持し、bufferの所有権は取得なし。
@@ -74,7 +72,70 @@ namespace ket
 			 * // view.Size() == 2
 			 * @endcode
 			 */
-			View(const std::uint8_t* data, std::size_t size) noexcept : data_(data), size_(size) {}
+			constexpr View(const std::uint8_t* data, std::size_t size) noexcept
+				: data_(data), size_(size)
+			{
+			}
+
+			/**
+			 * @brief view状態のcopy構築。
+			 * @param[in] other copy元view。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeを`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::View source(data, 1U);
+			 * ket::byte_view::View copied(source);
+			 * // copied.Data() == data, copied.Size() == 1
+			 * @endcode
+			 */
+			View(const View& other) noexcept = default;
+
+			/**
+			 * @brief view状態のcopy代入。
+			 * @param[in] other copy元view。
+			 * @retval reference `*this`。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeを`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::View source(data, 1U);
+			 * ket::byte_view::View assigned;
+			 * assigned = source;
+			 * // assigned.Data() == data, assigned.Size() == 1
+			 * @endcode
+			 */
+			View& operator=(const View& other) noexcept = default;
+
+			/**
+			 * @brief view状態のmove構築。
+			 * @param[in,out] other move元view。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeをmove前の`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::View source(data, 1U);
+			 * ket::byte_view::View moved(static_cast<ket::byte_view::View&&>(source));
+			 * // moved.Data() == data, moved.Size() == 1
+			 * @endcode
+			 */
+			View(View&& other) noexcept = default;
+
+			/**
+			 * @brief view状態のmove代入。
+			 * @param[in,out] other move元view。
+			 * @retval reference `*this`。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeをmove前の`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * const std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::View source(data, 1U);
+			 * ket::byte_view::View assigned;
+			 * assigned = static_cast<ket::byte_view::View&&>(source);
+			 * // assigned.Data() == data, assigned.Size() == 1
+			 * @endcode
+			 */
+			View& operator=(View&& other) noexcept = default;
 
 			/**
 			 * @brief 参照対象buffer先頭の取得。
@@ -89,7 +150,7 @@ namespace ket
 			 * // pointer == data
 			 * @endcode
 			 */
-			const std::uint8_t* Data() const noexcept; // NOLINT(modernize-use-nodiscard)
+			constexpr const std::uint8_t* Data() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
 			 * @brief 参照対象buffer byte数の取得。
@@ -103,7 +164,7 @@ namespace ket
 			 * // size == 2
 			 * @endcode
 			 */
-			std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
+			constexpr std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
 			 * @brief 空view判定。
@@ -117,7 +178,7 @@ namespace ket
 			 * // empty == true
 			 * @endcode
 			 */
-			bool Empty() const noexcept; // NOLINT(modernize-use-nodiscard)
+			constexpr bool Empty() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
 			 * @brief 指定indexのbyte取得。
@@ -171,7 +232,6 @@ namespace ket
 		  public:
 			/**
 			 * @brief 空の書き込み可能byte view構築。
-			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post `Data() == nullptr`、`Size() == 0`、`Empty() == true`。
 			 * @code
@@ -181,13 +241,12 @@ namespace ket
 			 * // view.Empty() == true
 			 * @endcode
 			 */
-			MutableView() noexcept : data_(nullptr), size_(0U) {}
+			constexpr MutableView() noexcept : data_(nullptr), size_(0U) {}
 
 			/**
 			 * @brief 書き込み可能byte列を参照するview構築。
 			 * @param[in] data 参照対象bufferの先頭。`nullptr`は`size == 0`の場合のみ空view。
 			 * @param[in] size 参照対象bufferのbyte数。
-			 * @retval void 戻り値なし。
 			 * @pre `data`は`size`byte以上読み書き可能な配列を指す。`nullptr + 非0`はinvalid
 			 * viewとして保持。
 			 * @post `data`と`size`を保持し、bufferの所有権は取得なし。
@@ -198,7 +257,71 @@ namespace ket
 			 * // view.Size() == 2
 			 * @endcode
 			 */
-			MutableView(std::uint8_t* data, std::size_t size) noexcept : data_(data), size_(size) {}
+			constexpr MutableView(std::uint8_t* data, std::size_t size) noexcept
+				: data_(data), size_(size)
+			{
+			}
+
+			/**
+			 * @brief mutable view状態のcopy構築。
+			 * @param[in] other copy元mutable view。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeを`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::MutableView source(data, 1U);
+			 * ket::byte_view::MutableView copied(source);
+			 * // copied.Data() == data, copied.Size() == 1
+			 * @endcode
+			 */
+			MutableView(const MutableView& other) noexcept = default;
+
+			/**
+			 * @brief mutable view状態のcopy代入。
+			 * @param[in] other copy元mutable view。
+			 * @retval reference `*this`。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeを`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::MutableView source(data, 1U);
+			 * ket::byte_view::MutableView assigned;
+			 * assigned = source;
+			 * // assigned.Data() == data, assigned.Size() == 1
+			 * @endcode
+			 */
+			MutableView& operator=(const MutableView& other) noexcept = default;
+
+			/**
+			 * @brief mutable view状態のmove構築。
+			 * @param[in,out] other move元mutable view。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeをmove前の`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::MutableView source(data, 1U);
+			 * ket::byte_view::MutableView moved(
+			 *     static_cast<ket::byte_view::MutableView&&>(source));
+			 * // moved.Data() == data, moved.Size() == 1
+			 * @endcode
+			 */
+			MutableView(MutableView&& other) noexcept = default;
+
+			/**
+			 * @brief mutable view状態のmove代入。
+			 * @param[in,out] other move元mutable view。
+			 * @retval reference `*this`。
+			 * @pre なし。
+			 * @post non-owning pointerとsizeをmove前の`other`と同じ値で保持。元bufferの変更なし。
+			 * @code
+			 * std::uint8_t data[] = {0x10U};
+			 * ket::byte_view::MutableView source(data, 1U);
+			 * ket::byte_view::MutableView assigned;
+			 * assigned = static_cast<ket::byte_view::MutableView&&>(source);
+			 * // assigned.Data() == data, assigned.Size() == 1
+			 * @endcode
+			 */
+			MutableView& operator=(MutableView&& other) noexcept = default;
 
 			/**
 			 * @brief 参照対象buffer先頭の取得。
@@ -213,7 +336,7 @@ namespace ket
 			 * // pointer == data
 			 * @endcode
 			 */
-			std::uint8_t* Data() const noexcept; // NOLINT(modernize-use-nodiscard)
+			constexpr std::uint8_t* Data() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
 			 * @brief 参照対象buffer byte数の取得。
@@ -227,7 +350,7 @@ namespace ket
 			 * // size == 2
 			 * @endcode
 			 */
-			std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
+			constexpr std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
 			 * @brief 空view判定。
@@ -241,7 +364,7 @@ namespace ket
 			 * // empty == true
 			 * @endcode
 			 */
-			bool Empty() const noexcept; // NOLINT(modernize-use-nodiscard)
+			constexpr bool Empty() const noexcept; // NOLINT(modernize-use-nodiscard)
 
 			/**
 			 * @brief 指定indexのbyte取得。
@@ -367,17 +490,17 @@ namespace ket
 		// Public API definitions
 		// -----------------------------------------------------------------------------
 
-		inline auto View::Data() const noexcept -> const std::uint8_t*
+		constexpr auto View::Data() const noexcept -> const std::uint8_t*
 		{
 			return data_;
 		}
 
-		inline auto View::Size() const noexcept -> std::size_t
+		constexpr auto View::Size() const noexcept -> std::size_t
 		{
 			return size_;
 		}
 
-		inline auto View::Empty() const noexcept -> bool
+		constexpr auto View::Empty() const noexcept -> bool
 		{
 			return size_ == 0U;
 		}
@@ -413,17 +536,17 @@ namespace ket
 			return true;
 		}
 
-		inline auto MutableView::Data() const noexcept -> std::uint8_t*
+		constexpr auto MutableView::Data() const noexcept -> std::uint8_t*
 		{
 			return data_;
 		}
 
-		inline auto MutableView::Size() const noexcept -> std::size_t
+		constexpr auto MutableView::Size() const noexcept -> std::size_t
 		{
 			return size_;
 		}
 
-		inline auto MutableView::Empty() const noexcept -> bool
+		constexpr auto MutableView::Empty() const noexcept -> bool
 		{
 			return size_ == 0U;
 		}

@@ -4,6 +4,17 @@
 
 namespace ket_byte_view_cxx11_check
 {
+	constexpr ket::byte_view::View kEmptyView;
+	constexpr ket::byte_view::MutableView kEmptyMutableView;
+
+	static_assert(kEmptyView.Data() == nullptr, "default View data is constexpr null");
+	static_assert(kEmptyView.Size() == 0U, "default View size is constexpr zero");
+	static_assert(kEmptyView.Empty(), "default View empty state is constexpr");
+	static_assert(kEmptyMutableView.Data() == nullptr,
+				  "default MutableView data is constexpr null");
+	static_assert(kEmptyMutableView.Size() == 0U, "default MutableView size is constexpr zero");
+	static_assert(kEmptyMutableView.Empty(), "default MutableView empty state is constexpr");
+
 	void Run()
 	{
 		std::uint8_t data[3] = {0x01U, 0x02U, 0x03U};

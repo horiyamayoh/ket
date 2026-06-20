@@ -6,6 +6,21 @@
 
 #include <gtest/gtest.h>
 
+namespace
+{
+	constexpr ket::byte_view::View kEmptyView;
+	constexpr ket::byte_view::MutableView kEmptyMutableView;
+
+	static_assert(kEmptyView.Data() == nullptr, "default View data is constexpr null");
+	static_assert(kEmptyView.Size() == 0U, "default View size is constexpr zero");
+	static_assert(kEmptyView.Empty(), "default View empty state is constexpr");
+	static_assert(kEmptyMutableView.Data() == nullptr,
+				  "default MutableView data is constexpr null");
+	static_assert(kEmptyMutableView.Size() == 0U, "default MutableView size is constexpr zero");
+	static_assert(kEmptyMutableView.Empty(), "default MutableView empty state is constexpr");
+
+} // namespace
+
 /**
  * @test
  * @brief default構築と`nullptr + 0`空viewの確認。
@@ -92,6 +107,61 @@ TEST(KetByteViewTest, ReadsBytesFromOriginalBufferWithoutOwning)
 	EXPECT_EQ(second, std::uint8_t{0x20U});
 	EXPECT_TRUE(read_changed_second);
 	EXPECT_EQ(changed_second, std::uint8_t{0x7FU});
+}
+
+/**
+ * @test
+ * @brief viewのcopy/moveがnon-owning状態だけを複製することの確認。
+ * @details
+ * 読み取り専用viewと書き込み可能viewのcopy/move後も同じ元bufferを参照し、所有権を取得しないことを確認。
+ * @pre C++17以降。
+ * @post mutable view経由の範囲内更新だけが元bufferへ反映。
+ */
+TEST(KetByteViewTest, CopiesAndMovesViewStateWithoutOwning)
+{
+	std::array<std::uint8_t, 3> bytes{{0x10U, 0x20U, 0x30U}};
+	const ket::byte_view::View source(bytes.data(), bytes.size());
+	ket::byte_view::View copied(source);
+	ket::byte_view::View copy_assigned;
+	copy_assigned = source;
+	const ket::byte_view::View moved(static_cast<ket::byte_view::View&&>(copied));
+	ket::byte_view::View move_assigned;
+	move_assigned = static_cast<ket::byte_view::View&&>(copy_assigned);
+
+	std::uint8_t moved_value = 0U;
+	std::uint8_t move_assigned_value = 0U;
+	const auto read_moved = moved.TryAt(1U, moved_value);
+	const auto read_move_assigned = move_assigned.TryAt(2U, move_assigned_value);
+
+	const ket::byte_view::MutableView mutable_source(bytes.data(), bytes.size());
+	ket::byte_view::MutableView mutable_copied(mutable_source);
+	ket::byte_view::MutableView mutable_copy_assigned;
+	mutable_copy_assigned = mutable_source;
+	ket::byte_view::MutableView mutable_moved(
+		static_cast<ket::byte_view::MutableView&&>(mutable_copied));
+	ket::byte_view::MutableView mutable_move_assigned;
+	mutable_move_assigned = static_cast<ket::byte_view::MutableView&&>(mutable_copy_assigned);
+
+	const auto set_from_moved = mutable_moved.TrySet(0U, 0xA0U);
+	const auto set_from_move_assigned = mutable_move_assigned.TrySet(2U, 0xC0U);
+
+	EXPECT_EQ(moved.Data(), bytes.data());
+	EXPECT_EQ(moved.Size(), bytes.size());
+	EXPECT_EQ(move_assigned.Data(), bytes.data());
+	EXPECT_EQ(move_assigned.Size(), bytes.size());
+	EXPECT_TRUE(read_moved);
+	EXPECT_EQ(moved_value, std::uint8_t{0x20U});
+	EXPECT_TRUE(read_move_assigned);
+	EXPECT_EQ(move_assigned_value, std::uint8_t{0x30U});
+	EXPECT_EQ(mutable_moved.Data(), bytes.data());
+	EXPECT_EQ(mutable_moved.Size(), bytes.size());
+	EXPECT_EQ(mutable_move_assigned.Data(), bytes.data());
+	EXPECT_EQ(mutable_move_assigned.Size(), bytes.size());
+	EXPECT_TRUE(set_from_moved);
+	EXPECT_TRUE(set_from_move_assigned);
+	EXPECT_EQ(bytes[0], std::uint8_t{0xA0U});
+	EXPECT_EQ(bytes[1], std::uint8_t{0x20U});
+	EXPECT_EQ(bytes[2], std::uint8_t{0xC0U});
 }
 
 /**
