@@ -53,6 +53,11 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。
 			 * @post `Joinable()`はfalse。
+			 * @code
+			 * ket::concurrency::JoiningThread thread;
+			 * const auto joinable = thread.Joinable();
+			 * // joinable == false
+			 * @endcode
 			 */
 			JoiningThread() noexcept = default;
 
@@ -62,6 +67,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `thread`がjoinableな場合、destructorや代入でself-joinにならない寿命関係。
 			 * @post `thread`の移動元状態を所有。引数のthread objectは移動元として破棄。
+			 * @code
+			 * int value = 0;
+			 * ket::concurrency::JoiningThread thread(std::thread([&value] { value = 1; }));
+			 * const auto joinable = thread.Joinable();
+			 * // joinable == true
+			 * @endcode
 			 */
 			explicit JoiningThread(std::thread thread) noexcept;
 
@@ -71,6 +82,13 @@ namespace ket
 			 * @pre 所有threadがjoinableな場合、destructorを実行するthread自身ではない。
 			 * @post joinableなthreadを所有していた場合は完了まで待機。
 			 * @note joinできない状態やjoin例外はnoexcept destructorによりstd::terminate。
+			 * @code
+			 * int value = 0;
+			 * {
+			 *     ket::concurrency::JoiningThread thread(std::thread([&value] { value = 1; }));
+			 * }
+			 * // value == 1
+			 * @endcode
 			 */
 			~JoiningThread() noexcept;
 
@@ -80,6 +98,11 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre copy操作は利用不可。
 			 * @post 状態変更なし。
+			 * @code
+			 * const auto copyable =
+			 * std::is_copy_constructible<ket::concurrency::JoiningThread>::value;
+			 * // copyable == false
+			 * @endcode
 			 */
 			JoiningThread(const JoiningThread& other) = delete;
 
@@ -89,6 +112,11 @@ namespace ket
 			 * @retval value 使用不可。
 			 * @pre copy操作は利用不可。
 			 * @post 状態変更なし。
+			 * @code
+			 * const auto assignable =
+			 * std::is_copy_assignable<ket::concurrency::JoiningThread>::value;
+			 * // assignable == false
+			 * @endcode
 			 */
 			JoiningThread& operator=(const JoiningThread& other) = delete;
 
@@ -98,6 +126,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre なし。移動元は有効なJoiningThread。
 			 * @post `other`はjoinableなthreadを所有しない。
+			 * @code
+			 * ket::concurrency::JoiningThread source(std::thread([] {}));
+			 * ket::concurrency::JoiningThread thread(std::move(source));
+			 * const auto moved = thread.Joinable();
+			 * // moved == true
+			 * @endcode
 			 */
 			JoiningThread(JoiningThread&& other) noexcept;
 
@@ -108,6 +142,13 @@ namespace ket
 			 * @pre 既存threadがjoinableな場合、代入を実行するthread自身ではない。
 			 * @post self-moveでは状態を保持。それ以外では既存threadをjoinしてから所有権を移す。
 			 * @note 既存threadのjoinで例外が発生した場合はnoexceptによりstd::terminate。
+			 * @code
+			 * ket::concurrency::JoiningThread source(std::thread([] {}));
+			 * ket::concurrency::JoiningThread thread;
+			 * thread = std::move(source);
+			 * const auto moved = thread.Joinable();
+			 * // moved == true
+			 * @endcode
 			 */
 			JoiningThread& operator=(JoiningThread&& other) noexcept;
 
@@ -116,6 +157,11 @@ namespace ket
 			 * @retval value 内部std::threadへの参照。
 			 * @pre なし。返却参照で直接操作したjoinable状態は利用者責任。
 			 * @post `*this`の所有thread object自体は同じ。
+			 * @code
+			 * ket::concurrency::JoiningThread thread;
+			 * const auto joinable = thread.Get().joinable();
+			 * // joinable == false
+			 * @endcode
 			 */
 			std::thread& Get() noexcept;
 
@@ -125,6 +171,11 @@ namespace ket
 			 * @retval false 所有threadがjoinableでない。
 			 * @pre なし。
 			 * @post `*this`と外部状態の変更なし。
+			 * @code
+			 * ket::concurrency::JoiningThread thread;
+			 * const auto joinable = thread.Joinable();
+			 * // joinable == false
+			 * @endcode
 			 */
 			bool Joinable() const noexcept; // NOLINT(modernize-use-nodiscard)
 
