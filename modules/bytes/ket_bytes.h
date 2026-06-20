@@ -171,9 +171,8 @@ namespace ket
 			/**
 			 * @brief reserve済みbuilderを作る。
 			 * @param[in] reserve_size 内部bufferへ事前確保するbyte数。
-			 * @retval value reserve済みbuilder。
 			 * @pre `reserve_size`はstd::vector<std::uint8_t>でreserve可能な値。
-			 * @post `Buffer().capacity()`は`reserve_size`以上。
+			 * @post `Buffer()`は空のbyte列を参照し、`Buffer().capacity()`は`reserve_size`以上。
 			 * @note std::vectorの確保があるためnoexceptなし。
 			 * @code
 			 * ket::bytes::Builder builder(8U);
