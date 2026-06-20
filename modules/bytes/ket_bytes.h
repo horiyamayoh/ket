@@ -28,7 +28,6 @@
  * 内部実装：ket::bytes::detail
  */
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -68,6 +67,7 @@ namespace ket
 		 * @pre `dst`は有効なstd::vectorオブジェクト。
 		 * @post `dst`の既存内容を保持し、末尾に上位byteから2byte追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note allocation失敗時は`dst`を変更せず、全byte追記かno-opのいずれかの強い例外保証。
 		 * @code
 		 * std::vector<std::uint8_t> bytes;
 		 * ket::bytes::AppendBe16(bytes, std::uint16_t{0x1234U});
@@ -84,6 +84,7 @@ namespace ket
 		 * @pre `dst`は有効なstd::vectorオブジェクト。
 		 * @post `dst`の既存内容を保持し、末尾に上位byteから4byte追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note allocation失敗時は`dst`を変更せず、全byte追記かno-opのいずれかの強い例外保証。
 		 * @code
 		 * std::vector<std::uint8_t> bytes;
 		 * ket::bytes::AppendBe32(bytes, std::uint32_t{0x12345678U});
@@ -100,6 +101,7 @@ namespace ket
 		 * @pre `dst`は有効なstd::vectorオブジェクト。
 		 * @post `dst`の既存内容を保持し、末尾に下位byteから2byte追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note allocation失敗時は`dst`を変更せず、全byte追記かno-opのいずれかの強い例外保証。
 		 * @code
 		 * std::vector<std::uint8_t> bytes;
 		 * ket::bytes::AppendLe16(bytes, std::uint16_t{0x1234U});
@@ -116,6 +118,7 @@ namespace ket
 		 * @pre `dst`は有効なstd::vectorオブジェクト。
 		 * @post `dst`の既存内容を保持し、末尾に下位byteから4byte追加。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note allocation失敗時は`dst`を変更せず、全byte追記かno-opのいずれかの強い例外保証。
 		 * @code
 		 * std::vector<std::uint8_t> bytes;
 		 * ket::bytes::AppendLe32(bytes, std::uint32_t{0x12345678U});
@@ -131,8 +134,10 @@ namespace ket
 		 * @param[in] size 追記するbyte数。
 		 * @retval void 戻り値なし。
 		 * @pre `dst`は有効なstd::vectorオブジェクト。`data`は`size`バイト以上読み取り可能な
-		 * 配列を指す。`Append(nullptr, 0)`はno-op、`Append(nullptr, size > 0)`はprecondition違反。
+		 * 配列を指す。`data[0..size)`は`dst`の内部storageと重ならない。`Append(nullptr,
+		 * 0)`はno-op、 `Append(nullptr, size > 0)`はprecondition違反。
 		 * @post `dst`の既存内容を保持し、`size`が0でなければ末尾に`data[0..size)`を同じ順序で追加。
+		 * @note self-appendは未対応。`data`が`dst`の要素を指す場合の動作は未定義。
 		 * @note raw byte列を扱うC API境界に近い入力のため、nullable条件付きのポインタを使う。
 		 * @note std::vectorの確保があるためnoexceptなし。
 		 * @code
@@ -276,10 +281,12 @@ namespace ket
 			 * @param[in] data 追記するbyte列の先頭。`size == 0`の場合だけnullptr可。
 			 * @param[in] size 追記するbyte数。
 			 * @retval *this 追記後のbuilder。
-			 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`Append(nullptr, 0)`は
-			 * no-op、`Append(nullptr, size > 0)`はprecondition違反。
+			 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`data[0..size)`は内部bufferと
+			 * 重ならない。`Append(nullptr, 0)`はno-op、`Append(nullptr, size >
+			 * 0)`はprecondition違反。
 			 * @post 内部bufferの既存内容を保持し、`size`が0でなければ末尾に`data[0..size)`を
 			 * 同じ順序で追加。
+			 * @note self-appendは未対応。`data`が内部bufferの要素を指す場合の動作は未定義。
 			 * @code
 			 * const std::uint8_t data[] = {0x01U, 0x02U};
 			 * ket::bytes::Builder builder;
@@ -297,8 +304,11 @@ namespace ket
 			 * @brief ASCII byte列として扱う文字列片の末尾追記。
 			 * @param[in] text 追記するASCII文字列片。
 			 * @retval *this 追記後のbuilder。
-			 * @pre `text`の各要素はASCII byte列。UTF-8 validationやencoding変換は行わない。
+			 * @pre `text`の各要素はASCII byte列。`text`の参照範囲は内部bufferと重ならない。
+			 * UTF-8 validationやencoding変換は行わない。
 			 * @post 内部bufferの既存内容を保持し、末尾に`text`の各byteを同じ順序で追加。
+			 * @note ASCII性はprecondition。各byteを検査せず追記し、非ASCII byteも変換しない。
+			 * @note self-appendは未対応。`text`が内部buffer由来の場合の動作は未定義。
 			 * @note std::vectorの確保があるためnoexceptなし。
 			 * @code
 			 * ket::bytes::Builder builder;
@@ -308,14 +318,8 @@ namespace ket
 			 */
 			Builder& AppendAscii(std::string_view text)
 			{
-				std::transform(text.begin(),
-							   text.end(),
-							   std::back_inserter(buffer_),
-							   [](char value)
-							   {
-								   return static_cast<std::uint8_t>(value);
-							   });
-
+				// validationや変換なし、ASCII byteとして単一insertで追記
+				buffer_.insert(buffer_.end(), text.begin(), text.end());
 				return *this;
 			}
 
@@ -400,6 +404,7 @@ namespace ket
 			 * @param[in] size 追記するbyte数。
 			 * @retval void 戻り値なし。
 			 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`size == 0`ではno-op。
+			 * `data[0..size)`は`dst`の内部storageと重ならない。
 			 * @post `dst`の既存内容を保持し、`size`が0でなければ末尾にbyte列を追加。
 			 */
 			inline void
@@ -427,30 +432,46 @@ namespace ket
 
 		inline void AppendBe16(std::vector<std::uint8_t>& dst, std::uint16_t value)
 		{
-			dst.push_back(detail::ByteAt(value, 8U));
-			dst.push_back(detail::ByteAt(value, 0U));
+			// 一時配列へ全byteを用意し、単一insertで追記。allocation失敗時は部分追記なし
+			const std::uint8_t encoded[] = {
+				detail::ByteAt(value, 8U),
+				detail::ByteAt(value, 0U),
+			};
+			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
 		}
 
 		inline void AppendBe32(std::vector<std::uint8_t>& dst, std::uint32_t value)
 		{
-			dst.push_back(detail::ByteAt(value, 24U));
-			dst.push_back(detail::ByteAt(value, 16U));
-			dst.push_back(detail::ByteAt(value, 8U));
-			dst.push_back(detail::ByteAt(value, 0U));
+			// 一時配列へ全byteを用意し、単一insertで追記。allocation失敗時は部分追記なし
+			const std::uint8_t encoded[] = {
+				detail::ByteAt(value, 24U),
+				detail::ByteAt(value, 16U),
+				detail::ByteAt(value, 8U),
+				detail::ByteAt(value, 0U),
+			};
+			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
 		}
 
 		inline void AppendLe16(std::vector<std::uint8_t>& dst, std::uint16_t value)
 		{
-			dst.push_back(detail::ByteAt(value, 0U));
-			dst.push_back(detail::ByteAt(value, 8U));
+			// 一時配列へ全byteを用意し、単一insertで追記。allocation失敗時は部分追記なし
+			const std::uint8_t encoded[] = {
+				detail::ByteAt(value, 0U),
+				detail::ByteAt(value, 8U),
+			};
+			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
 		}
 
 		inline void AppendLe32(std::vector<std::uint8_t>& dst, std::uint32_t value)
 		{
-			dst.push_back(detail::ByteAt(value, 0U));
-			dst.push_back(detail::ByteAt(value, 8U));
-			dst.push_back(detail::ByteAt(value, 16U));
-			dst.push_back(detail::ByteAt(value, 24U));
+			// 一時配列へ全byteを用意し、単一insertで追記。allocation失敗時は部分追記なし
+			const std::uint8_t encoded[] = {
+				detail::ByteAt(value, 0U),
+				detail::ByteAt(value, 8U),
+				detail::ByteAt(value, 16U),
+				detail::ByteAt(value, 24U),
+			};
+			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
 		}
 
 		inline void
