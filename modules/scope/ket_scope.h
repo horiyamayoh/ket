@@ -58,7 +58,9 @@ namespace ket
 		 * @pre `f` は引数なしで呼び出し可能。callback 例外は destructor 内で `std::terminate`。
 		 * @post `f` から move 構築した guard を返す。外部状態の変更は callback 実行時までなし。
 		 * @code
-		 * auto guard = ket::scope::MakeExit([&] { cleanup(); });
+		 * bool cleaned = false;
+		 * auto guard = ket::scope::MakeExit([&] { cleaned = true; });
+		 * // guard.Active() == true
 		 * @endcode
 		 */
 		template <typename F>
@@ -79,8 +81,10 @@ namespace ket
 		 * @pre `target` は guard より長く生存し、`T` は構築時の値保存と復元代入が可能。
 		 * @post `target` の現在値を保存した guard を返す。`target` の値は構築時点では変更なし。
 		 * @code
+		 * int mode = 1;
 		 * auto restore = ket::scope::MakeRestore(mode);
-		 * mode = temporary_mode;
+		 * mode = 2;
+		 * // restore破棄時にmode == 1
 		 * @endcode
 		 */
 		template <typename T>
@@ -167,6 +171,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `f` は引数なしで呼び出し可能。callback 例外は destructor 内で `std::terminate`。
 			 * @post guard は active。callback は value として保持。
+			 * @code
+			 * bool cleaned = false;
+			 * auto callback = [&cleaned] { cleaned = true; };
+			 * ket::scope::Exit<decltype(callback)> guard(callback);
+			 * // guard.Active() == true
+			 * @endcode
 			 */
 			explicit Exit(F f) : callback_(std::move(f)) {}
 
@@ -176,6 +186,11 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `F` は move 構築可能。`F` の move 例外は `noexcept` により `std::terminate`。
 			 * @post move 先は move 前の `other` と同じ active 状態。`other` は inactive。
+			 * @code
+			 * auto guard = ket::scope::MakeExit([] {});
+			 * auto moved = std::move(guard);
+			 * // moved.Active() == true, guard.Active() == false
+			 * @endcode
 			 */
 			// clang-format off
 			Exit(Exit&& other) noexcept : callback_(std::move(other.callback_)), active_(other.active_)
@@ -190,6 +205,10 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre copy は許可しない。
 			 * @post この関数は利用不可。
+			 * @code
+			 * auto guard = ket::scope::MakeExit([] {});
+			 * // auto copy = guard;  // compile error
+			 * @endcode
 			 */
 			Exit(const Exit& other) = delete;
 
@@ -199,6 +218,12 @@ namespace ket
 			 * @retval value 代入結果は提供しない。
 			 * @pre copy 代入は許可しない。
 			 * @post この関数は利用不可。
+			 * @code
+			 * auto callback = [] {};
+			 * ket::scope::Exit<decltype(callback)> guard(callback);
+			 * ket::scope::Exit<decltype(callback)> other(callback);
+			 * // guard = other;  // compile error
+			 * @endcode
 			 */
 			Exit& operator=(const Exit& other) = delete;
 
@@ -208,6 +233,12 @@ namespace ket
 			 * @retval value 代入結果は提供しない。
 			 * @pre move 代入は許可しない。
 			 * @post この関数は利用不可。
+			 * @code
+			 * auto callback = [] {};
+			 * ket::scope::Exit<decltype(callback)> guard(callback);
+			 * ket::scope::Exit<decltype(callback)> other(callback);
+			 * // guard = std::move(other);  // compile error
+			 * @endcode
 			 */
 			Exit& operator=(Exit&& other) = delete;
 
@@ -216,6 +247,13 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre active 状態では callback が引数なしで呼び出し可能。
 			 * @post active なら callback を1回実行。inactive なら callback 実行なし。
+			 * @code
+			 * bool cleaned = false;
+			 * {
+			 *     auto guard = ket::scope::MakeExit([&] { cleaned = true; });
+			 * }
+			 * // cleaned == true
+			 * @endcode
 			 */
 			~Exit() noexcept
 			{
@@ -231,6 +269,14 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre guard は有効な object。
 			 * @post guard は inactive。destructor で callback を呼ばない。
+			 * @code
+			 * bool cleaned = false;
+			 * {
+			 *     auto guard = ket::scope::MakeExit([&] { cleaned = true; });
+			 *     guard.Dismiss();
+			 * }
+			 * // cleaned == false
+			 * @endcode
 			 */
 			void Dismiss() noexcept
 			{
@@ -243,6 +289,11 @@ namespace ket
 			 * @retval false dismiss 済み、または move 後の inactive 状態。
 			 * @pre guard は有効な object。
 			 * @post guard と外部状態の変更なし。
+			 * @code
+			 * auto guard = ket::scope::MakeExit([] {});
+			 * const auto active = guard.Active();
+			 * // active == true
+			 * @endcode
 			 */
 			KET_SCOPE_NODISCARD bool Active() const noexcept
 			{
@@ -274,6 +325,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `target` は guard より長く生存し、`T` は構築時の値保存と復元代入が可能。
 			 * @post `target` の値は変更せず、guard 内に構築時の値を保存。
+			 * @code
+			 * int value = 1;
+			 * ket::scope::Restore<int> restore(value);
+			 * value = 2;
+			 * // restore破棄時にvalue == 1
+			 * @endcode
 			 */
 			explicit Restore(T& target) : target_(target), value_(target) {}
 
@@ -285,6 +342,13 @@ namespace ket
 			 * @post move 先は move 前の `other` と同じ active 状態。`other` は inactive。
 			 * @note
 			 * 仕様カードに列挙のない補正。C++11で非copyable/nonmovable戻り値を返せないため追加。
+			 * @code
+			 * int value = 1;
+			 * auto restore = ket::scope::MakeRestore(value);
+			 * auto moved = std::move(restore);
+			 * value = 2;
+			 * // moved破棄時にvalue == 1
+			 * @endcode
 			 */
 			// clang-format off
 			Restore(Restore&& other) noexcept(detail::RestoreMoveNoexcept<T>::value) : target_(other.target_), value_(other.value_), active_(other.active_)
@@ -299,6 +363,11 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre copy は許可しない。
 			 * @post この関数は利用不可。
+			 * @code
+			 * int value = 1;
+			 * auto restore = ket::scope::MakeRestore(value);
+			 * // auto copy = restore;  // compile error
+			 * @endcode
 			 */
 			Restore(const Restore& other) = delete;
 
@@ -308,6 +377,12 @@ namespace ket
 			 * @retval value 代入結果は提供しない。
 			 * @pre copy 代入は許可しない。
 			 * @post この関数は利用不可。
+			 * @code
+			 * int value = 1;
+			 * auto restore = ket::scope::MakeRestore(value);
+			 * auto other = ket::scope::MakeRestore(value);
+			 * // restore = other;  // compile error
+			 * @endcode
 			 */
 			Restore& operator=(const Restore& other) = delete;
 
@@ -316,6 +391,14 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre active 状態では保存値の復元代入が有効。
 			 * @post active なら対象値を構築時の値へ復元。inactive なら対象値を変更しない。
+			 * @code
+			 * int value = 1;
+			 * {
+			 *     auto restore = ket::scope::MakeRestore(value);
+			 *     value = 2;
+			 * }
+			 * // value == 1
+			 * @endcode
 			 */
 			~Restore() noexcept
 			{
@@ -331,6 +414,15 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre guard は有効な object。
 			 * @post guard は inactive。destructor で対象値を変更しない。
+			 * @code
+			 * int value = 1;
+			 * {
+			 *     auto restore = ket::scope::MakeRestore(value);
+			 *     value = 2;
+			 *     restore.Dismiss();
+			 * }
+			 * // value == 2
+			 * @endcode
 			 */
 			inline void Dismiss() noexcept // NOLINT(readability-redundant-inline-specifier)
 			{
