@@ -48,6 +48,11 @@ namespace ket
 		 * @retval value `value`をunderlying typeへ変換した値。
 		 * @pre `E`はenum型。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * enum class Mode : std::uint8_t { kRun = 1U };
+		 * const auto value = ket::enums::ToUnderlying(Mode::kRun);
+		 * // value == 1
+		 * @endcode
 		 */
 		template <typename E>
 		constexpr std::underlying_type_t<E> ToUnderlying(E value) noexcept;
@@ -98,6 +103,12 @@ namespace ket
 		 * @retval fallback 一致するentryなし。
 		 * @pre `table`の各`name`と`fallback`は戻り値の参照中に有効な文字列を指す。
 		 * @post 引数と外部状態の変更なし。重複valueでは先頭entryを返す。
+		 * @code
+		 * enum class Mode { kRun, kUnknown };
+		 * const ket::enums::Entry table[] = {ket::enums::Entry{Mode::kRun, "run"}};
+		 * const auto name = ket::enums::NameOr(Mode::kUnknown, table, "unknown");
+		 * // name == "unknown"
+		 * @endcode
 		 */
 		template <typename E, std::size_t N>
 		std::string_view
@@ -133,6 +144,12 @@ namespace ket
 		 * @retval false `value`と一致するentryなし。
 		 * @pre `table`は`N`個のentryを参照できる配列。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * enum class Mode { kRun };
+		 * const ket::enums::Entry table[] = {ket::enums::Entry{Mode::kRun, "run"}};
+		 * const auto valid = ket::enums::IsValid(Mode::kRun, table);
+		 * // valid == true
+		 * @endcode
 		 */
 		template <typename E, std::size_t N>
 		bool IsValid(E value, const Entry<E> (&table)[N]) noexcept;
@@ -146,6 +163,11 @@ namespace ket
 		 * @retval false `flag`の少なくとも1bitが`flags`に含まれない。
 		 * @pre `E`はbit maskとして扱うenum型。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
+		 * const auto has_write = ket::enums::HasFlag(Permission::kReadWrite, Permission::kWrite);
+		 * // has_write == true
+		 * @endcode
 		 */
 		template <typename E>
 		constexpr bool HasFlag(E flags, E flag) noexcept;
@@ -158,6 +180,11 @@ namespace ket
 		 * @retval value `flags`に`flag`のbitを加えた値。
 		 * @pre `E`はbit maskとして扱うenum型。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
+		 * const auto flags = ket::enums::SetFlag(Permission::kRead, Permission::kWrite);
+		 * // flags == Permission::kReadWrite
+		 * @endcode
 		 */
 		template <typename E>
 		constexpr E SetFlag(E flags, E flag) noexcept;
@@ -170,6 +197,11 @@ namespace ket
 		 * @retval value `flags`から`flag`のbitを除いた値。
 		 * @pre `E`はbit maskとして扱うenum型。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
+		 * const auto flags = ket::enums::ClearFlag(Permission::kReadWrite, Permission::kRead);
+		 * // flags == Permission::kWrite
+		 * @endcode
 		 */
 		template <typename E>
 		constexpr E ClearFlag(E flags, E flag) noexcept;
@@ -183,6 +215,11 @@ namespace ket
 		 * @retval false `mask`のbitが`flags`に含まれない。
 		 * @pre `E`はbit maskとして扱うenum型。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
+		 * const auto any = ket::enums::HasAnyFlag(Permission::kReadWrite, Permission::kWrite);
+		 * // any == true
+		 * @endcode
 		 */
 		template <typename E>
 		constexpr bool HasAnyFlag(E flags, E mask) noexcept;
@@ -196,6 +233,11 @@ namespace ket
 		 * @retval false `mask`の少なくとも1bitが`flags`に含まれない。
 		 * @pre `E`はbit maskとして扱うenum型。
 		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * enum class Permission : unsigned { kRead = 1U, kWrite = 2U, kReadWrite = 3U };
+		 * const auto all = ket::enums::HasAllFlags(Permission::kReadWrite, Permission::kReadWrite);
+		 * // all == true
+		 * @endcode
 		 */
 		template <typename E>
 		constexpr bool HasAllFlags(E flags, E mask) noexcept;
