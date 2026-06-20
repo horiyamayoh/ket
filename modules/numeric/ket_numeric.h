@@ -7,6 +7,8 @@
  * @details alignment、rounding、overflow、narrowing cast の小さい境界処理を短いAPIへ集約する。
  * ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。算術式を評価する前に範囲を確認し、
  * signed overflowや意図しないwraparoundを公開仕様にしない。
+ * 型制約では`char`、`wchar_t`、`char16_t`、`char32_t`をtext character型として除外する。
+ * `signed char`と`unsigned char`は`std::int8_t`/`std::uint8_t` aliasを保つため整数型として扱う。
  *
  * @par プロジェクトへの適用方法
  * `ket_numeric.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
@@ -46,7 +48,7 @@ namespace ket
 		 * @param[in] value 判定対象値。
 		 * @retval true `value`が`To`の表現範囲内。
 		 * @retval false `value`が`To`の表現範囲外。
-		 * @pre `To`と`From`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `To`と`From`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @note signed/unsignedの組み合わせでも比較前に十分広い整数表現へ変換。
 		 * @code
@@ -65,7 +67,7 @@ namespace ket
 		 * @param[in] min_value 下限値。
 		 * @param[in] max_value 上限値。
 		 * @retval value `min_value`以上`max_value`以下へ丸めた値。
-		 * @pre `T`はboolとcharacter型を除くintegral型。`min_value <= max_value`。
+		 * @pre `T`はboolとtext character型を除くintegral型。`min_value <= max_value`。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto value = ket::numeric::Clamp(10, 0, 7);
@@ -82,7 +84,7 @@ namespace ket
 		 * @param[in] a 1つ目の値。
 		 * @param[in] b 2つ目の値。
 		 * @retval value `a`と`b`の数学的な差の絶対値。
-		 * @pre `T`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @note signed最小値を単純に符号反転せず、unsigned変換後の差で表現。
 		 * @code
@@ -102,7 +104,7 @@ namespace ket
 		 * @param[out] out 成功時の切り上げ除算結果。
 		 * @retval true 成功。
 		 * @retval false `divisor == 0`。
-		 * @pre `T`はboolとcharacter型を除くunsigned integral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くunsigned integral型。対象外型はcompile error。
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * unsigned out = 0;
@@ -121,7 +123,7 @@ namespace ket
 		 * @param[out] out 成功時の切り上げ後の値。
 		 * @retval true 成功。
 		 * @retval false `alignment == 0`、または切り上げ結果のoverflow。
-		 * @pre `T`はboolとcharacter型を除くunsigned integral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くunsigned integral型。対象外型はcompile error。
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * unsigned out = 0;
@@ -140,7 +142,7 @@ namespace ket
 		 * @param[out] out 成功時の切り下げ後の値。
 		 * @retval true 成功。
 		 * @retval false `alignment == 0`。
-		 * @pre `T`はboolとcharacter型を除くunsigned integral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くunsigned integral型。対象外型はcompile error。
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * unsigned out = 0;
@@ -159,7 +161,7 @@ namespace ket
 		 * @param[out] out 成功時の加算結果。
 		 * @retval true 成功。
 		 * @retval false 加算結果のoverflow。
-		 * @pre `T`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * int out = 0;
@@ -178,7 +180,7 @@ namespace ket
 		 * @param[out] out 成功時の減算結果。
 		 * @retval true 成功。
 		 * @retval false 減算結果のoverflow。
-		 * @pre `T`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * int out = 0;
@@ -197,7 +199,7 @@ namespace ket
 		 * @param[out] out 成功時の乗算結果。
 		 * @retval true 成功。
 		 * @retval false 乗算結果のoverflow。
-		 * @pre `T`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * int out = 0;
@@ -214,7 +216,7 @@ namespace ket
 		 * @param[in] a 左辺値。
 		 * @param[in] b 右辺値。
 		 * @retval value 加算結果、または`T`の上下限へ飽和した値。
-		 * @pre `T`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto value = ket::numeric::SaturatingAdd(std::numeric_limits<int>::max(), 1);
@@ -230,7 +232,7 @@ namespace ket
 		 * @param[in] a 左辺値。
 		 * @param[in] b 右辺値。
 		 * @retval value 減算結果、または`T`の上下限へ飽和した値。
-		 * @pre `T`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `T`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 引数と外部状態の変更なし。
 		 * @code
 		 * const auto value = ket::numeric::SaturatingSub(std::numeric_limits<int>::min(), 1);
@@ -248,7 +250,7 @@ namespace ket
 		 * @param[out] out 成功時のcast結果。
 		 * @retval true 成功。
 		 * @retval false `value`が`To`の表現範囲外。
-		 * @pre `To`と`From`はboolとcharacter型を除くintegral型。対象外型はcompile error。
+		 * @pre `To`と`From`はboolとtext character型を除くintegral型。対象外型はcompile error。
 		 * @post 成功時のみ`out`を変更。失敗時は`out`を変更しない。
 		 * @code
 		 * unsigned out = 0;
@@ -321,31 +323,31 @@ namespace ket
 			};
 
 			/**
-			 * @brief character型かの判定。
+			 * @brief text character型かの判定。
 			 * @tparam T 判定対象型。
 			 * @note detail配下の型は公開APIではない。
 			 */
 			template <typename T>
-			struct IsCharacterIntegral
-				: std::integral_constant<
-					  bool,
-					  IsSame<T, char>::value || IsSame<T, signed char>::value ||
-						  IsSame<T, unsigned char>::value || IsSame<T, wchar_t>::value ||
-						  IsSame<T, char16_t>::value || IsSame<T, char32_t>::value>
+			struct IsTextCharacterIntegral
+				: std::integral_constant<bool,
+										 IsSame<T, char>::value || IsSame<T, wchar_t>::value ||
+											 IsSame<T, char16_t>::value ||
+											 IsSame<T, char32_t>::value>
 			{
 			};
 
 			/**
 			 * @brief numeric APIが受け付ける整数型かの判定。
 			 * @tparam T 判定対象型。
-			 * @note boolとcharacter型は対象外。
+			 * @note boolとtext character型は対象外。
+			 * @note signed charとunsigned charは固定幅8bit整数aliasを保つため対象。
 			 * @note detail配下の型は公開APIではない。
 			 */
 			template <typename T>
 			struct IsSupportedIntegral
 				: std::integral_constant<bool,
 										 IsIntegral<T>::value && !IsSame<T, bool>::value &&
-											 !IsCharacterIntegral<T>::value>
+											 !IsTextCharacterIntegral<T>::value>
 			{
 			};
 
@@ -366,7 +368,7 @@ namespace ket
 			 * @param[in] value 丸め対象値。
 			 * @param[in] max_value 上限値。
 			 * @retval value `max_value`以下へ丸めた値。
-			 * @pre `T`はboolとcharacter型を除くintegral型。
+			 * @pre `T`はboolとtext character型を除くintegral型。
 			 * @post 引数と外部状態の変更なし。
 			 */
 			template <typename T>
@@ -474,7 +476,7 @@ namespace ket
 				 * @param[in] a 1つ目の値。
 				 * @param[in] b 2つ目の値。
 				 * @retval value `a`と`b`の数学的な差の絶対値。
-				 * @pre `T`はboolとcharacter型を除くintegral型。
+				 * @pre `T`はboolとtext character型を除くintegral型。
 				 * @post 引数と外部状態の変更なし。
 				 */
 				static constexpr typename MakeUnsigned<T>::Type Run(T a, T b) noexcept
@@ -904,10 +906,10 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<To>::value,
 						  "ket::numeric::InRange requires an integral destination type except "
-						  "bool and character types.");
+						  "bool and text character types.");
 			static_assert(detail::IsSupportedIntegral<From>::value,
 						  "ket::numeric::InRange requires an integral source type except bool "
-						  "and character types.");
+						  "and text character types.");
 
 			return detail::InRangeImpl<To,
 									   From,
@@ -920,7 +922,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
 						  "ket::numeric::Clamp requires an integral type except bool and "
-						  "character types.");
+						  "text character types.");
 
 			return value < min_value ? min_value : detail::ClampUpper(value, max_value);
 		}
@@ -931,7 +933,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
 						  "ket::numeric::AbsDiff requires an integral type except bool and "
-						  "character types.");
+						  "text character types.");
 
 			return detail::AbsDiffImpl<T>::Run(a, b);
 		}
@@ -942,7 +944,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::value,
 						  "ket::numeric::TryDivideRoundUp requires an unsigned integral type "
-						  "except bool and character types.");
+						  "except bool and text character types.");
 
 			const auto zero = T{0};
 			const auto divisor_is_zero = divisor == zero;
@@ -969,7 +971,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::value,
 						  "ket::numeric::TryAlignUp requires an unsigned integral type except "
-						  "bool and character types.");
+						  "bool and text character types.");
 
 			const auto zero = T{0};
 			const auto alignment_is_zero = alignment == zero;
@@ -1003,7 +1005,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedUnsignedIntegral<T>::value,
 						  "ket::numeric::TryAlignDown requires an unsigned integral type except "
-						  "bool and character types.");
+						  "bool and text character types.");
 
 			const auto zero = T{0};
 			const auto alignment_is_zero = alignment == zero;
@@ -1022,7 +1024,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
 						  "ket::numeric::TryAdd requires an integral type except bool "
-						  "and character types.");
+						  "and text character types.");
 
 			return detail::CheckedAddImpl<T, detail::IsSigned<T>::value>::Run(a, b, out);
 		}
@@ -1032,7 +1034,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
 						  "ket::numeric::TrySub requires an integral type except bool "
-						  "and character types.");
+						  "and text character types.");
 
 			return detail::CheckedSubImpl<T, detail::IsSigned<T>::value>::Run(a, b, out);
 		}
@@ -1042,7 +1044,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
 						  "ket::numeric::TryMul requires an integral type except bool "
-						  "and character types.");
+						  "and text character types.");
 
 			return detail::CheckedMulImpl<T, detail::IsSigned<T>::value>::Run(a, b, out);
 		}
@@ -1052,7 +1054,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
 						  "ket::numeric::SaturatingAdd requires an integral type except bool "
-						  "and character types.");
+						  "and text character types.");
 
 			return detail::SaturatingAddImpl<T, detail::IsSigned<T>::value>::Run(a, b);
 		}
@@ -1062,7 +1064,7 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<T>::value,
 						  "ket::numeric::SaturatingSub requires an integral type except bool "
-						  "and character types.");
+						  "and text character types.");
 
 			return detail::SaturatingSubImpl<T, detail::IsSigned<T>::value>::Run(a, b);
 		}
@@ -1072,10 +1074,10 @@ namespace ket
 		{
 			static_assert(detail::IsSupportedIntegral<To>::value,
 						  "ket::numeric::TryCast requires an integral destination type "
-						  "except bool and character types.");
+						  "except bool and text character types.");
 			static_assert(detail::IsSupportedIntegral<From>::value,
 						  "ket::numeric::TryCast requires an integral source type except "
-						  "bool and character types.");
+						  "bool and text character types.");
 
 			const auto value_is_in_range = InRange<To>(value);
 			if (!value_is_in_range)

@@ -1,7 +1,8 @@
 #include "ket_numeric.h"
 
+#include <cstdint>
 #include <limits>
-#include <string> // IWYU pragma: keep  // NOLINT(misc-include-cleaner)
+#include <string> // IWYU pragma: keep
 
 #include <gtest/gtest.h>
 
@@ -320,4 +321,13 @@ TEST(KetNumericTest, ChecksCastRange)
 		static_cast<unsigned>(std::numeric_limits<unsigned short>::max()) + 1U, unsigned_short_out);
 	EXPECT_FALSE(unsigned_overflow);
 	EXPECT_EQ(unsigned_short_out, std::numeric_limits<unsigned short>::max());
+
+	std::uint8_t byte_out = 12U;
+	const auto byte_boundary = ket::numeric::TryCast(255, byte_out);
+	EXPECT_TRUE(byte_boundary);
+	EXPECT_EQ(byte_out, static_cast<std::uint8_t>(255U));
+
+	const auto byte_overflow = ket::numeric::TryCast(256, byte_out);
+	EXPECT_FALSE(byte_overflow);
+	EXPECT_EQ(byte_out, static_cast<std::uint8_t>(255U));
 }

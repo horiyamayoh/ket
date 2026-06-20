@@ -1,6 +1,9 @@
-#include <limits>
-
+// clang-format off
 #include "ket_numeric.h"
+
+#include <cstdint>
+#include <limits>
+// clang-format on
 
 namespace
 {
@@ -8,14 +11,14 @@ namespace
 				  "int is a supported numeric type");
 	static_assert(ket::numeric::detail::IsSupportedUnsignedIntegral<unsigned>::value,
 				  "unsigned is a supported unsigned numeric type");
+	static_assert(ket::numeric::detail::IsSupportedIntegral<std::int8_t>::value,
+				  "std::int8_t is a supported numeric type");
+	static_assert(ket::numeric::detail::IsSupportedUnsignedIntegral<std::uint8_t>::value,
+				  "std::uint8_t is a supported unsigned numeric type");
 	static_assert(!ket::numeric::detail::IsSupportedIntegral<bool>::value,
 				  "bool is not a supported numeric type");
 	static_assert(!ket::numeric::detail::IsSupportedIntegral<char>::value,
 				  "char is not a supported numeric type");
-	static_assert(!ket::numeric::detail::IsSupportedIntegral<signed char>::value,
-				  "signed char is not a supported numeric type");
-	static_assert(!ket::numeric::detail::IsSupportedIntegral<unsigned char>::value,
-				  "unsigned char is not a supported numeric type");
 	static_assert(!ket::numeric::detail::IsSupportedIntegral<wchar_t>::value,
 				  "wchar_t is not a supported numeric type");
 	static_assert(!ket::numeric::detail::IsSupportedIntegral<char16_t>::value,
@@ -43,6 +46,7 @@ namespace
 void KetNumericCxx11Check()
 {
 	unsigned unsigned_out = 0U;
+	std::uint8_t byte_out = 0U;
 	int int_out = 0;
 	short short_out = 0;
 
@@ -53,6 +57,7 @@ void KetNumericCxx11Check()
 	const bool subtracted = ket::numeric::TrySub(3, 1, int_out);
 	const bool multiplied = ket::numeric::TryMul(3, 4, int_out);
 	const bool casted = ket::numeric::TryCast(42, short_out);
+	const bool casted_byte = ket::numeric::TryCast(255, byte_out);
 
 	static_cast<void>(divided);
 	static_cast<void>(aligned_up);
@@ -61,7 +66,9 @@ void KetNumericCxx11Check()
 	static_cast<void>(subtracted);
 	static_cast<void>(multiplied);
 	static_cast<void>(casted);
+	static_cast<void>(casted_byte);
 	static_cast<void>(unsigned_out);
+	static_cast<void>(byte_out);
 	static_cast<void>(int_out);
 	static_cast<void>(short_out);
 }

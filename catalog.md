@@ -299,11 +299,13 @@ ket::numeric::Clamp(value, min_value, max_value)
 ket::numeric::AbsDiff(a, b)
 ket::numeric::TryDivideRoundUp(value, divisor, out)
 ket::numeric::TryAlignUp(value, alignment, out)
+ket::numeric::TryAlignDown(value, alignment, out)
 ket::numeric::TryAdd(a, b, out)
 ket::numeric::TrySub(a, b, out)
 ket::numeric::TryMul(a, b, out)
 ket::numeric::TryCast<To>(value, out)
 ket::numeric::SaturatingAdd(a, b)
+ket::numeric::SaturatingSub(a, b)
 ```
 
 C++バージョン要件:
@@ -321,7 +323,8 @@ Failure / edge cases:
 - divisor == 0
 - signed / unsigned overflow
 - signed 最小値を含む AbsDiff
-- bool / character 型の不採用
+- bool / text character 型の不採用
+- `std::int8_t` / `std::uint8_t` alias の採用
 - cast 範囲外
 
 他のライブラリへの依存:
@@ -333,12 +336,15 @@ Tests:
 
 - TryAlignUp(0, 4) == 0
 - TryAlignUp(max, 2) fails when overflow
+- TryAlignDown(5, 4) == 4
 - TryAdd(max, 1) fails
 - TrySub(min, 1) fails
 - TryMul boundary cases
+- SaturatingSub(min, 1) == min
 - TryCast<std::uint8_t>(255) succeeds
 - TryCast<std::uint8_t>(256) fails
 - bool / char の compile-only 不採用確認
+- std::int8_t / std::uint8_t の compile-only 採用確認
 
 ## Idea: Endian
 
