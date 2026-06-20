@@ -1053,6 +1053,7 @@ ket::byte_view::View
 ket::byte_view::MutableView
 view.TryAt(index, out)
 view.TrySlice(offset, count, out)
+// default constructor, Data, Size, Empty は constexpr
 ```
 
 C++バージョン要件:
@@ -1069,6 +1070,7 @@ Failure / edge cases:
 - lifetime は呼び出し側責任
 - nullptr + 0 は空 view
 - nullptr + 非0 は invalid view
+- copy / move は non-owning pointer と size だけを複製
 - bounds overrun
 - slice 失敗時 out 不変
 

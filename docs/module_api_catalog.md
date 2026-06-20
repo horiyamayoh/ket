@@ -879,24 +879,33 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Dependencies: 標準ライブラリのみ。他の ket module への依存なし。
 - Public API Signatures（`namespace ket::byte_view`）:
   - `class View`:
-    - `View() noexcept;`
-    - `View(const std::uint8_t* data, std::size_t size) noexcept;`
-    - `const std::uint8_t* Data() const noexcept;`
-    - `std::size_t Size() const noexcept;`
-    - `bool Empty() const noexcept;`
+    - `constexpr View() noexcept;`
+    - `constexpr View(const std::uint8_t* data, std::size_t size) noexcept;`
+    - `View(const View& other) noexcept = default;`
+    - `View& operator=(const View& other) noexcept = default;`
+    - `View(View&& other) noexcept = default;`
+    - `View& operator=(View&& other) noexcept = default;`
+    - `constexpr const std::uint8_t* Data() const noexcept;`
+    - `constexpr std::size_t Size() const noexcept;`
+    - `constexpr bool Empty() const noexcept;`
     - `bool TryAt(std::size_t index, std::uint8_t& out) const noexcept;`
     - `bool TrySlice(std::size_t offset, std::size_t count, View& out) const noexcept;`
   - `class MutableView`:
-    - `MutableView() noexcept;`
-    - `MutableView(std::uint8_t* data, std::size_t size) noexcept;`
-    - `std::uint8_t* Data() const noexcept;`
-    - `std::size_t Size() const noexcept;`
-    - `bool Empty() const noexcept;`
+    - `constexpr MutableView() noexcept;`
+    - `constexpr MutableView(std::uint8_t* data, std::size_t size) noexcept;`
+    - `MutableView(const MutableView& other) noexcept = default;`
+    - `MutableView& operator=(const MutableView& other) noexcept = default;`
+    - `MutableView(MutableView&& other) noexcept = default;`
+    - `MutableView& operator=(MutableView&& other) noexcept = default;`
+    - `constexpr std::uint8_t* Data() const noexcept;`
+    - `constexpr std::size_t Size() const noexcept;`
+    - `constexpr bool Empty() const noexcept;`
     - `bool TryAt(std::size_t index, std::uint8_t& out) const noexcept;`
     - `bool TrySet(std::size_t index, std::uint8_t value) noexcept;`
     - `bool TrySlice(std::size_t offset, std::size_t count, MutableView& out) const noexcept;`
 - Behavior: view は所有権を持たず、元 buffer lifetime に依存する。`TryAt`/`TrySlice` は範囲内のみ
-  成功し out へ書き込む。`MutableView::TrySet` は範囲内のみ書き込む。
+  成功し out へ書き込む。copy/move は non-owning pointer と size を複製し、元 buffer を変更しない。
+  `MutableView::TrySet` は範囲内のみ書き込む。
 - Failure/edge cases: `nullptr+0` は空 view。`nullptr+非0` は invalid view とし、access は失敗。
   slice 範囲超過は失敗で out 不変。
 - Complexity/performance: 全 method は O(1)。view は pointer と size のみ保持し allocation なし。

@@ -189,4 +189,23 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/bytes/ket_bytes_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_byte_view_test
+		SOURCES
+			modules/byte_view/ket_byte_view_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_view_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_byte_view_cxx11_check.cpp
+	)
+	target_include_directories(
+		ket_byte_view_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
+	)
+	add_dependencies(ket_byte_view_test ket_byte_view_cxx11_check)
 endif()

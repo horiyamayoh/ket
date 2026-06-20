@@ -23,3 +23,4 @@ Statusは次の値を使います。
 | endian      | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | byte orderを明示した16/32/64bit読み書き |
 | bytes       | binary           | verified | C++17   | GoogleTest                         | checked | 可変長byte payloadの構築                |
 | byte_writer | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | fixed bufferへの逐次書き込み            |
+| byte_view   | view             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | non-owning byte span                    |
