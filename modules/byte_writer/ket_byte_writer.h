@@ -55,6 +55,12 @@ namespace ket
 			 * @pre `data`は`size`バイト以上書き込み可能な配列を指す。`nullptr`と非0
 			 * sizeの組はinvalid writerとして構築。
 			 * @post offsetは0。buffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 2U);
+			 * // writer.Size() == 2
+			 * // writer.Offset() == 0
+			 * @endcode
 			 */
 			Writer(std::uint8_t* data, std::size_t size) noexcept;
 
@@ -64,6 +70,13 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `other`は有効またはinvalidなWriter object。
 			 * @post non-owning pointer、size、offsetをそのまま複製。buffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U};
+			 * ket::byte_writer::Writer source(buffer, 1U);
+			 * ket::byte_writer::Writer copied(source);
+			 * // copied.Size() == 1
+			 * // copied.Offset() == 0
+			 * @endcode
 			 */
 			Writer(const Writer& other) noexcept = default;
 
@@ -73,6 +86,13 @@ namespace ket
 			 * @retval value `*this`。
 			 * @pre `other`は有効またはinvalidなWriter object。
 			 * @post non-owning pointer、size、offsetをそのまま複製。buffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U};
+			 * ket::byte_writer::Writer source(buffer, 1U);
+			 * ket::byte_writer::Writer assigned(nullptr, 0U);
+			 * assigned = source;
+			 * // assigned.Size() == 1
+			 * @endcode
 			 */
 			Writer& operator=(const Writer& other) noexcept = default;
 
@@ -82,6 +102,12 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `other`は有効またはinvalidなWriter object。
 			 * @post non-owning pointer、size、offsetをそのまま移動。buffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U};
+			 * ket::byte_writer::Writer source(buffer, 1U);
+			 * ket::byte_writer::Writer moved(static_cast<ket::byte_writer::Writer&&>(source));
+			 * // moved.Size() == 1
+			 * @endcode
 			 */
 			Writer(Writer&& other) noexcept = default;
 
@@ -91,6 +117,13 @@ namespace ket
 			 * @retval value `*this`。
 			 * @pre `other`は有効またはinvalidなWriter object。
 			 * @post non-owning pointer、size、offsetをそのまま移動。buffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U};
+			 * ket::byte_writer::Writer source(buffer, 1U);
+			 * ket::byte_writer::Writer assigned(nullptr, 0U);
+			 * assigned = static_cast<ket::byte_writer::Writer&&>(source);
+			 * // assigned.Size() == 1
+			 * @endcode
 			 */
 			Writer& operator=(Writer&& other) noexcept = default;
 
@@ -99,6 +132,12 @@ namespace ket
 			 * @retval value constructorで渡されたbuffer size。
 			 * @pre なし。invalid writerでも参照先として渡されたsizeを返す。
 			 * @post writer状態とbuffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 2U);
+			 * const auto size = writer.Size();
+			 * // size == 2
+			 * @endcode
 			 */
 			std::size_t Size() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -107,6 +146,12 @@ namespace ket
 			 * @retval value 現在offset。
 			 * @pre なし。
 			 * @post writer状態とbuffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 1U);
+			 * const auto offset = writer.Offset();
+			 * // offset == 0
+			 * @endcode
 			 */
 			std::size_t Offset() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -115,6 +160,12 @@ namespace ket
 			 * @retval value `Size() - Offset()`。offsetがsizeを超える内部不整合時は0。
 			 * @pre なし。
 			 * @post writer状態とbuffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 2U);
+			 * const auto remaining = writer.Remaining();
+			 * // remaining == 2
+			 * @endcode
 			 */
 			std::size_t Remaining() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -124,6 +175,11 @@ namespace ket
 			 * @retval false 残りbyte数が1以上。
 			 * @pre なし。
 			 * @post writer状態とbuffer内容の変更なし。
+			 * @code
+			 * ket::byte_writer::Writer writer(nullptr, 0U);
+			 * const auto full = writer.Full();
+			 * // full == true
+			 * @endcode
 			 */
 			bool Full() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -134,6 +190,13 @@ namespace ket
 			 * @retval false invalid writer、または残りbyte数不足。
 			 * @pre なし。size不足は失敗値として扱う。
 			 * @post 成功時だけoffsetを`size`だけ進める。buffer内容の変更なし。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 2U);
+			 * const auto ok = writer.Skip(1U);
+			 * // ok == true
+			 * // writer.Offset() == 1
+			 * @endcode
 			 */
 			bool Skip(std::size_t size) noexcept;
 
@@ -144,6 +207,12 @@ namespace ket
 			 * @retval false invalid writer、または残りbyte数不足。
 			 * @pre なし。size不足は失敗値として扱う。
 			 * @post 成功時だけoffsetを1進め、対象byteを更新。失敗時はoffsetとbuffer内容を保持。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 1U);
+			 * const auto ok = writer.WriteU8(0x12U);
+			 * // ok == true, buffer[0] == 0x12U, writer.Offset() == 1
+			 * @endcode
 			 */
 			bool WriteU8(std::uint8_t value) noexcept;
 
@@ -155,6 +224,12 @@ namespace ket
 			 * @pre なし。size不足は失敗値として扱う。
 			 * @post
 			 * 成功時だけoffsetを2進め、対象byteをbig-endian順に更新。失敗時はoffsetとbuffer内容を保持。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 2U);
+			 * const auto ok = writer.WriteBe16(0x1234U);
+			 * // ok == true, buffer[0] == 0x12U, buffer[1] == 0x34U
+			 * @endcode
 			 */
 			bool WriteBe16(std::uint16_t value) noexcept;
 
@@ -166,6 +241,12 @@ namespace ket
 			 * @pre なし。size不足は失敗値として扱う。
 			 * @post
 			 * 成功時だけoffsetを4進め、対象byteをbig-endian順に更新。失敗時はoffsetとbuffer内容を保持。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U, 0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 4U);
+			 * const auto ok = writer.WriteBe32(0x12345678U);
+			 * // ok == true, buffer[0] == 0x12U, buffer[3] == 0x78U
+			 * @endcode
 			 */
 			bool WriteBe32(std::uint32_t value) noexcept;
 
@@ -177,6 +258,12 @@ namespace ket
 			 * @pre なし。size不足は失敗値として扱う。
 			 * @post
 			 * 成功時だけoffsetを2進め、対象byteをlittle-endian順に更新。失敗時はoffsetとbuffer内容を保持。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 2U);
+			 * const auto ok = writer.WriteLe16(0x1234U);
+			 * // ok == true, buffer[0] == 0x34U, buffer[1] == 0x12U
+			 * @endcode
 			 */
 			bool WriteLe16(std::uint16_t value) noexcept;
 
@@ -188,6 +275,12 @@ namespace ket
 			 * @pre なし。size不足は失敗値として扱う。
 			 * @post
 			 * 成功時だけoffsetを4進め、対象byteをlittle-endian順に更新。失敗時はoffsetとbuffer内容を保持。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U, 0x00U, 0x00U};
+			 * ket::byte_writer::Writer writer(buffer, 4U);
+			 * const auto ok = writer.WriteLe32(0x12345678U);
+			 * // ok == true, buffer[0] == 0x78U, buffer[3] == 0x12U
+			 * @endcode
 			 */
 			bool WriteLe32(std::uint32_t value) noexcept;
 
@@ -201,6 +294,13 @@ namespace ket
 			 * sizeの組は失敗値として扱う。
 			 * @post
 			 * 成功時だけoffsetを`size`だけ進め、対象範囲を更新。失敗時はoffsetとbuffer内容を保持。
+			 * @code
+			 * std::uint8_t buffer[] = {0x00U, 0x00U};
+			 * const std::uint8_t source[] = {0x10U, 0x20U};
+			 * ket::byte_writer::Writer writer(buffer, 2U);
+			 * const auto ok = writer.WriteBytes(source, 2U);
+			 * // ok == true, buffer[0] == 0x10U, writer.Offset() == 2
+			 * @endcode
 			 */
 			bool WriteBytes(const std::uint8_t* data, std::size_t size) noexcept;
 
