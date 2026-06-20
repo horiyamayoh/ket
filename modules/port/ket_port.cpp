@@ -31,6 +31,12 @@ namespace
 
 	constexpr bool CanAppendDigit(std::uint32_t value, std::uint32_t digit) noexcept
 	{
+		const auto digit_is_decimal = digit <= 9U;
+		if (!digit_is_decimal)
+		{
+			return false;
+		}
+
 		const auto max_before_append = (ket::port::detail::kMaxPortValue - digit) / 10U;
 		return value <= max_before_append;
 	}

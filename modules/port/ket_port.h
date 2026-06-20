@@ -6,7 +6,8 @@
  *
  * @details 0から65535までのTCP/UDP port番号を小さい値型として扱い、wide整数からの
  * 範囲確認、10進文字列からのparse、10進文字列へのformatを提供する。drop-in時は宣言と
- * 実装を同じ単位で持ち出す。socket addressやservice name解決は扱わない。
+ * 実装を同じ単位で持ち出す。socket address、service name解決、protocol別port型、
+ * ephemeral port採番は扱わない。
  *
  * @par プロジェクトへの適用方法
  * `ket_port.h` と `ket_port.cpp` を対象プロジェクトへコピー。
@@ -50,7 +51,7 @@ namespace ket
 		};
 
 		/**
-		 * @brief wide整数からport値型への範囲確認付き変換。
+		 * @brief wide unsigned整数からport値型への範囲確認付き変換。
 		 * @param[in] value 変換対象の整数値。
 		 * @param[out] out 成功時の格納先。失敗時は変更なし。
 		 * @retval true `value`が0から65535の範囲内で、`out`に変換結果を格納。
@@ -63,7 +64,7 @@ namespace ket
 		 * // ok == true, port.value == 443
 		 * @endcode
 		 */
-		constexpr bool TryFromUInt(std::uint32_t value, Port& out) noexcept;
+		constexpr bool TryFromUInt(std::uintmax_t value, Port& out) noexcept;
 
 		/**
 		 * @brief 10進文字列からport値型へのparse。
@@ -104,7 +105,7 @@ namespace ket
 			 * @brief port番号として表現できる最大値。
 			 * @note detail配下の値は公開APIではない。
 			 */
-			constexpr std::uint32_t kMaxPortValue = 65535U;
+			constexpr std::uintmax_t kMaxPortValue = 65535U;
 
 			/**
 			 * @brief wide整数がport番号の範囲内か判定。
@@ -115,7 +116,7 @@ namespace ket
 			 * @post 引数と外部状態の変更なし。
 			 * @note detail配下の関数は公開APIではない。
 			 */
-			constexpr bool IsValidPortValue(std::uint32_t value) noexcept
+			constexpr bool IsValidPortValue(std::uintmax_t value) noexcept
 			{
 				return value <= kMaxPortValue;
 			}
@@ -126,7 +127,7 @@ namespace ket
 		// Public API definitions
 		// -----------------------------------------------------------------------------
 
-		constexpr bool TryFromUInt(std::uint32_t value, Port& out) noexcept
+		constexpr bool TryFromUInt(std::uintmax_t value, Port& out) noexcept
 		{
 			const auto value_is_valid = detail::IsValidPortValue(value);
 			if (!value_is_valid)

@@ -23,7 +23,7 @@
  *
  * @par namespace
  * 公開API：ket::deadline
- * 内部実装：ket::deadline::detail
+ * 内部実装：なし
  */
 
 #include <chrono> // IWYU pragma: export
@@ -104,9 +104,8 @@ namespace ket
 			/**
 			 * @brief 開始点を指定したstopwatch生成。
 			 * @param[in] started_at 保持する開始時刻。
-			 * @retval value `started_at`を開始点にしたstopwatch。
 			 * @pre `started_at`は`std::chrono::steady_clock`由来の時刻。
-			 * @post 引数と外部状態の変更なし。
+			 * @post 引数と外部状態の変更なし。生成後のobjectは`started_at`を開始点として保持。
 			 */
 			explicit Stopwatch(std::chrono::steady_clock::time_point started_at) noexcept;
 
@@ -202,9 +201,8 @@ namespace ket
 			/**
 			 * @brief 期限時刻を指定したdeadline生成。
 			 * @param[in] time_point 保持する期限時刻。
-			 * @retval value `time_point`を期限にしたdeadline。
 			 * @pre `time_point`は`std::chrono::steady_clock`由来の時刻。
-			 * @post 引数と外部状態の変更なし。
+			 * @post 引数と外部状態の変更なし。生成後のobjectは`time_point`を期限として保持。
 			 */
 			explicit Deadline(std::chrono::steady_clock::time_point time_point) noexcept;
 
