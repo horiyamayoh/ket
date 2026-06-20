@@ -53,6 +53,10 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `T`は`std::aligned_storage`で格納可能なobject type。
 			 * @post 保持値なし。heap allocationなし。
+			 * @code
+			 * ket::cache::Lazy<int> value;
+			 * // value.HasValue() == false
+			 * @endcode
 			 */
 			Lazy() noexcept;
 
@@ -61,6 +65,13 @@ namespace ket
 			 * @retval void 戻り値なし。
 			 * @pre `T`のdestructorは例外を投げない。
 			 * @post 保持値があった場合はそのlifetime終了。destructor例外は`std::terminate`。
+			 * @code
+			 * {
+			 *     ket::cache::Lazy<int> value;
+			 *     value.GetOrCreate([] { return 42; });
+			 * }
+			 * // held int lifetime has ended
+			 * @endcode
 			 */
 			~Lazy() noexcept;
 
@@ -75,6 +86,13 @@ namespace ket
 			 * @retval false 保持値なし。
 			 * @pre なし。
 			 * @post `Lazy`と保持値の状態変更なし。
+			 * @code
+			 * ket::cache::Lazy<int> value;
+			 * const auto empty = value.HasValue();
+			 * value.GetOrCreate([] { return 42; });
+			 * const auto created = value.HasValue();
+			 * // empty == false && created == true
+			 * @endcode
 			 */
 			bool HasValue() const noexcept; // NOLINT(modernize-use-nodiscard)
 
@@ -84,6 +102,12 @@ namespace ket
 			 * @pre `T`のdestructorは例外を投げない。
 			 * @post 保持値があった場合はemptyへ戻る。保持値なしの場合は状態変更なし。
 			 * @note 破棄中の例外は`std::terminate`。
+			 * @code
+			 * ket::cache::Lazy<int> value;
+			 * value.GetOrCreate([] { return 42; });
+			 * value.Reset();
+			 * // value.HasValue() == false
+			 * @endcode
 			 */
 			void Reset() noexcept;
 
