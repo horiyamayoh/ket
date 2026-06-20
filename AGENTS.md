@@ -46,7 +46,7 @@ modules/<name>/ket_<name>_test.cpp
 - `template <...>` 宣言の後は必ず改行し、対象の `struct`、`class`、関数宣言、関数定義を同じ行に置かないでください。
 - C++コメントでは `namespace` などC++ネイティブな語を和訳しないでください。
 - C++コメントは「です」「ます」「ください」を避け、体言止めや簡潔な常体で書いてください。
-- 関数Doxygenコメントは宣言側に書き、`@brief`、`@param[in]` / `@param[out]` / `@param[in,out]`、`@retval`、`@pre`、`@post` を必ず含めてください。実装定義側に同じDoxygenを重複させないでください。
+- 関数Doxygenコメントは宣言側に書き、通常の関数には `@brief`、`@param[in]` / `@param[out]` / `@param[in,out]`、`@retval`、`@pre`、`@post` を含めてください。constructorとdestructorは戻り値を持たないため、`@retval` と `@return` を書かず、生成後または破棄後の性質を `@post` に書いてください。実装定義側に同じDoxygenを重複させないでください。
 - 公開ヘッダ内の `struct`、`class`、`enum` にはDoxygenコメントを書き、少なくとも `@brief` を含めてください。
 - 公開API関数のDoxygenには `@code` と `@endcode` を必ず書いてください。入力例と戻り値の形が一目で分かる短い例にしてください。
 - `@note`、`@pre`、`@post` は定型句だけで済ませず、制約、保持する性質、副作用の有無が分かる文章にしてください。
