@@ -50,8 +50,29 @@ namespace
 		}
 	};
 
+	struct StatefulHandler
+	{
+		explicit StatefulHandler(int value) : value_(value) {}
+
+		void SetValue(int value)
+		{
+			value_ = value;
+		}
+
+		int operator()(int input) const noexcept
+		{
+			return value_ + input;
+		}
+
+	  private:
+		int value_;
+	};
+
 	using CopyableOverload = ket::function::Overload<IntHandler>;
 	using MoveOnlyOverload = ket::function::Overload<MoveOnlyHandler>;
+	using ThrowingOverload = ket::function::Overload<ThrowingHandler>;
+	using GeneratedOverload = decltype(ket::function::MakeOverload(IntHandler{}));
+	using DeductedOverload = decltype(ket::function::Overload{IntHandler{}});
 
 	static_assert(std::is_copy_constructible_v<CopyableOverload>,
 				  "copyable callable keeps copy construction");
@@ -61,7 +82,25 @@ namespace
 				  "move-only callable disables copy construction");
 	static_assert(std::is_move_constructible_v<MoveOnlyOverload>,
 				  "move-only callable keeps move construction");
+	static_assert(std::is_same_v<GeneratedOverload, ket::function::Overload<IntHandler>>,
+				  "MakeOverload stores decayed callable types");
+	static_assert(std::is_same_v<DeductedOverload, ket::function::Overload<IntHandler>>,
+				  "Overload has a C++17 deduction guide");
+	static_assert(noexcept(ket::function::MakeOverload(MoveOnlyHandler{})),
+				  "MakeOverload preserves nothrow construction");
+	static_assert(noexcept(std::declval<const MoveOnlyOverload&>()(1)),
+				  "noexcept handler keeps noexcept call");
+	static_assert(!noexcept(std::declval<const ThrowingOverload&>()(1)),
+				  "potentially throwing handler keeps throwing call");
 	static_assert(noexcept(ket::function::Noop{}(1, "ignored")), "Noop call operator is noexcept");
+
+	constexpr bool NoopCanBeEvaluated()
+	{
+		ket::function::Noop{}();
+		return true;
+	}
+
+	static_assert(NoopCanBeEvaluated(), "Noop can be evaluated in constexpr context");
 
 } // namespace
 
@@ -128,15 +167,19 @@ TEST(KetFunctionTest, PreservesReturnValuesAndPropagatesExceptions)
 	const auto throwing_visitor = ket::function::MakeOverload(ThrowingHandler{});
 
 	const auto value = value_visitor(6);
+	const auto throws_handler_error = [&throwing_visitor]()
+	{
+		static_cast<void>(throwing_visitor(1));
+	};
 
 	EXPECT_EQ(value, 7);
-	EXPECT_THROW(throwing_visitor(1), std::runtime_error);
+	EXPECT_THROW(throws_handler_error(), std::runtime_error);
 }
 
 /**
  * @test
  * @brief Noopの任意引数破棄確認。
- * @details 複数型の引数とmove-only値を渡し、Noopが例外を送出せず呼び出せることを確認。
+ * @details 0個の引数、複数型の引数、move-only値を渡し、Noopが引数評価後に値を消費しないことを確認。
  * @pre C++17以降。
  * @post Noopは引数評価以外の外部状態を変更しない。
  */
@@ -144,8 +187,15 @@ TEST(KetFunctionTest, NoopAcceptsArbitraryArguments)
 {
 	const auto noop = ket::function::Noop{};
 	auto ptr = std::make_unique<int>(42);
+	auto value = 7;
 
-	EXPECT_NO_THROW(noop(1, std::string("ignored"), std::move(ptr)));
+	noop();
+	noop(value, std::string("ignored"), ptr);
+	noop(std::make_unique<int>(24));
+
+	EXPECT_EQ(value, 7);
+	ASSERT_NE(ptr, nullptr);
+	EXPECT_EQ(*ptr, 42);
 }
 
 /**
@@ -158,14 +208,19 @@ TEST(KetFunctionTest, NoopAcceptsArbitraryArguments)
  */
 TEST(KetFunctionTest, PreservesCallableCopyAndMoveConstraints)
 {
+	auto stateful = StatefulHandler(10);
+	const auto copied_from_lvalue = ket::function::MakeOverload(stateful);
 	const auto copyable = ket::function::MakeOverload(IntHandler{});
 	const auto copied = copyable;
 	auto move_only = ket::function::MakeOverload(MoveOnlyHandler{});
 	auto moved = std::move(move_only);
 
+	stateful.SetValue(100);
+	const auto copied_from_lvalue_result = copied_from_lvalue(5);
 	const auto copied_result = copied(1);
 	const auto moved_result = moved(41);
 
+	EXPECT_EQ(copied_from_lvalue_result, 15);
 	EXPECT_EQ(copied_result, 2);
 	EXPECT_EQ(moved_result, 42);
 }

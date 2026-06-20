@@ -23,9 +23,10 @@
  *
  * @par namespace
  * 公開API：ket::function
- * 内部実装：ket::function::detail
+ * 内部実装：なし
  */
 
+#include <type_traits>
 #include <utility>
 
 namespace ket
@@ -37,8 +38,9 @@ namespace ket
 		// -----------------------------------------------------------------------------
 
 		/**
-		 * @brief 複数callableを束ねるoverload set。
-		 * @tparam Fs 値として保持するcallable型。
+		 * @brief 1個以上のcallableを束ねるoverload set。
+		 * @tparam Fs 値として保持する、重複しない継承可能なclass型。
+		 * @pre `Fs`は重複しない継承可能なclass型で、有効なoverload setを構成する。
 		 * @note 各callableのcopy/move制約と呼び出し例外は元の型に従う。
 		 * @code
 		 * const auto visitor = ket::function::MakeOverload(
@@ -49,16 +51,29 @@ namespace ket
 		template <typename... Fs>
 		struct Overload : Fs...
 		{
+			static_assert(sizeof...(Fs) > 0,
+						  "ket::function::Overload requires at least one callable.");
+			static_assert((std::is_class_v<Fs> && ...),
+						  "ket::function::Overload stores callable class types only.");
+
 			using Fs::operator()...;
 		};
 
 		/**
-		 * @brief 複数callableからoverload setを生成。
-		 * @param[in] fs 値として保持するcallable。
-		 * @retval value `fs`を値として保持する`Overload`。
-		 * @pre 各callableは継承可能なclass型で、同時に有効なoverload setを構成する。
+		 * @brief `Overload{callable...}`のclass template argument deduction。
+		 */
+		template <typename... Fs>
+		Overload(Fs...) -> Overload<Fs...>;
+
+		/**
+		 * @brief 1個以上のcallableからoverload setを生成。
+		 * @param[in] fs `Overload`へ値として保持するcallable。
+		 * @retval value `std::decay_t<Fs>`を値として保持する`Overload`。
+		 * @pre 1つ以上のcallableを渡す。decay後の各callableは継承可能なclass型で、
+		 * 型が重複せず、同時に有効なoverload setを構成する。
 		 * @post 引数のcopy/move以外の外部状態の変更なし。
-		 * @note callableのcopy/move制約は型に従い、呼び出し例外はhandlerから伝播。
+		 * @note lvalue callableはcopy、rvalue
+		 * callableはmoveして保持。呼び出し例外はhandlerから伝播。
 		 * @code
 		 * const auto visitor = ket::function::MakeOverload(
 		 *     [](int value) { return std::to_string(value); },
@@ -68,7 +83,8 @@ namespace ket
 		 * @endcode
 		 */
 		template <typename... Fs>
-		Overload<Fs...> MakeOverload(Fs... fs);
+		constexpr Overload<std::decay_t<Fs>...> MakeOverload(Fs&&... fs) noexcept(
+			noexcept(Overload<std::decay_t<Fs>...>{std::forward<Fs>(fs)...}));
 
 		/**
 		 * @brief 任意引数を無視するnoexcept callable。
@@ -88,7 +104,7 @@ namespace ket
 			 * @endcode
 			 */
 			template <typename... Args>
-			void operator()(Args&&... args) const noexcept
+			constexpr void operator()(Args&&... args) const noexcept
 			{
 				(static_cast<void>(args), ...);
 			}
@@ -99,9 +115,10 @@ namespace ket
 		// -----------------------------------------------------------------------------
 
 		template <typename... Fs>
-		Overload<Fs...> MakeOverload(Fs... fs)
+		constexpr Overload<std::decay_t<Fs>...> MakeOverload(Fs&&... fs) noexcept(
+			noexcept(Overload<std::decay_t<Fs>...>{std::forward<Fs>(fs)...}))
 		{
-			return Overload<Fs...>{std::move(fs)...};
+			return Overload<std::decay_t<Fs>...>{std::forward<Fs>(fs)...};
 		}
 
 	} // namespace function
