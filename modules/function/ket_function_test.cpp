@@ -68,11 +68,63 @@ namespace
 		int value_;
 	};
 
+	struct MoveObservableHandler
+	{
+		MoveObservableHandler(int value, bool& moved_from) : value_(value), moved_from_(&moved_from)
+		{
+		}
+
+		MoveObservableHandler(const MoveObservableHandler&) = default;
+		MoveObservableHandler& operator=(const MoveObservableHandler&) = default;
+
+		MoveObservableHandler(MoveObservableHandler&& other) noexcept
+			: value_(other.value_), moved_from_(other.moved_from_)
+		{
+			other.value_ = -1;
+			if (other.moved_from_ != nullptr)
+			{
+				*other.moved_from_ = true;
+			}
+		}
+
+		MoveObservableHandler& operator=(MoveObservableHandler&& other) noexcept
+		{
+			if (this != &other)
+			{
+				value_ = other.value_;
+				moved_from_ = other.moved_from_;
+				other.value_ = -1;
+				if (other.moved_from_ != nullptr)
+				{
+					*other.moved_from_ = true;
+				}
+			}
+
+			return *this;
+		}
+
+		void SetValue(int value)
+		{
+			value_ = value;
+		}
+
+		int operator()(int input) const noexcept
+		{
+			return value_ + input;
+		}
+
+	  private:
+		int value_;
+		bool* moved_from_;
+	};
+
 	using CopyableOverload = ket::function::Overload<IntHandler>;
 	using MoveOnlyOverload = ket::function::Overload<MoveOnlyHandler>;
 	using ThrowingOverload = ket::function::Overload<ThrowingHandler>;
 	using GeneratedOverload = decltype(ket::function::MakeOverload(IntHandler{}));
 	using DeductedOverload = decltype(ket::function::Overload{IntHandler{}});
+	using MultiDeductedOverload =
+		decltype(ket::function::Overload{IntHandler{}, StringSizeHandler{}});
 
 	static_assert(std::is_copy_constructible_v<CopyableOverload>,
 				  "copyable callable keeps copy construction");
@@ -86,6 +138,9 @@ namespace
 				  "MakeOverload stores decayed callable types");
 	static_assert(std::is_same_v<DeductedOverload, ket::function::Overload<IntHandler>>,
 				  "Overload has a C++17 deduction guide");
+	static_assert(std::is_same_v<MultiDeductedOverload,
+								 ket::function::Overload<IntHandler, StringSizeHandler>>,
+				  "Overload deduction guide handles multiple callable types");
 	static_assert(noexcept(ket::function::MakeOverload(MoveOnlyHandler{})),
 				  "MakeOverload preserves nothrow construction");
 	static_assert(noexcept(std::declval<const MoveOnlyOverload&>()(1)),
@@ -100,7 +155,15 @@ namespace
 		return true;
 	}
 
+	constexpr bool NoopCanIgnoreLiteralArguments()
+	{
+		ket::function::Noop{}(1, 'a');
+		return true;
+	}
+
 	static_assert(NoopCanBeEvaluated(), "Noop can be evaluated in constexpr context");
+	static_assert(NoopCanIgnoreLiteralArguments(),
+				  "Noop can ignore literal arguments in constexpr context");
 
 } // namespace
 
@@ -136,15 +199,14 @@ TEST(KetFunctionTest, VisitsVariantWithGeneratedOverload)
 /**
  * @test
  * @brief 複数型handlerのoverload解決確認。
- * @details 明示したcallable型からOverloadを作り、intとstd::stringの呼び出しで異なる
- * operatorが選ばれることを確認。
+ * @details C++17 deduction guideで複数callable型からOverloadを作り、intとstd::stringの
+ * 呼び出しで異なるoperatorが選ばれることを確認。
  * @pre C++17以降。
  * @post テスト対象APIと外部状態の変更なし。
  */
 TEST(KetFunctionTest, ResolvesMultipleCallableTypes)
 {
-	const auto visitor =
-		ket::function::Overload<IntHandler, StringSizeHandler>{IntHandler{}, StringSizeHandler{}};
+	const auto visitor = ket::function::Overload{IntHandler{}, StringSizeHandler{}};
 	const auto text = std::string("abcd");
 
 	const auto int_result = visitor(41);
@@ -209,18 +271,25 @@ TEST(KetFunctionTest, NoopAcceptsArbitraryArguments)
 TEST(KetFunctionTest, PreservesCallableCopyAndMoveConstraints)
 {
 	auto stateful = StatefulHandler(10);
+	auto moved_from_lvalue = false;
+	auto move_observable = MoveObservableHandler(20, moved_from_lvalue);
 	const auto copied_from_lvalue = ket::function::MakeOverload(stateful);
+	const auto move_observable_copy = ket::function::MakeOverload(move_observable);
 	const auto copyable = ket::function::MakeOverload(IntHandler{});
 	const auto copied = copyable;
 	auto move_only = ket::function::MakeOverload(MoveOnlyHandler{});
 	auto moved = std::move(move_only);
 
 	stateful.SetValue(100);
+	move_observable.SetValue(200);
 	const auto copied_from_lvalue_result = copied_from_lvalue(5);
+	const auto move_observable_result = move_observable_copy(2);
 	const auto copied_result = copied(1);
 	const auto moved_result = moved(41);
 
+	EXPECT_EQ(moved_from_lvalue, false);
 	EXPECT_EQ(copied_from_lvalue_result, 15);
+	EXPECT_EQ(move_observable_result, 22);
 	EXPECT_EQ(copied_result, 2);
 	EXPECT_EQ(moved_result, 42);
 }
