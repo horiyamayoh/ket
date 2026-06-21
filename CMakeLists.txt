@@ -165,6 +165,20 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_ranges_test ket_ranges_cxx11_check)
 
 	ket_add_module_test(
+		ket_pointer_test
+		SOURCES
+			modules/pointer/ket_pointer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_pointer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/pointer/ket_pointer_cxx11_check.cpp
+	)
+	add_dependencies(ket_pointer_test ket_pointer_cxx11_check)
+
+	ket_add_module_test(
 		ket_object_test
 		SOURCES
 			modules/object/ket_object_test.cpp
@@ -339,6 +353,22 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/cli/ket_cli_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_tlv_test
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_tlv_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_cxx11_check.cpp
+	)
+	add_dependencies(ket_tlv_test ket_tlv_cxx11_check)
 
 	ket_add_module_test(
 		ket_tuple_test
