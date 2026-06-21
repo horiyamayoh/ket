@@ -65,6 +65,27 @@ namespace
 				  "uint32_t BCD output is constexpr");
 	static_assert(OptionalIsEmpty(ket::bcd::FromInt<std::uint8_t>(100)),
 				  "out-of-range BCD output is constexpr");
+	static_assert(ket::bcd::IsBcdByte(static_cast<std::uint8_t>(0x99U)),
+				  "uint8_t BCD validity is constexpr");
+	static_assert(!ket::bcd::IsBcdByte(static_cast<std::uint8_t>(0x9AU)),
+				  "uint8_t invalid BCD validity is constexpr");
+	static_assert(ket::bcd::IsBcd16(static_cast<std::uint16_t>(0x9999U)),
+				  "uint16_t BCD validity is constexpr");
+	static_assert(!ket::bcd::IsBcd16(static_cast<std::uint16_t>(0x99A9U)),
+				  "uint16_t invalid BCD validity is constexpr");
+	static_assert(ket::bcd::IsBcd32(std::uint32_t{0x99999999U}),
+				  "uint32_t BCD validity is constexpr");
+	static_assert(!ket::bcd::IsBcd32(std::uint32_t{0x9999999AU}),
+				  "uint32_t invalid BCD validity is constexpr");
+	static_assert(ket::bcd::Validate(static_cast<std::uint8_t>(0x42U)).Ok(),
+				  "uint8_t BCD validation is constexpr");
+	static_assert(!ket::bcd::Validate(static_cast<std::uint8_t>(0x4AU)).Ok(),
+				  "uint8_t invalid BCD validation is constexpr");
+	static_assert(ket::bcd::MaxInt<std::uint8_t>() == 99, "uint8_t BCD max integer is constexpr");
+	static_assert(ket::bcd::MaxInt<std::uint16_t>() == 9999,
+				  "uint16_t BCD max integer is constexpr");
+	static_assert(ket::bcd::MaxInt<std::uint32_t>() == 99999999,
+				  "uint32_t BCD max integer is constexpr");
 
 } // namespace
 
@@ -154,6 +175,66 @@ TEST(KetBcdTest, RejectsInvalidWideBcd)
 
 /**
  * @test
+ * @brief 固定幅パックBCDの公開validity helper確認。
+ * @details 2桁、4桁、8桁のvalid BCDとinvalid BCDをbool helperで判定することを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ReportsFixedWidthBcdValidity)
+{
+	const auto valid_uint8 = ket::bcd::IsBcdByte(static_cast<std::uint8_t>(0x99U));
+	const auto invalid_uint8 = ket::bcd::IsBcdByte(static_cast<std::uint8_t>(0x9AU));
+	const auto valid_uint16 = ket::bcd::IsBcd16(static_cast<std::uint16_t>(0x9999U));
+	const auto invalid_uint16 = ket::bcd::IsBcd16(static_cast<std::uint16_t>(0x99A9U));
+	const auto valid_uint32 = ket::bcd::IsBcd32(std::uint32_t{0x99999999U});
+	const auto invalid_uint32 = ket::bcd::IsBcd32(std::uint32_t{0x9999999AU});
+
+	EXPECT_TRUE(valid_uint8);
+	EXPECT_FALSE(invalid_uint8);
+	EXPECT_TRUE(valid_uint16);
+	EXPECT_FALSE(invalid_uint16);
+	EXPECT_TRUE(valid_uint32);
+	EXPECT_FALSE(invalid_uint32);
+}
+
+/**
+ * @test
+ * @brief 固定幅パックBCDの診断付きvalidation確認。
+ * @details high nibbleとlow nibbleの不正値について、byte
+ * offset、actual、nibble位置を返すことを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ReportsFixedWidthBcdValidationDiagnostics)
+{
+	const auto valid = ket::bcd::Validate(static_cast<std::uint8_t>(0x42U));
+	const auto invalid_low = ket::bcd::Validate(static_cast<std::uint8_t>(0x4AU));
+	const auto invalid_high = ket::bcd::Validate(static_cast<std::uint8_t>(0xA4U));
+	const auto invalid_wide = ket::bcd::Validate(static_cast<std::uint16_t>(0x12A4U));
+	const auto valid_ok = valid.Ok();
+	const auto invalid_low_ok = invalid_low.Ok();
+	const auto invalid_high_ok = invalid_high.Ok();
+	const auto invalid_wide_ok = invalid_wide.Ok();
+
+	EXPECT_TRUE(valid_ok);
+	EXPECT_EQ(valid.error, ket::bcd::ValidationError::kNone);
+	EXPECT_FALSE(invalid_low_ok);
+	EXPECT_EQ(invalid_low.error, ket::bcd::ValidationError::kInvalidNibble);
+	EXPECT_EQ(invalid_low.byte_offset, 0U);
+	EXPECT_EQ(invalid_low.actual, std::uint8_t{0x0AU});
+	EXPECT_FALSE(invalid_low.high_nibble);
+	EXPECT_FALSE(invalid_high_ok);
+	EXPECT_EQ(invalid_high.byte_offset, 0U);
+	EXPECT_EQ(invalid_high.actual, std::uint8_t{0x0AU});
+	EXPECT_TRUE(invalid_high.high_nibble);
+	EXPECT_FALSE(invalid_wide_ok);
+	EXPECT_EQ(invalid_wide.byte_offset, 1U);
+	EXPECT_EQ(invalid_wide.actual, std::uint8_t{0x0AU});
+	EXPECT_TRUE(invalid_wide.high_nibble);
+}
+
+/**
+ * @test
  * @brief 2桁固定幅パックBCDへの10進整数変換確認。
  * @details 代表値と境界値を入力し、2桁packed BCDへ変換されることを確認。
  * @pre C++17以降。
@@ -204,6 +285,24 @@ TEST(KetBcdTest, ConvertsIntToUint32Bcd)
 
 	EXPECT_EQ(date, std::optional<std::uint32_t>(0x20260613U));
 	EXPECT_EQ(maximum, std::optional<std::uint32_t>(0x99999999U));
+}
+
+/**
+ * @test
+ * @brief 固定幅パックBCDの最大10進整数確認。
+ * @details 各固定幅の桁数に対応した最大10進整数を返すことを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ReportsFixedWidthMaximumIntegers)
+{
+	const auto max_uint8 = ket::bcd::MaxInt<std::uint8_t>();
+	const auto max_uint16 = ket::bcd::MaxInt<std::uint16_t>();
+	const auto max_uint32 = ket::bcd::MaxInt<std::uint32_t>();
+
+	EXPECT_EQ(max_uint8, 99);
+	EXPECT_EQ(max_uint16, 9999);
+	EXPECT_EQ(max_uint32, 99999999);
 }
 
 /**
@@ -324,6 +423,38 @@ TEST(KetBcdTest, RejectsInvalidBcdBytes)
 	EXPECT_EQ(invalid_first_text, std::nullopt);
 	EXPECT_EQ(invalid_high_nibble_text, std::nullopt);
 	EXPECT_EQ(invalid_second_text, std::nullopt);
+}
+
+/**
+ * @test
+ * @brief 任意byte列パックBCDの診断付きvalidation確認。
+ * @details valid empty、valid bytes、invalid storage、first invalid byte/nibbleを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetBcdTest, ReportsBcdByteSequenceValidationDiagnostics)
+{
+	const auto valid_bytes = std::array<std::uint8_t, 2>{{0x00U, 0x42U}};
+	const auto invalid_bytes = std::array<std::uint8_t, 3>{{0x12U, 0x3AU, 0xFFU}};
+
+	const auto valid_empty = ket::bcd::Validate(nullptr, 0U);
+	const auto valid = ket::bcd::Validate(valid_bytes.data(), valid_bytes.size());
+	const auto invalid_storage = ket::bcd::Validate(nullptr, 1U);
+	const auto invalid = ket::bcd::Validate(invalid_bytes.data(), invalid_bytes.size());
+	const auto valid_empty_ok = valid_empty.Ok();
+	const auto valid_ok = valid.Ok();
+	const auto invalid_storage_ok = invalid_storage.Ok();
+	const auto invalid_ok = invalid.Ok();
+
+	EXPECT_TRUE(valid_empty_ok);
+	EXPECT_TRUE(valid_ok);
+	EXPECT_FALSE(invalid_storage_ok);
+	EXPECT_EQ(invalid_storage.error, ket::bcd::ValidationError::kInvalidStorage);
+	EXPECT_FALSE(invalid_ok);
+	EXPECT_EQ(invalid.error, ket::bcd::ValidationError::kInvalidNibble);
+	EXPECT_EQ(invalid.byte_offset, 1U);
+	EXPECT_EQ(invalid.actual, std::uint8_t{0x0AU});
+	EXPECT_FALSE(invalid.high_nibble);
 }
 
 /**

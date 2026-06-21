@@ -33,15 +33,45 @@ namespace
 		int value = 0;
 	};
 
+	struct WideIntegerFrame
+	{
+		std::uint32_t be32 = 0U;
+		std::uint32_t le32 = 0U;
+		std::uint64_t be64 = 0U;
+		std::uint64_t le64 = 0U;
+		std::int16_t i16 = 0;
+		std::int32_t i32 = 0;
+		std::int64_t i64 = 0;
+	};
+
+	struct WideBcdFrame
+	{
+		int be16 = 0;
+		int le16 = 0;
+		int be32 = 0;
+		int le32 = 0;
+	};
+
 	struct BitsFrame
 	{
 		std::uint8_t mode = 0U;
 		std::uint8_t flags = 0U;
 	};
 
+	struct Bits16Frame
+	{
+		std::uint16_t low = 0U;
+		std::uint16_t high = 0U;
+	};
+
 	struct PayloadFrame
 	{
 		std::array<std::uint8_t, 2U> copy{};
+		ket::byte_view::View view;
+	};
+
+	struct EmptyViewFrame
+	{
 		ket::byte_view::View view;
 	};
 
@@ -93,6 +123,50 @@ namespace
 					ket::wire::Bit<BitsFrame, &BitsFrame::flags, 4U, 2U>("flags")})});
 	}
 
+	auto MakeWideIntegerSchema()
+	{
+		return ket::wire::MakeSchema<WideIntegerFrame>(
+			"WideIntegerFrame",
+			std::array<ket::wire::Field<WideIntegerFrame>, 7U>{
+				ket::wire::U32Be<WideIntegerFrame, &WideIntegerFrame::be32>("be32"),
+				ket::wire::U32Le<WideIntegerFrame, &WideIntegerFrame::le32>("le32"),
+				ket::wire::U64Be<WideIntegerFrame, &WideIntegerFrame::be64>("be64"),
+				ket::wire::U64Le<WideIntegerFrame, &WideIntegerFrame::le64>("le64"),
+				ket::wire::I16Be<WideIntegerFrame, &WideIntegerFrame::i16>("i16"),
+				ket::wire::I32Le<WideIntegerFrame, &WideIntegerFrame::i32>("i32"),
+				ket::wire::I64Be<WideIntegerFrame, &WideIntegerFrame::i64>("i64")});
+	}
+
+	auto MakeWideBcdSchema()
+	{
+		return ket::wire::MakeSchema<WideBcdFrame>(
+			"WideBcdFrame",
+			std::array<ket::wire::Field<WideBcdFrame>, 4U>{
+				ket::wire::BcdU16Be<WideBcdFrame, &WideBcdFrame::be16>("be16"),
+				ket::wire::BcdU16Le<WideBcdFrame, &WideBcdFrame::le16>("le16"),
+				ket::wire::BcdU32Be<WideBcdFrame, &WideBcdFrame::be32>("be32"),
+				ket::wire::BcdU32Le<WideBcdFrame, &WideBcdFrame::le32>("le32")});
+	}
+
+	auto MakeBits16Schema()
+	{
+		return ket::wire::MakeSchema<Bits16Frame>(
+			"Bits16Frame",
+			std::array<ket::wire::Field<Bits16Frame>, 2U>{
+				ket::wire::BitsU16Be<Bits16Frame>(
+					"be_bits",
+					std::array<ket::wire::BitMember<Bits16Frame>, 3U>{
+						ket::wire::Bit<Bits16Frame, &Bits16Frame::low, 0U, 4U>("low"),
+						ket::wire::ReservedBits<Bits16Frame, 4U, 4U>("reserved", 3U),
+						ket::wire::Bit<Bits16Frame, &Bits16Frame::high, 8U, 4U>("high")}),
+				ket::wire::BitsU16Le<Bits16Frame>(
+					"le_bits",
+					std::array<ket::wire::BitMember<Bits16Frame>, 3U>{
+						ket::wire::Bit<Bits16Frame, &Bits16Frame::low, 0U, 4U>("low"),
+						ket::wire::ReservedBits<Bits16Frame, 4U, 4U>("reserved", 3U),
+						ket::wire::Bit<Bits16Frame, &Bits16Frame::high, 8U, 4U>("high")})});
+	}
+
 	bool LengthMatchesPayload(const ValidatedFrame& value, ket::wire::Status& status) noexcept
 	{
 		const auto payload_size = value.payload.size();
@@ -133,6 +207,16 @@ namespace
 		(void)value;
 		(void)status;
 		return false;
+	}
+
+	int g_validation_call_count = 0;
+
+	bool CountValidationCall(const CallbackFrame& value, ket::wire::Status& status) noexcept
+	{
+		(void)value;
+		status = ket::wire::Status{};
+		++g_validation_call_count;
+		return true;
 	}
 
 } // namespace
@@ -219,6 +303,44 @@ TEST(KetWireTest, DecodesExactFrameAndEncodesOwningBytes)
 
 /**
  * @test
+ * @brief wide integer fieldのmodule-backed endian roundtrip確認。
+ * @details U32/U64とsigned two's complement fieldをdecode/encodeし、big/little endianと
+ * signed最小値を保持することを確認。
+ * @pre C++17以降。
+ * @post input byte列とschemaは変更されず、encode resultだけが所有byte列を保持。
+ */
+TEST(KetWireTest, HandlesWideIntegerFieldsWithEndianModules)
+{
+	const auto schema = MakeWideIntegerSchema();
+	const auto data = std::array<std::uint8_t, 38U>{{
+		0x01U, 0x02U, 0x03U, 0x04U, 0x08U, 0x07U, 0x06U, 0x05U, 0x11U, 0x12U, 0x13U, 0x14U, 0x15U,
+		0x16U, 0x17U, 0x18U, 0x28U, 0x27U, 0x26U, 0x25U, 0x24U, 0x23U, 0x22U, 0x21U, 0xFFU, 0xFEU,
+		0xFDU, 0xFFU, 0xFFU, 0xFFU, 0x80U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+	}};
+
+	const auto decoded =
+		ket::wire::DecodeExact(ket::byte_view::View(data.data(), data.size()), schema);
+	const auto decoded_ok = decoded.status.Ok();
+	ASSERT_NE(decoded.value, std::nullopt);
+	const auto& value = decoded.value.value();
+	EXPECT_TRUE(decoded_ok);
+	EXPECT_EQ(value.be32, std::uint32_t{0x01020304U});
+	EXPECT_EQ(value.le32, std::uint32_t{0x05060708U});
+	EXPECT_EQ(value.be64, std::uint64_t{0x1112131415161718ULL});
+	EXPECT_EQ(value.le64, std::uint64_t{0x2122232425262728ULL});
+	EXPECT_EQ(value.i16, static_cast<std::int16_t>(-2));
+	EXPECT_EQ(value.i32, -3);
+	EXPECT_EQ(value.i64, std::numeric_limits<std::int64_t>::min());
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(encoded.bytes.value(), (std::vector<std::uint8_t>(data.begin(), data.end())));
+}
+
+/**
+ * @test
  * @brief prefix decodeとtrailing bytes diagnostics確認。
  * @details exact decodeはtrailing bytesを拒否し、prefix
  * decodeは同じ入力からschema分だけ消費することを確認。
@@ -266,10 +388,69 @@ TEST(KetWireTest, OwnsFieldArrayInsideSchema)
 		ket::wire::DecodeExact(ket::byte_view::View(data.data(), data.size()), schema);
 	ASSERT_NE(decoded.value, std::nullopt);
 	const auto& decoded_value = decoded.value.value();
-	EXPECT_EQ(schema.fields[0].name, "command");
+	const auto* first_field = schema.FieldAt(0U);
+	ASSERT_NE(first_field, nullptr);
+	EXPECT_EQ(first_field->Name(), "command");
 	EXPECT_EQ(decoded_value.command, 1U);
 	EXPECT_EQ(decoded_value.count, 0x0203U);
 	EXPECT_EQ(decoded_value.mode, 4U);
+}
+
+/**
+ * @test
+ * @brief descriptor metadata accessor確認。
+ * @details schema、field、bit memberの公開metadataをread-only accessor経由で取得できることを確認。
+ * @pre C++17以降。
+ * @post descriptorの内部callbackやvalidation stateを直接変更せずmetadataを参照可能。
+ */
+TEST(KetWireTest, ExposesReadOnlyDescriptorMetadata)
+{
+	const auto schema = MakeBits16Schema();
+	const auto schema_ok = schema.SchemaStatus().Ok();
+	const auto schema_fixed = schema.IsFixedSize();
+	EXPECT_TRUE(schema_ok);
+	EXPECT_EQ(schema.Name(), "Bits16Frame");
+	EXPECT_EQ(schema.FieldCountValue(), 2U);
+	EXPECT_TRUE(schema_fixed);
+	EXPECT_EQ(schema.FixedSize(), 4U);
+	EXPECT_EQ(schema.MaxSize(), 4U);
+
+	const auto* field = schema.FieldAt(0U);
+	ASSERT_NE(field, nullptr);
+	EXPECT_EQ(field->Name(), "be_bits");
+	EXPECT_EQ(field->Group(), "be_bits");
+	EXPECT_EQ(field->Kind(), ket::wire::FieldKind::kBits);
+	EXPECT_EQ(field->EncodedSize(), 2U);
+	EXPECT_EQ(field->MaxEncodedSize(), 2U);
+	const auto field_fixed = field->IsFixedSize();
+	const auto field_valid = field->IsValid();
+	EXPECT_TRUE(field_fixed);
+	EXPECT_TRUE(field_valid);
+	EXPECT_EQ(field->BitMemberCount(), 3U);
+
+	const auto* low = field->BitMemberAt(0U);
+	ASSERT_NE(low, nullptr);
+	EXPECT_EQ(low->Name(), "low");
+	EXPECT_EQ(low->Shift(), 0U);
+	EXPECT_EQ(low->Width(), 4U);
+	const auto low_has_member = low->HasMember();
+	const auto low_valid = low->IsValid();
+	EXPECT_TRUE(low_has_member);
+	EXPECT_TRUE(low_valid);
+
+	const auto* reserved = field->BitMemberAt(1U);
+	ASSERT_NE(reserved, nullptr);
+	EXPECT_EQ(reserved->Name(), "reserved");
+	EXPECT_EQ(reserved->Shift(), 4U);
+	EXPECT_EQ(reserved->Width(), 4U);
+	EXPECT_EQ(reserved->Expected(), 3U);
+	const auto reserved_has_member = reserved->HasMember();
+	const auto reserved_valid = reserved->IsValid();
+	EXPECT_FALSE(reserved_has_member);
+	EXPECT_TRUE(reserved_valid);
+
+	const auto* out_of_range = field->BitMemberAt(3U);
+	EXPECT_EQ(out_of_range, nullptr);
 }
 
 /**
@@ -320,6 +501,10 @@ TEST(KetWireTest, EncodesToFixedBufferWithoutTouchingExtraCapacity)
 	const auto short_result = ket::wire::EncodeTo(
 		value, schema, ket::byte_view::MutableView(short_output.data(), short_output.size()));
 	EXPECT_EQ(short_result.status.error, ket::wire::Error::kShortOutput);
+	EXPECT_EQ(short_result.status.field, "mode");
+	EXPECT_EQ(short_result.status.offset, 4U);
+	EXPECT_EQ(short_result.status.required_size, 1U);
+	EXPECT_EQ(short_result.status.available_size, 0U);
 	EXPECT_EQ(short_result.encoded_size, 0U);
 	EXPECT_EQ(short_output, (std::array<std::uint8_t, 4U>{{0xAAU, 0xAAU, 0xAAU, 0xAAU}}));
 
@@ -372,6 +557,81 @@ TEST(KetWireTest, HandlesBcdIntegerFields)
 
 /**
  * @test
+ * @brief wide BCD fieldのmodule-backed validation確認。
+ * @details BCD U16/U32 big/little endianをdecode/encodeし、invalid nibble diagnosticsが
+ * bcd module由来のactual値を保持することを確認。
+ * @pre C++17以降。
+ * @post BCD失敗resultはvalueなし、成功時は入力byte列へroundtrip。
+ */
+TEST(KetWireTest, HandlesWideBcdFieldsWithBcdModuleDiagnostics)
+{
+	const auto schema = MakeWideBcdSchema();
+	const auto data = std::array<std::uint8_t, 12U>{{
+		0x12U,
+		0x34U,
+		0x78U,
+		0x56U,
+		0x20U,
+		0x26U,
+		0x06U,
+		0x13U,
+		0x31U,
+		0x12U,
+		0x24U,
+		0x20U,
+	}};
+
+	const auto decoded =
+		ket::wire::DecodeExact(ket::byte_view::View(data.data(), data.size()), schema);
+	const auto decoded_ok = decoded.status.Ok();
+	ASSERT_NE(decoded.value, std::nullopt);
+	const auto& value = decoded.value.value();
+	EXPECT_TRUE(decoded_ok);
+	EXPECT_EQ(value.be16, 1234);
+	EXPECT_EQ(value.le16, 5678);
+	EXPECT_EQ(value.be32, 20260613);
+	EXPECT_EQ(value.le32, 20241231);
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(encoded.bytes.value(), (std::vector<std::uint8_t>(data.begin(), data.end())));
+
+	const auto invalid_data = std::array<std::uint8_t, 12U>{{
+		0x12U,
+		0x34U,
+		0x7AU,
+		0x56U,
+		0x20U,
+		0x26U,
+		0x06U,
+		0x13U,
+		0x31U,
+		0x12U,
+		0x24U,
+		0x20U,
+	}};
+	const auto invalid = ket::wire::DecodeExact(
+		ket::byte_view::View(invalid_data.data(), invalid_data.size()), schema);
+	const auto invalid_has_value = invalid.value.has_value();
+	EXPECT_FALSE(invalid_has_value);
+	EXPECT_EQ(invalid.status.error, ket::wire::Error::kInvalidBcd);
+	EXPECT_EQ(invalid.status.field, "le16");
+	EXPECT_EQ(invalid.status.offset, 2U);
+	EXPECT_EQ(invalid.status.actual, 0x0AU);
+
+	const WideBcdFrame too_large{1234, 10000, 20260613, 20241231};
+	const auto too_large_result = ket::wire::Encode(too_large, schema);
+	const auto too_large_has_bytes = too_large_result.bytes.has_value();
+	EXPECT_FALSE(too_large_has_bytes);
+	EXPECT_EQ(too_large_result.status.error, ket::wire::Error::kValueOutOfRange);
+	EXPECT_EQ(too_large_result.status.field, "le16");
+	EXPECT_EQ(too_large_result.status.offset, 2U);
+}
+
+/**
+ * @test
  * @brief grouped bit field roundtrip確認。
  * @details 1byte storageをlogical fieldsへ展開し、reserved bitを検査し、range
  * overflow時にoutputを保つことを確認。
@@ -409,6 +669,75 @@ TEST(KetWireTest, HandlesGroupedBitsAndReservedBits)
 		overflow, schema, ket::byte_view::MutableView(output.data(), output.size()));
 	EXPECT_EQ(overflow_result.status.error, ket::wire::Error::kValueOutOfRange);
 	EXPECT_EQ(output[0], 0xAAU);
+
+	const auto offset_schema = ket::wire::MakeSchema<BitsFrame>(
+		"OffsetBitsFrame",
+		std::array<ket::wire::Field<BitsFrame>, 2U>{
+			ket::wire::PadBytes<BitsFrame>("prefix", 1U, 0U),
+			ket::wire::BitsU8<BitsFrame>(
+				"flags",
+				std::array<ket::wire::BitMember<BitsFrame>, 2U>{
+					ket::wire::Bit<BitsFrame, &BitsFrame::mode, 0U, 3U>("mode"),
+					ket::wire::Bit<BitsFrame, &BitsFrame::flags, 4U, 2U>("flags")})});
+	const auto offset_result = ket::wire::Encode(overflow, offset_schema);
+	const auto offset_has_bytes = offset_result.bytes.has_value();
+	EXPECT_FALSE(offset_has_bytes);
+	EXPECT_EQ(offset_result.status.error, ket::wire::Error::kValueOutOfRange);
+	EXPECT_EQ(offset_result.status.field, "flags");
+	EXPECT_EQ(offset_result.status.offset, 1U);
+}
+
+/**
+ * @test
+ * @brief grouped bit descriptorの重複範囲拒否確認。
+ * @details logical bitとreserved bitのcoverageが重なるdescriptorをschema
+ * errorとして扱うことを確認。
+ * @pre C++17以降。
+ * @post invalid schemaはoperation実行前にkSchemaErrorを保持。
+ */
+TEST(KetWireTest, RejectsOverlappingGroupedBitMembers)
+{
+	const auto schema = ket::wire::MakeSchema<BitsFrame>(
+		"OverlapBits",
+		std::array<ket::wire::Field<BitsFrame>, 1U>{ket::wire::BitsU8<BitsFrame>(
+			"overlap",
+			std::array<ket::wire::BitMember<BitsFrame>, 2U>{
+				ket::wire::Bit<BitsFrame, &BitsFrame::mode, 0U, 4U>("mode"),
+				ket::wire::ReservedBits<BitsFrame, 2U, 2U>("reserved", 0U)})});
+	const auto schema_ok = schema.SchemaStatus().Ok();
+
+	EXPECT_FALSE(schema_ok);
+	EXPECT_EQ(schema.SchemaStatus().error, ket::wire::Error::kSchemaError);
+	EXPECT_EQ(schema.SchemaStatus().field, "overlap");
+}
+
+/**
+ * @test
+ * @brief 16bit grouped bit fieldのbig/little endian確認。
+ * @details BitsU16BeとBitsU16Leが同じlogical bit descriptorを別byte orderのstorageへ適用し、
+ * module-backed mask/endian pathでroundtripすることを確認。
+ * @pre C++17以降。
+ * @post bit groupは各storage unitを1回だけ消費。
+ */
+TEST(KetWireTest, HandlesBitsU16BeAndLe)
+{
+	const auto schema = MakeBits16Schema();
+	const auto data = std::array<std::uint8_t, 4U>{{0x02U, 0x34U, 0x34U, 0x02U}};
+
+	const auto decoded =
+		ket::wire::DecodeExact(ket::byte_view::View(data.data(), data.size()), schema);
+	const auto decoded_ok = decoded.status.Ok();
+	ASSERT_NE(decoded.value, std::nullopt);
+	const auto& value = decoded.value.value();
+	EXPECT_TRUE(decoded_ok);
+	EXPECT_EQ(value.low, 4U);
+	EXPECT_EQ(value.high, 2U);
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(encoded.bytes.value(), (std::vector<std::uint8_t>(data.begin(), data.end())));
 }
 
 /**
@@ -448,6 +777,36 @@ TEST(KetWireTest, CopiesFixedBytesAndPreservesViewPointerIntentionally)
 
 /**
  * @test
+ * @brief zero-size view bytesの正規化確認。
+ * @details ViewBytes size 0はempty inputからdecodeでき、result
+ * viewはnullptr+0として保持されることを確認。
+ * @pre C++17以降。
+ * @post decode resultはempty viewを保持し、owning encodeはempty vectorを返す。
+ */
+TEST(KetWireTest, NormalizesZeroSizeViewBytesToNullEmptyView)
+{
+	const auto schema = ket::wire::MakeSchema<EmptyViewFrame>(
+		"EmptyViewFrame",
+		std::array<ket::wire::Field<EmptyViewFrame>, 1U>{
+			ket::wire::ViewBytes<EmptyViewFrame, &EmptyViewFrame::view>("view", 0U)});
+
+	const auto decoded = ket::wire::DecodeExact(ket::byte_view::View(nullptr, 0U), schema);
+	const auto decoded_ok = decoded.status.Ok();
+	ASSERT_NE(decoded.value, std::nullopt);
+	const auto value = decoded.value.value();
+	EXPECT_TRUE(decoded_ok);
+	EXPECT_EQ(value.view.Data(), nullptr);
+	EXPECT_EQ(value.view.Size(), 0U);
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(encoded.bytes.value(), std::vector<std::uint8_t>{});
+}
+
+/**
+ * @test
  * @brief raw BCD bytes descriptor確認。
  * @details leading zeroを持つraw BCD bytesをcopyし、invalid nibbleではdecoded
  * objectを作らないことを確認。
@@ -474,6 +833,19 @@ TEST(KetWireTest, HandlesRawBcdBytesWithoutDroppingLeadingZero)
 	const auto invalid_has_value = invalid.value.has_value();
 	EXPECT_FALSE(invalid_has_value);
 	EXPECT_EQ(invalid.status.error, ket::wire::Error::kInvalidBcd);
+
+	const auto offset_schema = ket::wire::MakeSchema<RawBcdFrame>(
+		"OffsetRawBcdFrame",
+		std::array<ket::wire::Field<RawBcdFrame>, 2U>{
+			ket::wire::PadBytes<RawBcdFrame>("prefix", 1U, 0U),
+			ket::wire::RawBcdBytes<RawBcdFrame, &RawBcdFrame::digits>("digits")});
+	const RawBcdFrame invalid_value{{{0x00U, 0x4AU}}};
+	const auto invalid_encode = ket::wire::Encode(invalid_value, offset_schema);
+	const auto invalid_encode_has_bytes = invalid_encode.bytes.has_value();
+	EXPECT_FALSE(invalid_encode_has_bytes);
+	EXPECT_EQ(invalid_encode.status.error, ket::wire::Error::kInvalidBcd);
+	EXPECT_EQ(invalid_encode.status.field, "digits");
+	EXPECT_EQ(invalid_encode.status.offset, 2U);
 }
 
 /**
@@ -559,6 +931,37 @@ TEST(KetWireTest, RunsValidationHooksForLengthChecksumAndCallbackFailure)
 
 /**
  * @test
+ * @brief validation hookのsize/encode時実行回数確認。
+ * @details MeasureEncodedSizeとEncodeでvalidation callbackがそれぞれ1回だけ実行されることを確認。
+ * @pre C++17以降。
+ * @post callback countはoperationごとに1。schemaとvalueは変更されない。
+ */
+TEST(KetWireTest, RunsValidationHookOnceDuringMeasureAndEncode)
+{
+	const auto schema = ket::wire::MakeSchema<CallbackFrame>(
+		"CountingCallbackFrame",
+		std::array<ket::wire::Field<CallbackFrame>, 2U>{
+			ket::wire::U8<CallbackFrame, &CallbackFrame::value>("value"),
+			ket::wire::Validate<CallbackFrame>("counts", &CountValidationCall)});
+	const CallbackFrame value{0x42U};
+
+	g_validation_call_count = 0;
+	const auto measured = ket::wire::MeasureEncodedSize(value, schema);
+	const auto measured_ok = measured.status.Ok();
+	ASSERT_NE(measured.value, std::nullopt);
+	EXPECT_TRUE(measured_ok);
+	EXPECT_EQ(g_validation_call_count, 1);
+
+	g_validation_call_count = 0;
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(g_validation_call_count, 1);
+}
+
+/**
+ * @test
  * @brief size overflow diagnostics確認。
  * @details schema construction時のsize_t
  * overflowをEncodedSizeとMeasureEncodedSizeの失敗値として保持することを確認。
@@ -574,9 +977,9 @@ TEST(KetWireTest, ReportsSizeOverflow)
 				"huge", std::numeric_limits<std::size_t>::max(), 0U),
 			ket::wire::ConstU8<EmptyMessage>("one", 0U)});
 
-	const auto schema_ok = schema.status.Ok();
+	const auto schema_ok = schema.SchemaStatus().Ok();
 	EXPECT_FALSE(schema_ok);
-	EXPECT_EQ(schema.status.error, ket::wire::Error::kSizeOverflow);
+	EXPECT_EQ(schema.SchemaStatus().error, ket::wire::Error::kSizeOverflow);
 
 	const auto fixed_size = ket::wire::EncodedSize(schema);
 	const auto fixed_size_has_value = fixed_size.has_value();

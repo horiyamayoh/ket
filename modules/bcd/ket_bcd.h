@@ -44,6 +44,55 @@ namespace ket
 		// -----------------------------------------------------------------------------
 
 		/**
+		 * @brief packed BCD validation failure kind。
+		 */
+		enum class ValidationError : std::uint8_t
+		{
+			kNone,
+			kInvalidStorage,
+			kInvalidNibble
+		};
+
+		// NOLINTBEGIN(misc-non-private-member-variables-in-classes)
+
+		/**
+		 * @brief packed BCD validation result。
+		 */
+		struct ValidationResult
+		{
+			/** @brief validation failure kind。 */
+			ValidationError error = ValidationError::kNone;
+
+			/** @brief 不正nibbleを含むbyte offset。successとinvalid storageでは0。 */
+			std::size_t byte_offset = 0U;
+
+			/** @brief 不正nibble値。successとinvalid storageでは0。 */
+			std::uint8_t actual = 0U;
+
+			/** @brief 不正nibbleが上位nibbleならtrue、下位nibbleならfalse。 */
+			bool high_nibble = false;
+
+			/**
+			 * @brief validation成功判定。
+			 * @retval true `error == ValidationError::kNone`。
+			 * @retval false validation failureを保持。
+			 * @pre なし。
+			 * @post `*this`と外部状態の変更なし。
+			 * @code
+			 * ket::bcd::ValidationResult result;
+			 * const auto ok = result.Ok();
+			 * // ok == true
+			 * @endcode
+			 */
+			[[nodiscard]] constexpr bool Ok() const noexcept
+			{
+				return error == ValidationError::kNone;
+			}
+		};
+
+		// NOLINTEND(misc-non-private-member-variables-in-classes)
+
+		/**
 		 * @brief 2桁固定幅パックBCDの10進整数変換。
 		 * @param[in] value 変換対象のパックBCD値。
 		 * @retval value 変換後の10進整数。
@@ -106,6 +155,123 @@ namespace ket
 		 */
 		template <typename Packed>
 		constexpr std::optional<Packed> FromInt(int value) noexcept;
+
+		/**
+		 * @brief 2桁固定幅パックBCDの妥当性判定。
+		 * @param[in] value 判定対象のパックBCD値。
+		 * @retval true 全nibbleが0から9。
+		 * @retval false 不正nibbleを含む。
+		 * @pre なし。
+		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto ok = ket::bcd::IsBcdByte(static_cast<std::uint8_t>(0x42U));
+		 * // ok == true
+		 * @endcode
+		 */
+		constexpr bool IsBcdByte(std::uint8_t value) noexcept;
+
+		/**
+		 * @brief 4桁固定幅パックBCDの妥当性判定。
+		 * @param[in] value 判定対象のパックBCD値。
+		 * @retval true 全nibbleが0から9。
+		 * @retval false 不正nibbleを含む。
+		 * @pre なし。
+		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto ok = ket::bcd::IsBcd16(static_cast<std::uint16_t>(0x1234U));
+		 * // ok == true
+		 * @endcode
+		 */
+		constexpr bool IsBcd16(std::uint16_t value) noexcept;
+
+		/**
+		 * @brief 8桁固定幅パックBCDの妥当性判定。
+		 * @param[in] value 判定対象のパックBCD値。
+		 * @retval true 全nibbleが0から9。
+		 * @retval false 不正nibbleを含む。
+		 * @pre なし。
+		 * @post 引数と外部状態の変更なし。
+		 * @code
+		 * const auto ok = ket::bcd::IsBcd32(std::uint32_t{0x20260613U});
+		 * // ok == true
+		 * @endcode
+		 */
+		constexpr bool IsBcd32(std::uint32_t value) noexcept;
+
+		/**
+		 * @brief 2桁固定幅パックBCDの診断付き妥当性検査。
+		 * @param[in] value 判定対象のパックBCD値。
+		 * @retval value validation result。
+		 * @pre なし。
+		 * @post 引数と外部状態の変更なし。
+		 * @note `byte_offset`は常に0。
+		 * @code
+		 * const auto result = ket::bcd::Validate(static_cast<std::uint8_t>(0x1AU));
+		 * // result.Ok() == false, result.actual == 0x0A
+		 * @endcode
+		 */
+		constexpr ValidationResult Validate(std::uint8_t value) noexcept;
+
+		/**
+		 * @brief 4桁固定幅パックBCDの診断付き妥当性検査。
+		 * @param[in] value 判定対象のパックBCD値。
+		 * @retval value validation result。
+		 * @pre なし。
+		 * @post 引数と外部状態の変更なし。
+		 * @note `byte_offset`はpacked BCD値を上位byteから数えた位置。
+		 * @code
+		 * const auto result = ket::bcd::Validate(static_cast<std::uint16_t>(0x12A4U));
+		 * // result.Ok() == false, result.actual == 0x0A
+		 * @endcode
+		 */
+		constexpr ValidationResult Validate(std::uint16_t value) noexcept;
+
+		/**
+		 * @brief 8桁固定幅パックBCDの診断付き妥当性検査。
+		 * @param[in] value 判定対象のパックBCD値。
+		 * @retval value validation result。
+		 * @pre なし。
+		 * @post 引数と外部状態の変更なし。
+		 * @note `byte_offset`はpacked BCD値を上位byteから数えた位置。
+		 * @code
+		 * const auto result = ket::bcd::Validate(std::uint32_t{0x20260A13U});
+		 * // result.Ok() == false, result.actual == 0x0A
+		 * @endcode
+		 */
+		constexpr ValidationResult Validate(std::uint32_t value) noexcept;
+
+		/**
+		 * @brief 任意byte列のpacked BCD診断付き妥当性検査。
+		 * @param[in] data 判定対象byte列先頭。`size == 0`の場合だけnullptr可。
+		 * @param[in] size 判定対象byte数。
+		 * @retval value validation result。
+		 * @pre `data`は`size`バイト以上読み取り可能な配列を指す。`nullptr + 非0`は
+		 * invalid storageとして失敗値を返す。
+		 * @post 引数と外部状態の変更なし。
+		 * @note `byte_offset`は入力byte列先頭から数えた位置。
+		 * @note empty byte sequenceはvalidなBCD列として扱う。文字列化する`Format`の空入力失敗とは
+		 * 責務が異なる。
+		 * @code
+		 * const std::uint8_t data[] = {0x00U, 0x4AU};
+		 * const auto result = ket::bcd::Validate(data, 2U);
+		 * // result.Ok() == false, result.byte_offset == 1
+		 * @endcode
+		 */
+		ValidationResult Validate(const std::uint8_t* data, std::size_t size) noexcept;
+
+		/**
+		 * @brief 固定幅packed BCDに収まる10進整数最大値取得。
+		 * @tparam Packed `std::uint8_t`、`std::uint16_t`、`std::uint32_t`のいずれか。
+		 * @retval value `Packed`のBCD桁数で表現可能な最大10進整数。
+		 * @pre `Packed`は対応する固定幅packed BCD格納型。対象外型はcompile error。
+		 * @post 外部状態の変更なし。
+		 * @code
+		 * const auto max_value = ket::bcd::MaxInt<std::uint8_t>();
+		 * // max_value == 99
+		 * @endcode
+		 */
+		template <typename Packed>
+		constexpr int MaxInt() noexcept;
 
 		/**
 		 * @brief 任意バイト長パックBCDの10進文字列変換。
@@ -282,6 +448,100 @@ namespace ket
 			}
 
 			/**
+			 * @brief successful validation result生成。
+			 * @retval value success result。
+			 * @pre なし。
+			 * @post 外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr ValidationResult ValidResult() noexcept
+			{
+				return ValidationResult{};
+			}
+
+			/**
+			 * @brief invalid storage result生成。
+			 * @retval value invalid storage result。
+			 * @pre なし。
+			 * @post 外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr ValidationResult InvalidStorageResult() noexcept
+			{
+				return ValidationResult{ValidationError::kInvalidStorage, 0U, 0U, false};
+			}
+
+			/**
+			 * @brief invalid nibble result生成。
+			 * @param[in] byte_offset invalid nibbleを含むbyte offset。
+			 * @param[in] actual invalid nibble値。
+			 * @param[in] high_nibble high nibbleでの失敗か。
+			 * @retval value invalid nibble result。
+			 * @pre なし。
+			 * @post 外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr ValidationResult InvalidNibbleResult(std::size_t byte_offset,
+																		 std::uint8_t actual,
+																		 bool high_nibble) noexcept
+			{
+				return ValidationResult{
+					ValidationError::kInvalidNibble, byte_offset, actual, high_nibble};
+			}
+
+			/**
+			 * @brief 1byte packed BCDのvalidation。
+			 * @param[in] value validation対象。
+			 * @param[in] byte_offset resultに載せるbyte offset。
+			 * @retval value validation result。
+			 * @pre なし。
+			 * @post 外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr ValidationResult ValidateByte(std::uint8_t value,
+																  std::size_t byte_offset) noexcept
+			{
+				const auto high = static_cast<std::uint8_t>((value >> 4U) & 0x0FU);
+				const auto high_is_valid = IsBcdNibble(high);
+				if (!high_is_valid)
+				{
+					return InvalidNibbleResult(byte_offset, high, true);
+				}
+
+				const auto low = static_cast<std::uint8_t>(value & 0x0FU);
+				const auto low_is_valid = IsBcdNibble(low);
+				if (!low_is_valid)
+				{
+					return InvalidNibbleResult(byte_offset, low, false);
+				}
+
+				return ValidResult();
+			}
+
+			/**
+			 * @brief fixed-width packed BCDのvalidation。
+			 * @param[in] value validation対象。
+			 * @param[in] byte_count validationするbyte数。
+			 * @retval value validation result。
+			 * @pre `byte_count`は1以上4以下。
+			 * @post 外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr ValidationResult ValidatePacked(std::uint32_t value,
+																	int byte_count) noexcept
+			{
+				for (int index = byte_count - 1; index >= 0; --index)
+				{
+					const auto shift = index * 8;
+					const auto byte = static_cast<std::uint8_t>((value >> shift) & 0xFFU);
+					const auto byte_offset = static_cast<std::size_t>(byte_count - index - 1);
+					const auto result = ValidateByte(byte, byte_offset);
+					const auto result_ok = result.Ok();
+					if (!result_ok)
+					{
+						return result;
+					}
+				}
+
+				return ValidResult();
+			}
+
+			/**
 			 * @brief 固定幅パックBCD出力型のtraits。
 			 * @tparam Packed 判定対象の固定幅パックBCD格納型。
 			 * @note detail配下の型は公開APIではない。
@@ -363,6 +623,47 @@ namespace ket
 			}
 
 			return static_cast<Packed>(*result);
+		}
+
+		constexpr bool IsBcdByte(std::uint8_t value) noexcept
+		{
+			return Validate(value).Ok();
+		}
+
+		constexpr bool IsBcd16(std::uint16_t value) noexcept
+		{
+			return Validate(value).Ok();
+		}
+
+		constexpr bool IsBcd32(std::uint32_t value) noexcept
+		{
+			return Validate(value).Ok();
+		}
+
+		constexpr ValidationResult Validate(std::uint8_t value) noexcept
+		{
+			return detail::ValidateByte(value, 0U);
+		}
+
+		constexpr ValidationResult Validate(std::uint16_t value) noexcept
+		{
+			return detail::ValidatePacked(value, 2);
+		}
+
+		constexpr ValidationResult Validate(std::uint32_t value) noexcept
+		{
+			return detail::ValidatePacked(value, 4);
+		}
+
+		template <typename Packed>
+		constexpr int MaxInt() noexcept
+		{
+			static_assert(detail::PackedBcdTraits<Packed>::kSupported,
+						  "ket::bcd::MaxInt supports std::uint8_t, std::uint16_t, and "
+						  "std::uint32_t only.");
+			return detail::DecimalLimitForBcdNibbles(
+					   detail::PackedBcdTraits<Packed>::kNibbleCount) -
+				1;
 		}
 
 	} // namespace bcd

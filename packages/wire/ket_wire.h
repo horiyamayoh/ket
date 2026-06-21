@@ -11,8 +11,9 @@
  * logging, checksum algorithms, or TLV tree handling.
  *
  * @par プロジェクトへの適用方法
- * `ket_wire.h` と依存する `ket_byte_view.h` を対象プロジェクトへコピー。ヘッダオンリー
- * package runtime。
+ * `ket_wire.h` と依存する ket module のheader/sourceを対象プロジェクトへコピー。
+ * `ket_byte_reader.cpp`、`ket_byte_writer.cpp`、`ket_endian.cpp`、`ket_bcd.cpp`
+ * もbuild対象に含める。
  *
  * @par C++バージョン要件
  * 最小要件：C++17。
@@ -24,7 +25,8 @@
  * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
- * 標準ライブラリ、および ket::byte_view。
+ * 標準ライブラリ、および ket::byte_view、ket::byte_reader、ket::byte_writer、ket::endian、
+ * ket::bits、ket::numeric、ket::bcd、ket::bytes。
  * `ket-wire` は ordinary module ではなく package runtime であり、複数 ket module を合成可能。
  *
  * @par namespace
@@ -32,7 +34,6 @@
  * 内部実装：ket::wire::detail
  */
 
-#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -43,12 +44,41 @@
 #include <utility>
 #include <vector>
 
+#include "ket_bcd.h"
+#include "ket_bits.h"
+#include "ket_byte_reader.h"
 #include "ket_byte_view.h"
+#include "ket_byte_writer.h"
+#include "ket_bytes.h"
+#include "ket_endian.h"
+#include "ket_numeric.h"
 
 namespace ket
 {
 	namespace wire
 	{
+		namespace detail
+		{
+			/**
+			 * @brief BitMember private state access helper.
+			 */
+			template <typename T>
+			struct BitMemberAccess; // IWYU pragma: keep
+
+			/**
+			 * @brief Field private state access helper.
+			 */
+			template <typename T>
+			struct FieldAccess; // IWYU pragma: keep
+
+			/**
+			 * @brief Schema private state access helper.
+			 */
+			template <typename T, std::size_t FieldCount>
+			struct SchemaAccess; // IWYU pragma: keep
+
+		} // namespace detail
+
 		// -----------------------------------------------------------------------------
 		// Public API declarations
 		// -----------------------------------------------------------------------------
@@ -124,22 +154,77 @@ namespace ket
 		 * @tparam T schema対象型。
 		 */
 		template <typename T>
-		struct BitMember
+		class BitMember
 		{
+		  public:
 			using GetFunction = bool (*)(const T& value,
 										 const BitMember& member,
 										 std::uint64_t& out,
 										 Status& status) noexcept;
 			using SetFunction = void (*)(T& value, std::uint64_t raw) noexcept;
 
-			std::string_view name;
-			unsigned shift = 0U;
-			unsigned width = 0U;
-			std::uint64_t expected = 0U;
-			bool has_member = false;
-			bool is_valid = false;
-			GetFunction get = nullptr;
-			SetFunction set = nullptr;
+			/**
+			 * @brief logical bit名。
+			 * @retval value descriptor生成時に指定した名前。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::string_view Name() const noexcept;
+
+			/**
+			 * @brief storage内の開始bit位置。
+			 * @retval value least significant bitを0とするshift。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr unsigned Shift() const noexcept;
+
+			/**
+			 * @brief logical bit幅。
+			 * @retval value bit幅。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr unsigned Width() const noexcept;
+
+			/**
+			 * @brief reserved bitで期待される値。
+			 * @retval value expected raw value。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::uint64_t Expected() const noexcept;
+
+			/**
+			 * @brief object memberへ対応するlogical bitかを判定。
+			 * @retval true object member対応。
+			 * @retval false reserved bit。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr bool HasMember() const noexcept;
+
+			/**
+			 * @brief descriptor生成時の妥当性。
+			 * @retval true runtimeで利用可能。
+			 * @retval false schema構築時にschema errorとして扱う。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr bool IsValid() const noexcept;
+
+		  private:
+			template <typename>
+			friend struct detail::BitMemberAccess;
+
+			std::string_view name_;
+			unsigned shift_ = 0U;
+			unsigned width_ = 0U;
+			std::uint64_t expected_ = 0U;
+			bool has_member_ = false;
+			bool is_valid_ = false;
+			GetFunction get_ = nullptr;
+			SetFunction set_ = nullptr;
 		};
 
 		/**
@@ -147,8 +232,9 @@ namespace ket
 		 * @tparam T schema対象型。
 		 */
 		template <typename T>
-		struct Field
+		class Field
 		{
+		  public:
 			using DecodeFunction = bool (*)(ket::byte_view::View data,
 											std::size_t& offset,
 											T& value,
@@ -167,23 +253,137 @@ namespace ket
 											 Status& status) noexcept;
 			using ValidationFunction = bool (*)(const T& value, Status& status) noexcept;
 
-			std::string_view name;
-			std::string_view group;
-			FieldKind kind = FieldKind::kValidation;
-			std::size_t encoded_size = 0U;
-			std::size_t max_encoded_size = 0U;
-			bool is_fixed_size = true;
-			bool is_valid = false;
-			std::uint64_t expected = 0U;
-			const std::uint8_t* expected_bytes = nullptr;
-			std::size_t expected_bytes_size = 0U;
-			std::array<BitMember<T>, 16U> bit_members{};
-			std::size_t bit_member_count = 0U;
-			DecodeFunction decode = nullptr;
-			PreflightFunction preflight = nullptr;
-			EncodeFunction encode = nullptr;
-			MeasureFunction measure = nullptr;
-			ValidationFunction validation = nullptr;
+			/**
+			 * @brief field名。
+			 * @retval value descriptor生成時に指定した名前。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::string_view Name() const noexcept;
+
+			/**
+			 * @brief bit group名。
+			 * @retval value grouped bitsの場合はgroup名、それ以外は空。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::string_view Group() const noexcept;
+
+			/**
+			 * @brief field category取得。
+			 * @retval value field kind。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr FieldKind Kind() const noexcept;
+
+			/**
+			 * @brief fixed fieldのencoded byte数。
+			 * @retval value encoded byte数。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::size_t EncodedSize() const noexcept;
+
+			/**
+			 * @brief field単体の最大encoded byte数。
+			 * @retval value 最大encoded byte数。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::size_t MaxEncodedSize() const noexcept;
+
+			/**
+			 * @brief field sizeがvalue非依存かを判定。
+			 * @retval true fixed-size field。
+			 * @retval false value依存size field。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr bool IsFixedSize() const noexcept;
+
+			/**
+			 * @brief descriptor生成時の妥当性。
+			 * @retval true runtimeで利用可能。
+			 * @retval false schema構築時にschema errorとして扱う。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr bool IsValid() const noexcept;
+
+			/**
+			 * @brief repeated expected byte値。
+			 * @retval value repeated reserved/padding byte。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::uint64_t Expected() const noexcept;
+
+			/**
+			 * @brief const expected byte列。
+			 * @retval value expected byte列先頭。byte列を持たないfieldではnullptr。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr const std::uint8_t* ExpectedBytes() const noexcept;
+
+			/**
+			 * @brief const expected byte列の長さ。
+			 * @retval value expected byte列長。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::size_t ExpectedBytesSize() const noexcept;
+
+			/**
+			 * @brief grouped bit descriptors。
+			 * @retval value 最大16個のbit member descriptor配列。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr const std::array<BitMember<T>, 16U>&
+			BitMembers() const noexcept;
+
+			/**
+			 * @brief grouped bit descriptorをindexで取得。
+			 * @param[in] index bit member index。
+			 * @retval value descriptor pointer。
+			 * @retval nullptr `index >= BitMemberCount()`。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr const BitMember<T>*
+			BitMemberAt(std::size_t index) const noexcept;
+
+			/**
+			 * @brief 有効なgrouped bit descriptor数。
+			 * @retval value bit member descriptor数。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::size_t BitMemberCount() const noexcept;
+
+		  private:
+			template <typename>
+			friend struct detail::FieldAccess;
+
+			std::string_view name_;
+			std::string_view group_;
+			FieldKind kind_ = FieldKind::kValidation;
+			std::size_t encoded_size_ = 0U;
+			std::size_t max_encoded_size_ = 0U;
+			bool is_fixed_size_ = true;
+			bool is_valid_ = false;
+			std::uint64_t expected_ = 0U;
+			const std::uint8_t* expected_bytes_ = nullptr;
+			std::size_t expected_bytes_size_ = 0U;
+			std::array<BitMember<T>, 16U> bit_members_{};
+			std::size_t bit_member_count_ = 0U;
+			DecodeFunction decode_ = nullptr;
+			PreflightFunction preflight_ = nullptr;
+			EncodeFunction encode_ = nullptr;
+			MeasureFunction measure_ = nullptr;
+			ValidationFunction validation_ = nullptr;
 		};
 
 		/**
@@ -192,15 +392,87 @@ namespace ket
 		 * @tparam FieldCount field descriptor数。
 		 */
 		template <typename T, std::size_t FieldCount>
-		struct Schema
+		class Schema
 		{
-			std::string_view name;
-			std::array<Field<T>, FieldCount> fields{};
-			std::size_t field_count = FieldCount;
-			bool is_fixed_size = true;
-			std::size_t fixed_size = 0U;
-			std::size_t max_size = 0U;
-			Status status{};
+		  public:
+			/**
+			 * @brief schema名。
+			 * @retval value descriptor生成時に指定した名前。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::string_view Name() const noexcept;
+
+			/**
+			 * @brief schemaが所有するfield descriptor列。
+			 * @retval value field descriptor配列。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr const std::array<Field<T>, FieldCount>& Fields() const noexcept;
+
+			/**
+			 * @brief field descriptorをindexで取得。
+			 * @param[in] index field index。
+			 * @retval value descriptor pointer。
+			 * @retval nullptr `index >= FieldCountValue()`。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr const Field<T>* FieldAt(std::size_t index) const noexcept;
+
+			/**
+			 * @brief field descriptor数。
+			 * @retval value schema内field数。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::size_t FieldCountValue() const noexcept;
+
+			/**
+			 * @brief schema encoded sizeがvalue非依存かを判定。
+			 * @retval true fixed-size schema。
+			 * @retval false value依存size schema。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr bool IsFixedSize() const noexcept;
+
+			/**
+			 * @brief fixed-size schemaのencoded byte数。
+			 * @retval value fixed encoded byte数。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::size_t FixedSize() const noexcept;
+
+			/**
+			 * @brief schema最大encoded byte数。
+			 * @retval value 最大encoded byte数。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr std::size_t MaxSize() const noexcept;
+
+			/**
+			 * @brief schema構築時status。
+			 * @retval value schema構築時status。
+			 * @pre なし。
+			 * @post descriptorと外部状態の変更なし。
+			 */
+			[[nodiscard]] constexpr const Status& SchemaStatus() const noexcept;
+
+		  private:
+			template <typename, std::size_t>
+			friend struct detail::SchemaAccess;
+
+			std::string_view name_;
+			std::array<Field<T>, FieldCount> fields_{};
+			std::size_t field_count_ = FieldCount;
+			bool is_fixed_size_ = true;
+			std::size_t fixed_size_ = 0U;
+			std::size_t max_size_ = 0U;
+			Status status_{};
 		};
 
 		/**
@@ -301,9 +573,10 @@ namespace ket
 		 * @param[in] value encode対象object。
 		 * @param[in] schema encode schema。
 		 * @retval value 成功時はencoded bytes。
-		 * @retval std::nullopt 失敗時。
+		 * @retval std::nullopt schema errorまたはpreflight失敗時。
 		 * @pre schema内のview fieldは参照元byte列のlifetimeを呼び出し中維持。
 		 * @post 成功時だけbytesを保持。`value`の変更なし。
+		 * @note owning buffer確保に失敗した場合は標準例外が送出され、EncodeResultは返らない。
 		 */
 		template <typename T, std::size_t FieldCount>
 		EncodeResult Encode(const T& value, const Schema<T, FieldCount>& schema);
@@ -835,6 +1108,811 @@ namespace ket
 		namespace detail
 		{
 			/**
+			 * @brief BitMember private state access helper.
+			 * @tparam T schema対象型。
+			 */
+			template <typename T>
+			struct BitMemberAccess
+			{
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::string_view Name(const BitMember<T>& member) noexcept
+				{
+					return member.name_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetName(BitMember<T>& member, std::string_view name) noexcept
+				{
+					member.name_ = name;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr unsigned Shift(const BitMember<T>& member) noexcept
+				{
+					return member.shift_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetShift(BitMember<T>& member, unsigned shift) noexcept
+				{
+					member.shift_ = shift;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr unsigned Width(const BitMember<T>& member) noexcept
+				{
+					return member.width_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetWidth(BitMember<T>& member, unsigned width) noexcept
+				{
+					member.width_ = width;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::uint64_t Expected(const BitMember<T>& member) noexcept
+				{
+					return member.expected_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetExpected(BitMember<T>& member, std::uint64_t expected) noexcept
+				{
+					member.expected_ = expected;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr bool HasMember(const BitMember<T>& member) noexcept
+				{
+					return member.has_member_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetHasMember(BitMember<T>& member, bool has_member) noexcept
+				{
+					member.has_member_ = has_member;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr bool IsValid(const BitMember<T>& member) noexcept
+				{
+					return member.is_valid_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetIsValid(BitMember<T>& member, bool is_valid) noexcept
+				{
+					member.is_valid_ = is_valid;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr typename BitMember<T>::GetFunction
+				Get(const BitMember<T>& member) noexcept
+				{
+					return member.get_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetGet(BitMember<T>& member,
+								   typename BitMember<T>::GetFunction get) noexcept
+				{
+					member.get_ = get;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr typename BitMember<T>::SetFunction
+				Set(const BitMember<T>& member) noexcept
+				{
+					return member.set_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetSetter(BitMember<T>& member,
+									  typename BitMember<T>::SetFunction setter) noexcept
+				{
+					member.set_ = setter;
+				}
+			};
+
+			/**
+			 * @brief Field private state access helper.
+			 * @tparam T schema対象型。
+			 */
+			template <typename T>
+			struct FieldAccess
+			{
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::string_view Name(const Field<T>& field) noexcept
+				{
+					return field.name_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetName(Field<T>& field, std::string_view name) noexcept
+				{
+					field.name_ = name;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::string_view Group(const Field<T>& field) noexcept
+				{
+					return field.group_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetGroup(Field<T>& field, std::string_view group) noexcept
+				{
+					field.group_ = group;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr FieldKind Kind(const Field<T>& field) noexcept
+				{
+					return field.kind_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetKind(Field<T>& field, FieldKind kind) noexcept
+				{
+					field.kind_ = kind;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::size_t EncodedSize(const Field<T>& field) noexcept
+				{
+					return field.encoded_size_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetEncodedSize(Field<T>& field, std::size_t encoded_size) noexcept
+				{
+					field.encoded_size_ = encoded_size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::size_t MaxEncodedSize(const Field<T>& field) noexcept
+				{
+					return field.max_encoded_size_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetMaxEncodedSize(Field<T>& field,
+											  std::size_t max_encoded_size) noexcept
+				{
+					field.max_encoded_size_ = max_encoded_size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr bool IsFixedSize(const Field<T>& field) noexcept
+				{
+					return field.is_fixed_size_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetIsFixedSize(Field<T>& field, bool is_fixed_size) noexcept
+				{
+					field.is_fixed_size_ = is_fixed_size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr bool IsValid(const Field<T>& field) noexcept
+				{
+					return field.is_valid_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetIsValid(Field<T>& field, bool is_valid) noexcept
+				{
+					field.is_valid_ = is_valid;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::uint64_t Expected(const Field<T>& field) noexcept
+				{
+					return field.expected_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetExpected(Field<T>& field, std::uint64_t expected) noexcept
+				{
+					field.expected_ = expected;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr const std::uint8_t* ExpectedBytes(const Field<T>& field) noexcept
+				{
+					return field.expected_bytes_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetExpectedBytes(Field<T>& field, const std::uint8_t* expected) noexcept
+				{
+					field.expected_bytes_ = expected;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::size_t ExpectedBytesSize(const Field<T>& field) noexcept
+				{
+					return field.expected_bytes_size_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetExpectedBytesSize(Field<T>& field, std::size_t size) noexcept
+				{
+					field.expected_bytes_size_ = size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr const std::array<BitMember<T>, 16U>&
+				BitMembers(const Field<T>& field) noexcept
+				{
+					return field.bit_members_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetBitMember(Field<T>& field,
+										 std::size_t index,
+										 const BitMember<T>& member) noexcept
+				{
+					field.bit_members_[index] = member;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::size_t BitMemberCount(const Field<T>& field) noexcept
+				{
+					return field.bit_member_count_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetBitMemberCount(Field<T>& field, std::size_t count) noexcept
+				{
+					field.bit_member_count_ = count;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr typename Field<T>::DecodeFunction
+				Decode(const Field<T>& field) noexcept
+				{
+					return field.decode_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetDecode(Field<T>& field,
+									  typename Field<T>::DecodeFunction decode) noexcept
+				{
+					field.decode_ = decode;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr typename Field<T>::PreflightFunction
+				Preflight(const Field<T>& field) noexcept
+				{
+					return field.preflight_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetPreflight(Field<T>& field,
+										 typename Field<T>::PreflightFunction preflight) noexcept
+				{
+					field.preflight_ = preflight;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr typename Field<T>::EncodeFunction
+				Encode(const Field<T>& field) noexcept
+				{
+					return field.encode_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetEncode(Field<T>& field,
+									  typename Field<T>::EncodeFunction encode) noexcept
+				{
+					field.encode_ = encode;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr typename Field<T>::MeasureFunction
+				Measure(const Field<T>& field) noexcept
+				{
+					return field.measure_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetMeasure(Field<T>& field,
+									   typename Field<T>::MeasureFunction measure) noexcept
+				{
+					field.measure_ = measure;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr typename Field<T>::ValidationFunction
+				Validation(const Field<T>& field) noexcept
+				{
+					return field.validation_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetValidation(Field<T>& field,
+										  typename Field<T>::ValidationFunction validation) noexcept
+				{
+					field.validation_ = validation;
+				}
+			};
+
+			/**
+			 * @brief Schema private state access helper.
+			 * @tparam T schema対象型。
+			 * @tparam FieldCount field descriptor数。
+			 */
+			template <typename T, std::size_t FieldCount>
+			struct SchemaAccess
+			{
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::string_view Name(const Schema<T, FieldCount>& schema) noexcept
+				{
+					return schema.name_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetName(Schema<T, FieldCount>& schema, std::string_view name) noexcept
+				{
+					schema.name_ = name;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr const std::array<Field<T>, FieldCount>&
+				Fields(const Schema<T, FieldCount>& schema) noexcept
+				{
+					return schema.fields_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetFields(Schema<T, FieldCount>& schema,
+									  const std::array<Field<T>, FieldCount>& fields) noexcept
+				{
+					schema.fields_ = fields;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::size_t
+				FieldCountValue(const Schema<T, FieldCount>& schema) noexcept
+				{
+					return schema.field_count_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr bool IsFixedSize(const Schema<T, FieldCount>& schema) noexcept
+				{
+					return schema.is_fixed_size_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetIsFixedSize(Schema<T, FieldCount>& schema,
+										   bool is_fixed_size) noexcept
+				{
+					schema.is_fixed_size_ = is_fixed_size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::size_t FixedSize(const Schema<T, FieldCount>& schema) noexcept
+				{
+					return schema.fixed_size_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetFixedSize(Schema<T, FieldCount>& schema, std::size_t size) noexcept
+				{
+					schema.fixed_size_ = size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr std::size_t MaxSize(const Schema<T, FieldCount>& schema) noexcept
+				{
+					return schema.max_size_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetMaxSize(Schema<T, FieldCount>& schema, std::size_t size) noexcept
+				{
+					schema.max_size_ = size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr const Status&
+				SchemaStatus(const Schema<T, FieldCount>& schema) noexcept
+				{
+					return schema.status_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static void SetSchemaStatus(Schema<T, FieldCount>& schema,
+											const Status& status) noexcept
+				{
+					schema.status_ = status;
+				}
+			};
+
+			/**
 			 * @brief byte order for integer descriptors.
 			 */
 			enum class ByteOrder : std::uint8_t
@@ -983,20 +2061,6 @@ namespace ket
 			}
 
 			/**
-			 * @brief byte view storage validity判定。
-			 * @param[in] data buffer pointer。
-			 * @param[in] size buffer size。
-			 * @retval true `data != nullptr`、または`size == 0`。
-			 * @retval false `data == nullptr && size > 0`。
-			 * @pre なし。
-			 * @post 外部状態の変更なし。
-			 */
-			constexpr bool IsValidStorage(const void* data, std::size_t size) noexcept
-			{
-				return data != nullptr || size == 0U;
-			}
-
-			/**
 			 * @brief input view validity判定。
 			 * @param[in] data input view。
 			 * @retval true valid view。
@@ -1004,9 +2068,9 @@ namespace ket
 			 * @pre なし。
 			 * @post 外部状態の変更なし。
 			 */
-			constexpr bool IsValidInputView(ket::byte_view::View data) noexcept
+			constexpr bool IsValidInput(ket::byte_view::View data) noexcept
 			{
-				return IsValidStorage(data.Data(), data.Size());
+				return ket::byte_view::IsValid(data);
 			}
 
 			/**
@@ -1017,49 +2081,9 @@ namespace ket
 			 * @pre なし。
 			 * @post 外部状態の変更なし。
 			 */
-			constexpr bool IsValidOutputView(ket::byte_view::MutableView out) noexcept
+			constexpr bool IsValidOutput(ket::byte_view::MutableView out) noexcept
 			{
-				return IsValidStorage(out.Data(), out.Size());
-			}
-
-			/**
-			 * @brief read可能範囲判定。
-			 * @param[in] data input view。
-			 * @param[in] offset 開始offset。
-			 * @param[in] size 読み取りbyte数。
-			 * @retval true `offset..offset+size`がview内。
-			 * @retval false invalid view、またはsize不足。
-			 * @pre なし。
-			 * @post 外部状態の変更なし。
-			 */
-			constexpr bool
-			CanRead(ket::byte_view::View data, std::size_t offset, std::size_t size) noexcept
-			{
-				const auto is_valid = IsValidInputView(data);
-				return is_valid && offset <= data.Size() && size <= (data.Size() - offset);
-			}
-
-			/**
-			 * @brief size_t addition overflow検査。
-			 * @param[in] lhs 左辺。
-			 * @param[in] rhs 右辺。
-			 * @param[out] out 成功時の和。
-			 * @retval true overflowなし。
-			 * @retval false overflowあり。`out`は変更なし。
-			 * @pre `out`は有効な参照。
-			 * @post 成功時だけ`out`を更新。
-			 */
-			inline bool TryAddSize(std::size_t lhs, std::size_t rhs, std::size_t& out) noexcept
-			{
-				const auto max_value = std::numeric_limits<std::size_t>::max();
-				const auto overflows = rhs > (max_value - lhs);
-				if (overflows)
-				{
-					return false;
-				}
-
-				out = lhs + rhs;
-				return true;
+				return ket::byte_view::IsValid(out);
 			}
 
 			/**
@@ -1085,25 +2109,54 @@ namespace ket
 			 * @post 外部状態の変更なし。
 			 */
 			template <typename Unsigned>
-			Unsigned LoadUnsigned(const std::uint8_t* data, ByteOrder order) noexcept
+			Unsigned LoadInteger(const std::uint8_t* data, ByteOrder order) noexcept
 			{
 				static_assert(std::is_unsigned_v<Unsigned>, "Unsigned must be unsigned");
-				if (order == ByteOrder::kSingle)
+				if constexpr (sizeof(Unsigned) == sizeof(std::uint8_t))
 				{
 					return static_cast<Unsigned>(data[0]);
 				}
-
-				Unsigned value = 0U;
-				const auto width = IntegerByteSize<Unsigned>();
-				for (std::size_t index = 0U; index < width; ++index)
+				else
 				{
-					const auto source_index =
-						order == ByteOrder::kBig ? index : (width - index - 1U);
-					value = static_cast<Unsigned>((value << 8U) |
-												  static_cast<Unsigned>(data[source_index]));
-				}
+					if constexpr (sizeof(Unsigned) == sizeof(std::uint16_t))
+					{
+						if (order == ByteOrder::kBig)
+						{
+							const auto raw = ket::endian::LoadBe16(data);
+							return static_cast<Unsigned>(raw);
+						}
 
-				return value;
+						const auto raw = ket::endian::LoadLe16(data);
+						return static_cast<Unsigned>(raw);
+					}
+					else
+					{
+						if constexpr (sizeof(Unsigned) == sizeof(std::uint32_t))
+						{
+							if (order == ByteOrder::kBig)
+							{
+								const auto raw = ket::endian::LoadBe32(data);
+								return static_cast<Unsigned>(raw);
+							}
+
+							const auto raw = ket::endian::LoadLe32(data);
+							return static_cast<Unsigned>(raw);
+						}
+						else
+						{
+							static_assert(sizeof(Unsigned) == sizeof(std::uint64_t),
+										  "Unsupported unsigned integer width");
+							if (order == ByteOrder::kBig)
+							{
+								const auto raw = ket::endian::LoadBe64(data);
+								return static_cast<Unsigned>(raw);
+							}
+
+							const auto raw = ket::endian::LoadLe64(data);
+							return static_cast<Unsigned>(raw);
+						}
+					}
+				}
 			}
 
 			/**
@@ -1117,25 +2170,136 @@ namespace ket
 			 * @post `data[0..sizeof(Unsigned))`を更新。
 			 */
 			template <typename Unsigned>
-			void StoreUnsigned(std::uint8_t* data, Unsigned value, ByteOrder order) noexcept
+			void StoreInteger(std::uint8_t* data, Unsigned value, ByteOrder order) noexcept
 			{
 				static_assert(std::is_unsigned_v<Unsigned>, "Unsigned must be unsigned");
-				if (order == ByteOrder::kSingle)
+				if constexpr (sizeof(Unsigned) == sizeof(std::uint8_t))
 				{
 					data[0] = static_cast<std::uint8_t>(value);
 					return;
 				}
-
-				const auto width = IntegerByteSize<Unsigned>();
-				for (std::size_t index = 0U; index < width; ++index)
+				else
 				{
-					const auto shift = static_cast<unsigned>(index * 8U);
-					const auto shifted = static_cast<std::uint64_t>(value) >> shift;
-					const auto byte = static_cast<std::uint8_t>(shifted & std::uint64_t{0xFFU});
-					const auto destination_index =
-						order == ByteOrder::kBig ? (width - index - 1U) : index;
-					data[destination_index] = byte;
+					if constexpr (sizeof(Unsigned) == sizeof(std::uint16_t))
+					{
+						if (order == ByteOrder::kBig)
+						{
+							ket::endian::StoreBe16(data, static_cast<std::uint16_t>(value));
+						}
+						else
+						{
+							ket::endian::StoreLe16(data, static_cast<std::uint16_t>(value));
+						}
+						return;
+					}
+					else
+					{
+						if constexpr (sizeof(Unsigned) == sizeof(std::uint32_t))
+						{
+							if (order == ByteOrder::kBig)
+							{
+								ket::endian::StoreBe32(data, static_cast<std::uint32_t>(value));
+							}
+							else
+							{
+								ket::endian::StoreLe32(data, static_cast<std::uint32_t>(value));
+							}
+							return;
+						}
+						else
+						{
+							static_assert(sizeof(Unsigned) == sizeof(std::uint64_t),
+										  "Unsupported unsigned integer width");
+							if (order == ByteOrder::kBig)
+							{
+								ket::endian::StoreBe64(data, static_cast<std::uint64_t>(value));
+							}
+							else
+							{
+								ket::endian::StoreLe64(data, static_cast<std::uint64_t>(value));
+							}
+						}
+					}
 				}
+			}
+
+			/**
+			 * @brief field byte列をoffset位置から参照。
+			 * @tparam T schema対象型。
+			 * @param[in] data input view。
+			 * @param[in] offset field開始offset。
+			 * @param[in] field field descriptor。
+			 * @param[out] status failure status。
+			 * @param[out] out field byte列先頭。
+			 * @retval true 参照成功。
+			 * @retval false input不足。
+			 * @pre `out`は有効な参照。
+			 * @post 成功時だけ`out`を更新。
+			 */
+			template <typename T>
+			bool PeekFieldBytes(ket::byte_view::View data,
+								std::size_t offset,
+								const Field<T>& field,
+								Status& status,
+								const std::uint8_t*& out) noexcept
+			{
+				const auto field_start = offset;
+				const auto input_valid = IsValidInput(data);
+				const auto offset_valid = input_valid && offset <= data.Size();
+				const auto available = offset_valid ? ket::byte_view::Remaining(data, offset) : 0U;
+				const auto* data_ptr = data.Data();
+				const auto has_data = data_ptr != nullptr;
+				const std::uint8_t* start = nullptr;
+				if (offset_valid && has_data)
+				{
+					start = data_ptr + offset;
+				}
+
+				auto reader = ket::byte_reader::Reader(start, available);
+				const auto read = offset_valid && reader.ReadBytes(field.EncodedSize(), out);
+				if (!read)
+				{
+					status = MakeSizeStatus(Error::kShortInput,
+											field_start,
+											field.Name(),
+											field.Group(),
+											field.EncodedSize(),
+											available);
+					return false;
+				}
+
+				return true;
+			}
+
+			/**
+			 * @brief field byte列をoffset位置へ書き込み。
+			 * @tparam T schema対象型。
+			 * @param[in,out] out output buffer先頭。
+			 * @param[in,out] offset current offset。
+			 * @param[in] field field descriptor。
+			 * @param[in] source field byte列先頭。
+			 * @retval void 戻り値なし。
+			 * @pre `out`は十分な容量を持つbuffer。
+			 * @post `offset`を実書き込みbyte数だけ更新。
+			 */
+			template <typename T>
+			void WriteFieldBytes(std::uint8_t* out,
+								 std::size_t& offset,
+								 const Field<T>& field,
+								 const std::uint8_t* source) noexcept
+			{
+				const auto encoded_size = field.EncodedSize();
+				std::uint8_t* start = nullptr;
+				const auto has_output = encoded_size > 0U;
+				if (has_output)
+				{
+					start = out + offset;
+				}
+
+				auto writer = ket::byte_writer::Writer(start, encoded_size);
+				const auto wrote = writer.WriteBytes(source, encoded_size);
+				(void)wrote;
+				offset += writer.Offset();
 			}
 
 			/**
@@ -1247,21 +2411,14 @@ namespace ket
 				using MemberType = typename MemberPointerTraits<decltype(Member)>::member_type;
 				CheckMemberClass<T, Member>();
 				static_assert(sizeof(MemberType) == sizeof(Unsigned), "member size mismatch");
-				const auto field_start = offset;
-				const auto can_read = CanRead(data, offset, field.encoded_size);
-				if (!can_read)
+				const std::uint8_t* bytes = nullptr;
+				const auto read = PeekFieldBytes(data, offset, field, status, bytes);
+				if (!read)
 				{
-					const auto available = offset <= data.Size() ? (data.Size() - offset) : 0U;
-					status = MakeSizeStatus(Error::kShortInput,
-											field_start,
-											field.name,
-											field.group,
-											field.encoded_size,
-											available);
 					return false;
 				}
 
-				const auto raw = LoadUnsigned<Unsigned>(data.Data() + offset, Order);
+				const auto raw = LoadInteger<Unsigned>(bytes, Order);
 				if constexpr (std::is_signed_v<MemberType>)
 				{
 					value.*Member = DecodeSigned<MemberType, Unsigned>(raw);
@@ -1270,7 +2427,7 @@ namespace ket
 				{
 					value.*Member = static_cast<MemberType>(raw);
 				}
-				offset += field.encoded_size;
+				offset += field.EncodedSize();
 				return true;
 			}
 
@@ -1313,14 +2470,15 @@ namespace ket
 			{
 				(void)value;
 				std::size_t next_size = 0U;
-				const auto added = TryAddSize(encoded_size, field.encoded_size, next_size);
+				const auto added =
+					ket::numeric::TryAdd<std::size_t>(encoded_size, field.EncodedSize(), next_size);
 				if (!added)
 				{
 					status = MakeSizeStatus(Error::kSizeOverflow,
 											encoded_size,
-											field.name,
-											field.group,
-											field.encoded_size,
+											field.Name(),
+											field.Group(),
+											field.EncodedSize(),
 											encoded_size);
 					return false;
 				}
@@ -1360,8 +2518,9 @@ namespace ket
 					raw = static_cast<Unsigned>(value.*Member);
 				}
 
-				StoreUnsigned<Unsigned>(out + offset, raw, Order);
-				offset += field.encoded_size;
+				std::array<std::uint8_t, sizeof(Unsigned)> encoded{};
+				StoreInteger<Unsigned>(encoded.data(), raw, Order);
+				WriteFieldBytes(out, offset, field, encoded.data());
 			}
 
 			/**
@@ -1385,152 +2544,16 @@ namespace ket
 							  "integer member size mismatch");
 
 				Field<T> field{};
-				field.name = name;
-				field.kind = FieldKind::kInteger;
-				field.encoded_size = IntegerByteSize<Unsigned>();
-				field.max_encoded_size = field.encoded_size;
-				field.is_valid = true;
-				field.decode = &DecodeInteger<T, Member, Unsigned, Order>;
-				field.preflight = &PreflightNoop<T>;
-				field.encode = &EncodeInteger<T, Member, Unsigned, Order>;
-				field.measure = &MeasureFixed<T>;
+				FieldAccess<T>::SetName(field, name);
+				FieldAccess<T>::SetKind(field, FieldKind::kInteger);
+				FieldAccess<T>::SetEncodedSize(field, IntegerByteSize<Unsigned>());
+				FieldAccess<T>::SetMaxEncodedSize(field, field.EncodedSize());
+				FieldAccess<T>::SetIsValid(field, true);
+				FieldAccess<T>::SetDecode(field, &DecodeInteger<T, Member, Unsigned, Order>);
+				FieldAccess<T>::SetPreflight(field, &PreflightNoop<T>);
+				FieldAccess<T>::SetEncode(field, &EncodeInteger<T, Member, Unsigned, Order>);
+				FieldAccess<T>::SetMeasure(field, &MeasureFixed<T>);
 				return field;
-			}
-
-			/**
-			 * @brief BCD nibble妥当性判定。
-			 * @param[in] value nibble値。
-			 * @retval true `value <= 9`。
-			 * @retval false BCD範囲外。
-			 * @pre なし。
-			 * @post 外部状態の変更なし。
-			 */
-			constexpr bool IsBcdNibble(std::uint64_t value) noexcept
-			{
-				return value <= 9U;
-			}
-
-			/**
-			 * @brief BCD raw bitsのnibble検査。
-			 * @param[in] raw BCD raw bits。
-			 * @param[in] nibble_count nibble数。
-			 * @param[out] bad_nibble 不正nibble。
-			 * @retval true 全nibble valid。
-			 * @retval false invalid nibbleあり。
-			 * @pre `nibble_count <= 16`。
-			 * @post 成功時は`bad_nibble`変更なし。失敗時は不正nibbleを格納。
-			 */
-			inline bool ValidateBcdNibbles(std::uint64_t raw,
-										   unsigned nibble_count,
-										   std::uint8_t& bad_nibble) noexcept
-			{
-				for (unsigned index = 0U; index < nibble_count; ++index)
-				{
-					const auto shift = index * 4U;
-					const auto nibble = static_cast<std::uint8_t>((raw >> shift) & 0x0FU);
-					const auto is_bcd = IsBcdNibble(nibble);
-					if (!is_bcd)
-					{
-						bad_nibble = nibble;
-						return false;
-					}
-				}
-
-				return true;
-			}
-
-			/**
-			 * @brief BCD raw bitsをintへ変換。
-			 * @param[in] raw BCD raw bits。
-			 * @param[in] nibble_count nibble数。
-			 * @param[out] out decoded integer。
-			 * @param[out] bad_nibble 不正nibble。
-			 * @retval true 変換成功。
-			 * @retval false invalid nibble、またはint overflow。
-			 * @pre `out`と`bad_nibble`は有効な参照。
-			 * @post 成功時だけ`out`を更新。
-			 */
-			inline bool ParseBcdInteger(std::uint64_t raw,
-										unsigned nibble_count,
-										int& out,
-										std::uint8_t& bad_nibble) noexcept
-			{
-				int result = 0;
-				for (unsigned remaining = nibble_count; remaining > 0U; --remaining)
-				{
-					const auto shift = (remaining - 1U) * 4U;
-					const auto digit = static_cast<std::uint8_t>((raw >> shift) & 0x0FU);
-					const auto is_bcd = IsBcdNibble(digit);
-					if (!is_bcd)
-					{
-						bad_nibble = digit;
-						return false;
-					}
-
-					const auto max_value = std::numeric_limits<int>::max();
-					const auto max_before_append = (max_value - static_cast<int>(digit)) / 10;
-					const auto overflows = result > max_before_append;
-					if (overflows)
-					{
-						return false;
-					}
-
-					result = (result * 10) + static_cast<int>(digit);
-				}
-
-				out = result;
-				return true;
-			}
-
-			/**
-			 * @brief BCD digit数の10進上限取得。
-			 * @param[in] nibble_count digit数。
-			 * @retval value `10 ^ nibble_count`。
-			 * @pre `nibble_count <= 9`。
-			 * @post 外部状態の変更なし。
-			 */
-			constexpr int BcdDecimalLimit(unsigned nibble_count) noexcept
-			{
-				int limit = 1;
-				for (unsigned index = 0U; index < nibble_count; ++index)
-				{
-					limit *= 10;
-				}
-
-				return limit;
-			}
-
-			/**
-			 * @brief intをBCD raw bitsへ変換。
-			 * @param[in] value encode対象値。
-			 * @param[in] nibble_count BCD digit数。
-			 * @param[out] out raw bits。
-			 * @retval true 変換成功。
-			 * @retval false 範囲外。
-			 * @pre `out`は有効な参照。
-			 * @post 成功時だけ`out`を更新。
-			 */
-			inline bool
-			BuildBcdInteger(int value, unsigned nibble_count, std::uint64_t& out) noexcept
-			{
-				const auto limit = BcdDecimalLimit(nibble_count);
-				const auto in_range = value >= 0 && value < limit;
-				if (!in_range)
-				{
-					return false;
-				}
-
-				auto remaining = value;
-				std::uint64_t raw = 0U;
-				for (unsigned index = 0U; index < nibble_count; ++index)
-				{
-					const auto digit = static_cast<std::uint64_t>(remaining % 10);
-					raw |= digit << (index * 4U);
-					remaining /= 10;
-				}
-
-				out = raw;
-				return true;
 			}
 
 			/**
@@ -1559,34 +2582,38 @@ namespace ket
 				using MemberType = typename MemberPointerTraits<decltype(Member)>::member_type;
 				static_assert(std::is_same_v<MemberType, int>, "BCD decoded member must be int");
 				const auto field_start = offset;
-				const auto can_read = CanRead(data, offset, field.encoded_size);
-				if (!can_read)
+				const std::uint8_t* bytes = nullptr;
+				const auto read = PeekFieldBytes(data, offset, field, status, bytes);
+				if (!read)
 				{
-					const auto available = offset <= data.Size() ? (data.Size() - offset) : 0U;
-					status = MakeSizeStatus(Error::kShortInput,
-											field_start,
-											field.name,
-											field.group,
-											field.encoded_size,
-											available);
 					return false;
 				}
 
-				const auto raw =
-					static_cast<std::uint64_t>(LoadUnsigned<Unsigned>(data.Data() + offset, Order));
-				int decoded = 0;
-				std::uint8_t bad_nibble = 0U;
-				const auto parsed = ParseBcdInteger(
-					raw, static_cast<unsigned>(field.encoded_size * 2U), decoded, bad_nibble);
-				if (!parsed)
+				const auto validation = ket::bcd::Validate(bytes, field.EncodedSize());
+				const auto bcd_is_valid = validation.Ok();
+				if (!bcd_is_valid)
+				{
+					status = MakeExpectedStatus(Error::kInvalidBcd,
+												field_start + validation.byte_offset,
+												field.Name(),
+												field.Group(),
+												9U,
+												validation.actual);
+					return false;
+				}
+
+				const auto raw = static_cast<Unsigned>(LoadInteger<Unsigned>(bytes, Order));
+				const auto decoded = ket::bcd::ToInt(raw);
+				const auto decoded_has_value = decoded.has_value();
+				if (!decoded_has_value)
 				{
 					status = MakeExpectedStatus(
-						Error::kInvalidBcd, field_start, field.name, field.group, 9U, bad_nibble);
+						Error::kInvalidBcd, field_start, field.Name(), field.Group(), 9U, 0U);
 					return false;
 				}
 
-				value.*Member = decoded;
-				offset += field.encoded_size;
+				value.*Member = *decoded;
+				offset += field.EncodedSize();
 				return true;
 			}
 
@@ -1602,25 +2629,24 @@ namespace ket
 			 * @pre member type is int.
 			 * @post 引数と外部状態の変更なし。
 			 */
-			template <typename T, auto Member>
+			template <typename T, auto Member, typename Unsigned>
 			bool PreflightBcdInteger(const T& value, const Field<T>& field, Status& status) noexcept
 			{
 				using MemberType = typename MemberPointerTraits<decltype(Member)>::member_type;
 				static_assert(std::is_same_v<MemberType, int>, "BCD decoded member must be int");
-				std::uint64_t raw = 0U;
-				const auto nibble_count = static_cast<unsigned>(field.encoded_size * 2U);
-				const auto built = BuildBcdInteger(value.*Member, nibble_count, raw);
+				const auto encoded = ket::bcd::FromInt<Unsigned>(value.*Member);
+				const auto built = encoded.has_value();
 				if (!built)
 				{
-					const auto limit = BcdDecimalLimit(nibble_count);
 					const auto actual =
 						value.*Member < 0 ? 0U : static_cast<std::uint64_t>(value.*Member);
-					status = MakeExpectedStatus(Error::kValueOutOfRange,
-												0U,
-												field.name,
-												field.group,
-												static_cast<std::uint64_t>(limit - 1),
-												actual);
+					status =
+						MakeExpectedStatus(Error::kValueOutOfRange,
+										   0U,
+										   field.Name(),
+										   field.Group(),
+										   static_cast<std::uint64_t>(ket::bcd::MaxInt<Unsigned>()),
+										   actual);
 					return false;
 				}
 
@@ -1647,12 +2673,11 @@ namespace ket
 								  std::size_t& offset,
 								  const Field<T>& field) noexcept
 			{
-				std::uint64_t raw = 0U;
-				const auto nibble_count = static_cast<unsigned>(field.encoded_size * 2U);
-				const auto built = BuildBcdInteger(value.*Member, nibble_count, raw);
-				(void)built;
-				StoreUnsigned<Unsigned>(out + offset, static_cast<Unsigned>(raw), Order);
-				offset += field.encoded_size;
+				const auto encoded = ket::bcd::FromInt<Unsigned>(value.*Member);
+				const auto raw = encoded.value_or(Unsigned{0});
+				std::array<std::uint8_t, sizeof(Unsigned)> bytes{};
+				StoreInteger<Unsigned>(bytes.data(), raw, Order);
+				WriteFieldBytes(out, offset, field, bytes.data());
 			}
 
 			/**
@@ -1674,15 +2699,15 @@ namespace ket
 				static_assert(std::is_same_v<MemberType, int>, "BCD decoded member must be int");
 
 				Field<T> field{};
-				field.name = name;
-				field.kind = FieldKind::kBcdInteger;
-				field.encoded_size = IntegerByteSize<Unsigned>();
-				field.max_encoded_size = field.encoded_size;
-				field.is_valid = true;
-				field.decode = &DecodeBcdInteger<T, Member, Unsigned, Order>;
-				field.preflight = &PreflightBcdInteger<T, Member>;
-				field.encode = &EncodeBcdInteger<T, Member, Unsigned, Order>;
-				field.measure = &MeasureFixed<T>;
+				FieldAccess<T>::SetName(field, name);
+				FieldAccess<T>::SetKind(field, FieldKind::kBcdInteger);
+				FieldAccess<T>::SetEncodedSize(field, IntegerByteSize<Unsigned>());
+				FieldAccess<T>::SetMaxEncodedSize(field, field.EncodedSize());
+				FieldAccess<T>::SetIsValid(field, true);
+				FieldAccess<T>::SetDecode(field, &DecodeBcdInteger<T, Member, Unsigned, Order>);
+				FieldAccess<T>::SetPreflight(field, &PreflightBcdInteger<T, Member, Unsigned>);
+				FieldAccess<T>::SetEncode(field, &EncodeBcdInteger<T, Member, Unsigned, Order>);
+				FieldAccess<T>::SetMeasure(field, &MeasureFixed<T>);
 				return field;
 			}
 
@@ -1765,46 +2790,41 @@ namespace ket
 							 Status& status) noexcept
 			{
 				const auto field_start = offset;
-				const auto can_read = CanRead(data, offset, field.encoded_size);
-				if (!can_read)
+				const std::uint8_t* bytes = nullptr;
+				const auto read = PeekFieldBytes(data, offset, field, status, bytes);
+				if (!read)
 				{
-					const auto available = offset <= data.Size() ? (data.Size() - offset) : 0U;
-					status = MakeSizeStatus(Error::kShortInput,
-											field_start,
-											field.name,
-											field.group,
-											field.encoded_size,
-											available);
 					return false;
 				}
 
 				if constexpr (ValidateBcd)
 				{
-					for (std::size_t index = 0U; index < field.encoded_size; ++index)
+					const auto validation = ket::bcd::Validate(bytes, field.EncodedSize());
+					const auto bcd_is_valid = validation.Ok();
+					if (!bcd_is_valid)
 					{
-						const auto byte = data.Data()[offset + index];
-						std::uint8_t bad_nibble = 0U;
-						const auto valid_bcd = ValidateBcdNibbles(byte, 2U, bad_nibble);
-						if (!valid_bcd)
-						{
-							status = MakeExpectedStatus(Error::kInvalidBcd,
-														field_start + index,
-														field.name,
-														field.group,
-														9U,
-														bad_nibble);
-							return false;
-						}
+						status = MakeExpectedStatus(Error::kInvalidBcd,
+													field_start + validation.byte_offset,
+													field.Name(),
+													field.Group(),
+													9U,
+													validation.actual);
+						return false;
 					}
 				}
 
-				if (field.encoded_size > 0U)
+				const auto encoded_size = field.EncodedSize();
+				const auto has_bytes = encoded_size > 0U;
+				if (has_bytes)
 				{
 					auto* destination = MutableByteStorageData(value.*Member);
-					std::copy_n(data.Data() + offset, field.encoded_size, destination);
+					for (std::size_t index = 0U; index < encoded_size; ++index)
+					{
+						destination[index] = bytes[index];
+					}
 				}
 
-				offset += field.encoded_size;
+				offset += encoded_size;
 				return true;
 			}
 
@@ -1827,16 +2847,17 @@ namespace ket
 				if constexpr (ValidateBcd)
 				{
 					const auto* source = ByteStorageData(value.*Member);
-					for (std::size_t index = 0U; index < field.encoded_size; ++index)
+					const auto validation = ket::bcd::Validate(source, field.EncodedSize());
+					const auto bcd_is_valid = validation.Ok();
+					if (!bcd_is_valid)
 					{
-						std::uint8_t bad_nibble = 0U;
-						const auto valid_bcd = ValidateBcdNibbles(source[index], 2U, bad_nibble);
-						if (!valid_bcd)
-						{
-							status = MakeExpectedStatus(
-								Error::kInvalidBcd, index, field.name, field.group, 9U, bad_nibble);
-							return false;
-						}
+						status = MakeExpectedStatus(Error::kInvalidBcd,
+													validation.byte_offset,
+													field.Name(),
+													field.Group(),
+													9U,
+													validation.actual);
+						return false;
 					}
 				}
 
@@ -1861,13 +2882,17 @@ namespace ket
 							 std::size_t& offset,
 							 const Field<T>& field) noexcept
 			{
-				if (field.encoded_size > 0U)
+				const auto encoded_size = field.EncodedSize();
+				const auto has_bytes = encoded_size > 0U;
+				if (has_bytes)
 				{
 					const auto* source = ByteStorageData(value.*Member);
-					std::copy_n(source, field.encoded_size, out + offset);
+					WriteFieldBytes(out, offset, field, source);
 				}
-
-				offset += field.encoded_size;
+				else
+				{
+					WriteFieldBytes(out, offset, field, nullptr);
+				}
 			}
 
 			/**
@@ -1889,15 +2914,16 @@ namespace ket
 				static_assert(Traits::kIsByteArray, "member must be a fixed byte array");
 
 				Field<T> field{};
-				field.name = name;
-				field.kind = ValidateBcd ? FieldKind::kRawBcdBytes : FieldKind::kBytes;
-				field.encoded_size = Traits::kSize;
-				field.max_encoded_size = field.encoded_size;
-				field.is_valid = true;
-				field.decode = &DecodeBytes<T, Member, ValidateBcd>;
-				field.preflight = &PreflightBytes<T, Member, ValidateBcd>;
-				field.encode = &EncodeBytes<T, Member>;
-				field.measure = &MeasureFixed<T>;
+				FieldAccess<T>::SetName(field, name);
+				FieldAccess<T>::SetKind(field,
+										ValidateBcd ? FieldKind::kRawBcdBytes : FieldKind::kBytes);
+				FieldAccess<T>::SetEncodedSize(field, Traits::kSize);
+				FieldAccess<T>::SetMaxEncodedSize(field, field.EncodedSize());
+				FieldAccess<T>::SetIsValid(field, true);
+				FieldAccess<T>::SetDecode(field, &DecodeBytes<T, Member, ValidateBcd>);
+				FieldAccess<T>::SetPreflight(field, &PreflightBytes<T, Member, ValidateBcd>);
+				FieldAccess<T>::SetEncode(field, &EncodeBytes<T, Member>);
+				FieldAccess<T>::SetMeasure(field, &MeasureFixed<T>);
 				return field;
 			}
 
@@ -1922,28 +2948,23 @@ namespace ket
 								 const Field<T>& field,
 								 Status& status) noexcept
 			{
-				const auto field_start = offset;
-				const auto can_read = CanRead(data, offset, field.encoded_size);
-				if (!can_read)
+				const std::uint8_t* bytes = nullptr;
+				const auto read = PeekFieldBytes(data, offset, field, status, bytes);
+				if (!read)
 				{
-					const auto available = offset <= data.Size() ? (data.Size() - offset) : 0U;
-					status = MakeSizeStatus(Error::kShortInput,
-											field_start,
-											field.name,
-											field.group,
-											field.encoded_size,
-											available);
 					return false;
 				}
 
 				const std::uint8_t* view_data = nullptr;
-				if (field.encoded_size > 0U)
+				const auto encoded_size = field.EncodedSize();
+				const auto has_bytes = encoded_size > 0U;
+				if (has_bytes)
 				{
-					view_data = data.Data() + offset;
+					view_data = bytes;
 				}
 
-				value.*Member = ket::byte_view::View(view_data, field.encoded_size);
-				offset += field.encoded_size;
+				value.*Member = ket::byte_view::View(view_data, encoded_size);
+				offset += encoded_size;
 				return true;
 			}
 
@@ -1963,26 +2984,26 @@ namespace ket
 			bool PreflightViewBytes(const T& value, const Field<T>& field, Status& status) noexcept
 			{
 				const auto view = value.*Member;
-				const auto is_valid = IsValidInputView(view);
+				const auto is_valid = IsValidInput(view);
 				if (!is_valid)
 				{
 					status = MakeSizeStatus(Error::kInvalidInputView,
 											0U,
-											field.name,
-											field.group,
-											field.encoded_size,
+											field.Name(),
+											field.Group(),
+											field.EncodedSize(),
 											view.Size());
 					return false;
 				}
 
-				const auto size_matches = view.Size() == field.encoded_size;
+				const auto size_matches = view.Size() == field.EncodedSize();
 				if (!size_matches)
 				{
 					status = MakeSizeStatus(Error::kLengthMismatch,
 											0U,
-											field.name,
-											field.group,
-											field.encoded_size,
+											field.Name(),
+											field.Group(),
+											field.EncodedSize(),
 											view.Size());
 					return false;
 				}
@@ -2008,13 +3029,17 @@ namespace ket
 								 std::size_t& offset,
 								 const Field<T>& field) noexcept
 			{
-				if (field.encoded_size > 0U)
+				const auto encoded_size = field.EncodedSize();
+				const auto has_bytes = encoded_size > 0U;
+				if (has_bytes)
 				{
 					const auto view = value.*Member;
-					std::copy_n(view.Data(), field.encoded_size, out + offset);
+					WriteFieldBytes(out, offset, field, view.Data());
 				}
-
-				offset += field.encoded_size;
+				else
+				{
+					WriteFieldBytes(out, offset, field, nullptr);
+				}
 			}
 
 			/**
@@ -2039,26 +3064,22 @@ namespace ket
 			{
 				(void)value;
 				const auto field_start = offset;
-				const auto can_read = CanRead(data, offset, field.encoded_size);
-				if (!can_read)
+				const std::uint8_t* bytes = nullptr;
+				const auto read = PeekFieldBytes(data, offset, field, status, bytes);
+				if (!read)
 				{
-					const auto available = offset <= data.Size() ? (data.Size() - offset) : 0U;
-					status = MakeSizeStatus(Error::kShortInput,
-											field_start,
-											field.name,
-											field.group,
-											field.encoded_size,
-											available);
 					return false;
 				}
 
-				for (std::size_t index = 0U; index < field.encoded_size; ++index)
+				for (std::size_t index = 0U; index < field.EncodedSize(); ++index)
 				{
-					const auto actual = data.Data()[offset + index];
-					auto expected = static_cast<std::uint8_t>(field.expected);
-					if (field.expected_bytes != nullptr)
+					const auto actual = bytes[index];
+					auto expected = static_cast<std::uint8_t>(field.Expected());
+					const auto* expected_bytes = field.ExpectedBytes();
+					const auto has_expected_bytes = expected_bytes != nullptr;
+					if (has_expected_bytes)
 					{
-						expected = field.expected_bytes[index];
+						expected = expected_bytes[index];
 					}
 
 					const auto matches = actual == expected;
@@ -2066,15 +3087,15 @@ namespace ket
 					{
 						status = MakeExpectedStatus(Error::kReservedMismatch,
 													field_start + index,
-													field.name,
-													field.group,
+													field.Name(),
+													field.Group(),
 													expected,
 													actual);
 						return false;
 					}
 				}
 
-				offset += field.encoded_size;
+				offset += field.EncodedSize();
 				return true;
 			}
 
@@ -2096,18 +3117,30 @@ namespace ket
 									 const Field<T>& field) noexcept
 			{
 				(void)value;
-				for (std::size_t index = 0U; index < field.encoded_size; ++index)
+				const auto* expected_bytes = field.ExpectedBytes();
+				const auto has_expected_bytes = expected_bytes != nullptr;
+				if (has_expected_bytes)
 				{
-					auto expected = static_cast<std::uint8_t>(field.expected);
-					if (field.expected_bytes != nullptr)
-					{
-						expected = field.expected_bytes[index];
-					}
-
-					out[offset + index] = expected;
+					WriteFieldBytes(out, offset, field, expected_bytes);
+					return;
 				}
 
-				offset += field.encoded_size;
+				std::array<std::uint8_t, 1U> expected{static_cast<std::uint8_t>(field.Expected())};
+				const auto encoded_size = field.EncodedSize();
+				const auto has_bytes = encoded_size > 0U;
+				std::uint8_t* start = nullptr;
+				if (has_bytes)
+				{
+					start = out + offset;
+				}
+
+				auto writer = ket::byte_writer::Writer(start, encoded_size);
+				for (std::size_t index = 0U; index < encoded_size; ++index)
+				{
+					const auto wrote = writer.WriteBytes(expected.data(), expected.size());
+					(void)wrote;
+				}
+				offset += writer.Offset();
 			}
 
 			/**
@@ -2128,30 +3161,78 @@ namespace ket
 											   FieldKind kind) noexcept
 			{
 				Field<T> field{};
-				field.name = name;
-				field.kind = kind;
-				field.encoded_size = size;
-				field.max_encoded_size = size;
-				field.is_valid = true;
-				field.expected = expected;
-				field.decode = &DecodeExpectedBytes<T>;
-				field.preflight = &PreflightNoop<T>;
-				field.encode = &EncodeExpectedBytes<T>;
-				field.measure = &MeasureFixed<T>;
+				FieldAccess<T>::SetName(field, name);
+				FieldAccess<T>::SetKind(field, kind);
+				FieldAccess<T>::SetEncodedSize(field, size);
+				FieldAccess<T>::SetMaxEncodedSize(field, size);
+				FieldAccess<T>::SetIsValid(field, true);
+				FieldAccess<T>::SetExpected(field, expected);
+				FieldAccess<T>::SetDecode(field, &DecodeExpectedBytes<T>);
+				FieldAccess<T>::SetPreflight(field, &PreflightNoop<T>);
+				FieldAccess<T>::SetEncode(field, &EncodeExpectedBytes<T>);
+				FieldAccess<T>::SetMeasure(field, &MeasureFixed<T>);
 				return field;
 			}
 
 			/**
-			 * @brief bit mask生成。
+			 * @brief bit mask取得。
 			 * @param[in] width bit幅。
-			 * @retval value lower width bits mask。
-			 * @pre `width <= 64`。
+			 * @param[out] out lower width bits mask。
+			 * @retval true mask取得成功。
+			 * @retval false widthがstd::uint64_tのbit幅を超過。
+			 * @pre `out`は有効な参照。
+			 * @post 成功時だけ`out`を更新。
+			 */
+			inline bool TryBitMask(unsigned width, std::uint64_t& out) noexcept
+			{
+				return ket::bits::TryMask<std::uint64_t>(width, out);
+			}
+
+			/**
+			 * @brief bit memberがstorage bit幅に収まるか判定。
+			 * @tparam Unsigned storage unsigned type.
+			 * @tparam T schema対象型。
+			 * @param[in] member bit member descriptor。
+			 * @retval true storage bit幅内。
+			 * @retval false shiftまたはwidthがstorage bit幅外。
+			 * @pre `Unsigned`はunsigned integer type。
 			 * @post 外部状態の変更なし。
 			 */
-			constexpr std::uint64_t MaskForWidth(unsigned width) noexcept
+			template <typename Unsigned, typename T>
+			bool BitMemberFitsStorage(const BitMember<T>& member) noexcept
 			{
-				return width >= 64U ? std::numeric_limits<std::uint64_t>::max()
-									: ((std::uint64_t{1} << width) - 1U);
+				const auto storage_width = ket::bits::TypeBitWidth<Unsigned>();
+				const auto shift_fits = member.Shift() < storage_width;
+				if (!shift_fits)
+				{
+					return false;
+				}
+
+				return member.Width() <= (storage_width - member.Shift());
+			}
+
+			/**
+			 * @brief bit memberが占有するstorage mask取得。
+			 * @tparam T schema対象型。
+			 * @param[in] member bit member descriptor。
+			 * @param[out] out shifted coverage mask。
+			 * @retval true mask取得成功。
+			 * @retval false widthがmask生成範囲外。
+			 * @pre `member`はstorage bit幅内。
+			 * @post 成功時だけ`out`を更新。
+			 */
+			template <typename T>
+			bool TryBitMemberCoverage(const BitMember<T>& member, std::uint64_t& out) noexcept
+			{
+				std::uint64_t mask = 0U;
+				const auto mask_ok = TryBitMask(member.Width(), mask);
+				if (!mask_ok)
+				{
+					return false;
+				}
+
+				out = mask << member.Shift();
+				return true;
 			}
 
 			/**
@@ -2222,47 +3303,44 @@ namespace ket
 							Status& status) noexcept
 			{
 				const auto field_start = offset;
-				const auto can_read = CanRead(data, offset, field.encoded_size);
-				if (!can_read)
+				const std::uint8_t* bytes = nullptr;
+				const auto read = PeekFieldBytes(data, offset, field, status, bytes);
+				if (!read)
 				{
-					const auto available = offset <= data.Size() ? (data.Size() - offset) : 0U;
-					status = MakeSizeStatus(Error::kShortInput,
-											field_start,
-											field.name,
-											field.group,
-											field.encoded_size,
-											available);
 					return false;
 				}
 
 				const auto raw_storage =
-					static_cast<std::uint64_t>(LoadUnsigned<Unsigned>(data.Data() + offset, Order));
-				for (std::size_t index = 0U; index < field.bit_member_count; ++index)
+					static_cast<std::uint64_t>(LoadInteger<Unsigned>(bytes, Order));
+				for (std::size_t index = 0U; index < field.BitMemberCount(); ++index)
 				{
-					const auto& member = field.bit_members[index];
-					const auto mask = MaskForWidth(member.width);
-					const auto actual = (raw_storage >> member.shift) & mask;
-					if (!member.has_member)
+					const auto& member = field.BitMembers()[index];
+					std::uint64_t mask = 0U;
+					const auto mask_ok = TryBitMask(member.Width(), mask);
+					(void)mask_ok;
+					const auto actual = (raw_storage >> member.Shift()) & mask;
+					const auto has_member = member.HasMember();
+					if (!has_member)
 					{
-						const auto matches = actual == member.expected;
+						const auto matches = actual == member.Expected();
 						if (!matches)
 						{
 							status = MakeExpectedStatus(Error::kReservedMismatch,
 														field_start,
-														member.name,
-														field.group,
-														member.expected,
+														member.Name(),
+														field.Group(),
+														member.Expected(),
 														actual);
 							return false;
 						}
 					}
 					else
 					{
-						member.set(value, actual);
+						BitMemberAccess<T>::Set(member)(value, actual);
 					}
 				}
 
-				offset += field.encoded_size;
+				offset += field.EncodedSize();
 				return true;
 			}
 
@@ -2280,29 +3358,33 @@ namespace ket
 			template <typename T>
 			bool PreflightBits(const T& value, const Field<T>& field, Status& status) noexcept
 			{
-				for (std::size_t index = 0U; index < field.bit_member_count; ++index)
+				for (std::size_t index = 0U; index < field.BitMemberCount(); ++index)
 				{
-					const auto& member = field.bit_members[index];
-					if (!member.has_member)
+					const auto& member = field.BitMembers()[index];
+					const auto has_member = member.HasMember();
+					if (!has_member)
 					{
 						continue;
 					}
 
 					std::uint64_t actual = 0U; // NOLINT(misc-const-correctness)
-					const auto got_value = member.get(value, member, actual, status);
+					const auto got_value =
+						BitMemberAccess<T>::Get(member)(value, member, actual, status);
 					if (!got_value)
 					{
 						return false;
 					}
 
-					const auto max_value = MaskForWidth(member.width);
+					std::uint64_t max_value = 0U;
+					const auto mask_ok = TryBitMask(member.Width(), max_value);
+					(void)mask_ok;
 					const auto fits = actual <= max_value;
 					if (!fits)
 					{
 						status = MakeExpectedStatus(Error::kValueOutOfRange,
 													0U,
-													member.name,
-													field.group,
+													member.Name(),
+													field.Group(),
 													max_value,
 													actual);
 						return false;
@@ -2333,22 +3415,27 @@ namespace ket
 			{
 				std::uint64_t raw_storage = 0U;
 				Status ignored_status{}; // NOLINT(misc-const-correctness)
-				for (std::size_t index = 0U; index < field.bit_member_count; ++index)
+				for (std::size_t index = 0U; index < field.BitMemberCount(); ++index)
 				{
-					const auto& member = field.bit_members[index];
-					std::uint64_t actual = member.expected; // NOLINT(misc-const-correctness)
-					if (member.has_member)
+					const auto& member = field.BitMembers()[index];
+					std::uint64_t actual = member.Expected(); // NOLINT(misc-const-correctness)
+					const auto has_member = member.HasMember();
+					if (has_member)
 					{
-						const auto got_value = member.get(value, member, actual, ignored_status);
+						const auto got_value =
+							BitMemberAccess<T>::Get(member)(value, member, actual, ignored_status);
 						(void)got_value;
 					}
 
-					const auto mask = MaskForWidth(member.width);
-					raw_storage |= (actual & mask) << member.shift;
+					std::uint64_t mask = 0U;
+					const auto mask_ok = TryBitMask(member.Width(), mask);
+					(void)mask_ok;
+					raw_storage |= (actual & mask) << member.Shift();
 				}
 
-				StoreUnsigned<Unsigned>(out + offset, static_cast<Unsigned>(raw_storage), Order);
-				offset += field.encoded_size;
+				std::array<std::uint8_t, sizeof(Unsigned)> bytes{};
+				StoreInteger<Unsigned>(bytes.data(), static_cast<Unsigned>(raw_storage), Order);
+				WriteFieldBytes(out, offset, field, bytes.data());
 			}
 
 			/**
@@ -2368,35 +3455,47 @@ namespace ket
 								   std::array<BitMember<T>, BitCount> members) noexcept
 			{
 				Field<T> field{};
-				field.name = group;
-				field.group = group;
-				field.kind = FieldKind::kBits;
-				field.encoded_size = IntegerByteSize<Unsigned>();
-				field.max_encoded_size = field.encoded_size;
-				field.is_valid = BitCount <= field.bit_members.size();
-				field.decode = &DecodeBits<T, Unsigned, Order>;
-				field.preflight = &PreflightBits<T>;
-				field.encode = &EncodeBits<T, Unsigned, Order>;
-				field.measure = &MeasureFixed<T>;
-				if (!field.is_valid)
+				FieldAccess<T>::SetName(field, group);
+				FieldAccess<T>::SetGroup(field, group);
+				FieldAccess<T>::SetKind(field, FieldKind::kBits);
+				FieldAccess<T>::SetEncodedSize(field, IntegerByteSize<Unsigned>());
+				FieldAccess<T>::SetMaxEncodedSize(field, field.EncodedSize());
+				FieldAccess<T>::SetIsValid(field, BitCount <= field.BitMembers().size());
+				FieldAccess<T>::SetDecode(field, &DecodeBits<T, Unsigned, Order>);
+				FieldAccess<T>::SetPreflight(field, &PreflightBits<T>);
+				FieldAccess<T>::SetEncode(field, &EncodeBits<T, Unsigned, Order>);
+				FieldAccess<T>::SetMeasure(field, &MeasureFixed<T>);
+				const auto field_is_valid = field.IsValid();
+				if (!field_is_valid)
 				{
 					return field;
 				}
 
+				std::uint64_t used_mask = 0U;
 				for (std::size_t index = 0U; index < BitCount; ++index)
 				{
 					const auto& member = members[index];
-					const auto member_valid = member.is_valid;
-					if (!member_valid)
+					const auto member_valid = member.IsValid();
+					const auto member_fits_storage = BitMemberFitsStorage<Unsigned>(member);
+					std::uint64_t member_coverage = 0U;
+					bool coverage_ok = false;
+					if (member_fits_storage)
 					{
-						field.is_valid = false;
+						coverage_ok = TryBitMemberCoverage(member, member_coverage);
+					}
+					const auto member_overlaps =
+						coverage_ok && ((used_mask & member_coverage) != 0U);
+					if (!member_valid || !member_fits_storage || !coverage_ok || member_overlaps)
+					{
+						FieldAccess<T>::SetIsValid(field, false);
 						return field;
 					}
 
-					field.bit_members[index] = member;
+					used_mask |= member_coverage;
+					FieldAccess<T>::SetBitMember(field, index, member);
 				}
 
-				field.bit_member_count = BitCount;
+				FieldAccess<T>::SetBitMemberCount(field, BitCount);
 				return field;
 			}
 
@@ -2421,14 +3520,14 @@ namespace ket
 								  Status& status) noexcept
 			{
 				(void)data;
-				const auto callback_ok = field.validation(value, status);
+				const auto callback_ok = FieldAccess<T>::Validation(field)(value, status);
 				if (!callback_ok)
 				{
 					const auto status_ok = status.Ok();
 					if (status_ok)
 					{
 						status =
-							MakeStatus(Error::kCallbackFailed, offset, field.name, field.group);
+							MakeStatus(Error::kCallbackFailed, offset, field.Name(), field.Group());
 					}
 					return false;
 				}
@@ -2450,13 +3549,14 @@ namespace ket
 			template <typename T>
 			bool PreflightValidation(const T& value, const Field<T>& field, Status& status) noexcept
 			{
-				const auto callback_ok = field.validation(value, status);
+				const auto callback_ok = FieldAccess<T>::Validation(field)(value, status);
 				if (!callback_ok)
 				{
 					const auto status_ok = status.Ok();
 					if (status_ok)
 					{
-						status = MakeStatus(Error::kCallbackFailed, 0U, field.name, field.group);
+						status =
+							MakeStatus(Error::kCallbackFailed, 0U, field.Name(), field.Group());
 					}
 					return false;
 				}
@@ -2488,16 +3588,16 @@ namespace ket
 			}
 
 			/**
-			 * @brief validation field measure。
+			 * @brief validation field size measure no-op。
 			 * @tparam T schema対象型。
 			 * @param[in] value 測定対象object。
 			 * @param[in] field field descriptor。
 			 * @param[in,out] encoded_size 現在までのencoded size。
 			 * @param[out] status failure status。
-			 * @retval true callback success.
-			 * @retval false callback failure.
+			 * @retval true 常に成功。
+			 * @retval false 未使用。
 			 * @pre callback is valid.
-			 * @post encoded_sizeの変更なし。
+			 * @post encoded_size、status、外部状態の変更なし。
 			 */
 			template <typename T>
 			bool MeasureValidation(const T& value,
@@ -2505,8 +3605,11 @@ namespace ket
 								   std::size_t& encoded_size,
 								   Status& status) noexcept
 			{
+				(void)value;
+				(void)field;
 				(void)encoded_size;
-				return PreflightValidation(value, field, status);
+				(void)status;
+				return true;
 			}
 
 			/**
@@ -2523,11 +3626,65 @@ namespace ket
 			template <typename T, std::size_t FieldCount>
 			bool ValidateSchema(const Schema<T, FieldCount>& schema, Status& status) noexcept
 			{
-				const auto schema_ok = schema.status.Ok();
+				const auto schema_ok = schema.SchemaStatus().Ok();
 				if (!schema_ok)
 				{
-					status = schema.status;
+					status = schema.SchemaStatus();
 					return false;
+				}
+
+				return true;
+			}
+
+			/**
+			 * @brief output bufferがschema field列を収容できるか検査。
+			 * @tparam T schema対象型。
+			 * @tparam FieldCount field descriptor数。
+			 * @param[in] schema 対象schema。
+			 * @param[in] out output view。
+			 * @param[out] status failure status。
+			 * @retval true output capacity sufficient.
+			 * @retval false short output、またはsize overflow。
+			 * @pre `schema`はvalid、`out`はvalid view。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			template <typename T, std::size_t FieldCount>
+			bool CheckOutputCapacity(const Schema<T, FieldCount>& schema,
+									 ket::byte_view::MutableView out,
+									 Status& status) noexcept
+			{
+				std::size_t offset = 0U;
+				for (const auto& field : schema.Fields())
+				{
+					const auto field_size = field.EncodedSize();
+					const auto available = ket::byte_view::Remaining(out, offset);
+					const auto enough = field_size <= available;
+					if (!enough)
+					{
+						status = MakeSizeStatus(Error::kShortOutput,
+												offset,
+												field.Name(),
+												field.Group(),
+												field_size,
+												available);
+						return false;
+					}
+
+					std::size_t next_offset = 0U;
+					const auto added =
+						ket::numeric::TryAdd<std::size_t>(offset, field_size, next_offset);
+					if (!added)
+					{
+						status = MakeSizeStatus(Error::kSizeOverflow,
+												offset,
+												field.Name(),
+												field.Group(),
+												field_size,
+												offset);
+						return false;
+					}
+
+					offset = next_offset;
 				}
 
 				return true;
@@ -2559,17 +3716,31 @@ namespace ket
 				}
 
 				std::size_t measured = 0U; // NOLINT(misc-const-correctness)
-				for (const auto& field : schema.fields)
+				for (const auto& field : schema.Fields())
 				{
-					const auto measured_field = field.measure(value, field, measured, status);
+					const auto field_start = measured;
+					const auto measured_field =
+						FieldAccess<T>::Measure(field)(value, field, measured, status);
 					if (!measured_field)
 					{
 						return false;
 					}
 
-					const auto preflight_ok = field.preflight(value, field, status);
+					const auto preflight_ok =
+						FieldAccess<T>::Preflight(field)(value, field, status);
 					if (!preflight_ok)
 					{
+						const auto is_validation = field.Kind() == FieldKind::kValidation;
+						if (!is_validation)
+						{
+							std::size_t adjusted_offset = 0U;
+							const auto offset_adjusted = ket::numeric::TryAdd<std::size_t>(
+								field_start, status.offset, adjusted_offset);
+							if (offset_adjusted)
+							{
+								status.offset = adjusted_offset;
+							}
+						}
 						return false;
 					}
 				}
@@ -2595,9 +3766,9 @@ namespace ket
 								 std::uint8_t* out) noexcept
 			{
 				std::size_t offset = 0U; // NOLINT(misc-const-correctness)
-				for (const auto& field : schema.fields)
+				for (const auto& field : schema.Fields())
 				{
-					field.encode(value, out, offset, field);
+					FieldAccess<T>::Encode(field)(value, out, offset, field);
 				}
 			}
 
@@ -2606,6 +3777,179 @@ namespace ket
 		// -----------------------------------------------------------------------------
 		// Public API definitions
 		// -----------------------------------------------------------------------------
+
+		template <typename T>
+		constexpr std::string_view BitMember<T>::Name() const noexcept
+		{
+			return name_;
+		}
+
+		template <typename T>
+		constexpr unsigned BitMember<T>::Shift() const noexcept
+		{
+			return shift_;
+		}
+
+		template <typename T>
+		constexpr unsigned BitMember<T>::Width() const noexcept
+		{
+			return width_;
+		}
+
+		template <typename T>
+		constexpr std::uint64_t BitMember<T>::Expected() const noexcept
+		{
+			return expected_;
+		}
+
+		template <typename T>
+		constexpr bool BitMember<T>::HasMember() const noexcept
+		{
+			return has_member_;
+		}
+
+		template <typename T>
+		constexpr bool BitMember<T>::IsValid() const noexcept
+		{
+			return is_valid_;
+		}
+
+		template <typename T>
+		constexpr std::string_view Field<T>::Name() const noexcept
+		{
+			return name_;
+		}
+
+		template <typename T>
+		constexpr std::string_view Field<T>::Group() const noexcept
+		{
+			return group_;
+		}
+
+		template <typename T>
+		constexpr FieldKind Field<T>::Kind() const noexcept
+		{
+			return kind_;
+		}
+
+		template <typename T>
+		constexpr std::size_t Field<T>::EncodedSize() const noexcept
+		{
+			return encoded_size_;
+		}
+
+		template <typename T>
+		constexpr std::size_t Field<T>::MaxEncodedSize() const noexcept
+		{
+			return max_encoded_size_;
+		}
+
+		template <typename T>
+		constexpr bool Field<T>::IsFixedSize() const noexcept
+		{
+			return is_fixed_size_;
+		}
+
+		template <typename T>
+		constexpr bool Field<T>::IsValid() const noexcept
+		{
+			return is_valid_;
+		}
+
+		template <typename T>
+		constexpr std::uint64_t Field<T>::Expected() const noexcept
+		{
+			return expected_;
+		}
+
+		template <typename T>
+		constexpr const std::uint8_t* Field<T>::ExpectedBytes() const noexcept
+		{
+			return expected_bytes_;
+		}
+
+		template <typename T>
+		constexpr std::size_t Field<T>::ExpectedBytesSize() const noexcept
+		{
+			return expected_bytes_size_;
+		}
+
+		template <typename T>
+		constexpr const std::array<BitMember<T>, 16U>& Field<T>::BitMembers() const noexcept
+		{
+			return bit_members_;
+		}
+
+		template <typename T>
+		constexpr const BitMember<T>* Field<T>::BitMemberAt(std::size_t index) const noexcept
+		{
+			if (index >= bit_member_count_)
+			{
+				return nullptr;
+			}
+
+			return &bit_members_[index];
+		}
+
+		template <typename T>
+		constexpr std::size_t Field<T>::BitMemberCount() const noexcept
+		{
+			return bit_member_count_;
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr std::string_view Schema<T, FieldCount>::Name() const noexcept
+		{
+			return name_;
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr const std::array<Field<T>, FieldCount>&
+		Schema<T, FieldCount>::Fields() const noexcept
+		{
+			return fields_;
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr const Field<T>* Schema<T, FieldCount>::FieldAt(std::size_t index) const noexcept
+		{
+			if (index >= field_count_)
+			{
+				return nullptr;
+			}
+
+			return &fields_[index];
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr std::size_t Schema<T, FieldCount>::FieldCountValue() const noexcept
+		{
+			return field_count_;
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr bool Schema<T, FieldCount>::IsFixedSize() const noexcept
+		{
+			return is_fixed_size_;
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr std::size_t Schema<T, FieldCount>::FixedSize() const noexcept
+		{
+			return fixed_size_;
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr std::size_t Schema<T, FieldCount>::MaxSize() const noexcept
+		{
+			return max_size_;
+		}
+
+		template <typename T, std::size_t FieldCount>
+		constexpr const Status& Schema<T, FieldCount>::SchemaStatus() const noexcept
+		{
+			return status_;
+		}
 
 		/**
 		 * @brief success status判定。
@@ -2624,40 +3968,49 @@ namespace ket
 										 std::array<Field<T>, FieldCount> fields) noexcept
 		{
 			Schema<T, FieldCount> schema{};
-			schema.name = name;
-			schema.fields = fields;
-			schema.status = detail::OkStatus();
+			detail::SchemaAccess<T, FieldCount>::SetName(schema, name);
+			detail::SchemaAccess<T, FieldCount>::SetFields(schema, fields);
+			detail::SchemaAccess<T, FieldCount>::SetSchemaStatus(schema, detail::OkStatus());
 
 			std::size_t fixed_size = 0U;
 			std::size_t max_size = 0U;
 			for (std::size_t index = 0U; index < FieldCount; ++index)
 			{
-				const auto& field = schema.fields[index];
-				if (!field.is_valid || field.decode == nullptr || field.preflight == nullptr ||
-					field.encode == nullptr || field.measure == nullptr)
+				const auto& field = schema.Fields()[index];
+				const auto field_is_valid = field.IsValid();
+				const auto decode_is_valid = detail::FieldAccess<T>::Decode(field) != nullptr;
+				const auto preflight_is_valid = detail::FieldAccess<T>::Preflight(field) != nullptr;
+				const auto encode_is_valid = detail::FieldAccess<T>::Encode(field) != nullptr;
+				const auto measure_is_valid = detail::FieldAccess<T>::Measure(field) != nullptr;
+				const auto callbacks_are_valid =
+					decode_is_valid && preflight_is_valid && encode_is_valid && measure_is_valid;
+				if (!field_is_valid || !callbacks_are_valid)
 				{
-					schema.status =
-						detail::MakeStatus(Error::kSchemaError, index, field.name, field.group);
+					const auto status =
+						detail::MakeStatus(Error::kSchemaError, index, field.Name(), field.Group());
+					detail::SchemaAccess<T, FieldCount>::SetSchemaStatus(schema, status);
 					return schema;
 				}
 
-				if (!field.is_fixed_size)
+				const auto field_is_fixed_size = field.IsFixedSize();
+				if (!field_is_fixed_size)
 				{
-					schema.is_fixed_size = false;
+					detail::SchemaAccess<T, FieldCount>::SetIsFixedSize(schema, false);
 				}
 				else
 				{
 					std::size_t next_size = 0U;
-					const auto added =
-						detail::TryAddSize(fixed_size, field.encoded_size, next_size);
+					const auto added = ket::numeric::TryAdd<std::size_t>(
+						fixed_size, field.EncodedSize(), next_size);
 					if (!added)
 					{
-						schema.status = detail::MakeSizeStatus(Error::kSizeOverflow,
-															   fixed_size,
-															   field.name,
-															   field.group,
-															   field.encoded_size,
-															   fixed_size);
+						const auto status = detail::MakeSizeStatus(Error::kSizeOverflow,
+																   fixed_size,
+																   field.Name(),
+																   field.Group(),
+																   field.EncodedSize(),
+																   fixed_size);
+						detail::SchemaAccess<T, FieldCount>::SetSchemaStatus(schema, status);
 						return schema;
 					}
 
@@ -2665,24 +4018,25 @@ namespace ket
 				}
 
 				std::size_t next_max_size = 0U;
-				const auto max_added =
-					detail::TryAddSize(max_size, field.max_encoded_size, next_max_size);
+				const auto max_added = ket::numeric::TryAdd<std::size_t>(
+					max_size, field.MaxEncodedSize(), next_max_size);
 				if (!max_added)
 				{
-					schema.status = detail::MakeSizeStatus(Error::kSizeOverflow,
-														   max_size,
-														   field.name,
-														   field.group,
-														   field.max_encoded_size,
-														   max_size);
+					const auto status = detail::MakeSizeStatus(Error::kSizeOverflow,
+															   max_size,
+															   field.Name(),
+															   field.Group(),
+															   field.MaxEncodedSize(),
+															   max_size);
+					detail::SchemaAccess<T, FieldCount>::SetSchemaStatus(schema, status);
 					return schema;
 				}
 
 				max_size = next_max_size;
 			}
 
-			schema.fixed_size = fixed_size;
-			schema.max_size = max_size;
+			detail::SchemaAccess<T, FieldCount>::SetFixedSize(schema, fixed_size);
+			detail::SchemaAccess<T, FieldCount>::SetMaxSize(schema, max_size);
 			return schema;
 		}
 
@@ -2703,7 +4057,7 @@ namespace ket
 				result.status = detail::MakeSizeStatus(Error::kTrailingBytes,
 													   result.consumed,
 													   {},
-													   schema.name,
+													   schema.Name(),
 													   result.consumed,
 													   data.Size());
 				result.consumed = 0U;
@@ -2717,11 +4071,11 @@ namespace ket
 		DecodeResult<T> DecodePrefix(ket::byte_view::View data, const Schema<T, FieldCount>& schema)
 		{
 			DecodeResult<T> result{};
-			const auto input_valid = detail::IsValidInputView(data);
+			const auto input_valid = detail::IsValidInput(data);
 			if (!input_valid)
 			{
 				result.status = detail::MakeSizeStatus(
-					Error::kInvalidInputView, 0U, {}, schema.name, 0U, data.Size());
+					Error::kInvalidInputView, 0U, {}, schema.Name(), 0U, data.Size());
 				return result;
 			}
 
@@ -2733,10 +4087,10 @@ namespace ket
 
 			T decoded{};
 			std::size_t offset = 0U; // NOLINT(misc-const-correctness)
-			for (const auto& field : schema.fields)
+			for (const auto& field : schema.Fields())
 			{
-				const auto decoded_field =
-					field.decode(data, offset, decoded, field, result.status);
+				const auto decoded_field = detail::FieldAccess<T>::Decode(field)(
+					data, offset, decoded, field, result.status);
 				if (!decoded_field)
 				{
 					result.consumed = 0U;
@@ -2762,8 +4116,9 @@ namespace ket
 				return result;
 			}
 
-			std::vector<std::uint8_t> bytes{};
-			bytes.resize(encoded_size);
+			auto builder = ket::bytes::Builder(encoded_size);
+			builder.AppendFill(std::uint8_t{0U}, encoded_size);
+			auto bytes = std::move(builder).Build();
 			std::uint8_t* data = nullptr;
 			if (encoded_size > 0U)
 			{
@@ -2782,11 +4137,11 @@ namespace ket
 								ket::byte_view::MutableView out)
 		{
 			EncodeToResult result{};
-			const auto output_valid = detail::IsValidOutputView(out);
+			const auto output_valid = detail::IsValidOutput(out);
 			if (!output_valid)
 			{
 				result.status = detail::MakeSizeStatus(
-					Error::kInvalidOutputView, 0U, {}, schema.name, 0U, out.Size());
+					Error::kInvalidOutputView, 0U, {}, schema.Name(), 0U, out.Size());
 				return result;
 			}
 
@@ -2798,11 +4153,9 @@ namespace ket
 				return result;
 			}
 
-			const auto enough_output = encoded_size <= out.Size();
+			const auto enough_output = detail::CheckOutputCapacity(schema, out, result.status);
 			if (!enough_output)
 			{
-				result.status = detail::MakeSizeStatus(
-					Error::kShortOutput, 0U, {}, schema.name, encoded_size, out.Size());
 				return result;
 			}
 
@@ -2821,37 +4174,38 @@ namespace ket
 		template <typename T, std::size_t FieldCount>
 		std::optional<std::size_t> EncodedSize(const Schema<T, FieldCount>& schema) noexcept
 		{
-			const auto schema_ok = schema.status.Ok();
+			const auto schema_ok = schema.SchemaStatus().Ok();
 			if (!schema_ok)
 			{
 				return std::nullopt;
 			}
 
-			if (!schema.is_fixed_size)
+			const auto schema_is_fixed_size = schema.IsFixedSize();
+			if (!schema_is_fixed_size)
 			{
 				return std::nullopt;
 			}
 
-			return schema.fixed_size;
+			return schema.FixedSize();
 		}
 
 		template <typename T, std::size_t FieldCount>
 		std::optional<std::size_t> MaxEncodedSize(const Schema<T, FieldCount>& schema) noexcept
 		{
-			const auto schema_ok = schema.status.Ok();
+			const auto schema_ok = schema.SchemaStatus().Ok();
 			if (!schema_ok)
 			{
 				return std::nullopt;
 			}
 
-			return schema.max_size;
+			return schema.MaxSize();
 		}
 
 		template <typename T, std::size_t FieldCount>
 		bool IsFixedSize(const Schema<T, FieldCount>& schema) noexcept
 		{
-			const auto schema_ok = schema.status.Ok();
-			return schema_ok && schema.is_fixed_size;
+			const auto schema_ok = schema.SchemaStatus().Ok();
+			return schema_ok && schema.IsFixedSize();
 		}
 
 		template <typename T, std::size_t FieldCount>
@@ -3025,15 +4379,15 @@ namespace ket
 						  "view bytes member must be ket::byte_view::View");
 
 			Field<T> field{};
-			field.name = name;
-			field.kind = FieldKind::kViewBytes;
-			field.encoded_size = size;
-			field.max_encoded_size = size;
-			field.is_valid = true;
-			field.decode = &detail::DecodeViewBytes<T, Member>;
-			field.preflight = &detail::PreflightViewBytes<T, Member>;
-			field.encode = &detail::EncodeViewBytes<T, Member>;
-			field.measure = &detail::MeasureFixed<T>;
+			detail::FieldAccess<T>::SetName(field, name);
+			detail::FieldAccess<T>::SetKind(field, FieldKind::kViewBytes);
+			detail::FieldAccess<T>::SetEncodedSize(field, size);
+			detail::FieldAccess<T>::SetMaxEncodedSize(field, size);
+			detail::FieldAccess<T>::SetIsValid(field, true);
+			detail::FieldAccess<T>::SetDecode(field, &detail::DecodeViewBytes<T, Member>);
+			detail::FieldAccess<T>::SetPreflight(field, &detail::PreflightViewBytes<T, Member>);
+			detail::FieldAccess<T>::SetEncode(field, &detail::EncodeViewBytes<T, Member>);
+			detail::FieldAccess<T>::SetMeasure(field, &detail::MeasureFixed<T>);
 			return field;
 		}
 
@@ -3048,17 +4402,19 @@ namespace ket
 		ConstBytes(std::string_view name, const std::uint8_t* expected, std::size_t size) noexcept
 		{
 			Field<T> field{};
-			field.name = name;
-			field.kind = FieldKind::kConstBytes;
-			field.encoded_size = size;
-			field.max_encoded_size = size;
-			field.is_valid = detail::IsValidStorage(expected, size);
-			field.expected_bytes = expected;
-			field.expected_bytes_size = size;
-			field.decode = &detail::DecodeExpectedBytes<T>;
-			field.preflight = &detail::PreflightNoop<T>;
-			field.encode = &detail::EncodeExpectedBytes<T>;
-			field.measure = &detail::MeasureFixed<T>;
+			detail::FieldAccess<T>::SetName(field, name);
+			detail::FieldAccess<T>::SetKind(field, FieldKind::kConstBytes);
+			detail::FieldAccess<T>::SetEncodedSize(field, size);
+			detail::FieldAccess<T>::SetMaxEncodedSize(field, size);
+			const auto expected_view = ket::byte_view::View(expected, size);
+			const auto expected_is_valid = ket::byte_view::IsValid(expected_view);
+			detail::FieldAccess<T>::SetIsValid(field, expected_is_valid);
+			detail::FieldAccess<T>::SetExpectedBytes(field, expected);
+			detail::FieldAccess<T>::SetExpectedBytesSize(field, size);
+			detail::FieldAccess<T>::SetDecode(field, &detail::DecodeExpectedBytes<T>);
+			detail::FieldAccess<T>::SetPreflight(field, &detail::PreflightNoop<T>);
+			detail::FieldAccess<T>::SetEncode(field, &detail::EncodeExpectedBytes<T>);
+			detail::FieldAccess<T>::SetMeasure(field, &detail::MeasureFixed<T>);
 			return field;
 		}
 
@@ -3104,16 +4460,18 @@ namespace ket
 			static_assert(std::is_integral_v<MemberType> && std::is_unsigned_v<MemberType>,
 						  "bit member must be unsigned integral");
 			static_assert(Width > 0U, "bit width must be positive");
-			static_assert(Width <= sizeof(MemberType) * 8U, "bit width must fit member type");
+			static_assert(Width <= ket::bits::TypeBitWidth<MemberType>(),
+						  "bit width must fit member type");
 
 			BitMember<T> member{};
-			member.name = name;
-			member.shift = Shift;
-			member.width = Width;
-			member.has_member = true;
-			member.is_valid = Width > 0U && Width <= 64U;
-			member.get = &detail::GetBitMember<T, Member>;
-			member.set = &detail::SetBitMember<T, Member>;
+			detail::BitMemberAccess<T>::SetName(member, name);
+			detail::BitMemberAccess<T>::SetShift(member, Shift);
+			detail::BitMemberAccess<T>::SetWidth(member, Width);
+			detail::BitMemberAccess<T>::SetHasMember(member, true);
+			detail::BitMemberAccess<T>::SetIsValid(
+				member, Width > 0U && Width <= ket::bits::TypeBitWidth<MemberType>());
+			detail::BitMemberAccess<T>::SetGet(member, &detail::GetBitMember<T, Member>);
+			detail::BitMemberAccess<T>::SetSetter(member, &detail::SetBitMember<T, Member>);
 			return member;
 		}
 
@@ -3121,12 +4479,15 @@ namespace ket
 		BitMember<T> ReservedBits(std::string_view name, std::uint64_t expected) noexcept
 		{
 			BitMember<T> member{};
-			member.name = name;
-			member.shift = Shift;
-			member.width = Width;
-			member.expected = expected;
-			member.has_member = false;
-			member.is_valid = Width > 0U && Width <= 64U && expected <= detail::MaskForWidth(Width);
+			detail::BitMemberAccess<T>::SetName(member, name);
+			detail::BitMemberAccess<T>::SetShift(member, Shift);
+			detail::BitMemberAccess<T>::SetWidth(member, Width);
+			detail::BitMemberAccess<T>::SetExpected(member, expected);
+			detail::BitMemberAccess<T>::SetHasMember(member, false);
+			std::uint64_t mask = 0U;
+			const auto mask_ok = detail::TryBitMask(Width, mask);
+			detail::BitMemberAccess<T>::SetIsValid(member,
+												   Width > 0U && mask_ok && expected <= mask);
 			return member;
 		}
 
@@ -3156,14 +4517,14 @@ namespace ket
 		Field<T> Validate(std::string_view name, ValidationCallback<T> callback) noexcept
 		{
 			Field<T> field{};
-			field.name = name;
-			field.kind = FieldKind::kValidation;
-			field.is_valid = callback != nullptr;
-			field.validation = callback;
-			field.decode = &detail::DecodeValidation<T>;
-			field.preflight = &detail::PreflightValidation<T>;
-			field.encode = &detail::EncodeValidation<T>;
-			field.measure = &detail::MeasureValidation<T>;
+			detail::FieldAccess<T>::SetName(field, name);
+			detail::FieldAccess<T>::SetKind(field, FieldKind::kValidation);
+			detail::FieldAccess<T>::SetIsValid(field, callback != nullptr);
+			detail::FieldAccess<T>::SetValidation(field, callback);
+			detail::FieldAccess<T>::SetDecode(field, &detail::DecodeValidation<T>);
+			detail::FieldAccess<T>::SetPreflight(field, &detail::PreflightValidation<T>);
+			detail::FieldAccess<T>::SetEncode(field, &detail::EncodeValidation<T>);
+			detail::FieldAccess<T>::SetMeasure(field, &detail::MeasureValidation<T>);
 			return field;
 		}
 

@@ -427,6 +427,101 @@ namespace ket
 			std::size_t size_;
 		};
 
+		/**
+		 * @brief 読み取り専用viewが有効なstorageを指すか判定。
+		 * @param[in] view 判定対象view。
+		 * @retval true `view.Data() != nullptr`、または`view.Size() == 0`。
+		 * @retval false `view.Data() == nullptr`かつ`view.Size() != 0`。
+		 * @pre なし。invalid viewも判定対象として受け取る。
+		 * @post `view`と外部状態の変更なし。
+		 * @code
+		 * const auto ok = ket::byte_view::IsValid(ket::byte_view::View(nullptr, 0U));
+		 * // ok == true
+		 * @endcode
+		 */
+		constexpr bool IsValid(View view) noexcept;
+
+		/**
+		 * @brief 書き込み可能viewが有効なstorageを指すか判定。
+		 * @param[in] view 判定対象view。
+		 * @retval true `view.Data() != nullptr`、または`view.Size() == 0`。
+		 * @retval false `view.Data() == nullptr`かつ`view.Size() != 0`。
+		 * @pre なし。invalid viewも判定対象として受け取る。
+		 * @post `view`と外部状態の変更なし。
+		 * @code
+		 * const auto ok = ket::byte_view::IsValid(ket::byte_view::MutableView(nullptr, 0U));
+		 * // ok == true
+		 * @endcode
+		 */
+		constexpr bool IsValid(MutableView view) noexcept;
+
+		/**
+		 * @brief 読み取り専用view内の指定範囲がslice可能か判定。
+		 * @param[in] view 判定対象view。
+		 * @param[in] offset slice開始位置。
+		 * @param[in] count slice byte数。
+		 * @retval true viewがvalidかつ`offset`から`count`byteが範囲内。
+		 * @retval false invalid view、または範囲外slice。
+		 * @pre なし。`offset > view.Size()`は失敗値として扱う。
+		 * @post `view`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0x01U, 0x02U};
+		 * const auto ok = ket::byte_view::CanSlice(ket::byte_view::View(data, 2U), 1U, 1U);
+		 * // ok == true
+		 * @endcode
+		 */
+		constexpr bool CanSlice(View view, std::size_t offset, std::size_t count) noexcept;
+
+		/**
+		 * @brief 書き込み可能view内の指定範囲がslice可能か判定。
+		 * @param[in] view 判定対象view。
+		 * @param[in] offset slice開始位置。
+		 * @param[in] count slice byte数。
+		 * @retval true viewがvalidかつ`offset`から`count`byteが範囲内。
+		 * @retval false invalid view、または範囲外slice。
+		 * @pre なし。`offset > view.Size()`は失敗値として扱う。
+		 * @post `view`と外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[] = {0x01U, 0x02U};
+		 * const auto ok =
+		 *     ket::byte_view::CanSlice(ket::byte_view::MutableView(data, 2U), 1U, 1U);
+		 * // ok == true
+		 * @endcode
+		 */
+		constexpr bool CanSlice(MutableView view, std::size_t offset, std::size_t count) noexcept;
+
+		/**
+		 * @brief 読み取り専用viewの指定offset以降の残りbyte数取得。
+		 * @param[in] view 対象view。
+		 * @param[in] offset 基準offset。
+		 * @retval value valid viewかつ`offset <= view.Size()`なら`view.Size() - offset`。
+		 * invalid viewまたは範囲外offsetでは0。
+		 * @pre なし。
+		 * @post `view`と外部状態の変更なし。
+		 * @code
+		 * const std::uint8_t data[] = {0x01U, 0x02U};
+		 * const auto rest = ket::byte_view::Remaining(ket::byte_view::View(data, 2U), 1U);
+		 * // rest == 1
+		 * @endcode
+		 */
+		constexpr std::size_t Remaining(View view, std::size_t offset) noexcept;
+
+		/**
+		 * @brief 書き込み可能viewの指定offset以降の残りbyte数取得。
+		 * @param[in] view 対象view。
+		 * @param[in] offset 基準offset。
+		 * @retval value valid viewかつ`offset <= view.Size()`なら`view.Size() - offset`。
+		 * invalid viewまたは範囲外offsetでは0。
+		 * @pre なし。
+		 * @post `view`と外部状態の変更なし。
+		 * @code
+		 * std::uint8_t data[] = {0x01U, 0x02U};
+		 * const auto rest = ket::byte_view::Remaining(ket::byte_view::MutableView(data, 2U), 1U);
+		 * // rest == 1
+		 * @endcode
+		 */
+		constexpr std::size_t Remaining(MutableView view, std::size_t offset) noexcept;
+
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
 		// -----------------------------------------------------------------------------
@@ -593,6 +688,36 @@ namespace ket
 
 			out = MutableView(slice_data, count);
 			return true;
+		}
+
+		constexpr bool IsValid(View view) noexcept
+		{
+			return detail::IsValidStorage(view.Data(), view.Size());
+		}
+
+		constexpr bool IsValid(MutableView view) noexcept
+		{
+			return detail::IsValidStorage(view.Data(), view.Size());
+		}
+
+		constexpr bool CanSlice(View view, std::size_t offset, std::size_t count) noexcept
+		{
+			return detail::CanSlice(view.Data(), view.Size(), offset, count);
+		}
+
+		constexpr bool CanSlice(MutableView view, std::size_t offset, std::size_t count) noexcept
+		{
+			return detail::CanSlice(view.Data(), view.Size(), offset, count);
+		}
+
+		constexpr std::size_t Remaining(View view, std::size_t offset) noexcept
+		{
+			return IsValid(view) && offset <= view.Size() ? (view.Size() - offset) : 0U;
+		}
+
+		constexpr std::size_t Remaining(MutableView view, std::size_t offset) noexcept
+		{
+			return IsValid(view) && offset <= view.Size() ? (view.Size() - offset) : 0U;
 		}
 
 	} // namespace byte_view

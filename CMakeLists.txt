@@ -271,12 +271,23 @@ if(KET_BUILD_TESTS)
 	ket_add_module_test(
 		ket_wire_test
 		SOURCES
+			modules/bcd/ket_bcd.cpp
+			modules/byte_reader/ket_byte_reader.cpp
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/endian/ket_endian.cpp
 			packages/wire/ket_wire_test.cpp
 	)
 	target_include_directories(
 		ket_wire_test
 		PRIVATE
 			"${CMAKE_CURRENT_SOURCE_DIR}/packages/wire"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/bcd"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/bits"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_reader"
 			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_writer"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/bytes"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/endian"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/numeric"
 	)
 endif()

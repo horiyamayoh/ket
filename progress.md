@@ -15,7 +15,7 @@ Statusは次の値を使います。
 
 | Module      | Category         | Status   | C++ Min | Tests                              | Format  | Notes                                    |
 | ----------- | ---------------- | -------- | ------- | ---------------------------------- | ------- | ---------------------------------------- |
-| bcd         | numeric / binary | verified | C++17   | GoogleTest                         | checked | packed BCDと10進整数・文字列を相互変換   |
+| bcd         | numeric / binary | verified | C++17   | GoogleTest                         | checked | packed BCD変換とvalidation diagnostics   |
 | bits        | numeric / binary | verified | C++11   | GoogleTest + C++11 compile-only    | checked | bit/nibble/mask/rotateの境界処理         |
 | date        | date             | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定          |
 | deadline    | time             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定   |
@@ -26,7 +26,7 @@ Statusは次の値を使います。
 | numeric     | numeric          | verified | C++11   | GoogleTest + C++11 compile-only    | checked | overflow、align、cast の境界確認         |
 | byte_reader | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 固定bufferからoffset保持で逐次読み取り   |
 | endian      | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | byte orderを明示した16/32/64bit読み書き  |
-| bytes       | binary           | verified | C++17   | GoogleTest                         | checked | 可変長byte payloadの構築                 |
+| bytes       | binary           | verified | C++17   | GoogleTest                         | checked | 可変長byte payload構築と64bit/fill追記   |
 | byte_writer | binary           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | fixed bufferへの逐次書き込み             |
-| byte_view   | view             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | non-owning byte span                     |
-| wire        | package runtime  | verified | C++17   | GoogleTest                         | checked | schema driven binary wire layout runtime |
+| byte_view   | view             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | non-owning byte spanとconstexpr helper   |
+| wire        | package runtime  | verified | C++17   | GoogleTest                         | checked | module-first binary wire runtime         |

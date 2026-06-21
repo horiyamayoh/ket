@@ -94,6 +94,23 @@ namespace ket
 		inline void AppendBe32(std::vector<std::uint8_t>& dst, std::uint32_t value);
 
 		/**
+		 * @brief 64bit値のbig-endian末尾追記。
+		 * @param[in,out] dst 追記先のbyte列。
+		 * @param[in] value 追記する64bit値。
+		 * @retval void 戻り値なし。
+		 * @pre `dst`は有効なstd::vectorオブジェクト。
+		 * @post `dst`の既存内容を保持し、末尾に上位byteから8byte追加。
+		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note allocation失敗時は`dst`を変更せず、全byte追記かno-opのいずれかの強い例外保証。
+		 * @code
+		 * std::vector<std::uint8_t> bytes;
+		 * ket::bytes::AppendBe64(bytes, std::uint64_t{0x0102030405060708ULL});
+		 * // bytes == {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+		 * @endcode
+		 */
+		inline void AppendBe64(std::vector<std::uint8_t>& dst, std::uint64_t value);
+
+		/**
 		 * @brief 16bit値のlittle-endian末尾追記。
 		 * @param[in,out] dst 追記先のbyte列。
 		 * @param[in] value 追記する16bit値。
@@ -128,6 +145,23 @@ namespace ket
 		inline void AppendLe32(std::vector<std::uint8_t>& dst, std::uint32_t value);
 
 		/**
+		 * @brief 64bit値のlittle-endian末尾追記。
+		 * @param[in,out] dst 追記先のbyte列。
+		 * @param[in] value 追記する64bit値。
+		 * @retval void 戻り値なし。
+		 * @pre `dst`は有効なstd::vectorオブジェクト。
+		 * @post `dst`の既存内容を保持し、末尾に下位byteから8byte追加。
+		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note allocation失敗時は`dst`を変更せず、全byte追記かno-opのいずれかの強い例外保証。
+		 * @code
+		 * std::vector<std::uint8_t> bytes;
+		 * ket::bytes::AppendLe64(bytes, std::uint64_t{0x0102030405060708ULL});
+		 * // bytes == {0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01}
+		 * @endcode
+		 */
+		inline void AppendLe64(std::vector<std::uint8_t>& dst, std::uint64_t value);
+
+		/**
 		 * @brief 任意byte列の末尾追記。
 		 * @param[in,out] dst 追記先のbyte列。
 		 * @param[in] data 追記するbyte列の先頭。`size == 0`の場合だけnullptr可。
@@ -149,6 +183,26 @@ namespace ket
 		 */
 		inline void
 		Append(std::vector<std::uint8_t>& dst, const std::uint8_t* data, std::size_t size);
+
+		/**
+		 * @brief 同一byte値の繰り返し末尾追記。
+		 * @param[in,out] dst 追記先のbyte列。
+		 * @param[in] value 追記するbyte値。
+		 * @param[in] count 追記するbyte数。
+		 * @retval void 戻り値なし。
+		 * @pre `dst`は有効なstd::vectorオブジェクト。
+		 * @post `dst`の既存内容を保持し、末尾に`value`を`count`byte追加。`count == 0`はno-op。
+		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note `dst.size() + count`が`dst.max_size()`を超える場合は`std::length_error`が送出され、
+		 * `dst`は変更されない。
+		 * @code
+		 * std::vector<std::uint8_t> bytes;
+		 * ket::bytes::AppendFill(bytes, 0xAAU, 3U);
+		 * // bytes == {0xAA, 0xAA, 0xAA}
+		 * @endcode
+		 */
+		inline void
+		AppendFill(std::vector<std::uint8_t>& dst, std::uint8_t value, std::size_t count);
 
 		/**
 		 * @brief 可変長byte payload builder。
@@ -240,6 +294,24 @@ namespace ket
 			}
 
 			/**
+			 * @brief 64bit値のbig-endian末尾追記。
+			 * @param[in] value 追記する64bit値。
+			 * @retval *this 追記後のbuilder。
+			 * @pre なし。
+			 * @post 内部bufferの既存内容を保持し、末尾に上位byteから8byte追加。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendBe64(std::uint64_t{0x0102030405060708ULL});
+			 * // builder.Buffer() == {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+			 * @endcode
+			 */
+			Builder& AppendBe64(std::uint64_t value)
+			{
+				ket::bytes::AppendBe64(buffer_, value);
+				return *this;
+			}
+
+			/**
 			 * @brief 16bit値のlittle-endian末尾追記。
 			 * @param[in] value 追記する16bit値。
 			 * @retval *this 追記後のbuilder。
@@ -276,6 +348,24 @@ namespace ket
 			}
 
 			/**
+			 * @brief 64bit値のlittle-endian末尾追記。
+			 * @param[in] value 追記する64bit値。
+			 * @retval *this 追記後のbuilder。
+			 * @pre なし。
+			 * @post 内部bufferの既存内容を保持し、末尾に下位byteから8byte追加。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendLe64(std::uint64_t{0x0102030405060708ULL});
+			 * // builder.Buffer() == {0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01}
+			 * @endcode
+			 */
+			Builder& AppendLe64(std::uint64_t value)
+			{
+				ket::bytes::AppendLe64(buffer_, value);
+				return *this;
+			}
+
+			/**
 			 * @brief 任意byte列の末尾追記。
 			 * @param[in] data 追記するbyte列の先頭。`size == 0`の場合だけnullptr可。
 			 * @param[in] size 追記するbyte数。
@@ -296,6 +386,27 @@ namespace ket
 			Builder& Append(const std::uint8_t* data, std::size_t size)
 			{
 				ket::bytes::Append(buffer_, data, size);
+				return *this;
+			}
+
+			/**
+			 * @brief 同一byte値の繰り返し末尾追記。
+			 * @param[in] value 追記するbyte値。
+			 * @param[in] count 追記するbyte数。
+			 * @retval *this 追記後のbuilder。
+			 * @pre なし。
+			 * @post 内部bufferの既存内容を保持し、末尾に`value`を`count`byte追加。
+			 * @note
+			 * 内部buffer上限を超える場合は`std::length_error`が送出され、内部bufferは変更されない。
+			 * @code
+			 * ket::bytes::Builder builder;
+			 * builder.AppendFill(0xAAU, 3U);
+			 * // builder.Buffer() == {0xAA, 0xAA, 0xAA}
+			 * @endcode
+			 */
+			Builder& AppendFill(std::uint8_t value, std::size_t count)
+			{
+				ket::bytes::AppendFill(buffer_, value, count);
 				return *this;
 			}
 
@@ -385,6 +496,20 @@ namespace ket
 		{
 			/**
 			 * @brief 指定shift位置の1byte取得。
+			 * @param[in] value 取得対象の16bit値。
+			 * @param[in] shift 右shiftするbit数。
+			 * @retval value `shift`位置の下位8bit。
+			 * @pre `shift`は0、8のいずれか。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			constexpr std::uint8_t ByteAt(std::uint16_t value, unsigned shift) noexcept
+			{
+				const auto wide_value = static_cast<std::uint32_t>(value);
+				return static_cast<std::uint8_t>((wide_value >> shift) & 0xFFU);
+			}
+
+			/**
+			 * @brief 指定shift位置の1byte取得。
 			 * @param[in] value 取得対象の32bit値。
 			 * @param[in] shift 右shiftするbit数。
 			 * @retval value `shift`位置の下位8bit。
@@ -392,6 +517,19 @@ namespace ket
 			 * @post 引数と外部状態の変更なし。
 			 */
 			constexpr std::uint8_t ByteAt(std::uint32_t value, unsigned shift) noexcept
+			{
+				return static_cast<std::uint8_t>((value >> shift) & 0xFFU);
+			}
+
+			/**
+			 * @brief 指定shift位置の1byte取得。
+			 * @param[in] value 取得対象の64bit値。
+			 * @param[in] shift 右shiftするbit数。
+			 * @retval value `shift`位置の下位8bit。
+			 * @pre `shift`は0から56までの8の倍数。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			constexpr std::uint8_t ByteAt(std::uint64_t value, unsigned shift) noexcept
 			{
 				return static_cast<std::uint8_t>((value >> shift) & 0xFFU);
 			}
@@ -452,6 +590,22 @@ namespace ket
 			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
 		}
 
+		inline void AppendBe64(std::vector<std::uint8_t>& dst, std::uint64_t value)
+		{
+			// 一時配列へ全byteを用意し、単一insertで追記。allocation失敗時は部分追記なし
+			const std::uint8_t encoded[] = {
+				detail::ByteAt(value, 56U),
+				detail::ByteAt(value, 48U),
+				detail::ByteAt(value, 40U),
+				detail::ByteAt(value, 32U),
+				detail::ByteAt(value, 24U),
+				detail::ByteAt(value, 16U),
+				detail::ByteAt(value, 8U),
+				detail::ByteAt(value, 0U),
+			};
+			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
+		}
+
 		inline void AppendLe16(std::vector<std::uint8_t>& dst, std::uint16_t value)
 		{
 			// 一時配列へ全byteを用意し、単一insertで追記。allocation失敗時は部分追記なし
@@ -474,10 +628,32 @@ namespace ket
 			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
 		}
 
+		inline void AppendLe64(std::vector<std::uint8_t>& dst, std::uint64_t value)
+		{
+			// 一時配列へ全byteを用意し、単一insertで追記。allocation失敗時は部分追記なし
+			const std::uint8_t encoded[] = {
+				detail::ByteAt(value, 0U),
+				detail::ByteAt(value, 8U),
+				detail::ByteAt(value, 16U),
+				detail::ByteAt(value, 24U),
+				detail::ByteAt(value, 32U),
+				detail::ByteAt(value, 40U),
+				detail::ByteAt(value, 48U),
+				detail::ByteAt(value, 56U),
+			};
+			dst.insert(dst.end(), std::begin(encoded), std::end(encoded));
+		}
+
 		inline void
 		Append(std::vector<std::uint8_t>& dst, const std::uint8_t* data, std::size_t size)
 		{
 			detail::AppendBytes(dst, data, size);
+		}
+
+		inline void
+		AppendFill(std::vector<std::uint8_t>& dst, std::uint8_t value, std::size_t count)
+		{
+			dst.insert(dst.end(), count, value);
 		}
 
 	} // namespace bytes

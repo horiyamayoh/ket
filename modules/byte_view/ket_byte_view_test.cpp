@@ -18,6 +18,16 @@ namespace
 				  "default MutableView data is constexpr null");
 	static_assert(kEmptyMutableView.Size() == 0U, "default MutableView size is constexpr zero");
 	static_assert(kEmptyMutableView.Empty(), "default MutableView empty state is constexpr");
+	static_assert(ket::byte_view::IsValid(kEmptyView), "default View is valid empty");
+	static_assert(ket::byte_view::IsValid(kEmptyMutableView), "default MutableView is valid empty");
+	static_assert(ket::byte_view::CanSlice(kEmptyView, 0U, 0U),
+				  "default View supports empty slice");
+	static_assert(ket::byte_view::CanSlice(kEmptyMutableView, 0U, 0U),
+				  "default MutableView supports empty slice");
+	static_assert(ket::byte_view::Remaining(kEmptyView, 0U) == 0U,
+				  "default View has no remaining bytes");
+	static_assert(ket::byte_view::Remaining(kEmptyMutableView, 0U) == 0U,
+				  "default MutableView has no remaining bytes");
 
 } // namespace
 
@@ -203,6 +213,103 @@ TEST(KetByteViewTest, RejectsInvalidNullNonEmptyViews)
 	EXPECT_EQ(mutable_output.Size(), sentinel.size());
 	EXPECT_EQ(sentinel[0], std::uint8_t{0xA0U});
 	EXPECT_EQ(sentinel[1], std::uint8_t{0xB0U});
+}
+
+/**
+ * @test
+ * @brief view validity helperの境界確認。
+ * @details 読み取り専用viewと書き込み可能viewについて、valid empty、valid
+ * non-empty、invalid storageの判定を確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetByteViewTest, ReportsPublicViewValidity)
+{
+	const std::array<std::uint8_t, 1> immutable_bytes{{0x10U}};
+	std::array<std::uint8_t, 1> mutable_bytes{{0x20U}};
+
+	const ket::byte_view::View empty_view(nullptr, 0U);
+	const ket::byte_view::View valid_view(immutable_bytes.data(), immutable_bytes.size());
+	const ket::byte_view::View invalid_view(nullptr, immutable_bytes.size());
+	const ket::byte_view::MutableView empty_mutable_view(nullptr, 0U);
+	const ket::byte_view::MutableView valid_mutable_view(mutable_bytes.data(),
+														 mutable_bytes.size());
+	const ket::byte_view::MutableView invalid_mutable_view(nullptr, mutable_bytes.size());
+
+	const auto empty_valid = ket::byte_view::IsValid(empty_view);
+	const auto valid = ket::byte_view::IsValid(valid_view);
+	const auto invalid = ket::byte_view::IsValid(invalid_view);
+	const auto empty_mutable_valid = ket::byte_view::IsValid(empty_mutable_view);
+	const auto mutable_valid = ket::byte_view::IsValid(valid_mutable_view);
+	const auto mutable_invalid = ket::byte_view::IsValid(invalid_mutable_view);
+
+	EXPECT_TRUE(empty_valid);
+	EXPECT_TRUE(valid);
+	EXPECT_FALSE(invalid);
+	EXPECT_TRUE(empty_mutable_valid);
+	EXPECT_TRUE(mutable_valid);
+	EXPECT_FALSE(mutable_invalid);
+}
+
+/**
+ * @test
+ * @brief public slice helperとremaining helperの境界確認。
+ * @details 読み取り専用viewと書き込み可能viewについて、全体、中央、末尾空slice、
+ * 範囲外slice、invalid view、範囲外offsetのremainingを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetByteViewTest, ChecksPublicSliceAndRemainingBoundaries)
+{
+	const std::array<std::uint8_t, 4> immutable_bytes{{0x10U, 0x20U, 0x30U, 0x40U}};
+	std::array<std::uint8_t, 4> mutable_bytes{{0x50U, 0x60U, 0x70U, 0x80U}};
+	const ket::byte_view::View view(immutable_bytes.data(), immutable_bytes.size());
+	const ket::byte_view::View invalid_view(nullptr, immutable_bytes.size());
+	const ket::byte_view::MutableView mutable_view(mutable_bytes.data(), mutable_bytes.size());
+	const ket::byte_view::MutableView invalid_mutable_view(nullptr, mutable_bytes.size());
+
+	const auto view_full = ket::byte_view::CanSlice(view, 0U, immutable_bytes.size());
+	const auto view_middle = ket::byte_view::CanSlice(view, 1U, 2U);
+	const auto view_end_empty = ket::byte_view::CanSlice(view, immutable_bytes.size(), 0U);
+	const auto view_too_large_count = ket::byte_view::CanSlice(view, 3U, 2U);
+	const auto view_too_large_offset = ket::byte_view::CanSlice(view, 5U, 0U);
+	const auto view_invalid = ket::byte_view::CanSlice(invalid_view, 0U, 0U);
+	const auto mutable_full = ket::byte_view::CanSlice(mutable_view, 0U, mutable_bytes.size());
+	const auto mutable_middle = ket::byte_view::CanSlice(mutable_view, 1U, 2U);
+	const auto mutable_end_empty = ket::byte_view::CanSlice(mutable_view, mutable_bytes.size(), 0U);
+	const auto mutable_too_large_count = ket::byte_view::CanSlice(mutable_view, 3U, 2U);
+	const auto mutable_too_large_offset = ket::byte_view::CanSlice(mutable_view, 5U, 0U);
+	const auto mutable_invalid = ket::byte_view::CanSlice(invalid_mutable_view, 0U, 0U);
+	const auto view_remaining_middle = ket::byte_view::Remaining(view, 1U);
+	const auto view_remaining_end = ket::byte_view::Remaining(view, immutable_bytes.size());
+	const auto view_remaining_too_far = ket::byte_view::Remaining(view, 5U);
+	const auto view_remaining_invalid = ket::byte_view::Remaining(invalid_view, 0U);
+	const auto mutable_remaining_middle = ket::byte_view::Remaining(mutable_view, 1U);
+	const auto mutable_remaining_end =
+		ket::byte_view::Remaining(mutable_view, mutable_bytes.size());
+	const auto mutable_remaining_too_far = ket::byte_view::Remaining(mutable_view, 5U);
+	const auto mutable_remaining_invalid = ket::byte_view::Remaining(invalid_mutable_view, 0U);
+
+	EXPECT_TRUE(view_full);
+	EXPECT_TRUE(view_middle);
+	EXPECT_TRUE(view_end_empty);
+	EXPECT_FALSE(view_too_large_count);
+	EXPECT_FALSE(view_too_large_offset);
+	EXPECT_FALSE(view_invalid);
+	EXPECT_TRUE(mutable_full);
+	EXPECT_TRUE(mutable_middle);
+	EXPECT_TRUE(mutable_end_empty);
+	EXPECT_FALSE(mutable_too_large_count);
+	EXPECT_FALSE(mutable_too_large_offset);
+	EXPECT_FALSE(mutable_invalid);
+	EXPECT_EQ(view_remaining_middle, 3U);
+	EXPECT_EQ(view_remaining_end, 0U);
+	EXPECT_EQ(view_remaining_too_far, 0U);
+	EXPECT_EQ(view_remaining_invalid, 0U);
+	EXPECT_EQ(mutable_remaining_middle, 3U);
+	EXPECT_EQ(mutable_remaining_end, 0U);
+	EXPECT_EQ(mutable_remaining_too_far, 0U);
+	EXPECT_EQ(mutable_remaining_invalid, 0U);
 }
 
 /**

@@ -73,6 +73,12 @@ ket::bcd::ToInt(value)
 ket::bcd::FromInt<std::uint8_t>(value)
 ket::bcd::FromInt<std::uint16_t>(value)
 ket::bcd::FromInt<std::uint32_t>(value)
+ket::bcd::MaxInt<std::uint32_t>()
+ket::bcd::IsBcdByte(value)
+ket::bcd::IsBcd16(value)
+ket::bcd::IsBcd32(value)
+ket::bcd::Validate(value)
+ket::bcd::Validate(data, size)
 ket::bcd::Format(data, size)
 ket::bcd::Parse(text)
 ```
@@ -89,13 +95,15 @@ C++バージョン要件:
 Failure / edge cases:
 
 - nibble > 9
-- `data == nullptr`
-- `size == 0`
+- invalid storage (`data == nullptr && size > 0`)
+- `Validate(nullptr, 0)` は valid empty
+- `Format(nullptr, size)` と `Format(data, 0)` は失敗値
 - empty decimal string
 - non-digit character
 - accumulated integer overflow
 - negative decimal value
 - fixed-width BCD digit overflow
+- validation diagnostics: byte offset、actual nibble、high/low nibble
 
 他のライブラリへの依存:
 
@@ -109,6 +117,9 @@ Tests:
 - ToInt(0x10) == 10
 - ToInt(0x99) == 99
 - ToInt(0x0A) == std::nullopt
+- Validate(0x0A).error == ValidationError::kInvalidNibble
+- Validate(nullptr, 0).Ok()
+- Validate(nullptr, 1).error == ValidationError::kInvalidStorage
 - FromInt<std::uint8_t>(42) == 0x42
 - FromInt<std::uint8_t>(100) == std::nullopt
 - FromInt<std::uint16_t>(1234) == 0x1234
@@ -841,10 +852,16 @@ Candidate API:
 ket::bytes::Builder
 builder.AppendU8(value)
 builder.AppendBe16(value)
+builder.AppendBe64(value)
+builder.AppendLe64(value)
+builder.AppendFill(value, count)
 builder.Append(data, size)
 builder.Buffer()
 builder.Build()
 ket::bytes::AppendU8(dst, value)
+ket::bytes::AppendBe64(dst, value)
+ket::bytes::AppendLe64(dst, value)
+ket::bytes::AppendFill(dst, value, count)
 ```
 
 Canonical name note:
@@ -864,11 +881,14 @@ C++バージョン要件:
 Failure / edge cases:
 
 - allocation 例外
+- `std::vector::max_size()` 超過時は `std::length_error`、対象bufferは無変更
 - 固定幅 append は一時配列を単一 insert で追記し strong exception guarantee（失敗時 dst 無変更）
 - null + 非0 size は precondition
 - self-append 未対応（data は dst / 内部 buffer と非 overlap）
 - AppendAscii は検査なしの byte copy（ASCII は precondition）
 - BE/LE fixed width
+- BE/LE 64-bit golden bytes
+- fill count 0 / 非0
 - reserve size
 - Build 後の moved-from state
 
@@ -880,6 +900,7 @@ Failure / edge cases:
 Tests:
 
 - AppendU8 / BE / LE golden bytes
+- AppendFill count 0 / 非0
 - Append empty
 - reserve
 - Build returns expected vector
@@ -1060,6 +1081,9 @@ ket::byte_view::View
 ket::byte_view::MutableView
 view.TryAt(index, out)
 view.TrySlice(offset, count, out)
+ket::byte_view::IsValid(view)
+ket::byte_view::CanSlice(view, offset, count)
+ket::byte_view::Remaining(view, offset)
 // default constructor, Data, Size, Empty は constexpr
 ```
 
@@ -1080,6 +1104,7 @@ Failure / edge cases:
 - copy / move は non-owning pointer と size だけを複製
 - bounds overrun
 - slice 失敗時 out 不変
+- Remaining は invalid view / out-of-range offset で 0
 
 他のライブラリへの依存:
 
@@ -1094,6 +1119,8 @@ Tests:
 - TryAt bounds
 - TrySlice success / failure
 - mutable set
+- IsValid / CanSlice / Remaining constexpr
+- C++11 compile-only
 
 ## Idea: Utf8
 

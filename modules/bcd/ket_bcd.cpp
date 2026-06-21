@@ -45,6 +45,31 @@ namespace ket
 {
 	namespace bcd
 	{
+		ValidationResult Validate(const std::uint8_t* data, std::size_t size) noexcept
+		{
+			if (data == nullptr)
+			{
+				if (size == 0U)
+				{
+					return detail::ValidResult();
+				}
+
+				return detail::InvalidStorageResult();
+			}
+
+			for (std::size_t index = 0U; index < size; ++index)
+			{
+				const auto result = detail::ValidateByte(data[index], index);
+				const auto result_ok = result.Ok();
+				if (!result_ok)
+				{
+					return result;
+				}
+			}
+
+			return detail::ValidResult();
+		}
+
 		std::optional<std::string> Format(const std::uint8_t* data, std::size_t size)
 		{
 			// 入力妥当性確認

@@ -25,23 +25,22 @@ TEST(KetBytesTest, AppendsFixedWidthIntegersToVector)
 	ket::bytes::AppendU8(destination, std::uint8_t{0x12U});
 	ket::bytes::AppendBe16(destination, std::uint16_t{0x3456U});
 	ket::bytes::AppendBe32(destination, std::uint32_t{0x789ABCDEU});
+	ket::bytes::AppendBe64(destination, std::uint64_t{0x0102030405060708ULL});
 	ket::bytes::AppendLe16(destination, std::uint16_t{0x1234U});
 	ket::bytes::AppendLe32(destination, std::uint32_t{0x56789ABCU});
+	ket::bytes::AppendLe64(destination, std::uint64_t{0x1122334455667788ULL});
+	ket::bytes::AppendFill(destination, std::uint8_t{0xEEU}, 3U);
+	ket::bytes::AppendFill(destination, std::uint8_t{0xDDU}, 0U);
 
 	const auto expected = std::vector<std::uint8_t>{
-		std::uint8_t{0x12U},
-		std::uint8_t{0x34U},
-		std::uint8_t{0x56U},
-		std::uint8_t{0x78U},
-		std::uint8_t{0x9AU},
-		std::uint8_t{0xBCU},
-		std::uint8_t{0xDEU},
-		std::uint8_t{0x34U},
-		std::uint8_t{0x12U},
-		std::uint8_t{0xBCU},
-		std::uint8_t{0x9AU},
-		std::uint8_t{0x78U},
-		std::uint8_t{0x56U},
+		std::uint8_t{0x12U}, std::uint8_t{0x34U}, std::uint8_t{0x56U}, std::uint8_t{0x78U},
+		std::uint8_t{0x9AU}, std::uint8_t{0xBCU}, std::uint8_t{0xDEU}, std::uint8_t{0x01U},
+		std::uint8_t{0x02U}, std::uint8_t{0x03U}, std::uint8_t{0x04U}, std::uint8_t{0x05U},
+		std::uint8_t{0x06U}, std::uint8_t{0x07U}, std::uint8_t{0x08U}, std::uint8_t{0x34U},
+		std::uint8_t{0x12U}, std::uint8_t{0xBCU}, std::uint8_t{0x9AU}, std::uint8_t{0x78U},
+		std::uint8_t{0x56U}, std::uint8_t{0x88U}, std::uint8_t{0x77U}, std::uint8_t{0x66U},
+		std::uint8_t{0x55U}, std::uint8_t{0x44U}, std::uint8_t{0x33U}, std::uint8_t{0x22U},
+		std::uint8_t{0x11U}, std::uint8_t{0xEEU}, std::uint8_t{0xEEU}, std::uint8_t{0xEEU},
 	};
 
 	EXPECT_EQ(destination, expected);
@@ -59,28 +58,27 @@ TEST(KetBytesTest, BuildsPayloadWithFluentApi)
 {
 	ket::bytes::Builder builder;
 
-	const auto& returned = builder.AppendU8(std::uint8_t{0xA5U})
-							   .AppendBe16(std::uint16_t{0x1234U})
-							   .AppendBe32(std::uint32_t{0x01020304U})
-							   .AppendLe16(std::uint16_t{0x5678U})
-							   .AppendLe32(std::uint32_t{0x0A0B0C0DU});
+	auto& returned = builder.AppendU8(std::uint8_t{0xA5U})
+						 .AppendBe16(std::uint16_t{0x1234U})
+						 .AppendBe32(std::uint32_t{0x01020304U})
+						 .AppendBe64(std::uint64_t{0x1112131415161718ULL})
+						 .AppendLe16(std::uint16_t{0x5678U})
+						 .AppendLe32(std::uint32_t{0x0A0B0C0DU});
+	returned.AppendLe64(std::uint64_t{0x2122232425262728ULL})
+		.AppendFill(std::uint8_t{0xEEU}, 2U)
+		.AppendFill(std::uint8_t{0xDDU}, 0U);
 
 	const auto same_object = &returned == &builder;
 	const auto buffer = builder.Buffer();
 	const auto expected = std::vector<std::uint8_t>{
-		std::uint8_t{0xA5U},
-		std::uint8_t{0x12U},
-		std::uint8_t{0x34U},
-		std::uint8_t{0x01U},
-		std::uint8_t{0x02U},
-		std::uint8_t{0x03U},
-		std::uint8_t{0x04U},
-		std::uint8_t{0x78U},
-		std::uint8_t{0x56U},
-		std::uint8_t{0x0DU},
-		std::uint8_t{0x0CU},
-		std::uint8_t{0x0BU},
-		std::uint8_t{0x0AU},
+		std::uint8_t{0xA5U}, std::uint8_t{0x12U}, std::uint8_t{0x34U}, std::uint8_t{0x01U},
+		std::uint8_t{0x02U}, std::uint8_t{0x03U}, std::uint8_t{0x04U}, std::uint8_t{0x11U},
+		std::uint8_t{0x12U}, std::uint8_t{0x13U}, std::uint8_t{0x14U}, std::uint8_t{0x15U},
+		std::uint8_t{0x16U}, std::uint8_t{0x17U}, std::uint8_t{0x18U}, std::uint8_t{0x78U},
+		std::uint8_t{0x56U}, std::uint8_t{0x0DU}, std::uint8_t{0x0CU}, std::uint8_t{0x0BU},
+		std::uint8_t{0x0AU}, std::uint8_t{0x28U}, std::uint8_t{0x27U}, std::uint8_t{0x26U},
+		std::uint8_t{0x25U}, std::uint8_t{0x24U}, std::uint8_t{0x23U}, std::uint8_t{0x22U},
+		std::uint8_t{0x21U}, std::uint8_t{0xEEU}, std::uint8_t{0xEEU},
 	};
 
 	EXPECT_TRUE(same_object);
