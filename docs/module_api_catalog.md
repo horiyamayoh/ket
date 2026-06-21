@@ -22,6 +22,9 @@
 計算量・性能、失敗方針、境界条件、テスト観点を固定済みであり、追加の仕様分割なしで製造依頼できる。
 signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポインタ、戻り型は実装契約として扱う。
 製造時に逸脱する場合は、逸脱内容と理由を Doxygen と `progress.md` に明記する。
+ただし package runtime からの要請で重複実装を減らす目的がある場合、`Ready` または `Existing`
+module へ公開APIを追加してよい。この場合も additive change を原則とし、module単体でも意味がある
+汎用APIとして設計し、実装前に module 仕様カード、`catalog.md` 候補、Doxygen、test 観点を更新対象にする。
 
 製造依頼では、対象 module の仕様カードだけでなく、この文書の共通ルールと
 `AGENTS.md`、`README.md`、`docs/module_lifecycle.md`、`docs/style.md`、
@@ -35,7 +38,11 @@ signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポイン
   header-only で十分な場合は `.cpp` を置かない。
 - 公開APIは module ごとの入れ子 `namespace ket::<module>` に置く。C++11/14 の drop-in を維持するため `namespace ket { namespace <module> { ... } }` の入れ子 block 形式で書き、C++17 短縮形は使わない。top-level の `namespace ket` は1つだけ。内部 helper は header 内なら `ket::<module>::detail`、
   `.cpp` 内なら無名 namespace。内部 helper がない場合は file Doxygen に `内部実装：なし` と書く。
-- 各 module は原則として他の ket module に依存しない。小さい内部処理の重複は許容する。
+- ordinary module は原則として他の ket module に依存しない。package runtime は複数 module を合成する層であり、module に依存してよいが、module から package へ依存させない。
+- package runtime からの要請で ordinary module へ公開APIを追加する場合は、既存APIを壊さない additive change とし、package 固有型、package 固有 status、protocol 固有語を公開APIへ持ち込まない。
+- package-driven API extension は module の責務に自然に属し、package なしでも独立して使える小さい汎用APIに限る。package 内 detail に閉じるべき処理は公開API化しない。
+- module-specific `Do not implement` は有効な制約として扱う。package 要請を根拠に見直す場合は、仕様カード内で理由を明記してから変更する。
+- 小さい内部処理の重複は許容する。ただし package と module で同じ処理が増える場合は、module API として独立して価値があるかを検討する。
 - 公開ヘッダは include what you use を守り、自分が必要な標準ヘッダを自分で include する。
 - 公開ヘッダは Doxygen `@file` コメント、公開API宣言、内部実装、公開API定義の順に書く。
 - 非optionalの出力引数と入出力引数は参照型で受ける。`nullptr` が意味を持つ optional
@@ -59,7 +66,8 @@ signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポイン
 - format 変種は `enum class LetterCase { kLower, kUpper }` か `<T>FormatOptions` の引数で表し、`...Upper` のような名前接尾辞や無名 bool は使わない。`FormatOptions` などの名前付き options 型では、`with_hash` のように意味が名前で固定される bool field を許容する。endian を含む読み書きは `LoadBe32`/`LoadLe32` のように byte order を名前へ必ず出す。
 - bool predicate は原則として free 関数で `Is` / `Has` / `Contains` を使う。unit 名は、API 名では広く認知された単位記号（`KiB`、`MiB` など）以外を省略しない。
 - `Existing` module は header の Doxygen と実装が正本であり、この文書の記述が header と矛盾する場合は
-  header を優先する。仕様を変えるべき場合は破壊的変更提案として明示し、勝手に header を書き換えない。
+  header を優先する。仕様を変えるべき場合は破壊的変更提案として明示する。ただし package-driven
+  additive API extension は、既存APIを壊さない範囲で仕様カードと header Doxygen を更新してよい。
 - `TryXxx` は失敗時に出力引数と対象 object の状態を変更しない。
 - 文字列生成、vector 生成、I/O など allocation や stream 例外の可能性がある API には無理に
   `noexcept` を付けない。
@@ -85,7 +93,8 @@ signature の `template`、`const`、`noexcept`、`constexpr`、参照/ポイン
 - 失敗を戻り値、precondition、例外、process termination のどれで扱うか固定済み。
 - 最小 C++ 要件、推奨版、非推奨版、標準代替または標準代替なしの理由が固定済み。
 - C++11/14 module では、最低標準の compile-only check が必要かどうか固定済み。
-- 他 ket module へ依存しない方針と、必要な標準ヘッダまたは platform API が固定済み。
+- ordinary module の独立性方針、package から利用される場合の依存方向、必要な標準ヘッダまたは
+  platform API が固定済み。
 - null、empty、overflow、size不足、lifetime、encoding、endian、platform差など主要境界のテスト観点が固定済み。
 - `Naming Audit` を通過し、公開API名が命名規約と module の責務に合っている。
 - `Do not implement` で初回製造時に広げない範囲が固定済み。
@@ -1929,9 +1938,9 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 [ ] modules/<name>/ket_<name>_test.cpp を作った
 [ ] ヘッダ先頭に Doxygen @file と drop-in 条件を書いた
 [ ] C++バージョン要件と標準代替を書いた
-[ ] 他のライブラリへの依存と ket module 非依存を書いた
+[ ] 他のライブラリへの依存と ordinary module / package runtime の依存方針を書いた
 [ ] 公開APIは namespace ket::<module>
-[ ] 他の ket module に依存していない
+[ ] ordinary module は他の ket module へ依存していない、または package runtime は依存する module と持ち出し単位を明記した
 [ ] 公開ヘッダが必要な標準ヘッダを自分で include している
 [ ] 公開ヘッダの section banner が規約通り
 [ ] 公開API関数 Doxygen に @brief / @param / @retval / @pre / @post / @code がある（constructor/destructorは @retval なし）

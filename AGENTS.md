@@ -7,7 +7,7 @@
 - 設計思想の原典は `ket_coding_agent_brief.md` です。
 - 日常の入口は `README.md`、運用ルールは `docs/` を参照してください。
 - 未実装moduleの公開API、C++要件、失敗方針、境界条件は `docs/module_api_catalog.md` のmodule別仕様カードを正とします。
-- `Existing` moduleを変更する場合は、既存module headerのDoxygenと実装を正とします。`docs/module_api_catalog.md` の記述と矛盾する場合も、勝手に既存仕様を書き換えないでください。
+- `Existing` moduleを変更する場合は、既存module headerのDoxygenと実装を正とします。`docs/module_api_catalog.md` の記述と矛盾する場合も、勝手に既存仕様を書き換えないでください。ただし package runtime からの要請で公開APIを追加する場合は、破壊的変更ではない additive change として、module単体でも意味がある汎用APIに限り、仕様、Doxygen、テスト、関連docsを同時に更新してください。
 - coding ruleは `docs/style.md`、test ruleは `docs/testing.md` を正とします。
 - 候補APIは `catalog.md`、実装状況は `progress.md` で管理します。
 - `docs/proposals/module_api_proposal.md` は履歴資料です。`docs/module_api_catalog.md` を上書きする根拠として使わないでください。
@@ -18,6 +18,8 @@
 - 実moduleは1つずつ追加します。空のカテゴリフォルダや空のmoduleフォルダを先に大量作成しないでください。
 - `modules/<name>/` は、そのmoduleを実装するタイミングで初めて作成してください。
 - 段階的な開発は採用範囲を小さく保つための方針であり、実装品質を下げる理由ではありません。採用した関数は1つずつ、設計、実装、Doxygen、テスト、検証のすべてで高い忠実度を求めてください。
+- `packages/<name>/` の package runtime は複数の既存moduleを合成する層です。重複実装を減らすため、ordinary moduleへ公開API追加を要求できます。
+- package-driven APIはpackage固有型、package固有status、protocol固有語をordinary moduleの公開APIへ持ち込まず、module単体でも自然に使える小さい汎用APIとして設計してください。
 - 標準ライブラリを置き換えないでください。薄く包んで意図を読みやすくすることが目的です。
 - 業務固有ロジック、巨大framework、深い内部依存は避けてください。
 
@@ -39,7 +41,8 @@ modules/<name>/ket_<name>_test.cpp
 - 公開ヘッダの各sectionには、`Public API declarations`、`Internal implementation details`、`Public API definitions` のdashed bannerコメントを置いてください。該当sectionが存在しない場合は、そのbannerも置かないでください。
 - 命名規則はGoogle C++ Styleに従ってください。enum値も `kUpperCamelCase` にします。
 - 非optionalの出力引数と入出力引数は参照型で受けてください。`nullptr` が意味を持つoptional出力やC API境界だけポインタ型を使い、その理由をDoxygenに書いてください。
-- 各moduleは原則として他のket moduleに依存しないでください。
+- 各ordinary moduleは原則として他のket moduleに依存しないでください。package runtimeはmoduleに依存できますが、moduleからpackageへ依存させないでください。
+- package runtimeからの要請でmodule公開APIを追加する場合はadditive changeを原則とし、既存APIの破壊的変更は明示的な破壊的変更提案なしに行わないでください。
 - 小さい内部処理の重複は許容します。drop-in性を優先します。
 - ヘッダ先頭にDoxygen `@file`コメントを書き、`@brief`、`@details`、`@par プロジェクトへの適用方法`、`@par C++バージョン要件`、`@par 他のライブラリへの依存`、`@par namespace` を含めてください。
 - `@par C++バージョン要件` には `最小要件：`、`本ライブラリの適用を推奨する C++ バージョン：`、`推奨理由：`、`本ライブラリの適用を推奨しない C++ バージョン：`、`非推奨理由：` を書いてください。非推奨がない場合は `本ライブラリの適用を推奨しない C++ バージョン：なし。` と `非推奨理由：なし。` を書いてください。

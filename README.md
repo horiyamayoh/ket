@@ -76,7 +76,7 @@ header-only moduleでは `.cpp` を置きません。moduleを追加するとき
 
 ## 方針
 
-- 他のket moduleへの依存は原則として増やしません。
+- ordinary module は原則として他の ket module へ依存させません。package runtime は複数 module を合成してよく、必要に応じて module へ汎用API追加を要求できます。
 - 標準ライブラリは置き換えず、意図が読みにくい小さな儀式を薄く包みます。
 - 小さい重複は許容し、drop-in性を優先します。
 - moduleを1つずつ育てる方針はスコープ管理であり、品質を下げる理由ではありません。
