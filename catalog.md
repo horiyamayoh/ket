@@ -1400,6 +1400,7 @@ Candidate API:
 ```cpp
 ket::memory::IsAligned(ptr, alignment)
 ket::memory::TryAlignUp(ptr, alignment, out)
+ket::memory::TryAlignDown(ptr, alignment, out)
 ket::memory::Zero(ptr, size)
 ket::memory::SecureZero(ptr, size)
 ket::memory::ObjectBytes(object)

@@ -151,6 +151,20 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_memory_test
+		SOURCES
+			modules/memory/ket_memory_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_memory_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/memory/ket_memory_cxx11_check.cpp
+	)
+	add_dependencies(ket_memory_test ket_memory_cxx11_check)
+
+	ket_add_module_test(
 		ket_version_test
 		SOURCES
 			modules/version/ket_version.cpp

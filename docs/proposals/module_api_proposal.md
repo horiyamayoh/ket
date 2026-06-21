@@ -258,7 +258,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `io_stream`         | P1   | C++11    | stream の確実な読み書き               | `ReadExactly`, `StreamStateSaver`                  |
 | `format_value`      | P1   | C++17    | 診断用文字列                          | `ToHexString`, `FormatBytes`, `FormatDuration`     |
 | `algorithm_range`   | P1   | C++11    | iterator pair の儀式除去              | `AllOf`, `FindIf`, `IndexOf`                       |
-| `memory`            | P1   | C++11    | alignment/object bytes                | `IsAligned`, `ObjectBytes`, `SecureZeroMemory`     |
+| `memory`            | P1   | C++11    | alignment/object bytes                | `IsAligned`, `TryAlignUp`, `SecureZero`            |
 | `pointer`           | P1   | C++11    | null/ownership の明示                 | `NotNull`, `LockWeak`, `AddressOf`                 |
 | `testing_bytes`     | P1   | C++17    | bytes系テスト補助                     | `BytesEq`, `HexEq`                                 |
 | `version`           | P1   | C++17    | numeric version triplet parse/compare | `ket::version::Parse`, `ket::version::Format`      |
@@ -1428,23 +1428,34 @@ namespace ket
 ```cpp
 namespace ket
 {
+namespace memory
+{
 	bool IsAligned(const void* ptr, std::size_t alignment) noexcept;
-	bool TryAlignUpPtr(const void* ptr, std::size_t alignment, const void** out) noexcept;
-	bool TryAlignDownPtr(const void* ptr, std::size_t alignment, const void** out) noexcept;
+	bool TryAlignUp(const void* ptr, std::size_t alignment, const void*& out) noexcept;
+	bool TryAlignUp(void* ptr, std::size_t alignment, void*& out) noexcept;
+	template <typename T>
+	bool TryAlignUp(T* ptr, std::size_t alignment, T*& out) noexcept;
+	bool TryAlignDown(const void* ptr, std::size_t alignment, const void*& out) noexcept;
+	bool TryAlignDown(void* ptr, std::size_t alignment, void*& out) noexcept;
+	template <typename T>
+	bool TryAlignDown(T* ptr, std::size_t alignment, T*& out) noexcept;
 
-	void ZeroMemory(void* ptr, std::size_t size) noexcept;
-	void SecureZeroMemory(void* ptr, std::size_t size) noexcept;
+	void Zero(void* ptr, std::size_t size) noexcept;
+	void SecureZero(void* ptr, std::size_t size) noexcept;
 
 	template <typename T>
-	const std::uint8_t* ObjectBytes(const T& object) noexcept;
+	const unsigned char* ObjectBytes(const T& object) noexcept;
 
 	template <typename T>
-	std::size_t ObjectByteSize(const T& object) noexcept;
+	constexpr std::size_t ObjectByteSize(const T& object) noexcept;
 
+} // namespace memory
 } // namespace ket
 ```
 
 注意: object lifetime に踏み込む API は危険。最初は alignment と object representation の読み取りに絞る。
+実装では `TryAlignUpPtr`、`TryAlignDownPtr`、`ZeroMemory`、`SecureZeroMemory` の候補名を採用せず、
+module namespace 内の `TryAlignUp`、`TryAlignDown`、`Zero`、`SecureZero` に正規化した。
 
 ---
 
