@@ -277,7 +277,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `math_small`        | P2   | C++11    | 単位・補間など小さい数学              | `Lerp`, `MapRange`, `DegreesToRadians`                     |
 | `meta`              | P3   | C++11/17 | type traits 補助                      | `RemoveCvref`, `AlwaysFalse`                               |
 | `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助          | `JoiningThread`, `FutureReady`                             |
-| `uuid`              | P3   | C++17    | UUID parse/format                     | `ParseUuid`, `FormatUuid`                                  |
+| `uuid`              | P3   | C++17    | UUID parse/format                     | `Parse`, `Format`                                          |
 | `color`             | done | C++11    | RGB小値型                             | `Rgb`, `TryParse`, `Format`                                |
 | `percent`           | P3   | C++11    | percent小値型                         | `Percent::FromRatio`, `ClampPercent`                       |
 | `recipes`           | P3   | mixed    | moduleの使い方実例                    | `recipes/binary_payload`, `recipes/c_api_wrapper`          |
@@ -2053,13 +2053,17 @@ namespace ket
 ```cpp
 namespace ket
 {
-	struct Uuid
+	namespace uuid
 	{
-		std::uint8_t bytes[16] = {};
-	};
+		struct Uuid
+		{
+			std::array<std::uint8_t, 16U> bytes = {};
+		};
 
-	std::optional<Uuid> ParseUuid(std::string_view text) noexcept;
-	std::string FormatUuid(Uuid value);
+		std::optional<Uuid> Parse(std::string_view text) noexcept;
+		std::string Format(const Uuid& value);
+
+	} // namespace uuid
 
 } // namespace ket
 ```

@@ -421,6 +421,13 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_tlv_test ket_tlv_cxx11_check)
 
 	ket_add_module_test(
+		ket_uuid_test
+		SOURCES
+			modules/uuid/ket_uuid.cpp
+			modules/uuid/ket_uuid_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_tuple_test
 		SOURCES
 			modules/tuple/ket_tuple_test.cpp

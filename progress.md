@@ -38,6 +38,7 @@ Statusは次の値を使います。
 | memory      | memory              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | alignment判定、secure zero、object bytes      |
 | pointer     | pointer             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | null不許可raw pointerとweak/address補助       |
 | version     | parsing             | verified | C++17   | GoogleTest                         | checked | numeric version tripletのparse/format/compare |
+| uuid        | parsing             | verified | C++17   | GoogleTest                         | checked | canonical UUID のparse/format                 |
 | testing     | testing / binary    | verified | C++17   | GoogleTest                         | checked | byte列比較用GoogleTest assertion helper       |
 | ipv4        | network             | verified | C++17   | GoogleTest                         | checked | IPv4 dotted decimalとBE 32bit表現を相互変換   |
 | port        | network / value     | verified | C++17   | GoogleTest                         | checked | TCP/UDP port番号の値型とparse/format          |

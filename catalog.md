@@ -2639,11 +2639,14 @@ Tests:
 
 - zero uuid
 - normal uuid
+- all-ff uuid
 - upper input
 - bad length
 - bad hyphen
 - bad hex
+- brace / URN rejected
 - format lower-case
+- roundtrip
 
 ## Idea: ColorRgb
 
