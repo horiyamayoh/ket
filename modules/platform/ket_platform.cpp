@@ -72,7 +72,14 @@ namespace
 			return FormatUnknownErrno(error_number);
 		}
 
-		return {message};
+		const std::string_view message_view(message);
+		const auto message_is_generic_unknown = message_view == "Unknown error";
+		if (message_is_generic_unknown)
+		{
+			return FormatUnknownErrno(error_number);
+		}
+
+		return std::string(message_view);
 	}
 
 	std::size_t NextErrnoMessageBufferSize(std::size_t current_size) noexcept
