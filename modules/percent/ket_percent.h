@@ -47,7 +47,6 @@ namespace ket
 		  public:
 			/**
 			 * @brief 0%を表す値の構築。
-			 * @retval value 0%のPercent値。
 			 * @pre なし。
 			 * @post 構築後のBasisPoints()は0。
 			 * @code
@@ -81,7 +80,8 @@ namespace ket
 			 * @retval false 範囲外、NaN、Inf。`out`は変更なし。
 			 * @pre `out`は有効なPercentオブジェクト。
 			 * @post 成功時のみ`out`をnearest basis pointへ丸めた値に更新。失敗時は`out`を保持。
-			 * @note 丸めは非負値に対する`floor(value + 0.5)`相当。
+			 * @note 丸めは入力`double`値をbasis pointsへscaleした後の`floor(value + 0.5)`相当。
+			 * 十進表記の厳密なtie丸めが必要な場合は`TryFromBasisPoints`を使用。
 			 * @code
 			 * ket::percent::Percent value;
 			 * const auto ok = ket::percent::Percent::TryFromPercent(12.345, value);
@@ -98,7 +98,8 @@ namespace ket
 			 * @retval false 範囲外、NaN、Inf。`out`は変更なし。
 			 * @pre `out`は有効なPercentオブジェクト。
 			 * @post 成功時のみ`out`をnearest basis pointへ丸めた値に更新。失敗時は`out`を保持。
-			 * @note 丸めは非負値に対する`floor(value + 0.5)`相当。
+			 * @note 丸めは入力`double`値をbasis pointsへscaleした後の`floor(value + 0.5)`相当。
+			 * 十進表記の厳密なtie丸めが必要な場合は`TryFromBasisPoints`を使用。
 			 * @code
 			 * ket::percent::Percent value;
 			 * const auto ok = ket::percent::Percent::TryFromRatio(0.12345, value);
@@ -112,8 +113,9 @@ namespace ket
 			 * @param[in] percent 入力percent値。
 			 * @retval value 0.0から100.0へclamp後、nearest basis pointへ丸めたPercent値。
 			 * @pre なし。NaNは0%、-Infは0%、+Infは100%として扱う。
-			 * @post 引数と外部状態の変更なし。
-			 * @note 有限の範囲外入力は0.0から100.0へclamp。
+			 * @post 引数とketオブジェクトの変更なし。
+			 * @note 有限の範囲外入力は0.0から100.0へclamp。丸めは入力`double`値をbasis
+			 * pointsへscaleした後の`floor(value + 0.5)`相当。
 			 * @code
 			 * const auto value = ket::percent::Percent::FromPercentClamped(120.0);
 			 * // value.BasisPoints() == 10000
@@ -167,7 +169,6 @@ namespace ket
 			/**
 			 * @brief 検証済みbasis pointsによる内部構築。
 			 * @param[in] basis_points 保持するbasis points。
-			 * @retval value `basis_points`を保持するPercent値。
 			 * @pre `basis_points <= 10000`。
 			 * @post 構築後のBasisPoints()は`basis_points`。
 			 */
@@ -294,7 +295,7 @@ namespace ket
 			 * @retval true NaNでもInfでもない有限値。
 			 * @retval false NaNまたはInf。
 			 * @pre なし。
-			 * @post 引数と外部状態の変更なし。
+			 * @post 引数とketオブジェクトの変更なし。
 			 */
 			inline bool IsFinite(double value) noexcept
 			{
@@ -306,7 +307,7 @@ namespace ket
 			 * @param[in] basis_points 丸め対象の非負basis points値。
 			 * @retval value `floor(basis_points + 0.5)`相当の値。
 			 * @pre `0.0 <= basis_points <= 10000.0`。
-			 * @post 引数と外部状態の変更なし。
+			 * @post 引数とketオブジェクトの変更なし。
 			 */
 			inline std::uint16_t RoundNonNegativeBasisPoints(double basis_points) noexcept
 			{
@@ -319,14 +320,19 @@ namespace ket
 		// Public API definitions
 		// -----------------------------------------------------------------------------
 
+		/**
+		 * @brief `Percent()`宣言側仕様に従う定義。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
+		 */
 		constexpr Percent::Percent() noexcept : basis_points_(0U) {}
 
 		/**
-		 * @brief 検証済みbasis pointsによる内部構築。
-		 * @param[in] basis_points 保持するbasis points。
-		 * @retval value `basis_points`を保持するPercent値。
-		 * @pre `basis_points <= 10000`。
-		 * @post 構築後のBasisPoints()は`basis_points`。
+		 * @brief `Percent(std::uint16_t)`宣言側仕様に従う定義。
+		 * @param[in] basis_points 宣言側仕様の検証済みbasis points。
+		 * @retval value 宣言側仕様のPercent値。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		constexpr Percent::Percent(std::uint16_t basis_points) noexcept
 			: basis_points_(basis_points)
@@ -334,13 +340,13 @@ namespace ket
 		}
 
 		/**
-		 * @brief basis points単位からPercent値を構築。
-		 * @param[in] basis_points 入力basis points。0から10000のみ成功。
-		 * @param[out] out 成功時に構築結果を書き込む出力先。
-		 * @retval true `basis_points <= 10000`。
-		 * @retval false `basis_points > 10000`。`out`は変更なし。
-		 * @pre `out`は有効なPercentオブジェクト。
-		 * @post 成功時のみ`out`を`basis_points`相当へ更新。失敗時は`out`を保持。
+		 * @brief `TryFromBasisPoints`宣言側仕様に従う定義。
+		 * @param[in] basis_points 宣言側仕様の入力basis points。
+		 * @param[out] out 宣言側仕様の出力先。
+		 * @retval true 宣言側仕様の成功条件。
+		 * @retval false 宣言側仕様の失敗条件。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		inline bool Percent::TryFromBasisPoints(std::uint32_t basis_points, Percent& out) noexcept
 		{
@@ -355,13 +361,13 @@ namespace ket
 		}
 
 		/**
-		 * @brief percent単位の小数からPercent値を構築。
-		 * @param[in] percent 入力percent値。0.0から100.0のみ成功。
-		 * @param[out] out 成功時に構築結果を書き込む出力先。
-		 * @retval true 有限かつ0.0から100.0の入力。
-		 * @retval false 範囲外、NaN、Inf。`out`は変更なし。
-		 * @pre `out`は有効なPercentオブジェクト。
-		 * @post 成功時のみ`out`をnearest basis pointへ丸めた値に更新。失敗時は`out`を保持。
+		 * @brief `TryFromPercent`宣言側仕様に従う定義。
+		 * @param[in] percent 宣言側仕様の入力percent値。
+		 * @param[out] out 宣言側仕様の出力先。
+		 * @retval true 宣言側仕様の成功条件。
+		 * @retval false 宣言側仕様の失敗条件。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		inline bool Percent::TryFromPercent(double percent, Percent& out) noexcept
 		{
@@ -378,13 +384,13 @@ namespace ket
 		}
 
 		/**
-		 * @brief ratio単位の小数からPercent値を構築。
-		 * @param[in] ratio 入力ratio値。0.0から1.0のみ成功。
-		 * @param[out] out 成功時に構築結果を書き込む出力先。
-		 * @retval true 有限かつ0.0から1.0の入力。
-		 * @retval false 範囲外、NaN、Inf。`out`は変更なし。
-		 * @pre `out`は有効なPercentオブジェクト。
-		 * @post 成功時のみ`out`をnearest basis pointへ丸めた値に更新。失敗時は`out`を保持。
+		 * @brief `TryFromRatio`宣言側仕様に従う定義。
+		 * @param[in] ratio 宣言側仕様の入力ratio値。
+		 * @param[out] out 宣言側仕様の出力先。
+		 * @retval true 宣言側仕様の成功条件。
+		 * @retval false 宣言側仕様の失敗条件。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		inline bool Percent::TryFromRatio(double ratio, Percent& out) noexcept
 		{
@@ -401,11 +407,11 @@ namespace ket
 		}
 
 		/**
-		 * @brief percent単位の小数を範囲内へ丸め込んでPercent値を構築。
-		 * @param[in] percent 入力percent値。
-		 * @retval value 0.0から100.0へclamp後、nearest basis pointへ丸めたPercent値。
-		 * @pre なし。NaNは0%、-Infは0%、+Infは100%として扱う。
-		 * @post 引数と外部状態の変更なし。
+		 * @brief `FromPercentClamped`宣言側仕様に従う定義。
+		 * @param[in] percent 宣言側仕様の入力percent値。
+		 * @retval value 宣言側仕様のclamp済みPercent値。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		inline Percent Percent::FromPercentClamped(double percent) noexcept
 		{
@@ -432,10 +438,10 @@ namespace ket
 		}
 
 		/**
-		 * @brief 保持中のbasis points取得。
-		 * @retval value 0から10000のbasis points値。
-		 * @pre なし。
-		 * @post 引数と外部状態の変更なし。
+		 * @brief `BasisPoints`宣言側仕様に従う定義。
+		 * @retval value 宣言側仕様のbasis points値。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		constexpr std::uint16_t Percent::BasisPoints() const noexcept
 		{
@@ -443,10 +449,10 @@ namespace ket
 		}
 
 		/**
-		 * @brief 保持値のpercent単位変換。
-		 * @retval value `BasisPoints() / 100.0`。
-		 * @pre なし。
-		 * @post 引数と外部状態の変更なし。
+		 * @brief `ToPercent`宣言側仕様に従う定義。
+		 * @retval value 宣言側仕様のpercent単位値。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		constexpr double Percent::ToPercent() const noexcept
 		{
@@ -454,10 +460,10 @@ namespace ket
 		}
 
 		/**
-		 * @brief 保持値のratio単位変換。
-		 * @retval value `BasisPoints() / 10000.0`。
-		 * @pre なし。
-		 * @post 引数と外部状態の変更なし。
+		 * @brief `ToRatio`宣言側仕様に従う定義。
+		 * @retval value 宣言側仕様のratio単位値。
+		 * @pre 宣言側preconditionに準拠。
+		 * @post 宣言側postconditionに準拠。
 		 */
 		constexpr double Percent::ToRatio() const noexcept
 		{

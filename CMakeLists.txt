@@ -142,46 +142,143 @@ if(KET_BUILD_TESTS)
 			modules/percent/ket_percent_test.cpp
 	)
 
-	set(ket_percent_cxx11_check_source "${CMAKE_CURRENT_BINARY_DIR}/ket_percent_cxx11_check.cpp")
-	file(
-		WRITE
-		"${ket_percent_cxx11_check_source}"
-		[=[
-#include "ket_percent.h"
-
-namespace
-{
-	constexpr ket::percent::Percent kDefaultPercent;
-
-	static_assert(kDefaultPercent.BasisPoints() == 0U, "default percent is C++11 constexpr");
-	static_assert(kDefaultPercent.ToPercent() == 0.0, "percent conversion is C++11 constexpr");
-	static_assert(kDefaultPercent.ToRatio() == 0.0, "ratio conversion is C++11 constexpr");
-	static_assert(kDefaultPercent == ket::percent::Percent{}, "comparison is C++11 constexpr");
-
-} // namespace
-
-int KetPercentCxx11Check()
-{
-	ket::percent::Percent value;
-	const bool from_basis_points = ket::percent::Percent::TryFromBasisPoints(10000U, value);
-	const bool from_percent = ket::percent::Percent::TryFromPercent(12.345, value);
-	const bool from_ratio = ket::percent::Percent::TryFromRatio(0.12345, value);
-
-	return (from_basis_points && from_percent && from_ratio) ? 0 : 1;
-}
-]=]
-	)
-
 	ket_add_compile_check(
 		ket_percent_cxx11_check
 		CXX_STANDARD 11
 		SOURCES
-			"${ket_percent_cxx11_check_source}"
-	)
-	target_include_directories(
-		ket_percent_cxx11_check
-		PRIVATE
-			"${CMAKE_CURRENT_SOURCE_DIR}/modules/percent"
+			modules/percent/ket_percent_cxx11_check.cpp
 	)
 	add_dependencies(ket_percent_test ket_percent_cxx11_check)
+
+	ket_add_module_test(
+		ket_tuple_test
+		SOURCES
+			modules/tuple/ket_tuple_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_optional_test
+		SOURCES
+			modules/optional/ket_optional_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_meta_test
+		SOURCES
+			modules/meta/ket_meta_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_meta_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/meta/ket_meta_cxx11_check.cpp
+	)
+	add_dependencies(ket_meta_test ket_meta_cxx11_check)
+
+	ket_add_module_test(
+		ket_bits_test
+		SOURCES
+			modules/bits/ket_bits_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_bits_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_bits_cxx11_check.cpp
+	)
+	target_include_directories(
+		ket_bits_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/bits"
+	)
+	add_dependencies(ket_bits_test ket_bits_cxx11_check)
+
+	ket_add_module_test(
+		ket_numeric_test
+		SOURCES
+			modules/numeric/ket_numeric_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_numeric_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/numeric/ket_numeric_cxx11_check.cpp
+	)
+	add_dependencies(ket_numeric_test ket_numeric_cxx11_check)
+
+	ket_add_module_test(
+		ket_byte_reader_test
+		SOURCES
+			modules/byte_reader/ket_byte_reader.cpp
+			modules/byte_reader/ket_byte_reader_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_reader_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/byte_reader/ket_byte_reader.cpp
+			modules/byte_reader/ket_byte_reader.h
+	)
+	add_dependencies(ket_byte_reader_test ket_byte_reader_cxx11_check)
+
+	ket_add_module_test(
+		ket_byte_writer_test
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_writer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/byte_writer/ket_byte_writer.cpp
+			modules/byte_writer/ket_byte_writer.h
+	)
+	add_dependencies(ket_byte_writer_test ket_byte_writer_cxx11_check)
+
+	ket_add_module_test(
+		ket_endian_test
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_endian_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/endian/ket_endian.cpp
+			modules/endian/ket_endian.h
+	)
+	add_dependencies(ket_endian_test ket_endian_cxx11_check)
+
+	ket_add_module_test(
+		ket_bytes_test
+		SOURCES
+			modules/bytes/ket_bytes_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_byte_view_test
+		SOURCES
+			modules/byte_view/ket_byte_view_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_byte_view_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_byte_view_cxx11_check.cpp
+	)
+	target_include_directories(
+		ket_byte_view_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
+	)
+	add_dependencies(ket_byte_view_test ket_byte_view_cxx11_check)
 endif()
