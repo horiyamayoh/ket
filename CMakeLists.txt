@@ -192,6 +192,13 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_mac_test
+		SOURCES
+			modules/mac/ket_mac.cpp
+			modules/mac/ket_mac_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_object_test
 		SOURCES
 			modules/object/ket_object_test.cpp

@@ -201,7 +201,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 9. `testing_bytes`
 10. `version`
 11. `ipv4`
-12. `mac_address`
+12. `mac`
 
 ### P2: 便利だが、大きくなりやすいので抑制して入れる
 
@@ -233,54 +233,54 @@ BCD の次に ket の価値を最も表しやすい module 群。
 
 ## 5. module proposal 一覧
 
-| Module              | 優先 | C++ Min  | 狙い                                  | 代表API                                             |
-| ------------------- | ---- | -------- | ------------------------------------- | --------------------------------------------------- |
-| `bcd`               | done | C++17    | packed BCD 変換                       | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`          |
-| `bits`              | P0   | C++11    | bit/nibble/mask の事故防止            | `HighNibble`, `HasBit`, `Mask`                      |
-| `numeric`           | P0   | C++11    | overflow/align/cast の小さい正解      | `AlignUp`, `CheckedAdd`, `InRange`                  |
-| `endian`            | P0   | C++11    | unaligned/endian 読み書き             | `LoadBe32`, `StoreLe16`                             |
-| `hex`               | P0   | C++17    | bytes と16進文字列/hex dump           | `BytesToHex`, `HexToBytes`, `HexDump`               |
-| `parse_numeric`     | P0   | C++17    | `from_chars` 周りの儀式除去           | `ParseUInt`, `TryParseHex`                          |
-| `enum_table`        | P0   | C++17    | enum class と文字列変換               | `EnumName`, `ParseEnum`, `ToUnderlying`             |
-| `container`         | P0   | C++11/17 | map/vector の小さい儀式               | `ContainsKey`, `AtOrNull`, `GetOrDefault`           |
-| `string_ascii`      | P0   | C++17    | ASCII前提の文字列処理                 | `TrimAscii`, `SplitView`, `ToLowerAscii`            |
-| `scope`             | P0   | C++11    | RAII cleanup                          | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`       |
-| `byte_reader`       | P0   | C++11    | byte列の安全な逐次読み取り            | `ReadU8`, `ReadBe16`, `Remaining`                   |
-| `byte_writer`       | P0   | C++11    | fixed buffer への安全な書き込み       | `WriteU8`, `WriteLe32`, `Remaining`                 |
-| `bytes_builder`     | P0   | C++17    | owning payload builder                | `AppendU8`, `AppendBe16`, `Build`                   |
-| `date`              | P0   | C++11    | 日付・時刻の妥当性                    | `IsLeapYear`, `IsValidDate`                         |
-| `deadline`          | P0   | C++11    | timeout と elapsed time               | `Stopwatch`, `Deadline`                             |
-| `cli`               | P0   | C++17    | 小さい社内CLIの option 取得           | `HasOption`, `GetOption`, `Positional`              |
-| `byte_view`         | P1   | C++11    | non-owning byte span                  | `ByteView`, `SubView`, `SafeAt`                     |
-| `utf8`              | P1   | C++17    | UTF-8検査を小さく隔離                 | `ValidateUtf8`, `IsUtf8`, `Utf8Length`              |
-| `file`              | P1   | C++17    | ファイル全読み/全書き                 | `ReadAllText`, `WriteAllBytes`                      |
-| `io_stream`         | P1   | C++11    | stream の確実な読み書き               | `ReadExactly`, `StreamStateSaver`                   |
-| `format_value`      | P1   | C++17    | 診断用文字列                          | `ToHexString`, `FormatBytes`, `FormatDuration`      |
-| `algorithm_range`   | P1   | C++11    | iterator pair の儀式除去              | `AllOf`, `FindIf`, `IndexOf`                        |
-| `memory`            | P1   | C++11    | alignment/object bytes                | `IsAligned`, `TryAlignUp`, `SecureZero`             |
-| `pointer`           | P1   | C++11    | null/ownership の明示                 | `NotNull`, `LockWeak`, `AddressOf`                  |
-| `testing_bytes`     | P1   | C++17    | bytes系テスト補助                     | `BytesEq`, `HexEq`                                  |
-| `version`           | P1   | C++17    | numeric version triplet parse/compare | `ket::version::Parse`, `ket::version::Format`       |
-| `ipv4`              | P1   | C++17    | IPv4 parse/format                     | `ParseIpV4`, `FormatIpV4`                           |
-| `mac_address`       | P1   | C++17    | MAC address parse/format              | `ParseMacAddress`, `FormatMacAddress`               |
-| `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`, `Noop`                  |
-| `variant_match`     | P2   | C++17    | `std::variant` visitor 補助           | `Match`, `Holds`, `GetIf`                           |
-| `optional_ext`      | P2   | C++17    | optional の小さい合成                 | `MapOptional`, `AndThen`, `ValueOrEval`             |
-| `contract`          | done | C++11    | precondition 明示                     | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds` |
-| `c_interop`         | P2   | C++11    | C API 境界の事故防止                  | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle`  |
-| `platform_error`    | P2   | C++17    | errno/Windows error の文字列化        | `ErrnoMessage`, `WindowsErrorMessage`               |
-| `state`             | P2   | C++17    | 小さい状態遷移表                      | `Next`, `IsAllowed`                                 |
-| `cache_once`        | P2   | C++11    | once/lazy value                       | `OnceValue`, `Lazy`, `GetOrCreate`                  |
-| `tlv`               | P2   | C++11    | length-prefix/TLV                     | `Encode`, `Append`, `TryDecode`                     |
-| `tuple`             | P2   | C++17    | tuple/pair の小さい補助               | `ForEach`, `Transform`                              |
-| `build_config`      | P2   | C++11    | feature detection                     | `KET_HAS_STD_OPTIONAL`                              |
-| `math_small`        | P2   | C++11    | 単位・補間など小さい数学              | `Lerp`, `MapRange`, `DegreesToRadians`              |
-| `meta`              | P3   | C++11/17 | type traits 補助                      | `RemoveCvref`, `AlwaysFalse`                        |
-| `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助          | `JoiningThread`, `FutureReady`                      |
-| `uuid`              | P3   | C++17    | UUID parse/format                     | `ParseUuid`, `FormatUuid`                           |
-| `color`             | done | C++11    | RGB小値型                             | `Rgb`, `TryParse`, `Format`                         |
-| `percent`           | P3   | C++11    | percent小値型                         | `Percent::FromRatio`, `ClampPercent`                |
-| `recipes`           | P3   | mixed    | moduleの使い方実例                    | `recipes/binary_payload`, `recipes/c_api_wrapper`   |
+| Module              | 優先 | C++ Min  | 狙い                                  | 代表API                                                    |
+| ------------------- | ---- | -------- | ------------------------------------- | ---------------------------------------------------------- |
+| `bcd`               | done | C++17    | packed BCD 変換                       | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`                 |
+| `bits`              | P0   | C++11    | bit/nibble/mask の事故防止            | `HighNibble`, `HasBit`, `Mask`                             |
+| `numeric`           | P0   | C++11    | overflow/align/cast の小さい正解      | `AlignUp`, `CheckedAdd`, `InRange`                         |
+| `endian`            | P0   | C++11    | unaligned/endian 読み書き             | `LoadBe32`, `StoreLe16`                                    |
+| `hex`               | P0   | C++17    | bytes と16進文字列/hex dump           | `BytesToHex`, `HexToBytes`, `HexDump`                      |
+| `parse_numeric`     | P0   | C++17    | `from_chars` 周りの儀式除去           | `ParseUInt`, `TryParseHex`                                 |
+| `enum_table`        | P0   | C++17    | enum class と文字列変換               | `EnumName`, `ParseEnum`, `ToUnderlying`                    |
+| `container`         | P0   | C++11/17 | map/vector の小さい儀式               | `ContainsKey`, `AtOrNull`, `GetOrDefault`                  |
+| `string_ascii`      | P0   | C++17    | ASCII前提の文字列処理                 | `TrimAscii`, `SplitView`, `ToLowerAscii`                   |
+| `scope`             | P0   | C++11    | RAII cleanup                          | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`              |
+| `byte_reader`       | P0   | C++11    | byte列の安全な逐次読み取り            | `ReadU8`, `ReadBe16`, `Remaining`                          |
+| `byte_writer`       | P0   | C++11    | fixed buffer への安全な書き込み       | `WriteU8`, `WriteLe32`, `Remaining`                        |
+| `bytes_builder`     | P0   | C++17    | owning payload builder                | `AppendU8`, `AppendBe16`, `Build`                          |
+| `date`              | P0   | C++11    | 日付・時刻の妥当性                    | `IsLeapYear`, `IsValidDate`                                |
+| `deadline`          | P0   | C++11    | timeout と elapsed time               | `Stopwatch`, `Deadline`                                    |
+| `cli`               | P0   | C++17    | 小さい社内CLIの option 取得           | `HasOption`, `GetOption`, `Positional`                     |
+| `byte_view`         | P1   | C++11    | non-owning byte span                  | `ByteView`, `SubView`, `SafeAt`                            |
+| `utf8`              | P1   | C++17    | UTF-8検査を小さく隔離                 | `ValidateUtf8`, `IsUtf8`, `Utf8Length`                     |
+| `file`              | P1   | C++17    | ファイル全読み/全書き                 | `ReadAllText`, `WriteAllBytes`                             |
+| `io_stream`         | P1   | C++11    | stream の確実な読み書き               | `ReadExactly`, `StreamStateSaver`                          |
+| `format_value`      | P1   | C++17    | 診断用文字列                          | `ToHexString`, `FormatBytes`, `FormatDuration`             |
+| `algorithm_range`   | P1   | C++11    | iterator pair の儀式除去              | `AllOf`, `FindIf`, `IndexOf`                               |
+| `memory`            | P1   | C++11    | alignment/object bytes                | `IsAligned`, `TryAlignUp`, `SecureZero`                    |
+| `pointer`           | P1   | C++11    | null/ownership の明示                 | `NotNull`, `LockWeak`, `AddressOf`                         |
+| `testing_bytes`     | P1   | C++17    | bytes系テスト補助                     | `BytesEq`, `HexEq`                                         |
+| `version`           | P1   | C++17    | numeric version triplet parse/compare | `ket::version::Parse`, `ket::version::Format`              |
+| `ipv4`              | P1   | C++17    | IPv4 parse/format                     | `ParseIpV4`, `FormatIpV4`                                  |
+| `mac`               | P1   | C++17    | MAC address parse/format              | `ket::mac::Address`, `ket::mac::Parse`, `ket::mac::Format` |
+| `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`, `Noop`                         |
+| `variant_match`     | P2   | C++17    | `std::variant` visitor 補助           | `Match`, `Holds`, `GetIf`                                  |
+| `optional_ext`      | P2   | C++17    | optional の小さい合成                 | `MapOptional`, `AndThen`, `ValueOrEval`                    |
+| `contract`          | done | C++11    | precondition 明示                     | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds`        |
+| `c_interop`         | P2   | C++11    | C API 境界の事故防止                  | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle`         |
+| `platform_error`    | P2   | C++17    | errno/Windows error の文字列化        | `ErrnoMessage`, `WindowsErrorMessage`                      |
+| `state`             | P2   | C++17    | 小さい状態遷移表                      | `Next`, `IsAllowed`                                        |
+| `cache_once`        | P2   | C++11    | once/lazy value                       | `OnceValue`, `Lazy`, `GetOrCreate`                         |
+| `tlv`               | P2   | C++11    | length-prefix/TLV                     | `Encode`, `Append`, `TryDecode`                            |
+| `tuple`             | P2   | C++17    | tuple/pair の小さい補助               | `ForEach`, `Transform`                                     |
+| `build_config`      | P2   | C++11    | feature detection                     | `KET_HAS_STD_OPTIONAL`                                     |
+| `math_small`        | P2   | C++11    | 単位・補間など小さい数学              | `Lerp`, `MapRange`, `DegreesToRadians`                     |
+| `meta`              | P3   | C++11/17 | type traits 補助                      | `RemoveCvref`, `AlwaysFalse`                               |
+| `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助          | `JoiningThread`, `FutureReady`                             |
+| `uuid`              | P3   | C++17    | UUID parse/format                     | `ParseUuid`, `FormatUuid`                                  |
+| `color`             | done | C++11    | RGB小値型                             | `Rgb`, `TryParse`, `Format`                                |
+| `percent`           | P3   | C++11    | percent小値型                         | `Percent::FromRatio`, `ClampPercent`                       |
+| `recipes`           | P3   | mixed    | moduleの使い方実例                    | `recipes/binary_payload`, `recipes/c_api_wrapper`          |
 
 ---
 
@@ -1582,26 +1582,37 @@ namespace ket
 
 ---
 
-### 7.12 `modules/mac_address/ket_mac_address.h`
+### 7.12 `modules/mac/ket_mac.h`
 
 ```cpp
 namespace ket
 {
-	struct MacAddress
+	namespace mac
 	{
-		std::uint8_t bytes[6] = {0, 0, 0, 0, 0, 0};
-	};
+		enum class LetterCase
+		{
+			kLower,
+			kUpper
+		};
 
-	std::optional<MacAddress> ParseMacAddress(std::string_view text) noexcept;
-	std::string FormatMacAddress(MacAddress value);
-	std::string FormatMacAddressUpper(MacAddress value);
+		struct Address
+		{
+			std::uint8_t bytes[6] = {0, 0, 0, 0, 0, 0};
+		};
+
+		bool operator==(Address lhs, Address rhs) noexcept;
+		bool operator!=(Address lhs, Address rhs) noexcept;
+		std::optional<Address> Parse(std::string_view text) noexcept;
+		std::string Format(Address value, LetterCase letter_case = LetterCase::kLower);
+
+	} // namespace mac
 
 } // namespace ket
 ```
 
 仕様メモ:
 
-- `AA:BB:CC:DD:EE:FF` と `aa-bb-cc-dd-ee-ff` のどちらを許すか固定する。推奨は `:` と `-` を許す。
+- `AA:BB:CC:DD:EE:FF` と `aa-bb-cc-dd-ee-ff` を許し、区切り文字の混在は失敗。
 - Cisco形式 `aabb.ccdd.eeff` は最初は扱わない。
 
 ---

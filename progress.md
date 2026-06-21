@@ -40,6 +40,7 @@ Statusは次の値を使います。
 | testing     | testing / binary    | verified | C++17   | GoogleTest                         | checked | byte列比較用GoogleTest assertion helper       |
 | ipv4        | network             | verified | C++17   | GoogleTest                         | checked | IPv4 dotted decimalとBE 32bit表現を相互変換   |
 | port        | network / value     | verified | C++17   | GoogleTest                         | checked | TCP/UDP port番号の値型とparse/format          |
+| mac         | network             | verified | C++17   | GoogleTest                         | checked | MAC addressのparse/format                     |
 | variant     | variant             | verified | C++17   | GoogleTest                         | checked | std::variant visitor補助                      |
 | utf8        | text                | verified | C++17   | GoogleTest                         | checked | UTF-8 byte列の妥当性検査とcode point数取得    |
 | file        | filesystem          | verified | C++17   | GoogleTest                         | checked | ファイル全読み/全書きと基本query              |

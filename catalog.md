@@ -1699,6 +1699,7 @@ Candidate API:
 ket::mac::Address
 ket::mac::Parse(text)
 ket::mac::Format(address)
+address_a == address_b
 ```
 
 C++バージョン要件:
@@ -1726,9 +1727,11 @@ Failure / edge cases:
 Tests:
 
 - colon format
-- hyphen format
+- hyphen input
 - upper/lower input
+- address comparison
 - mixed separator fails
+- invalid separator fails
 - invalid hex fails
 - format golden output
 
