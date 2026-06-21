@@ -670,17 +670,15 @@ ket の「広大な視野」を保つための地図である。
 候補:
 
 ```cpp
-ket::IgnoreUnused(...)
-ket::Unreachable()
-ket::Exchange(obj, new_value)
-ket::ArraySize(array)
-ket::AsConst(x)
-ket::Identity(x)
+ket::lang::IgnoreUnused(...)
+ket::lang::ArraySize(array)
+ket::lang::AsConst(x)
 ```
 
 注意:
 
 - `ToUnderlying` は `language` でも `enum` でもよいが、enum module に寄せてもよい
+- 未到達動作、exchange、identity は初回の language module には含めない
 - copy/move意図の型補助は `object` module へ分離済み
 - マクロは最小限にする
 
@@ -780,12 +778,11 @@ std::visit(ket::Overload{
 候補:
 
 ```cpp
-ket::Expects(condition)
-ket::Ensures(condition)
-ket::AssertInvariant(condition)
-ket::RequireNonNull(ptr)
-ket::RequireInRange(value, min, max)
-ket::CheckBounds(index, size)
+KET_EXPECTS(condition)
+KET_ENSURES(condition)
+KET_ASSERT_INVARIANT(condition)
+KET_REQUIRE_NON_NULL(ptr)
+ket::contract::IsInBounds(index, size)
 ```
 
 注意:
@@ -829,27 +826,24 @@ ket::numeric::TryCast<T>(value, out)
 
 目的: 数値より少し高レベルな計算補助。
 
-候補:
+採用API:
 
 ```cpp
-ket::Lerp(a, b, t)
-ket::InverseLerp(a, b, x)
-ket::MapRange(x, in_min, in_max, out_min, out_max)
-ket::Mean(range)
-ket::Median(range)
-ket::Variance(range)
-ket::DegreesToRadians(deg)
-ket::RadiansToDegrees(rad)
-ket::Distance2D(a, b)
-ket::RectContains(rect, point)
-ket::BytesToKiB(bytes)
-ket::KiBToBytes(kib)
+ket::math::Lerp(a, b, t)
+ket::math::ToRadians(degrees)
+ket::math::ToDegrees(radians)
+ket::math::NearlyEqual(a, b, epsilon)
+ket::math::TryBytesFromKiB(kib, out)
+ket::math::TryBytesFromMiB(mib, out)
+ket::math::BytesToKiB(bytes)
+ket::math::BytesToMiB(bytes)
 ```
 
 注意:
 
 - 単位変換は便利だが、巨大なunits frameworkにはしない
 - 浮動小数点誤差の扱いをドキュメント化する
+- `InverseLerp`、`MapRange`、統計、幾何は今回採用しない
 
 ---
 
@@ -937,6 +931,8 @@ ket::memory::ObjectByteSize(obj)
 
 - C++20の `std::construct_at` と重なる
 - object representation と object lifetime は危険領域なので、API名とコメントで用途を限定する
+- pointer alignment の戻り値は address-level の結果で、object bounds や dereference 可能性は保証しない
+- `ObjectBytes` は padding/endian/layout を含むため、serialization や安定比較には使わない
 
 ---
 
@@ -1642,6 +1638,7 @@ ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
 ket::version::Parse(text)
+ket::version::Format(value)
 ket::version::Compare(a, b)
 ```
 
@@ -1659,12 +1656,9 @@ ket::version::Compare(a, b)
 候補:
 
 ```cpp
-ket::Transition<State, Event>
-ket::TransitionTable<State, Event>
-ket::IsValidTransition(current, event, table)
-ket::NextState(current, event, table)
-ket::StateName(state, table)
-ket::EventName(event, table)
+ket::state::Transition<State, Event>
+ket::state::IsAllowed(current, event, table)
+ket::state::Next(current, event, table)
 ```
 
 注意:
