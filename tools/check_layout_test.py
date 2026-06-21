@@ -233,7 +233,9 @@ class CheckLayoutTest(unittest.TestCase):
 						" * 内部実装：KET_DETAIL_* macros（ヘッダ末尾で#undef）。",
 						" */",
 						"",
-						"#define KET_CXX_VERSION 201703L",
+						"#define KET_DETAIL_CXX_VERSION_VALUE 201703L",
+						"#define KET_CXX_VERSION KET_DETAIL_CXX_VERSION_VALUE",
+						"#undef KET_DETAIL_CXX_VERSION_VALUE",
 						"",
 					)
 				),
@@ -264,6 +266,139 @@ class CheckLayoutTest(unittest.TestCase):
 			errors = check_layout.collect_layout_errors(root)
 
 			self.assertEqual(errors, [])
+
+	def test_build_config_macro_only_layout_reports_namespace(self) -> None:
+		with tempfile.TemporaryDirectory() as root_name:
+			root = Path(root_name)
+			(root / "modules" / "build_config").mkdir(parents=True)
+			(root / "modules" / "build_config" / "ket_build_config.h").write_text(
+				"\n".join(
+					(
+						"#pragma once",
+						"",
+						"/**",
+						" * @file ket_build_config.h",
+						" * @brief build config macro。",
+						" *",
+						" * @details macro-only module。",
+						" *",
+						" * @par プロジェクトへの適用方法",
+						" * `ket_build_config.h` を対象プロジェクトへコピー。",
+						" *",
+						" * @par C++バージョン要件",
+						" * 最小要件：C++11。",
+						" * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。",
+						" * 推奨理由：試験用の理由。",
+						" * 本ライブラリの適用を推奨しない C++ バージョン：なし。",
+						" * 非推奨理由：なし。",
+						" *",
+						" * @par 他のライブラリへの依存",
+						" * 標準ライブラリのみ。",
+						" * 他のket moduleへの依存なし。",
+						" *",
+						" * @par namespace",
+						" * 公開API：global KET_* macros（C++ namespaceなし）。",
+						" * 内部実装：KET_DETAIL_* macros（ヘッダ末尾で#undef）。",
+						" */",
+						"",
+						"namespace ket",
+						"{",
+						"}",
+						"#define KET_DETAIL_CXX_VERSION_VALUE 201703L",
+						"#define KET_CXX_VERSION KET_DETAIL_CXX_VERSION_VALUE",
+						"#undef KET_DETAIL_CXX_VERSION_VALUE",
+						"",
+					)
+				),
+				encoding="utf-8",
+			)
+			(root / "modules" / "build_config" / "ket_build_config_test.cpp").write_text(
+				'#include "ket_build_config.h"\n',
+				encoding="utf-8",
+			)
+			(root / "CMakeLists.txt").write_text(
+				"ket_add_module_test(\n"
+				"    ket_build_config_test\n"
+				"    SOURCES\n"
+				"        modules/build_config/ket_build_config_test.cpp\n"
+				")\n",
+				encoding="utf-8",
+			)
+			(root / "progress.md").write_text(
+				"| Module | Status |\n| ------ | ------ |\n| build_config | verified |\n",
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/build_config/ket_build_config.h: macro-only module must not declare a C++ namespace.",
+				errors,
+			)
+
+	def test_build_config_macro_only_layout_reports_missing_detail_macro(self) -> None:
+		with tempfile.TemporaryDirectory() as root_name:
+			root = Path(root_name)
+			(root / "modules" / "build_config").mkdir(parents=True)
+			(root / "modules" / "build_config" / "ket_build_config.h").write_text(
+				"\n".join(
+					(
+						"#pragma once",
+						"",
+						"/**",
+						" * @file ket_build_config.h",
+						" * @brief build config macro。",
+						" *",
+						" * @details macro-only module。",
+						" *",
+						" * @par プロジェクトへの適用方法",
+						" * `ket_build_config.h` を対象プロジェクトへコピー。",
+						" *",
+						" * @par C++バージョン要件",
+						" * 最小要件：C++11。",
+						" * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。",
+						" * 推奨理由：試験用の理由。",
+						" * 本ライブラリの適用を推奨しない C++ バージョン：なし。",
+						" * 非推奨理由：なし。",
+						" *",
+						" * @par 他のライブラリへの依存",
+						" * 標準ライブラリのみ。",
+						" * 他のket moduleへの依存なし。",
+						" *",
+						" * @par namespace",
+						" * 公開API：global KET_* macros（C++ namespaceなし）。",
+						" * 内部実装：KET_DETAIL_* macros（ヘッダ末尾で#undef）。",
+						" */",
+						"",
+						"#define KET_CXX_VERSION 201703L",
+						"",
+					)
+				),
+				encoding="utf-8",
+			)
+			(root / "modules" / "build_config" / "ket_build_config_test.cpp").write_text(
+				'#include "ket_build_config.h"\n',
+				encoding="utf-8",
+			)
+			(root / "CMakeLists.txt").write_text(
+				"ket_add_module_test(\n"
+				"    ket_build_config_test\n"
+				"    SOURCES\n"
+				"        modules/build_config/ket_build_config_test.cpp\n"
+				")\n",
+				encoding="utf-8",
+			)
+			(root / "progress.md").write_text(
+				"| Module | Status |\n| ------ | ------ |\n| build_config | verified |\n",
+				encoding="utf-8",
+			)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"modules/build_config/ket_build_config.h: macro-only module must keep KET_DETAIL macro implementation local to the header.",
+				errors,
+			)
 
 	def test_missing_standard_file_is_reported(self) -> None:
 		with self.make_repo() as root_name:

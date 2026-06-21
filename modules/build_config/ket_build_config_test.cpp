@@ -84,8 +84,28 @@
 #error "KET_DETAIL_HAS_INCLUDE_OPERATOR must not leak from ket_build_config.h."
 #endif
 
+#ifdef KET_DETAIL_HAS_STD_OPTIONAL_HEADER
+#error "KET_DETAIL_HAS_STD_OPTIONAL_HEADER must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_HAS_STD_STRING_VIEW_HEADER
+#error "KET_DETAIL_HAS_STD_STRING_VIEW_HEADER must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_HAS_STD_SPAN_HEADER
+#error "KET_DETAIL_HAS_STD_SPAN_HEADER must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_HAS_STD_FORMAT_HEADER
+#error "KET_DETAIL_HAS_STD_FORMAT_HEADER must not leak from ket_build_config.h."
+#endif
+
 #ifdef KET_DETAIL_APPLE_OSX_TARGET
 #error "KET_DETAIL_APPLE_OSX_TARGET must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_APPLE_MACCATALYST_TARGET
+#error "KET_DETAIL_APPLE_MACCATALYST_TARGET must not leak from ket_build_config.h."
 #endif
 
 static_assert(KET_CXX_VERSION == 201103L || KET_CXX_VERSION == 201402L ||
@@ -145,7 +165,8 @@ TEST(KetBuildConfigTest, DefinesPublicMacrosAsNormalizedValues)
  * @test
  * @brief C++標準値と下限判定macroの境界確認。
  * @details
- * C++17 targetでC++11、14、17、20、23の境界値を入力し、期待する下限判定になることを確認。
+ * functional test
+ * targetでC++11、14、17、20、23の境界値を入力し、報告標準値に沿った下限判定になることを確認。
  * @pre C++17以降。
  * @post テスト対象macroと外部状態の変更なし。
  */
@@ -157,13 +178,15 @@ TEST(KetBuildConfigTest, ReportsCxxVersionBoundaries)
 	const auto at_least_cxx20 = KET_CXX_AT_LEAST(202002L);
 	const auto at_least_cxx23 = KET_CXX_AT_LEAST(202302L);
 	const auto at_least_next_after_reported = KET_CXX_AT_LEAST(KET_CXX_VERSION + 1L);
+	const auto expected_at_least_cxx20 = KET_CXX_VERSION >= 202002L ? 1 : 0;
+	const auto expected_at_least_cxx23 = KET_CXX_VERSION >= 202302L ? 1 : 0;
 
-	EXPECT_EQ(KET_CXX_VERSION, 201703L);
+	EXPECT_GE(KET_CXX_VERSION, 201703L);
 	EXPECT_EQ(at_least_cxx11, 1);
 	EXPECT_EQ(at_least_cxx14, 1);
 	EXPECT_EQ(at_least_cxx17, 1);
-	EXPECT_EQ(at_least_cxx20, 0);
-	EXPECT_EQ(at_least_cxx23, 0);
+	EXPECT_EQ(at_least_cxx20, expected_at_least_cxx20);
+	EXPECT_EQ(at_least_cxx23, expected_at_least_cxx23);
 	EXPECT_EQ(at_least_next_after_reported, 0);
 }
 

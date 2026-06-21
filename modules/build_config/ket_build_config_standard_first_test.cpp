@@ -6,6 +6,18 @@
 
 #include "ket_build_config.h"
 
+#ifdef KET_DETAIL_CXX_STANDARD_VALUE
+#error "KET_DETAIL_CXX_STANDARD_VALUE must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_HAS_STD_OPTIONAL_HEADER
+#error "KET_DETAIL_HAS_STD_OPTIONAL_HEADER must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_HAS_STD_STRING_VIEW_HEADER
+#error "KET_DETAIL_HAS_STD_STRING_VIEW_HEADER must not leak from ket_build_config.h."
+#endif
+
 /**
  * @test
  * @brief 標準headerを先にincludeした場合のfeature判定確認。
