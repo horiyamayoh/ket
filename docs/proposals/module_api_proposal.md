@@ -221,7 +221,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 ### P3: 保留・recipes 向き
 
 1. `meta`
-2. `concurrency_small`
+2. `concurrency`
 3. `uuid`
 4. `color_rgb`
 5. `percent`
