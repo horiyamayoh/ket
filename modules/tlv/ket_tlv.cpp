@@ -107,7 +107,8 @@ namespace
 		}
 
 		const auto max_value_size = max_size - header_size;
-		return value_size > max_value_size;
+		const auto value_count = static_cast<std::size_t>(value_size);
+		return value_count > max_value_size;
 	}
 
 } // namespace
