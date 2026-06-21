@@ -362,6 +362,22 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_io_stream_test
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_io_stream_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream_cxx11_check.cpp
+	)
+	add_dependencies(ket_io_stream_test ket_io_stream_cxx11_check)
+
+	ket_add_module_test(
 		ket_tlv_test
 		SOURCES
 			modules/tlv/ket_tlv.cpp

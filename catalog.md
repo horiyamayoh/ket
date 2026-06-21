@@ -1257,24 +1257,24 @@ Category: stream
 
 Pain:
 
-- stream の exact read/write と state 復元を毎回書くと失敗条件が曖昧になりやすい
+- stream の exact read/write と書式状態復元を毎回書くと失敗条件が曖昧になりやすい
 - short read を成功扱いしたくない
-- ASCII line trim 程度の小さい stream 補助がほしい
+- ASCII line right trim 程度の小さい stream 補助がほしい
 
 Candidate API:
 
 ```cpp
 ket::io_stream::TryReadExactly(stream, data, size)
 ket::io_stream::TryWriteAll(stream, data, size)
-ket::io_stream::StateSaver
-ket::io_stream::TryReadLineTrimmedAscii(stream, out)
+ket::io_stream::FormatStateSaver
+ket::io_stream::TryReadLineTrimRightAscii(stream, out)
 ```
 
 C++バージョン要件:
 
 - 最小要件：C++11
 - 本ライブラリの適用を推奨する C++ バージョン：C++11以降
-- 推奨理由：stream の確実な読み書きと状態復元を小さいAPIで固定できる
+- 推奨理由：stream の確実な読み書きと書式状態復元を小さいAPIで固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -1283,10 +1283,10 @@ Failure / edge cases:
 
 - short read
 - write failure
-- null buffer + 非0 size
+- null buffer + 非0 size はstreamへアクセスせずfalse
 - stream exception
-- state restore
-- ASCII trim only
+- flags、precision、fillのrestore
+- ASCII right trim only
 
 他のライブラリへの依存:
 
@@ -1298,8 +1298,9 @@ Tests:
 - exact read success
 - short read fails
 - write all success
-- stream state restored
-- trim line ASCII whitespace
+- format state restored
+- excluded stream state not restored
+- trim line right ASCII whitespace
 - exception propagation
 
 ## Idea: FormatValue
