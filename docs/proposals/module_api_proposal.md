@@ -859,6 +859,11 @@ namespace ket
 
 ### 6.9 `modules/scope/ket_scope.h`
 
+この初期案は `docs/module_api_catalog.md` の `scope` moduleで置き換え済み。
+実装済みAPIは `ket::scope::Exit`、`ket::scope::MakeExit`、`ket::scope::Restore`、
+`ket::scope::MakeRestore`。旧名 `ScopeExit`、`MakeScopeExit`、`RestoreOnExit`、
+`MakeRestoreOnExit` は採用しない。
+
 目的: cleanup 漏れ、早期 return 時の復元漏れを防ぐ。
 
 C++ Min: C++11

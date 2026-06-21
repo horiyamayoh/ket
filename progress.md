@@ -22,6 +22,7 @@ Statusは次の値を使います。
 | cli         | CLI                 | verified | C++17   | GoogleTest                         | checked | argc/argvから小さいCLI optionを取得      |
 | date        | date                | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定          |
 | deadline    | time                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定   |
+| scope       | RAII                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | scope exit cleanupと構築時の値復元        |
 | parse       | parsing             | verified | C++17   | GoogleTest                         | checked | from_chars境界条件とbool parseを固定     |
 | string      | string              | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記   |
 | testing     | testing / binary    | verified | C++17   | GoogleTest                         | checked | byte列比較用GoogleTest assertion helper |

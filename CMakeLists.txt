@@ -151,6 +151,20 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_scope_test
+		SOURCES
+			modules/scope/ket_scope_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_scope_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/scope/ket_scope_cxx11_check.cpp
+	)
+	add_dependencies(ket_scope_test ket_scope_cxx11_check)
+
+	ket_add_module_test(
 		ket_testing_test
 		SOURCES
 			modules/testing/ket_testing.cpp

@@ -708,6 +708,7 @@ Candidate API:
 ket::scope::Exit
 ket::scope::MakeExit(cleanup)
 ket::scope::Restore<T>
+ket::scope::MakeRestore(target)
 ```
 
 C++バージョン要件:
@@ -717,15 +718,19 @@ C++バージョン要件:
 - 推奨理由：cleanup と復元漏れを標準ライブラリだけで小さく防げる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：なし
+- 標準代替：C++23 `std::scope_exit` は `Exit` の代替候補。`Restore` とC++11〜20向けの
+  drop-in性は本moduleで補う
 
 Failure / edge cases:
 
 - destructor 中の callable 例外は terminate
+- Exit callback は nothrow move constructible
 - dismiss 後は実行しない
 - move 元は inactive
 - 二重実行なし
+- callback 参照先 lifetime
 - restore 先 lifetime
+- Restore move transfers responsibility
 
 他のライブラリへの依存:
 
@@ -739,6 +744,7 @@ Tests:
 - move transfers cleanup
 - callable throwing in destructor terminates
 - Restore restores original value
+- Restore dismiss / move / Active
 
 ## Idea: ByteReader
 
