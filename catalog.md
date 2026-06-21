@@ -199,8 +199,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - value > 65535
+- wide unsigned value above `std::uint32_t` range
 - empty string
 - leading / trailing whitespace
+- control character or embedded NUL
 - `+` / `-`
 - non-digit character
 - integer overflow
@@ -216,10 +218,12 @@ Tests:
 - TryFromUInt(0) succeeds
 - TryFromUInt(65535) succeeds
 - TryFromUInt(65536) fails
+- TryFromUInt(std::uintmax_t max) fails
 - Parse("0") succeeds
 - Parse("65535") succeeds
 - Parse("65536") fails
 - Parse(" 80") fails
+- Parse("80\\0") fails
 - Parse("+80") fails
 - Parse("080") fails
 - Format(Port{80}) == "80"
@@ -417,8 +421,9 @@ Candidate API:
 ```cpp
 ket::hex::Encode(data, size, options)
 ket::hex::Decode(text)
-ket::hex::Dump(data, size, options)
-ket::hex::Encode(value, width)
+ket::hex::Dump(data, size)
+ket::hex::DumpMemory(data, size)
+ket::hex::Format(value, width)
 ```
 
 C++バージョン要件:
@@ -494,6 +499,8 @@ Failure / edge cases:
 - non-digit
 - overflow / underflow
 - hex prefix
+- leading `+` は10進parseで失敗
+- hex parse は符号文字を許可しない
 - bool は case-sensitive
 
 他のライブラリへの依存:
@@ -544,7 +551,7 @@ Failure / edge cases:
 - unknown enum
 - unknown text
 - duplicate table entry は先勝ち
-- flags の underlying 演算
+- flags の unsigned underlying 演算
 - case-sensitive parse
 
 他のライブラリへの依存:
@@ -578,7 +585,8 @@ ket::container::ContainsKey(map, key)
 ket::container::AtOrNull(map, key)
 ket::container::AtOr(map, key, fallback)
 ket::container::AtOrCreate(map, key, factory)
-ket::container::EraseIf(container, predicate)
+ket::container::EraseIf(sequence, predicate)
+ket::container::SortUnique(values)
 ```
 
 C++バージョン要件:
@@ -594,6 +602,7 @@ Failure / edge cases:
 
 - key not found
 - factory は必要時だけ呼ぶ
+- AtOr はcopy可能なmapped_type向け
 - const / non-const map
 - erase 件数
 - predicate 例外伝播
@@ -611,6 +620,7 @@ Tests:
 - AtOr fallback
 - AtOrCreate factory count
 - EraseIf removed count
+- SortUnique duplicates
 
 ## Idea: StringAscii
 
@@ -626,11 +636,18 @@ Candidate API:
 
 ```cpp
 ket::ascii::Trim(text)
+ket::ascii::TrimLeft(text)
+ket::ascii::TrimRight(text)
 ket::ascii::SplitViews(text, delimiter)
+ket::ascii::Split(text, delimiter)
+ket::ascii::Join(parts, delimiter)
 ket::ascii::ToLower(text)
+ket::ascii::ToUpper(text)
+ket::ascii::EqualsIgnoreCase(a, b)
 ket::ascii::ReplaceAll(text, from, to)
 ket::ascii::StartsWith(text, prefix)
 ket::ascii::EndsWith(text, suffix)
+ket::ascii::Contains(text, needle)
 ket::ascii::StripPrefix(text, prefix)
 ket::ascii::StripSuffix(text, suffix)
 ```
@@ -653,9 +670,11 @@ Failure / edge cases:
 
 - ASCII whitespace のみ
 - UTF-8 byte は保持
+- ReplaceAll の空 from は std::invalid_argument
 - leading / trailing delimiter
 - empty fields
 - view lifetime
+- viewを返すAPIは一時std::stringを拒否
 - allocation 例外
 
 他のライブラリへの依存:
@@ -667,8 +686,10 @@ Tests:
 
 - Trim empty / whitespace / normal
 - SplitViews keeps empty fields
+- SplitViews rejects temporary string
 - ToLower leaves non-ASCII bytes unchanged
 - ReplaceAll no match / repeated match
+- ReplaceAll rejects empty from
 - StartsWith / EndsWith boundaries
 
 ## Idea: Scope
@@ -1021,7 +1042,7 @@ C++バージョン要件:
 
 - 最小要件：C++17
 - 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::string_view` で argv lifetime に依存する値を明示しながら扱える
+- 推奨理由：`std::string_view` で argv lifetime に依存する値を明示し、`std::optional` で option値の不在を小さく扱える
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -1031,9 +1052,13 @@ Failure / edge cases:
 - argc < 0
 - argv == nullptr
 - argv[i] == nullptr
-- option name が "--" で始まらない
+- option name が "--" で始まらない、名前部分が空、または "=" を含む
+- bare "--" はoption終端
 - missing value
+- empty value は有効値
 - duplicate option は先勝ち
+- single dashで始まる次要素は値
+- PositionalArguments はschemaなしのnon-option抽出。separate option値は保持
 
 他のライブラリへの依存:
 
@@ -1048,6 +1073,9 @@ Tests:
 - missing value
 - duplicate option
 - positional args
+- option terminator
+- empty value
+- option name boundary
 
 ## Idea: ByteView
 
@@ -1108,7 +1136,7 @@ Category: text
 Pain:
 
 - UTF-8 validation を業務処理から隔離したい
-- 最初の不正 byte offset を返す方針を固定したい
+- 最初の不正 byte offset とtruncated sequenceのoffset方針を固定したい
 - grapheme や normalization までは扱わない小さい検査がほしい
 
 Candidate API:
@@ -1124,7 +1152,7 @@ C++バージョン要件:
 
 - 最小要件：C++17
 - 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::string_view` と `std::optional` で UTF-8 検査結果と失敗位置を小さく扱える
+- 推奨理由：`std::string_view` で byte列を非所有参照し、`std::optional` で code point数取得の失敗を小さく扱える
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：標準ライブラリに UTF-8 byte列検証の直接APIなし
@@ -1137,6 +1165,7 @@ Failure / edge cases:
 - bad continuation byte
 - code point 範囲外
 - empty は valid
+- error offset は存在する不正 byte の位置。妥当な prefix のまま EOF に達した truncated sequence は sequence 先頭
 
 他のライブラリへの依存:
 
@@ -1152,6 +1181,8 @@ Tests:
 - truncated
 - surrogate
 - bad continuation
+- ASCII boundary
+- short malformed sequence
 
 ## Idea: File
 
@@ -1466,13 +1497,20 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::testing::BytesEq(expected, actual)
-ket::testing::HexEq(hex, actual)
+::testing::AssertionResult ket::testing::BytesEqual(
+	const std::uint8_t* expected,
+	std::size_t expected_size,
+	const std::uint8_t* actual,
+	std::size_t actual_size);
+
+::testing::AssertionResult ket::testing::HexEqual(
+	std::string_view expected_hex,
+	const std::uint8_t* actual,
+	std::size_t actual_size);
 ```
 
-Canonical API in `docs/module_api_catalog.md`: `ket::testing::BytesEq` and
-`ket::testing::HexEq` are superseded by `ket::testing::BytesEqual` and
-`ket::testing::HexEqual`.
+`ket::testing::BytesEq` and `ket::testing::HexEq` were early names and are
+superseded by `ket::testing::BytesEqual` and `ket::testing::HexEqual`.
 
 C++バージョン要件:
 
@@ -1487,6 +1525,7 @@ Failure / edge cases:
 
 - length mismatch
 - first differing offset
+- HexEqual ignores ASCII whitespace
 - invalid hex
 - GoogleTest dependency
 - test-helper only
@@ -1502,8 +1541,10 @@ Tests:
 - equal bytes
 - mismatch offset
 - length mismatch
-- HexEq valid
-- HexEq invalid hex failure message
+- empty vs non-empty
+- HexEqual valid
+- HexEqual ASCII whitespace
+- HexEqual invalid hex failure message
 
 ## Idea: SemanticVersion
 
@@ -1566,7 +1607,8 @@ Pain:
 
 - IPv4 dotted decimal の parse/format を毎回書きたくない
 - octet 境界、個数不足/過多、leading zero の扱いを固定したい
-- IPv6/CIDR/DNS までは不要
+- BE 32bit表現との相互変換をhost byte order変換から分けたい
+- IPv6/CIDR/DNS/port/socket address までは不要
 
 Candidate API:
 
@@ -1574,6 +1616,8 @@ Candidate API:
 ket::ipv4::Address
 ket::ipv4::Parse(text)
 ket::ipv4::Format(address)
+ket::ipv4::ToBe32(address)
+ket::ipv4::FromBe32(value)
 ```
 
 C++バージョン要件:
@@ -1592,6 +1636,7 @@ Failure / edge cases:
 - too few / too many components
 - leading zero
 - whitespace
+- control character or embedded NUL
 - sign
 
 他のライブラリへの依存:
@@ -1603,9 +1648,12 @@ Tests:
 
 - 0.0.0.0
 - 255.255.255.255
+- 1.2.3.4 <-> 0x01020304
+- 192.168.0.1 <-> 0xC0A80001
 - octet overflow
 - missing / extra component
 - leading zero fails
+- embedded NUL fails
 - format golden output
 
 ## Idea: MacAddress
@@ -1733,8 +1781,10 @@ Failure / edge cases:
 
 - unhandled alternative is compile error
 - handler exception propagation
+- valueless_by_exception propagation
 - const / non-const
 - lvalue / rvalue
+- handler copy / move
 - void / non-void return
 
 他のライブラリへの依存:
@@ -1748,7 +1798,10 @@ Tests:
 - reference preservation
 - const variant
 - rvalue variant
+- lvalue handler copy
+- move-only rvalue handler
 - exception propagation
+- valueless_by_exception propagation
 - missing handler compile error
 
 ## Idea: OptionalExt
