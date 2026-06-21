@@ -17,6 +17,7 @@ Statusは次の値を使います。
 | ----------- | ------------------- | -------- | ------- | ---------------------------------- | ------- | ---------------------------------------- |
 | bcd         | numeric / binary    | verified | C++17   | GoogleTest                         | checked | packed BCDと10進整数・文字列を相互変換   |
 | bits        | numeric / binary    | verified | C++11   | GoogleTest + C++11 compile-only    | checked | bit/nibble/mask/rotateの境界処理         |
+| container   | container           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | map/vector の小さいlookup、生成、削除補助 |
 | cli         | CLI                 | verified | C++17   | GoogleTest                         | checked | argc/argvから小さいCLI optionを取得      |
 | date        | date                | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定          |
 | deadline    | time                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定   |

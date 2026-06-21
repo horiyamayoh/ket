@@ -579,7 +579,8 @@ ket::container::ContainsKey(map, key)
 ket::container::AtOrNull(map, key)
 ket::container::AtOr(map, key, fallback)
 ket::container::AtOrCreate(map, key, factory)
-ket::container::EraseIf(container, predicate)
+ket::container::EraseIf(sequence, predicate)
+ket::container::SortUnique(values)
 ```
 
 C++バージョン要件:
@@ -595,6 +596,7 @@ Failure / edge cases:
 
 - key not found
 - factory は必要時だけ呼ぶ
+- AtOr はcopy可能なmapped_type向け
 - const / non-const map
 - erase 件数
 - predicate 例外伝播
@@ -612,6 +614,7 @@ Tests:
 - AtOr fallback
 - AtOrCreate factory count
 - EraseIf removed count
+- SortUnique duplicates
 
 ## Idea: StringAscii
 
