@@ -1609,6 +1609,10 @@ namespace ket
 
 ### 8.2 `modules/variant_match/ket_variant_match.h`
 
+この案は `docs/module_api_catalog.md` の `variant` moduleで置き換え済み。実装済みAPIは
+`modules/variant/ket_variant.h` の `ket::variant::Match` のみで、`Holds` と `GetIf` は初回APIに
+含めない。
+
 ```cpp
 namespace ket
 {
