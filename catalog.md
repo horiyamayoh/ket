@@ -2307,7 +2307,9 @@ ket::math::ToRadians(degrees)
 ket::math::ToDegrees(radians)
 ket::math::NearlyEqual(a, b, epsilon)
 ket::math::TryBytesFromKiB(kib, out)
+ket::math::TryBytesFromMiB(mib, out)
 ket::math::BytesToKiB(bytes)
+ket::math::BytesToMiB(bytes)
 ```
 
 Canonical name note:
@@ -2327,7 +2329,7 @@ C++バージョン要件:
 Failure / edge cases:
 
 - floating-point 型限定
-- epsilon <= 0
+- epsilon <= 0 / NaN / Inf
 - NaN
 - Inf
 - byte conversion overflow
@@ -2342,11 +2344,13 @@ Tests:
 
 - endpoints
 - midpoint
+- extrapolation
 - angle roundtrip
 - epsilon
-- NaN
+- NaN / Inf
 - byte conversion overflow
 - large byte values
+- C++11 compile-only
 
 ## Idea: Language
 

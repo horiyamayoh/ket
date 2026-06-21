@@ -829,27 +829,24 @@ ket::numeric::TryCast<T>(value, out)
 
 目的: 数値より少し高レベルな計算補助。
 
-候補:
+採用API:
 
 ```cpp
-ket::Lerp(a, b, t)
-ket::InverseLerp(a, b, x)
-ket::MapRange(x, in_min, in_max, out_min, out_max)
-ket::Mean(range)
-ket::Median(range)
-ket::Variance(range)
-ket::DegreesToRadians(deg)
-ket::RadiansToDegrees(rad)
-ket::Distance2D(a, b)
-ket::RectContains(rect, point)
-ket::BytesToKiB(bytes)
-ket::KiBToBytes(kib)
+ket::math::Lerp(a, b, t)
+ket::math::ToRadians(degrees)
+ket::math::ToDegrees(radians)
+ket::math::NearlyEqual(a, b, epsilon)
+ket::math::TryBytesFromKiB(kib, out)
+ket::math::TryBytesFromMiB(mib, out)
+ket::math::BytesToKiB(bytes)
+ket::math::BytesToMiB(bytes)
 ```
 
 注意:
 
 - 単位変換は便利だが、巨大なunits frameworkにはしない
 - 浮動小数点誤差の扱いをドキュメント化する
+- `InverseLerp`、`MapRange`、統計、幾何は今回採用しない
 
 ---
 
