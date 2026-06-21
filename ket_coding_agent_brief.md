@@ -746,9 +746,9 @@ ket::object::ResetOnMove<T>
 候補:
 
 ```cpp
-ket::Overload{...}
-ket::MakeOverload(...)
-ket::Noop()
+ket::function::Overload
+ket::function::MakeOverload(...)
+ket::function::Noop{}
 ket::Invoke(f, args...)
 ket::BindFront(f, args...)
 ket::FunctionRef<R(Args...)>
@@ -758,7 +758,12 @@ ket::MoveOnlyFunction<R(Args...)>
 特に欲しいもの:
 
 ```cpp
-std::visit(ket::Overload{
+std::visit(ket::function::MakeOverload(
+    [](const A&) { ... },
+    [](const B&) { ... }
+), value);
+
+std::visit(ket::function::Overload{
     [](const A&) { ... },
     [](const B&) { ... },
 }, value);
@@ -1450,23 +1455,18 @@ ket::ToSeconds(duration)
 
 目的: 並行処理の小さい事故を減らす。
 
-候補:
+採用API:
 
 ```cpp
-ket::ThreadJoiner
-ket::JoiningThread
-ket::LockGuardIf(mutex, condition)
-ket::AtomicFlagGuard
-ket::Synchronized<T>
-ket::CallOnce(flag, f)
-ket::FutureReady(future)
-ket::WaitUntilDeadline(...)
+ket::concurrency::JoiningThread
+ket::concurrency::IsReady(future)
 ```
 
 注意:
 
 - thread poolやasync frameworkを作らない
-- join忘れ、lock忘れ、timeout計算など局所的な事故防止に絞る
+- lock framework、atomic wrapper、deadline待機は今回採用しない
+- join忘れとfuture ready判定に絞る
 
 ---
 
@@ -1549,12 +1549,12 @@ ket::Positional(args)
 候補:
 
 ```cpp
-ket::ErrnoMessage(errno_value)
-ket::WindowsErrorMessage(error_code)
-ket::GetLastErrorCode()
-ket::CurrentThreadIdString()
-ket::SleepFor(duration)
-ket::EnvironmentVariable(name)
+ket::platform::FormatErrno(errno_value)
+ket::platform::ReadEnvironmentVariable(name)
+#ifdef _WIN32
+ket::platform::GetLastErrorCode()
+ket::platform::FormatWindowsError(error_code)
+#endif
 ```
 
 注意:
@@ -1638,6 +1638,7 @@ ket::ipv4::Parse(text)
 ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
+mac_a == mac_b
 ket::version::Parse(text)
 ket::version::Format(value)
 ket::version::Compare(a, b)
