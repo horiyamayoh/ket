@@ -25,6 +25,7 @@ Statusは次の値を使います。
 | scope       | RAII                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | scope exit cleanupと構築時の値復元        |
 | parse       | parsing             | verified | C++17   | GoogleTest                         | checked | from_chars境界条件とbool parseを固定     |
 | string      | string              | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記   |
+| lang        | language            | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 未使用無視、raw配列長、const参照化        |
 | state       | state               | verified | C++17   | GoogleTest                         | checked | 小さい状態遷移表lookup                  |
 | color       | value               | verified | C++11   | GoogleTest + C++11 compile-only    | checked | RGB小値型と6桁hex文字列を相互変換         |
 | contract    | contract            | verified | C++11   | GoogleTest + C++11 compile-only    | checked | pre/postcondition/invariantを常時評価     |

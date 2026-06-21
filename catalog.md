@@ -2373,12 +2373,14 @@ C++バージョン要件:
 - 推奨理由：C++11/14の欠落や冗長な言語儀式を小さいAPIで名前付けできる
 - 本ライブラリの適用を推奨しない C++ バージョン：API別
 - 非推奨理由：APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない
-- 標準代替：C++17 `std::size` / `std::as_const` / `[[maybe_unused]]`
+- 標準代替：C++17 `std::size` / `std::as_const`。`IgnoreUnused` は C++17 `[[maybe_unused]]` と一部重複
 
 Failure / edge cases:
 
 - array reference only
+- non-array rejection
 - AsConst lifetime
+- AsConst rvalue rejection
 - unused expression side effects
 - C++11 compile
 
@@ -2390,8 +2392,11 @@ Failure / edge cases:
 Tests:
 
 - unused compiles
+- move-only unused
 - array length
+- non-array rejection
 - const conversion
+- rvalue rejection
 - C++11 compile-only
 
 ## Idea: Object
