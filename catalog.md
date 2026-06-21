@@ -1580,9 +1580,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - numeric triplet only
+- empty / missing / extra component
+- non-digit / sign / whitespace
 - leading zero
 - overflow
-- missing / extra component
 - prerelease / build metadata は対象外
 
 他のライブラリへの依存:
@@ -1597,6 +1598,7 @@ Tests:
 - compare major/minor/patch
 - leading zero fails
 - overflow fails
+- prerelease / build metadata fails
 - format golden output
 
 ## Idea: Ipv4

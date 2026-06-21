@@ -151,6 +151,13 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_version_test
+		SOURCES
+			modules/version/ket_version.cpp
+			modules/version/ket_version_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_scope_test
 		SOURCES
 			modules/scope/ket_scope_test.cpp
