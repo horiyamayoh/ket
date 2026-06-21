@@ -2729,13 +2729,13 @@ ket::percent::Percent
 ket::percent::Percent::TryFromBasisPoints(value, out)
 ket::percent::Percent::TryFromPercent(value, out)
 ket::percent::Percent::TryFromRatio(ratio, out)
-ket::percent::Clamp(value)
+ket::percent::Percent::FromPercentClamped(value)
 ```
 
 Canonical name note:
 
-- percent 単位入力を clamp して `Percent` へ変換する API は `docs/module_api_catalog.md` で
-  `ket::percent::Percent::FromPercentClamped(value)` を採用。
+- percent 単位入力を clamp して `Percent` へ変換する API は
+  `ket::percent::Percent::FromPercentClamped(value)` を採用。namespace単位の `Clamp` は追加しない。
 
 C++バージョン要件:
 
@@ -2748,13 +2748,13 @@ C++バージョン要件:
 
 Failure / edge cases:
 
-- basis points < 0 / > 10000
-- ratio denominator 0
-- negative ratio
-- ratio > 1
-- NaN
-- rounding
-- clamp boundaries
+- basis points > 10000
+- percent < 0 / > 100
+- ratio < 0 / > 1
+- `TryFromPercent` / `TryFromRatio` の NaN / Inf は失敗
+- `TryXxx` 失敗時は out不変
+- binary floating-point値のnearest basis point丸め
+- `FromPercentClamped` は NaN / -Inf を 0%、+Inf と上限超過を 100% へclamp
 
 他のライブラリへの依存:
 
@@ -2765,12 +2765,16 @@ Tests:
 
 - 0%
 - 100%
+- basis points最大値超過
 - negative fails
 - > 100 fails
 - ratio normal
-- ratio denominator 0 fails
-- rounding
-- clamp
+- ratio > 1 fails
+- `TryFromPercent` / `TryFromRatio` の NaN / Inf fails
+- out不変
+- rounding threshold
+- clamp 0% / 100%
+- C++11 compile-only
 
 ## Idea: BinaryPayloadRecipe
 

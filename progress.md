@@ -34,6 +34,7 @@ Statusは次の値を使います。
 | lang        | language            | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 未使用無視、raw配列長、const参照化            |
 | state       | state               | verified | C++17   | GoogleTest                         | checked | 小さい状態遷移表lookup                        |
 | color       | value               | verified | C++11   | GoogleTest + C++11 compile-only    | checked | RGB小値型と6桁hex文字列を相互変換             |
+| percent     | value               | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 0〜100%をbasis pointsで保持する小値型         |
 | contract    | contract            | verified | C++11   | GoogleTest + C++11 compile-only    | checked | pre/postcondition/invariantを常時評価         |
 | memory      | memory              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | alignment判定、secure zero、object bytes      |
 | pointer     | pointer             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | null不許可raw pointerとweak/address補助       |

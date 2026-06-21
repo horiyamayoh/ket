@@ -213,6 +213,20 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_cache_test ket_cache_cxx11_check)
 
 	ket_add_module_test(
+		ket_percent_test
+		SOURCES
+			modules/percent/ket_percent_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_percent_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/percent/ket_percent_cxx11_check.cpp
+	)
+	add_dependencies(ket_percent_test ket_percent_cxx11_check)
+
+	ket_add_module_test(
 		ket_object_test
 		SOURCES
 			modules/object/ket_object_test.cpp
