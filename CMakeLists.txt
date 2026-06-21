@@ -150,6 +150,20 @@ if(KET_BUILD_TESTS)
 			modules/string/ket_string_test.cpp
 	)
 
+	ket_add_compile_check(
+		ket_ranges_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/ranges/ket_ranges_cxx11_check.cpp
+	)
+
+	ket_add_module_test(
+		ket_ranges_test
+		SOURCES
+			modules/ranges/ket_ranges_test.cpp
+	)
+	add_dependencies(ket_ranges_test ket_ranges_cxx11_check)
+
 	ket_add_module_test(
 		ket_pointer_test
 		SOURCES

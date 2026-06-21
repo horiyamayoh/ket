@@ -1357,19 +1357,21 @@ ket::ranges::FindIndexIf(range, predicate, out)
 C++バージョン要件:
 
 - 最小要件：C++11
-- 本ライブラリの適用を推奨する C++ バージョン：C++11〜17
-- 推奨理由：C++17以前で index 付き range 走査を小さく書ける
-- 本ライブラリの適用を推奨しない C++ バージョン：C++20以降
-- 非推奨理由：C++20以降は `std::ranges` を優先できる
-- 標準代替：C++20 ranges
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：index 付き range 走査を小さく書ける
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：C++20 ranges algorithmで一部用途を置き換え可能。ただしindex付き走査の直接代替ではない
 
 Failure / edge cases:
 
 - empty range
 - not found
-- predicate exception
+- callable / predicate exception
 - out 不変
 - const / non-const element reference
+- ADL begin/end
+- callable / predicate をAPI内でcopyしない
 
 他のライブラリへの依存:
 
@@ -1384,6 +1386,7 @@ Tests:
 - first match
 - not found out unchanged
 - predicate exception propagation
+- C++11 compile-only
 
 ## Idea: Memory
 
