@@ -263,7 +263,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `version`           | P1   | C++17    | numeric version triplet parse/compare | `ket::version::Parse`, `ket::version::Format`       |
 | `ipv4`              | P1   | C++17    | IPv4 parse/format                     | `ParseIpV4`, `FormatIpV4`                           |
 | `mac_address`       | P1   | C++17    | MAC address parse/format              | `ParseMacAddress`, `FormatMacAddress`               |
-| `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`                          |
+| `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`, `Noop`                  |
 | `variant_match`     | P2   | C++17    | `std::variant` visitor 補助           | `Match`, `Holds`, `GetIf`                           |
 | `optional_ext`      | P2   | C++17    | optional の小さい合成                 | `MapOptional`, `AndThen`, `ValueOrEval`             |
 | `contract`          | done | C++11    | precondition 明示                     | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds` |
@@ -1613,25 +1613,34 @@ namespace ket
 ```cpp
 namespace ket
 {
+namespace function
+{
 	template <typename... Fs>
 	struct Overload : Fs...
 	{
+		static_assert(sizeof...(Fs) > 0);
+		static_assert((std::is_class_v<Fs> && ...));
 		using Fs::operator()...;
 	};
 
 	template <typename... Fs>
-	Overload<Fs...> MakeOverload(Fs... fs);
+	Overload(Fs...) -> Overload<Fs...>;
+
+	template <typename... Fs>
+	constexpr Overload<std::decay_t<Fs>...> MakeOverload(Fs&&... fs) noexcept(...);
 
 	struct Noop
 	{
 		template <typename... Args>
-		void operator()(Args&&...) const noexcept;
+		constexpr void operator()(Args&&...) const noexcept;
 	};
 
+} // namespace function
 } // namespace ket
 ```
 
 注意: `FunctionRef` は寿命事故が多いため、最初は入れない。`Overload` は `std::visit` で価値が明確。
+実装では top-level `ket::Overload` ではなく module namespace の `ket::function::Overload` を採用する。
 
 ---
 

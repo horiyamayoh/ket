@@ -1761,6 +1761,8 @@ C++バージョン要件:
 
 Failure / edge cases:
 
+- empty overload set
+- non-class callable
 - callable copy/move constraints
 - handler exception propagation
 - overload resolution
@@ -1776,7 +1778,8 @@ Tests:
 - std::visit with variants
 - overload resolution
 - return value
-- Noop accepts arbitrary args
+- Noop accepts arbitrary args and constexpr empty call
+- MakeOverload stores decayed callable types
 - copy / move constraints
 
 ## Idea: VariantMatch

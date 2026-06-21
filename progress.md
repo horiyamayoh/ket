@@ -25,6 +25,7 @@ Statusは次の値を使います。
 | scope       | RAII                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | scope exit cleanupと構築時の値復元            |
 | parse       | parsing             | verified | C++17   | GoogleTest                         | checked | from_chars境界条件とbool parseを固定          |
 | string      | string              | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記        |
+| function    | callable            | verified | C++17   | GoogleTest                         | checked | callable/visitorの小さい儀式補助              |
 | io_stream   | stream              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | stream読み書き、行末ASCII trim、書式状態復元  |
 | ranges      | algorithm           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | index付きrange走査と最初の一致index取得       |
 | object      | object              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | copy/move意図のmixinとmove後reset             |
