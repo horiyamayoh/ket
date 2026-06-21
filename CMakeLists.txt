@@ -267,4 +267,16 @@ if(KET_BUILD_TESTS)
 			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
 	)
 	add_dependencies(ket_byte_view_test ket_byte_view_cxx11_check)
+
+	ket_add_module_test(
+		ket_wire_test
+		SOURCES
+			packages/wire/ket_wire_test.cpp
+	)
+	target_include_directories(
+		ket_wire_test
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/packages/wire"
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
+	)
 endif()

@@ -15,5 +15,5 @@ Checks: >
   -modernize-avoid-c-arrays,
   -modernize-concat-nested-namespaces
 WarningsAsErrors: "*"
-HeaderFilterRegex: ".*/modules/.*"
+HeaderFilterRegex: ".*/(modules|packages)/.*"
 FormatStyle: file

@@ -83,7 +83,7 @@ def iter_prettier_files() -> list[Path]:
 def iter_analysis_files() -> list[Path]:
 	files: list[Path] = []
 
-	for directory_name in ("modules", "tests"):
+	for directory_name in ("modules", "packages", "tests"):
 		directory = ROOT / directory_name
 		if not directory.exists():
 			continue

@@ -60,7 +60,7 @@ def main() -> int:
 		print("No C++ analysis files found.")
 		return 0
 
-	header_filter = r".*/modules/.*"
+	header_filter = r".*/(modules|packages)/.*"
 	noise_patterns = (
 		re.compile(r"^\d+ warnings generated\.$"),
 		re.compile(r"^Suppressed \d+ warnings .*$"),

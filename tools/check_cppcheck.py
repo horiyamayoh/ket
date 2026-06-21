@@ -38,6 +38,7 @@ def main() -> int:
 		"--suppress=missingIncludeSystem",
 		"--suppress=checkersReport",
 		"--file-filter=*/modules/*",
+		"--file-filter=*/packages/*",
 		"--file-filter=*/tests/*",
 	]
 	result = subprocess.run(command, cwd=ket_tooling.ROOT)
