@@ -24,6 +24,7 @@ Statusは次の値を使います。
 | deadline    | time                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定   |
 | parse       | parsing             | verified | C++17   | GoogleTest                         | checked | from_chars境界条件とbool parseを固定     |
 | string      | string              | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記   |
+| testing     | testing / binary    | verified | C++17   | GoogleTest                         | checked | byte列比較用GoogleTest assertion helper |
 | ipv4        | network             | verified | C++17   | GoogleTest                         | checked | IPv4 dotted decimalとBE 32bit表現を相互変換 |
 | port        | network / value     | verified | C++17   | GoogleTest                         | checked | TCP/UDP port番号の値型とparse/format     |
 | variant     | variant             | verified | C++17   | GoogleTest                         | checked | std::variant visitor補助                  |

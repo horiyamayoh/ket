@@ -151,6 +151,13 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_testing_test
+		SOURCES
+			modules/testing/ket_testing.cpp
+			modules/testing/ket_testing_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_ipv4_test
 		SOURCES
 			modules/ipv4/ket_ipv4.cpp

@@ -1491,13 +1491,20 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::testing::BytesEq(expected, actual)
-ket::testing::HexEq(hex, actual)
+::testing::AssertionResult ket::testing::BytesEqual(
+	const std::uint8_t* expected,
+	std::size_t expected_size,
+	const std::uint8_t* actual,
+	std::size_t actual_size);
+
+::testing::AssertionResult ket::testing::HexEqual(
+	std::string_view expected_hex,
+	const std::uint8_t* actual,
+	std::size_t actual_size);
 ```
 
-Canonical API in `docs/module_api_catalog.md`: `ket::testing::BytesEq` and
-`ket::testing::HexEq` are superseded by `ket::testing::BytesEqual` and
-`ket::testing::HexEqual`.
+`ket::testing::BytesEq` and `ket::testing::HexEq` were early names and are
+superseded by `ket::testing::BytesEqual` and `ket::testing::HexEqual`.
 
 C++バージョン要件:
 
@@ -1512,6 +1519,7 @@ Failure / edge cases:
 
 - length mismatch
 - first differing offset
+- HexEqual ignores ASCII whitespace
 - invalid hex
 - GoogleTest dependency
 - test-helper only
@@ -1527,8 +1535,10 @@ Tests:
 - equal bytes
 - mismatch offset
 - length mismatch
-- HexEq valid
-- HexEq invalid hex failure message
+- empty vs non-empty
+- HexEqual valid
+- HexEqual ASCII whitespace
+- HexEqual invalid hex failure message
 
 ## Idea: SemanticVersion
 

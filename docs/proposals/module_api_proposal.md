@@ -1476,6 +1476,10 @@ namespace ket
 
 ### 7.9 `modules/testing_bytes/ket_testing_bytes.h`
 
+この初期案は `docs/module_api_catalog.md` の `testing` moduleで置き換え済み。
+実装済みAPIは `ket::testing::BytesEqual` と `ket::testing::HexEqual`。
+旧名 `BytesEq` と `HexEq` は採用しない。
+
 ```cpp
 namespace ket
 {
