@@ -90,6 +90,22 @@ namespace
 		}
 	};
 
+	struct AdlRange
+	{
+		int* first;
+		int* last;
+	};
+
+	int* begin(AdlRange& range)
+	{
+		return range.first;
+	}
+
+	int* end(AdlRange& range)
+	{
+		return range.last;
+	}
+
 } // namespace
 
 /**
@@ -247,6 +263,28 @@ TEST(KetRangesTest, ForEachWithIndexAcceptsBuiltInArray)
 
 /**
  * @test
+ * @brief ADL begin/end rangeの走査確認。
+ * @details free functionのbegin/endだけを持つrangeを入力し、ADLで走査されることを確認。
+ * @pre C++17以降。
+ * @post range要素は期待する値に変化。その他の外部状態の変更なし。
+ */
+TEST(KetRangesTest, ForEachWithIndexAcceptsAdlBeginEndRange)
+{
+	int values[] = {3, 4};
+	AdlRange range = {values, values + 2};
+
+	ket::ranges::ForEachWithIndex(range,
+								  [](std::size_t index, int& value)
+								  {
+									  value += static_cast<int>(index);
+								  });
+
+	EXPECT_EQ(values[0], 3);
+	EXPECT_EQ(values[1], 5);
+}
+
+/**
+ * @test
  * @brief not found時のout不変確認。
  * @details 条件を満たす要素がないrangeを入力し、falseを返してoutを変更しないことを確認。
  * @pre C++17以降。
@@ -322,6 +360,33 @@ TEST(KetRangesTest, FindIndexIfReturnsFirstMatchingIndex)
 	EXPECT_TRUE(found);
 	EXPECT_EQ(index, 1U);
 	EXPECT_EQ(call_count, 2);
+}
+
+/**
+ * @test
+ * @brief 先頭要素一致時のindex確認。
+ * @details 先頭要素が条件を満たすrangeを入力し、index 0でtrueを返して短絡することを確認。
+ * @pre C++17以降。
+ * @post outは0へ変化。predicate呼び出し回数は1回。
+ */
+TEST(KetRangesTest, FindIndexIfReturnsZeroForFirstElementMatch)
+{
+	const std::vector<int> values = {20, 30};
+	std::size_t index = 99U;
+	int call_count = 0;
+
+	const auto found = ket::ranges::FindIndexIf(
+		values,
+		[&call_count](int value)
+		{
+			++call_count;
+			return value == 20;
+		},
+		index);
+
+	EXPECT_TRUE(found);
+	EXPECT_EQ(index, 0U);
+	EXPECT_EQ(call_count, 1);
 }
 
 /**
@@ -446,8 +511,13 @@ TEST(KetRangesTest, FindIndexIfPropagatesPredicateExceptionAndKeepsOutUnchanged)
 {
 	const std::vector<int> values = {10, 20, 30};
 	std::size_t index = 77U;
+	const auto find_index = [&values, &index]()
+	{
+		const auto found = ket::ranges::FindIndexIf(values, ThrowingPredicate{}, index);
+		static_cast<void>(found);
+	};
 
-	EXPECT_THROW(ket::ranges::FindIndexIf(values, ThrowingPredicate{}, index), std::runtime_error);
+	EXPECT_THROW(find_index(), std::runtime_error);
 	EXPECT_EQ(index, 77U);
 }
 
@@ -461,14 +531,16 @@ TEST(KetRangesTest, FindIndexIfPropagatesPredicateExceptionAndKeepsOutUnchanged)
 TEST(KetRangesTest, ForEachWithIndexPropagatesCallableException)
 {
 	const std::vector<int> values = {10};
+	const auto for_each = [&values]()
+	{
+		ket::ranges::ForEachWithIndex(values,
+									  [](std::size_t index, const int& value)
+									  {
+										  static_cast<void>(index);
+										  static_cast<void>(value);
+										  throw std::runtime_error(std::string("callable failed"));
+									  });
+	};
 
-	EXPECT_THROW(ket::ranges::ForEachWithIndex(values,
-											   [](std::size_t index, const int& value)
-											   {
-												   static_cast<void>(index);
-												   static_cast<void>(value);
-												   throw std::runtime_error(
-													   std::string("callable failed"));
-											   }),
-				 std::runtime_error);
+	EXPECT_THROW(for_each(), std::runtime_error);
 }

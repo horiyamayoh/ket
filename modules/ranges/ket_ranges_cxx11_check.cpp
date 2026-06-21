@@ -1,8 +1,11 @@
+// clang-format off
+#include "ket_ranges.h"
+
 #include <cstddef>
+#include <initializer_list>
 #include <type_traits>
 #include <vector>
-
-#include "ket_ranges.h"
+// clang-format on
 
 namespace ket_ranges_cxx11_check
 {
@@ -108,15 +111,30 @@ void KetRangesCxx11Check()
 	const ket_ranges_cxx11_check::IndexTypeProbe index_type_probe;
 	ket::ranges::ForEachWithIndex(range, index_type_probe);
 
+	int array_values[] = {2, 3};
+	ket::ranges::ForEachWithIndex(array_values, index_type_probe);
+
+	const std::vector<int> const_values = {2, 3};
+	ket::ranges::ForEachWithIndex(const_values, index_type_probe);
+
+	const std::initializer_list<int> initializer_values = {2, 3};
+	ket::ranges::ForEachWithIndex(initializer_values, index_type_probe);
+
 	std::size_t found_index = 0U;
 	ket_ranges_cxx11_check::MoveOnlyPredicate predicate;
 	const bool found = ket::ranges::FindIndexIf(range, predicate, found_index);
+
+	const bool array_found = ket::ranges::FindIndexIf(array_values, predicate, found_index);
+	const bool initializer_found =
+		ket::ranges::FindIndexIf(initializer_values, predicate, found_index);
 
 	std::vector<int> proxy_values = {4, 5};
 	const bool proxy_found = ket::ranges::FindIndexIf(
 		proxy_values, ket_ranges_cxx11_check::ProxyPredicate(), found_index);
 
 	static_cast<void>(found);
+	static_cast<void>(array_found);
+	static_cast<void>(initializer_found);
 	static_cast<void>(proxy_found);
 	static_cast<void>(found_index);
 }

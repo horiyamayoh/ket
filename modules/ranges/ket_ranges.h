@@ -6,18 +6,20 @@
  *
  * @details C++17以前で書きがちなindex付きrange走査と、最初に条件を満たす要素のindex取得を
  * 小さいAPIへ集約する。ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。
- * iterator pair overloadやrange
- * frameworkは扱わず、`std::begin`/`std::end`で走査できるobjectに限定。
+ * iterator pair overloadやrange frameworkは扱わず、`begin`/`end`で走査できるobjectに限定。
+ * ADLによるfree functionの`begin`/`end`も対象。
  *
  * @par プロジェクトへの適用方法
  * `ket_ranges.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
  *
  * @par C++バージョン要件
  * 最小要件：C++11。
- * 本ライブラリの適用を推奨する C++ バージョン：C++11〜17。
- * 推奨理由：C++17以前でindex付きrange走査を小さく書ける。
- * 本ライブラリの適用を推奨しない C++ バージョン：C++20以降。
- * 非推奨理由：C++20以降は`std::ranges`を優先できる。
+ * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。
+ * 推奨理由：index付きrange走査を小さく書ける。
+ * 本ライブラリの適用を推奨しない C++ バージョン：なし。
+ * 非推奨理由：なし。
+ * 標準代替：C++20の`std::ranges`
+ * algorithmで一部用途を置き換え可能。ただしindex付き走査の直接代替ではない。
  *
  * @par 他のライブラリへの依存
  * 標準ライブラリのみ。
@@ -25,7 +27,7 @@
  *
  * @par namespace
  * 公開API：ket::ranges
- * 内部実装：ket::ranges::detail
+ * 内部実装：なし
  */
 
 #include <cstddef>
@@ -88,58 +90,20 @@ namespace ket
 		bool FindIndexIf(Range&& range, Predicate&& predicate, std::size_t& out);
 
 		// -----------------------------------------------------------------------------
-		// Internal implementation details
-		// -----------------------------------------------------------------------------
-
-		namespace detail
-		{
-			using std::begin;
-			using std::end;
-
-			/**
-			 * @brief range先頭iterator取得。
-			 * @param[in] range `begin`で先頭を取得するrange object。
-			 * @retval iterator `range`の先頭iterator。
-			 * @pre `begin(range)`が有効。
-			 * @post 引数と外部状態の変更なし。
-			 * @note detail配下の関数は公開APIではない。
-			 */
-			template <typename Range>
-			auto Begin(Range& range) -> decltype(begin(range))
-			{
-				using std::begin;
-				return begin(range);
-			}
-
-			/**
-			 * @brief range終端iterator取得。
-			 * @param[in] range `end`で終端を取得するrange object。
-			 * @retval iterator `range`の終端iterator。
-			 * @pre `end(range)`が有効。
-			 * @post 引数と外部状態の変更なし。
-			 * @note detail配下の関数は公開APIではない。
-			 */
-			template <typename Range>
-			auto End(Range& range) -> decltype(end(range))
-			{
-				using std::end;
-				return end(range);
-			}
-
-		} // namespace detail
-
-		// -----------------------------------------------------------------------------
 		// Public API definitions
 		// -----------------------------------------------------------------------------
 
 		template <typename Range, typename F>
 		void ForEachWithIndex(Range&& range, F&& f)
 		{
-			std::size_t index = 0U;
-			auto it = detail::Begin(range);
-			const auto end = detail::End(range);
+			using std::begin;
+			using std::end;
 
-			for (; it != end; ++it)
+			std::size_t index = 0U;
+			auto it = begin(range);
+			const auto range_end = end(range);
+
+			for (; it != range_end; ++it)
 			{
 				f(index, *it);
 				++index;
@@ -149,11 +113,14 @@ namespace ket
 		template <typename Range, typename Predicate>
 		bool FindIndexIf(Range&& range, Predicate&& predicate, std::size_t& out)
 		{
-			std::size_t index = 0U;
-			auto it = detail::Begin(range);
-			const auto end = detail::End(range);
+			using std::begin;
+			using std::end;
 
-			for (; it != end; ++it)
+			std::size_t index = 0U;
+			auto it = begin(range);
+			const auto range_end = end(range);
+
+			for (; it != range_end; ++it)
 			{
 				const bool matches = static_cast<bool>(predicate(*it));
 				if (matches)
