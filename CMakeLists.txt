@@ -67,6 +67,8 @@ if(KET_ENABLE_FORMAT_TARGETS)
 endif()
 
 if(KET_BUILD_TESTS)
+	find_package(Threads REQUIRED)
+
 	set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 	set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -402,8 +404,8 @@ if(KET_BUILD_TESTS)
 			modules/cli/ket_cli_test.cpp
 	)
 
-	ket_add_module_test(
-		ket_io_stream_test
+		ket_add_module_test(
+			ket_io_stream_test
 		SOURCES
 			modules/io_stream/ket_io_stream.cpp
 			modules/io_stream/ket_io_stream_test.cpp
@@ -447,6 +449,22 @@ if(KET_BUILD_TESTS)
 			modules/platform/ket_platform.cpp
 			modules/platform/ket_platform_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_concurrency_test
+		SOURCES
+			modules/concurrency/ket_concurrency_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_concurrency_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/concurrency/ket_concurrency_cxx11_check.cpp
+	)
+	target_link_libraries(ket_concurrency_test PRIVATE Threads::Threads)
+	target_link_libraries(ket_concurrency_cxx11_check PRIVATE Threads::Threads)
+	add_dependencies(ket_concurrency_test ket_concurrency_cxx11_check)
 
 	ket_add_module_test(
 		ket_tuple_test

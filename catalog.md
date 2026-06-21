@@ -2576,7 +2576,7 @@ C++バージョン要件:
 - 推奨理由：thread join と future ready 判定の小さい儀式を局所化できる
 - 本ライブラリの適用を推奨しない C++ バージョン：API別
 - 非推奨理由：`JoiningThread` は C++20 `std::jthread` と一部重なるため API ごとに判断する
-- 標準代替：C++20 `std::jthread`
+- API別標準代替：`JoiningThread` は C++20 `std::jthread`。`IsReady` は直接代替なし。
 
 Failure / edge cases:
 
@@ -2586,6 +2586,7 @@ Failure / edge cases:
 - join exception terminates
 - invalid future precondition
 - deferred is not ready
+- internal thread is not directly exposed
 
 他のライブラリへの依存:
 
@@ -2597,8 +2598,11 @@ Tests:
 - default
 - joinable
 - move / self-move
+- non-joinable thread
 - old thread joined on move assignment
-- ready / not ready / deferred
+- ready / not ready / deferred / stored exception
+- invalid future precondition
+- const future / shared_future
 - C++11 compile-only
 
 ## Idea: Uuid
