@@ -31,6 +31,35 @@ namespace
 		MoveOnlyPayload() = default;
 	};
 
+	class ThrowingResetValue
+	{
+	  public:
+		ThrowingResetValue() noexcept(false)
+		{
+			MayThrow();
+		}
+
+		ThrowingResetValue(const ThrowingResetValue&) = delete;
+		ThrowingResetValue& operator=(const ThrowingResetValue&) = delete;
+
+		ThrowingResetValue(ThrowingResetValue&& other) noexcept(false) : value_(other.value_)
+		{
+			MayThrow();
+		}
+
+		ThrowingResetValue& operator=(ThrowingResetValue&& other) noexcept(false)
+		{
+			value_ = other.value_;
+			MayThrow();
+			return *this;
+		}
+
+	  private:
+		static void MayThrow() noexcept(false) {}
+
+		int value_ = 0;
+	};
+
 	static_assert(!std::is_copy_constructible<CopyDisabled>::value,
 				  "NonCopyable derived type is not copy constructible.");
 	static_assert(!std::is_copy_assignable<CopyDisabled>::value,
@@ -67,6 +96,12 @@ namespace
 				  "ResetOnMove<int> move construction is noexcept.");
 	static_assert(std::is_nothrow_move_assignable<ket::object::ResetOnMove<int>>::value,
 				  "ResetOnMove<int> move assignment is noexcept.");
+	static_assert(
+		!std::is_nothrow_move_constructible<ket::object::ResetOnMove<ThrowingResetValue>>::value,
+		"ResetOnMove<T> move construction is not noexcept when T can throw.");
+	static_assert(
+		!std::is_nothrow_move_assignable<ket::object::ResetOnMove<ThrowingResetValue>>::value,
+		"ResetOnMove<T> move assignment is not noexcept when T can throw.");
 
 	class ResetOnMoveExercise
 	{

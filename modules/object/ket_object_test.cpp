@@ -1,5 +1,6 @@
 #include "ket_object.h"
 
+#include <initializer_list>
 #include <memory>
 #include <string> // NOLINT(misc-include-cleaner)
 #include <type_traits>
@@ -60,6 +61,45 @@ namespace
 		int value_ = 0;
 	};
 
+	class InitializerListMoveValue
+	{
+	  public:
+		InitializerListMoveValue() noexcept = default;
+
+		explicit InitializerListMoveValue(int value) noexcept : value_(value) {}
+
+		InitializerListMoveValue(std::initializer_list<InitializerListMoveValue> values) noexcept(
+			false)
+			: value_(900 + static_cast<int>(values.size()))
+		{
+		}
+
+		InitializerListMoveValue(const InitializerListMoveValue& other) noexcept = default;
+
+		InitializerListMoveValue&
+		operator=(const InitializerListMoveValue& other) noexcept = default;
+
+		InitializerListMoveValue(InitializerListMoveValue&& other) noexcept : value_(other.value_)
+		{
+			other.value_ = -1;
+		}
+
+		InitializerListMoveValue& operator=(InitializerListMoveValue&& other) noexcept
+		{
+			value_ = other.value_;
+			other.value_ = -1;
+			return *this;
+		}
+
+		int Value() const noexcept // NOLINT(modernize-use-nodiscard)
+		{
+			return value_;
+		}
+
+	  private:
+		int value_ = 0;
+	};
+
 	class ThrowingResetValue
 	{
 	  public:
@@ -84,7 +124,7 @@ namespace
 		}
 
 	  private:
-		static void MayThrow() noexcept(false);
+		static void MayThrow() noexcept(false) {}
 
 		int value_ = 0;
 	};
@@ -303,6 +343,29 @@ TEST(KetObjectTest, SupportsMoveOnlyResetValue)
 	EXPECT_TRUE(destination_has_value);
 	EXPECT_FALSE(source_has_value);
 	EXPECT_EQ(destination_value, 9);
+}
+
+/**
+ * @test
+ * @brief ResetOnMoveのmove構築が保持値のmove constructorを使うことの確認。
+ * @details
+ * initializer_list
+ * constructorを持つ型で、wrapperのmove構築がlist-initializationを選ばないことを確認。
+ * @pre C++17以降。
+ * @post move元とmove先はともに有効なwrapper。
+ */
+TEST(KetObjectTest, MoveConstructsInitializerListAwareValueWithoutListInitialization)
+{
+	ket::object::ResetOnMove<InitializerListMoveValue> source(InitializerListMoveValue(17));
+
+	ket::object::ResetOnMove<InitializerListMoveValue> destination(std::move(source));
+	const auto destination_value = destination.Get().Value();
+	// cppcheck-suppress accessMoved
+	// NOLINTNEXTLINE(bugprone-use-after-move, clang-analyzer-cplusplus.Move)
+	const auto source_value = source.Get().Value();
+
+	EXPECT_EQ(destination_value, 17);
+	EXPECT_EQ(source_value, 0);
 }
 
 /**

@@ -61,8 +61,16 @@ namespace ket
 			 * @pre なし。
 			 * @post mixin自体は状態を持たず、`other`にも状態変化なし。
 			 */
-			NonCopyable(NonCopyable&&) = default;
-			NonCopyable& operator=(NonCopyable&&) = default;
+			NonCopyable(NonCopyable&& other) = default;
+
+			/**
+			 * @brief NonCopyable baseのmove代入。
+			 * @param[in,out] other move元base。
+			 * @retval reference `*this`への参照。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たず、`other`にも状態変化なし。
+			 */
+			NonCopyable& operator=(NonCopyable&& /*other*/) = default;
 
 			/**
 			 * @brief NonCopyable baseの破棄。
@@ -78,12 +86,26 @@ namespace ket
 			 * @pre 呼び出し不可。
 			 * @post 呼び出し不可。
 			 * @code
-			 * static_assert(!std::is_copy_constructible<ket::object::NonCopyable>::value,
-			 *               "NonCopyable is not copy constructible.");
+			 * struct Value : ket::object::NonCopyable { Value() = default; };
+			 * static_assert(!std::is_copy_constructible<Value>::value,
+			 *               "Value is not copy constructible.");
 			 * @endcode
 			 */
-			NonCopyable(const NonCopyable&) = delete;
-			NonCopyable& operator=(const NonCopyable&) = delete;
+			NonCopyable(const NonCopyable& other) = delete;
+
+			/**
+			 * @brief copy代入を禁止。
+			 * @param[in] other copy元base。
+			 * @retval reference 呼び出し不可。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * struct Value : ket::object::NonCopyable { Value() = default; };
+			 * static_assert(!std::is_copy_assignable<Value>::value,
+			 *               "Value is not copy assignable.");
+			 * @endcode
+			 */
+			NonCopyable& operator=(const NonCopyable& other) = delete;
 		};
 
 		/**
@@ -114,12 +136,26 @@ namespace ket
 			 * @pre 呼び出し不可。
 			 * @post 呼び出し不可。
 			 * @code
-			 * static_assert(!std::is_copy_constructible<ket::object::NonMovable>::value,
-			 *               "NonMovable is not copy constructible.");
+			 * struct Value : ket::object::NonMovable { Value() = default; };
+			 * static_assert(!std::is_copy_constructible<Value>::value,
+			 *               "Value is not copy constructible.");
 			 * @endcode
 			 */
-			NonMovable(const NonMovable&) = delete;
-			NonMovable& operator=(const NonMovable&) = delete;
+			NonMovable(const NonMovable& other) = delete;
+
+			/**
+			 * @brief copy代入を禁止。
+			 * @param[in] other copy元base。
+			 * @retval reference 呼び出し不可。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * struct Value : ket::object::NonMovable { Value() = default; };
+			 * static_assert(!std::is_copy_assignable<Value>::value,
+			 *               "Value is not copy assignable.");
+			 * @endcode
+			 */
+			NonMovable& operator=(const NonMovable& other) = delete;
 
 			/**
 			 * @brief move構築を禁止。
@@ -127,12 +163,26 @@ namespace ket
 			 * @pre 呼び出し不可。
 			 * @post 呼び出し不可。
 			 * @code
-			 * static_assert(!std::is_move_constructible<ket::object::NonMovable>::value,
-			 *               "NonMovable is not move constructible.");
+			 * struct Value : ket::object::NonMovable { Value() = default; };
+			 * static_assert(!std::is_move_constructible<Value>::value,
+			 *               "Value is not move constructible.");
 			 * @endcode
 			 */
-			NonMovable(NonMovable&&) = delete;
-			NonMovable& operator=(NonMovable&&) = delete;
+			NonMovable(NonMovable&& other) = delete;
+
+			/**
+			 * @brief move代入を禁止。
+			 * @param[in,out] other move元base。
+			 * @retval reference 呼び出し不可。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * struct Value : ket::object::NonMovable { Value() = default; };
+			 * static_assert(!std::is_move_assignable<Value>::value,
+			 *               "Value is not move assignable.");
+			 * @endcode
+			 */
+			NonMovable& operator=(NonMovable&& other) = delete;
 		};
 
 		/**
@@ -163,12 +213,26 @@ namespace ket
 			 * @pre 呼び出し不可。
 			 * @post 呼び出し不可。
 			 * @code
-			 * static_assert(!std::is_copy_constructible<ket::object::MoveOnly>::value,
-			 *               "MoveOnly is not copy constructible.");
+			 * struct Value : ket::object::MoveOnly { Value() = default; };
+			 * static_assert(!std::is_copy_constructible<Value>::value,
+			 *               "Value is not copy constructible.");
 			 * @endcode
 			 */
-			MoveOnly(const MoveOnly&) = delete;
-			MoveOnly& operator=(const MoveOnly&) = delete;
+			MoveOnly(const MoveOnly& other) = delete;
+
+			/**
+			 * @brief copy代入を禁止。
+			 * @param[in] other copy元base。
+			 * @retval reference 呼び出し不可。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * struct Value : ket::object::MoveOnly { Value() = default; };
+			 * static_assert(!std::is_copy_assignable<Value>::value,
+			 *               "Value is not copy assignable.");
+			 * @endcode
+			 */
+			MoveOnly& operator=(const MoveOnly& other) = delete;
 
 			/**
 			 * @brief MoveOnly baseのmove構築。
@@ -176,12 +240,26 @@ namespace ket
 			 * @pre なし。
 			 * @post mixin自体は状態を持たず、`other`にも状態変化なし。
 			 * @code
-			 * static_assert(std::is_move_constructible<ket::object::MoveOnly>::value,
-			 *               "MoveOnly is move constructible.");
+			 * struct Value : ket::object::MoveOnly { Value() = default; };
+			 * static_assert(std::is_move_constructible<Value>::value,
+			 *               "Value is move constructible.");
 			 * @endcode
 			 */
-			MoveOnly(MoveOnly&&) = default;
-			MoveOnly& operator=(MoveOnly&&) = default;
+			MoveOnly(MoveOnly&& other) = default;
+
+			/**
+			 * @brief MoveOnly baseのmove代入。
+			 * @param[in,out] other move元base。
+			 * @retval reference `*this`への参照。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たず、`other`にも状態変化なし。
+			 * @code
+			 * struct Value : ket::object::MoveOnly { Value() = default; };
+			 * static_assert(std::is_move_assignable<Value>::value,
+			 *               "Value is move assignable.");
+			 * @endcode
+			 */
+			MoveOnly& operator=(MoveOnly&& /*other*/) = default;
 		};
 
 		/**
@@ -356,7 +434,7 @@ namespace ket
 			std::is_nothrow_move_constructible<T>::value &&
 			std::is_nothrow_default_constructible<T>::value &&
 			std::is_nothrow_move_assignable<T>::value)
-			: value_{std::move(other.value_)}
+			: value_ /* paren-init */ (std::move(other.value_))
 		{
 			detail::ResetToDefault(other.value_);
 		}

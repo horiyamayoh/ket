@@ -2380,6 +2380,7 @@ Tests:
 - self move assignment
 - empty base size
 - user-defined comparison coexistence
+- C++11 compile-only
 
 ## Idea: Meta
 
