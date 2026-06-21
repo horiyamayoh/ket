@@ -12,22 +12,24 @@ namespace
 {
 	constexpr std::size_t kUuidByteCount = 16U;
 
-	bool UuidBytesEqual(const ket::uuid::Uuid& value,
-						const std::array<std::uint8_t, kUuidByteCount>& expected) noexcept
+	void ExpectUuidBytes(const ket::uuid::Uuid& value,
+						 const std::array<std::uint8_t, kUuidByteCount>& expected)
 	{
-		return value.bytes == expected;
+		EXPECT_EQ(value.bytes, expected);
 	}
 
-	bool OptionalUuidBytesEqual(const std::optional<ket::uuid::Uuid>& value,
-								const std::array<std::uint8_t, kUuidByteCount>& expected) noexcept
+	void ExpectOptionalUuidBytes(const std::optional<ket::uuid::Uuid>& value,
+								 const std::array<std::uint8_t, kUuidByteCount>& expected)
 	{
-		const auto value_has_value = value.has_value();
-		if (!value_has_value)
-		{
-			return false;
-		}
+		const auto value_has_value = value != std::nullopt;
+		ASSERT_TRUE(value_has_value);
+		const auto actual = value.value_or(ket::uuid::Uuid{});
+		ExpectUuidBytes(actual, expected);
+	}
 
-		return UuidBytesEqual(*value, expected);
+	bool IsRequiredHyphenPosition(std::size_t position) noexcept
+	{
+		return position == 8U || position == 13U || position == 18U || position == 23U;
 	}
 
 } // namespace
@@ -44,8 +46,7 @@ TEST(KetUuidTest, ParsesZeroUuid)
 	const auto value = ket::uuid::Parse("00000000-0000-0000-0000-000000000000");
 	const auto expected = std::array<std::uint8_t, kUuidByteCount>{};
 
-	const auto bytes_match = OptionalUuidBytesEqual(value, expected);
-	EXPECT_TRUE(bytes_match);
+	ExpectOptionalUuidBytes(value, expected);
 }
 
 /**
@@ -76,8 +77,7 @@ TEST(KetUuidTest, ParsesNormalUuid)
 																	0xeeU,
 																	0xffU}};
 
-	const auto bytes_match = OptionalUuidBytesEqual(value, expected);
-	EXPECT_TRUE(bytes_match);
+	ExpectOptionalUuidBytes(value, expected);
 }
 
 /**
@@ -107,8 +107,7 @@ TEST(KetUuidTest, ParsesAllFfUuid)
 																	0xffU,
 																	0xffU}};
 
-	const auto bytes_match = OptionalUuidBytesEqual(value, expected);
-	EXPECT_TRUE(bytes_match);
+	ExpectOptionalUuidBytes(value, expected);
 }
 
 /**
@@ -139,8 +138,7 @@ TEST(KetUuidTest, ParsesUppercaseUuid)
 																	0xefU,
 																	0xabU}};
 
-	const auto bytes_match = OptionalUuidBytesEqual(value, expected);
-	EXPECT_TRUE(bytes_match);
+	ExpectOptionalUuidBytes(value, expected);
 }
 
 /**
@@ -177,8 +175,6 @@ TEST(KetUuidTest, RejectsBadLengthBracedAndUrnForms)
 TEST(KetUuidTest, RejectsBadHyphenPlacement)
 {
 	const auto required_hyphen_positions = std::array<std::size_t, 4U>{{8U, 13U, 18U, 23U}};
-	const auto unexpected_hyphen_positions =
-		std::array<std::size_t, 8U>{{7U, 9U, 12U, 14U, 17U, 19U, 22U, 24U}};
 
 	for (const auto position : required_hyphen_positions)
 	{
@@ -192,8 +188,14 @@ TEST(KetUuidTest, RejectsBadHyphenPlacement)
 		EXPECT_EQ(missing_required, std::nullopt);
 	}
 
-	for (const auto position : unexpected_hyphen_positions)
+	for (std::size_t position = 0U; position < 36U; ++position)
 	{
+		const auto position_requires_hyphen = IsRequiredHyphenPosition(position);
+		if (position_requires_hyphen)
+		{
+			continue;
+		}
+
 		const auto trace = std::string("unexpected hyphen index ") + std::to_string(position);
 		SCOPED_TRACE(trace);
 		std::string extra_hyphen = "00112233-4455-6677-8899-aabbccddeeff";
@@ -215,16 +217,23 @@ TEST(KetUuidTest, RejectsBadHyphenPlacement)
  */
 TEST(KetUuidTest, RejectsBadHex)
 {
-	std::string invalid_first = "00112233-4455-6677-8899-aabbccddeeff";
-	std::string invalid_last = "00112233-4455-6677-8899-aabbccddeeff";
-	invalid_first[0] = 'g';
-	invalid_last[35] = '_';
+	for (std::size_t position = 0U; position < 36U; ++position)
+	{
+		const auto position_requires_hyphen = IsRequiredHyphenPosition(position);
+		if (position_requires_hyphen)
+		{
+			continue;
+		}
 
-	const auto bad_first = ket::uuid::Parse(invalid_first);
-	const auto bad_last = ket::uuid::Parse(invalid_last);
+		const auto trace = std::string("invalid hex index ") + std::to_string(position);
+		SCOPED_TRACE(trace);
+		std::string invalid_text = "00112233-4455-6677-8899-aabbccddeeff";
+		invalid_text[position] = 'g';
 
-	EXPECT_EQ(bad_first, std::nullopt);
-	EXPECT_EQ(bad_last, std::nullopt);
+		const auto parsed = ket::uuid::Parse(invalid_text);
+
+		EXPECT_EQ(parsed, std::nullopt);
+	}
 }
 
 /**
@@ -256,6 +265,22 @@ TEST(KetUuidTest, FormatsUuidAsLowercaseCanonicalText)
 	const auto text = ket::uuid::Format(value);
 
 	EXPECT_EQ(text, std::string("abcdefab-cdef-abcd-efab-cdefabcdefab"));
+}
+
+/**
+ * @test
+ * @brief all-zero UUID の文字列化確認。
+ * @details 全byteが0x00のUUID値を入力し、全桁0のcanonical hyphen形式へformatされることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetUuidTest, FormatsZeroUuid)
+{
+	const auto value = ket::uuid::Uuid{};
+
+	const auto text = ket::uuid::Format(value);
+
+	EXPECT_EQ(text, std::string("00000000-0000-0000-0000-000000000000"));
 }
 
 /**
@@ -316,12 +341,13 @@ TEST(KetUuidTest, FormatsParsedUppercaseAsLowercaseCanonical)
 																	0xcdU,
 																	0xefU,
 																	0xabU}};
-	const auto bytes_match = OptionalUuidBytesEqual(parsed, expected);
-	const auto parsed_value = parsed.value_or(ket::uuid::Uuid{});
+	ExpectOptionalUuidBytes(parsed, expected);
+	const auto parsed_has_value = parsed != std::nullopt;
+	ASSERT_TRUE(parsed_has_value);
 
+	const auto parsed_value = parsed.value_or(ket::uuid::Uuid{});
 	const auto text = ket::uuid::Format(parsed_value);
 
-	EXPECT_TRUE(bytes_match);
 	EXPECT_EQ(text, std::string("abcdefab-cdef-abcd-efab-cdefabcdefab"));
 }
 
@@ -400,7 +426,5 @@ TEST(KetUuidTest, ParsesFormattedUuidRoundtrip)
 
 	const auto text = ket::uuid::Format(value);
 	const auto reparsed = ket::uuid::Parse(text);
-	const auto bytes_match = OptionalUuidBytesEqual(reparsed, expected);
-
-	EXPECT_TRUE(bytes_match);
+	ExpectOptionalUuidBytes(reparsed, expected);
 }

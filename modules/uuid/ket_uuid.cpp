@@ -1,5 +1,6 @@
 #include "ket_uuid.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -9,45 +10,34 @@
 
 namespace
 {
-	constexpr std::array<std::size_t, 5U> kGroupByteCounts{{4U, 2U, 2U, 2U, 6U}};
-	constexpr std::size_t kUuidByteCount = kGroupByteCounts[0] + kGroupByteCounts[1] +
-		kGroupByteCounts[2] + kGroupByteCounts[3] + kGroupByteCounts[4];
-	constexpr std::size_t kCanonicalTextLength =
-		(kUuidByteCount * 2U) + kGroupByteCounts.size() - 1U;
+	constexpr std::size_t kUuidByteCount = ket::uuid::Uuid{}.bytes.size();
+	constexpr std::array<std::size_t, 4U> kHyphenTextIndexes{{8U, 13U, 18U, 23U}};
+	constexpr std::array<std::size_t, 4U> kHyphenByteIndexes{{4U, 6U, 8U, 10U}};
+	constexpr std::size_t kCanonicalTextLength = (kUuidByteCount * 2U) + kHyphenTextIndexes.size();
+	static_assert(kUuidByteCount == 16U, "UUID byte representation must be 16 bytes.");
+	static_assert(kCanonicalTextLength == 36U, "Canonical UUID text must be 36 bytes.");
 
-	constexpr bool IsHyphenIndex(std::size_t index) noexcept
+	bool IsHyphenIndex(std::size_t index) noexcept
 	{
-		std::size_t boundary_byte_count = 0U;
-		for (std::size_t group_index = 0U; group_index + 1U < kGroupByteCounts.size();
-			 ++group_index)
-		{
-			boundary_byte_count += kGroupByteCounts[group_index];
-			const auto hyphen_index = (boundary_byte_count * 2U) + group_index;
-			const auto index_matches = index == hyphen_index;
-			if (index_matches)
-			{
-				return true;
-			}
-		}
-
-		return false;
+		const auto index_matches = std::any_of(kHyphenTextIndexes.begin(),
+											   kHyphenTextIndexes.end(),
+											   [index](std::size_t hyphen_index) noexcept
+											   {
+												   return index == hyphen_index;
+											   });
+		return index_matches;
 	}
 
-	constexpr bool NeedsHyphenBeforeByte(std::size_t byte_index) noexcept
+	bool NeedsHyphenBeforeByte(std::size_t byte_index) noexcept
 	{
-		std::size_t boundary_byte_count = 0U;
-		for (std::size_t group_index = 0U; group_index + 1U < kGroupByteCounts.size();
-			 ++group_index)
-		{
-			boundary_byte_count += kGroupByteCounts[group_index];
-			const auto byte_index_matches = byte_index == boundary_byte_count;
-			if (byte_index_matches)
-			{
-				return true;
-			}
-		}
-
-		return false;
+		const auto byte_index_matches =
+			std::any_of(kHyphenByteIndexes.begin(),
+						kHyphenByteIndexes.end(),
+						[byte_index](std::size_t hyphen_byte_index) noexcept
+						{
+							return byte_index == hyphen_byte_index;
+						});
+		return byte_index_matches;
 	}
 
 	constexpr std::optional<std::uint8_t> HexValue(char value) noexcept
