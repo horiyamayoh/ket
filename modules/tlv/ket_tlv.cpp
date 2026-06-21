@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <stdexcept>
 #include <vector>
@@ -42,8 +43,16 @@ namespace
 		dst.push_back(static_cast<std::uint8_t>(value & 0x000000FFU));
 	}
 
-	std::size_t CheckedRecordSize(std::uint32_t value_size)
+	std::size_t CheckedRecordSize(std::size_t value_size)
 	{
+		const auto max_wire_value_size =
+			static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max());
+		const auto value_exceeds_wire_length = value_size > max_wire_value_size;
+		if (value_exceeds_wire_length)
+		{
+			throw std::length_error("ket TLV value exceeds uint32 wire length.");
+		}
+
 		const auto max_size = std::vector<std::uint8_t>().max_size();
 		const auto header_does_not_fit = max_size < kHeaderSize;
 		if (header_does_not_fit)
@@ -58,12 +67,11 @@ namespace
 			throw std::length_error("ket TLV record exceeds std::vector::max_size().");
 		}
 
-		const auto value_count = static_cast<std::size_t>(value_size);
-		const auto record_size = kHeaderSize + value_count;
+		const auto record_size = kHeaderSize + value_size;
 		return record_size;
 	}
 
-	void ReserveForAppend(const std::vector<std::uint8_t>& dst, std::size_t record_size)
+	void ValidateAppendSize(const std::vector<std::uint8_t>& dst, std::size_t record_size)
 	{
 		const auto max_size = dst.max_size();
 		const auto record_too_large = record_size > max_size;
@@ -79,21 +87,60 @@ namespace
 		}
 	}
 
+	void AppendValueBytes(std::vector<std::uint8_t>& dst,
+						  const std::uint8_t* value,
+						  std::size_t value_size)
+	{
+		for (std::size_t index = 0U; index < value_size; ++index)
+		{
+			dst.push_back(value[index]);
+		}
+	}
+
 	std::vector<std::uint8_t>
-	BuildRecord(std::uint16_t type, const std::uint8_t* value, std::uint32_t value_size)
+	BuildRecord(std::uint16_t type, const std::uint8_t* value, std::size_t value_size)
 	{
 		const auto record_size = CheckedRecordSize(value_size);
 		std::vector<std::uint8_t> record;
 		record.reserve(record_size);
 		AppendBe16(record, type);
-		AppendBe32(record, value_size);
-
-		for (std::uint32_t index = 0; index < value_size; ++index)
-		{
-			record.push_back(value[index]);
-		}
+		AppendBe32(record, static_cast<std::uint32_t>(value_size));
+		AppendValueBytes(record, value, value_size);
 
 		return record;
+	}
+
+	bool PointerIsInsideDestination(const std::vector<std::uint8_t>& dst,
+									const std::uint8_t* value,
+									std::size_t value_size) noexcept
+	{
+		const auto destination_is_empty = dst.empty();
+		const auto value_is_null = value == nullptr;
+		const auto value_is_empty = value_size == 0U;
+		if (destination_is_empty || value_is_null || value_is_empty)
+		{
+			return false;
+		}
+
+		const auto* const begin = dst.data();
+		const auto* const end = begin + dst.size();
+		const std::less<const std::uint8_t*> less; // NOLINT(modernize-use-transparent-functors)
+		const auto before_begin = less(value, begin);
+		const auto before_end = less(value, end);
+		return !before_begin && before_end;
+	}
+
+	void AppendRecord(std::vector<std::uint8_t>& dst,
+					  std::uint16_t type,
+					  const std::uint8_t* value,
+					  std::size_t value_size)
+	{
+		const auto record_size = CheckedRecordSize(value_size);
+		ValidateAppendSize(dst, record_size);
+		dst.reserve(dst.size() + record_size);
+		AppendBe16(dst, type);
+		AppendBe32(dst, static_cast<std::uint32_t>(value_size));
+		AppendValueBytes(dst, value, value_size);
 	}
 
 	bool ConsumedSizeWouldOverflow(std::uint32_t value_size) noexcept
@@ -118,7 +165,7 @@ namespace ket
 	namespace tlv
 	{
 		std::vector<std::uint8_t>
-		Encode(std::uint16_t type, const std::uint8_t* value, std::uint32_t value_size)
+		Encode(std::uint16_t type, const std::uint8_t* value, std::size_t value_size)
 		{
 			return BuildRecord(type, value, value_size);
 		}
@@ -126,12 +173,18 @@ namespace ket
 		void Append(std::vector<std::uint8_t>& dst,
 					std::uint16_t type,
 					const std::uint8_t* value,
-					std::uint32_t value_size)
+					std::size_t value_size)
 		{
-			const auto record = BuildRecord(type, value, value_size);
-			ReserveForAppend(dst, record.size());
-			dst.reserve(dst.size() + record.size());
-			dst.insert(dst.end(), record.begin(), record.end());
+			const auto value_is_inside_destination =
+				PointerIsInsideDestination(dst, value, value_size);
+			if (value_is_inside_destination)
+			{
+				const auto record = BuildRecord(type, value, value_size);
+				AppendRecord(dst, type, record.data() + kHeaderSize, value_size);
+				return;
+			}
+
+			AppendRecord(dst, type, value, value_size);
 		}
 
 		bool TryDecode(const std::uint8_t* data, std::size_t size, DecodeResult& out) noexcept
@@ -163,8 +216,11 @@ namespace ket
 				return false;
 			}
 
-			const DecodeResult result{{type, data + kHeaderSize, value_size},
-									  kHeaderSize + value_size_as_size};
+			DecodeResult result;
+			result.view.type = type;
+			result.view.value = data + kHeaderSize;
+			result.view.value_size = value_size;
+			result.consumed = kHeaderSize + value_size_as_size;
 			out = result;
 
 			return true;

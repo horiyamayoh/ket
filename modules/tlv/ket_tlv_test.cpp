@@ -3,6 +3,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -154,6 +156,34 @@ TEST(KetTlvTest, EncodesAndDecodesLength256)
 
 /**
  * @test
+ * @brief uint32 lengthの上位16 bitを使う成功系確認。
+ * @details 65536 byte valueを入力し、lengthが00 01 00
+ * 00として格納されdecode結果と一致することを確認。
+ * @pre C++17以降。
+ * @post decode結果は入力bufferへのnon-owning viewを保持。入力buffer自体の変更なし。
+ */
+TEST(KetTlvTest, EncodesAndDecodesLength65536)
+{
+	std::vector<std::uint8_t> value(65536U, std::uint8_t{0xA5U});
+	const auto record = ket::tlv::Encode(0x0102U, value.data(), value.size());
+	auto decoded = MakeSentinelResult();
+
+	const auto succeeded = ket::tlv::TryDecode(record.data(), record.size(), decoded);
+
+	ASSERT_TRUE(succeeded);
+	ASSERT_EQ(record.size(), kHeaderSize + 65536U);
+	EXPECT_EQ(record[2], std::uint8_t{0x00U});
+	EXPECT_EQ(record[3], std::uint8_t{0x01U});
+	EXPECT_EQ(record[4], std::uint8_t{0x00U});
+	EXPECT_EQ(record[5], std::uint8_t{0x00U});
+	EXPECT_EQ(decoded.view.value, record.data() + kHeaderSize);
+	EXPECT_EQ(decoded.view.value_size, 65536U);
+	EXPECT_EQ(decoded.consumed, kHeaderSize + 65536U);
+	EXPECT_EQ(decoded.view.value[65535], std::uint8_t{0xA5U});
+}
+
+/**
+ * @test
  * @brief type境界値のencode/decode確認。
  * @details type 0x0000と0xFFFFをencode/decodeし、16 bit境界値を保持することを確認。
  * @pre C++17以降。
@@ -222,10 +252,43 @@ TEST(KetTlvTest, AppendsDocumentedExample)
 	const std::uint8_t value[] = {0xAAU};
 
 	ket::tlv::Append(output, 0x1234U, value, 1U);
+	const auto expected = std::vector<std::uint8_t>{
+		std::uint8_t{0x12U},
+		std::uint8_t{0x34U},
+		std::uint8_t{0x00U},
+		std::uint8_t{0x00U},
+		std::uint8_t{0x00U},
+		std::uint8_t{0x01U},
+		std::uint8_t{0xAAU},
+	};
 
-	ASSERT_EQ(output.size(), 7U);
-	EXPECT_EQ(output[0], std::uint8_t{0x12U});
-	EXPECT_EQ(output[6], std::uint8_t{0xAAU});
+	EXPECT_EQ(output, expected);
+}
+
+/**
+ * @test
+ * @brief 空valueのappend確認。
+ * @details nullptrとsize 0を入力し、既存内容の末尾へ6 byte headerだけのTLV
+ * recordを追加することを確認。
+ * @pre C++17以降。
+ * @post destinationはprefixと空value TLV recordを保持。
+ */
+TEST(KetTlvTest, AppendsEmptyValue)
+{
+	std::vector<std::uint8_t> destination{std::uint8_t{0x99U}};
+
+	ket::tlv::Append(destination, 0x1234U, nullptr, 0U);
+	const auto expected = std::vector<std::uint8_t>{
+		std::uint8_t{0x99U},
+		std::uint8_t{0x12U},
+		std::uint8_t{0x34U},
+		std::uint8_t{0x00U},
+		std::uint8_t{0x00U},
+		std::uint8_t{0x00U},
+		std::uint8_t{0x00U},
+	};
+
+	EXPECT_EQ(destination, expected);
 }
 
 /**
@@ -240,7 +303,7 @@ TEST(KetTlvTest, AppendsValueAliasedWithDestinationStorage)
 {
 	std::vector<std::uint8_t> destination{std::uint8_t{0xAAU}, std::uint8_t{0xBBU}};
 	const std::uint8_t* const source = destination.data();
-	const auto source_size = static_cast<std::uint32_t>(destination.size());
+	const auto source_size = destination.size();
 
 	ket::tlv::Append(destination, 0x0102U, source, source_size);
 
@@ -258,6 +321,27 @@ TEST(KetTlvTest, AppendsValueAliasedWithDestinationStorage)
 	};
 
 	EXPECT_EQ(destination, expected);
+}
+
+/**
+ * @test
+ * @brief uint32 wire lengthを超えるvalue size拒否確認。
+ * @details std::size_t入力がwire length上限を超える場合にlength_errorを送出し、
+ * Appendではdestinationを変更しないことを確認。
+ * @pre C++17以降。
+ * @post destinationは入力時の内容を保持。
+ */
+TEST(KetTlvTest, RejectsValueSizeBeyondUint32WireLength)
+{
+	const std::uint8_t value[] = {0xAAU};
+	const auto too_large_size =
+		static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()) + 1U;
+	std::vector<std::uint8_t> destination{std::uint8_t{0x99U}};
+	const auto expected_destination = destination;
+
+	EXPECT_THROW((void)ket::tlv::Encode(0x1234U, value, too_large_size), std::length_error);
+	EXPECT_THROW(ket::tlv::Append(destination, 0x1234U, value, too_large_size), std::length_error);
+	EXPECT_EQ(destination, expected_destination);
 }
 
 /**

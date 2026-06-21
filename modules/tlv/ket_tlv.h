@@ -13,9 +13,9 @@
  * `ket_tlv.h` と `ket_tlv.cpp` を対象プロジェクトへコピー。
  *
  * @par C++バージョン要件
- * 最小要件：C++17。
- * 本ライブラリの適用を推奨する C++ バージョン：C++17以降。
- * 推奨理由：`std::vector<std::uint8_t>` とbool+outでwire format境界を固定できる。
+ * 最小要件：C++11。
+ * 本ライブラリの適用を推奨する C++ バージョン：C++11以降。
+ * 推奨理由：raw pointer、`std::vector<std::uint8_t>`、bool+out参照でwire format境界を固定できる。
  * 本ライブラリの適用を推奨しない C++ バージョン：なし。
  * 非推奨理由：なし。
  *
@@ -68,10 +68,12 @@ namespace ket
 		 * @param[in] value 追加するvalue bytes。`value_size == 0`の場合のみ`nullptr`可。
 		 * @param[in] value_size 追加するvalue byte数。wire headerへbig-endian uint32で格納。
 		 * @retval value `type:uint16 big-endian` + `length:uint32 big-endian` + value bytes。
-		 * @pre `value_size > 0`の場合、`value`は`value_size`バイト以上読み取り可能な配列を指す。
-		 * `value == nullptr && value_size > 0`はprecondition違反。
+		 * @pre `0 < value_size && value_size <= UINT32_MAX`の場合、`value`は`value_size`
+		 * バイト以上読み取り可能な配列を指す。`value == nullptr && value_size >
+		 * 0`はprecondition違反。
 		 * @post 引数と外部状態の変更なし。
-		 * @note record sizeがstd::vector::max_size()を超える場合はstd::length_error送出。
+		 * @note `value_size > UINT32_MAX`、またはrecord sizeがstd::vector::max_size()を超える場合は
+		 * std::length_error送出。
 		 * @note std::vectorの確保があるためnoexceptなし。
 		 * @code
 		 * const std::uint8_t value[] = {0xAAU};
@@ -80,7 +82,7 @@ namespace ket
 		 * @endcode
 		 */
 		std::vector<std::uint8_t>
-		Encode(std::uint16_t type, const std::uint8_t* value, std::uint32_t value_size);
+		Encode(std::uint16_t type, const std::uint8_t* value, std::size_t value_size);
 
 		/**
 		 * @brief 1つのTLV recordを既存byte列の末尾へ追加。
@@ -89,12 +91,12 @@ namespace ket
 		 * @param[in] value 追加するvalue bytes。`value_size == 0`の場合のみ`nullptr`可。
 		 * @param[in] value_size 追加するvalue byte数。wire headerへbig-endian uint32で格納。
 		 * @retval void 戻り値なし。
-		 * @pre `dst`は有効なstd::vector。`value_size > 0`の場合、`value`は`value_size`バイト以上
-		 * 読み取り可能な配列を指す。`value`は`dst`の内部storageを指していてもよい。
+		 * @pre `dst`は有効なstd::vector。`0 < value_size && value_size <= UINT32_MAX`の場合、
+		 * `value`は`value_size`バイト以上読み取り可能な配列を指す。`value`は`dst`の内部storageを指していてもよい。
 		 * `value == nullptr && value_size > 0`はprecondition違反。
 		 * @post `dst`の既存内容を保持し、末尾にTLV recordを追加。
-		 * @note record sizeまたは出力合計がstd::vector::max_size()を超える場合は
-		 * std::length_error送出。
+		 * @note `value_size > UINT32_MAX`、record
+		 * size、または出力合計がstd::vector::max_size()を超える場合は std::length_error送出。
 		 * @note std::vectorの確保があるためnoexceptなし。
 		 * @note 例外時は`dst`を変更しない強い例外保証。
 		 * @code
@@ -107,7 +109,7 @@ namespace ket
 		void Append(std::vector<std::uint8_t>& dst,
 					std::uint16_t type,
 					const std::uint8_t* value,
-					std::uint32_t value_size);
+					std::size_t value_size);
 
 		/**
 		 * @brief 入力先頭の1つのTLV recordをdecode。
@@ -129,6 +131,14 @@ namespace ket
 		 * @endcode
 		 */
 		bool TryDecode(const std::uint8_t* data, std::size_t size, DecodeResult& out) noexcept;
+
+		// -----------------------------------------------------------------------------
+		// Internal implementation details
+		// -----------------------------------------------------------------------------
+
+		// -----------------------------------------------------------------------------
+		// Public API definitions
+		// -----------------------------------------------------------------------------
 
 	} // namespace tlv
 
