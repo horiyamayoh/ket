@@ -93,7 +93,8 @@ namespace ket
 		 * 読み取り可能な配列を指す。`value`は`dst`の内部storageを指していてもよい。
 		 * `value == nullptr && value_size > 0`はprecondition違反。
 		 * @post `dst`の既存内容を保持し、末尾にTLV recordを追加。
-		 * @note std::vectorの確保があるためnoexceptなし。
+			 * @note record sizeまたは出力合計がstd::vector::max_size()を超える場合はstd::length_error送出。
+			 * @note std::vectorの確保があるためnoexceptなし。
 		 * @note 例外時は`dst`を変更しない強い例外保証。
 		 * @code
 		 * std::vector<std::uint8_t> output;
