@@ -61,3 +61,25 @@ jobs:
 
       - name: Run repository gate
         run: python3 tools/check_repository.py
+
+  windows-platform:
+    runs-on: windows-2022
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure platform test
+        run: >
+          cmake -S . -B build/windows-platform -G "Visual Studio 17 2022" -A x64
+          -DKET_BUILD_TESTS=ON
+          -DKET_ENABLE_FORMAT_TARGETS=OFF
+          -DKET_ENABLE_STRICT_WARNINGS=ON
+          -DKET_WARNINGS_AS_ERRORS=ON
+
+      - name: Build platform test
+        run: cmake --build build/windows-platform --config Debug --target ket_platform_test
+
+      - name: Run platform test
+        run: ctest --test-dir build/windows-platform -C Debug -R "^KetPlatformTest[.]" --output-on-failure --no-tests=error

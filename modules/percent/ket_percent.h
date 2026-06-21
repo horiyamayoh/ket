@@ -404,16 +404,8 @@ namespace ket
 		// Public API definitions
 		// -----------------------------------------------------------------------------
 
-		/**
-		 * @brief `TryFromBasisPoints`宣言側仕様に従う定義。
-		 * @param[in] basis_points 宣言側仕様の入力basis points。
-		 * @param[out] out 宣言側仕様の出力先。
-		 * @retval true 宣言側仕様の成功条件。
-		 * @retval false 宣言側仕様の失敗条件。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		inline bool Percent::TryFromBasisPoints(std::uint32_t basis_points, Percent& out) noexcept
+		inline auto Percent::TryFromBasisPoints(std::uint32_t basis_points,
+												Percent& out) noexcept -> bool
 		{
 			const auto basis_points_too_large = basis_points > detail::kMaxBasisPoints;
 			if (basis_points_too_large)
@@ -425,16 +417,7 @@ namespace ket
 			return true;
 		}
 
-		/**
-		 * @brief `TryFromPercent`宣言側仕様に従う定義。
-		 * @param[in] percent 宣言側仕様の入力percent値。
-		 * @param[out] out 宣言側仕様の出力先。
-		 * @retval true 宣言側仕様の成功条件。
-		 * @retval false 宣言側仕様の失敗条件。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		inline bool Percent::TryFromPercent(double percent, Percent& out) noexcept
+		inline auto Percent::TryFromPercent(double percent, Percent& out) noexcept -> bool
 		{
 			const auto percent_is_finite = detail::IsFinite(percent);
 			const auto percent_is_in_range = percent >= 0.0 && percent <= detail::kMaxPercent;
@@ -448,16 +431,7 @@ namespace ket
 			return true;
 		}
 
-		/**
-		 * @brief `TryFromRatio`宣言側仕様に従う定義。
-		 * @param[in] ratio 宣言側仕様の入力ratio値。
-		 * @param[out] out 宣言側仕様の出力先。
-		 * @retval true 宣言側仕様の成功条件。
-		 * @retval false 宣言側仕様の失敗条件。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		inline bool Percent::TryFromRatio(double ratio, Percent& out) noexcept
+		inline auto Percent::TryFromRatio(double ratio, Percent& out) noexcept -> bool
 		{
 			const auto ratio_is_finite = detail::IsFinite(ratio);
 			const auto ratio_is_in_range = ratio >= 0.0 && ratio <= detail::kMaxRatio;
@@ -471,14 +445,7 @@ namespace ket
 			return true;
 		}
 
-		/**
-		 * @brief `FromPercentClamped`宣言側仕様に従う定義。
-		 * @param[in] percent 宣言側仕様の入力percent値。
-		 * @retval value 宣言側仕様のclamp済みPercent値。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		inline Percent Percent::FromPercentClamped(double percent) noexcept
+		inline auto Percent::FromPercentClamped(double percent) noexcept -> Percent
 		{
 			const auto percent_is_nan = detail::IsNan(percent);
 			if (percent_is_nan)
@@ -502,35 +469,17 @@ namespace ket
 			return Percent(basis_points);
 		}
 
-		/**
-		 * @brief `BasisPoints`宣言側仕様に従う定義。
-		 * @retval value 宣言側仕様のbasis points値。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		constexpr std::uint16_t Percent::BasisPoints() const noexcept
+		constexpr auto Percent::BasisPoints() const noexcept -> std::uint16_t
 		{
 			return basis_points_;
 		}
 
-		/**
-		 * @brief `ToPercent`宣言側仕様に従う定義。
-		 * @retval value 宣言側仕様のpercent単位値。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		constexpr double Percent::ToPercent() const noexcept
+		constexpr auto Percent::ToPercent() const noexcept -> double
 		{
 			return static_cast<double>(BasisPoints()) / 100.0;
 		}
 
-		/**
-		 * @brief `ToRatio`宣言側仕様に従う定義。
-		 * @retval value 宣言側仕様のratio単位値。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		constexpr double Percent::ToRatio() const noexcept
+		constexpr auto Percent::ToRatio() const noexcept -> double
 		{
 			return static_cast<double>(BasisPoints()) / 10000.0;
 		}
