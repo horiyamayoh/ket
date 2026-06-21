@@ -859,6 +859,11 @@ namespace ket
 
 ### 6.9 `modules/scope/ket_scope.h`
 
+この初期案は `docs/module_api_catalog.md` の `scope` moduleで置き換え済み。
+実装済みAPIは `ket::scope::Exit`、`ket::scope::MakeExit`、`ket::scope::Restore`、
+`ket::scope::MakeRestore`。旧名 `ScopeExit`、`MakeScopeExit`、`RestoreOnExit`、
+`MakeRestoreOnExit` は採用しない。
+
 目的: cleanup 漏れ、早期 return 時の復元漏れを防ぐ。
 
 C++ Min: C++11
@@ -1476,6 +1481,10 @@ namespace ket
 
 ### 7.9 `modules/testing_bytes/ket_testing_bytes.h`
 
+この初期案は `docs/module_api_catalog.md` の `testing` moduleで置き換え済み。
+実装済みAPIは `ket::testing::BytesEqual` と `ket::testing::HexEqual`。
+旧名 `BytesEq` と `HexEq` は採用しない。
+
 ```cpp
 namespace ket
 {
@@ -1534,6 +1543,10 @@ namespace ket
 ---
 
 ### 7.11 `modules/ipv4/ket_ipv4.h`
+
+この案は `docs/module_api_catalog.md` の `ipv4` moduleで置き換え済み。実装済みAPIは
+`modules/ipv4/ket_ipv4.h` の `ket::ipv4::Address`、`ket::ipv4::Parse`、`ket::ipv4::Format`、
+`ket::ipv4::ToBe32`、`ket::ipv4::FromBe32`。
 
 ```cpp
 namespace ket
@@ -1613,6 +1626,10 @@ namespace ket
 ---
 
 ### 8.2 `modules/variant_match/ket_variant_match.h`
+
+この案は `docs/module_api_catalog.md` の `variant` moduleで置き換え済み。実装済みAPIは
+`modules/variant/ket_variant.h` の `ket::variant::Match` のみで、`Holds` と `GetIf` は初回APIに
+含めない。
 
 ```cpp
 namespace ket
