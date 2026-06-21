@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>値の範囲と表記を小さいAPIに固定する - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>値の範囲と表記を小さいAPIに固定する</h1>
+<p class="lead">裸のintや文字列で扱うとぶれやすいdomain値を、moduleごとの値型やparseで固定する。</p>
+<h2>Decision Flow</h2>
+<ul><li>port番号は port を使う。</li><li>IPv4 dotted decimalは ipv4 を使う。</li><li>version tripletは version を使う。</li><li>RGB hexは color を使う。</li><li>日付妥当性は date を使う。</li><li>汎用overflowやcast境界は numeric を使う。</li></ul>
+<h2>Modules</h2>
+<table><tr><th>Module</th><th>Role</th></tr>
+<tr><td><a href="../modules/port.html">port</a></td><td>0から65535のport値とparse/format。</td></tr>
+<tr><td><a href="../modules/ipv4.html">ipv4</a></td><td>IPv4文字列表現とBE 32bit値。</td></tr>
+<tr><td><a href="../modules/version.html">version</a></td><td>numeric tripletの比較と表記。</td></tr>
+<tr><td><a href="../modules/color.html">color</a></td><td>RGB小値型と6桁hex文字列。</td></tr>
+<tr><td><a href="../modules/date.html">date</a></td><td>Gregorian日付と時刻の妥当性。</td></tr>
+<tr><td><a href="../modules/numeric.html">numeric</a></td><td>overflow、align、cast境界。</td></tr>
+</table>
+<h2>Recipe</h2>
+<ul><li>入力直後にdomain moduleへ変換する。</li><li>変換後は裸値ではなく意味のある型や名前のAPIで扱う。</li><li>formatも同じmoduleへ戻して表記を固定する。</li></ul>
+<h2>See Also</h2>
+<p class="pillrow"><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span> <span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span></p>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

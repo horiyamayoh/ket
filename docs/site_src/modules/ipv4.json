@@ -1,0 +1,17 @@
+{
+  "module": "ipv4",
+  "title": "IPv4 address",
+  "summary": "IPv4 dotted decimalとbig-endian 32bit表現を相互変換する。",
+  "categories": ["value", "boundary"],
+  "use_cases": ["cli-config", "value-validation"],
+  "when_to_use": [
+    "IPv4 literalを範囲確認して値として扱いたい時。",
+    "BE 32bit表現との変換を明示したい時。"
+  ],
+  "when_not_to_use": [
+    "IPv6、CIDR、DNS解決、socket addressを扱う時。",
+    "OS network API wrapperが必要な時。"
+  ],
+  "related_modules": ["port", "parse", "endian"],
+  "notes": ["dotted decimalに絞り、leading zeroは失敗として扱う。"]
+}

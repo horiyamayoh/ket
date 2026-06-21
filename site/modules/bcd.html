@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::bcd - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::bcd</h1>
+<p class="lead">packed BCDと10進整数・10進文字列の相互変換を扱う。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/bcd/ket_bcd.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++17</td></tr>
+<tr><th>Tests</th><td>GoogleTest</td></tr>
+<tr><th>Progress note</th><td>packed BCDと10進整数・文字列を相互変換</td></tr>
+<tr><th>Drop-in</th><td>`ket_bcd.h` と `ket_bcd.cpp` を対象プロジェクトへコピー。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::bcd 内部実装：ket::bcd::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>電文や古い外部仕様でpacked BCD fieldが必要な時。</li><li>nibble妥当性や先頭ゼロ保持を呼び出し側に散らしたくない時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>通常の10進文字列formatだけで十分な時。</li><li>任意精度decimal演算や金額計算をしたい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="../categories/value.html">値型・validation</a></span><span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span> <span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/bits.html">bits</a></span> <span class="pill"><a href="../modules/bytes.html">bytes</a></span> <span class="pill"><a href="../modules/byte_writer.html">byte_writer</a></span> <span class="pill"><a href="../modules/hex.html">hex</a></span></p>
+<h2>Notes</h2>
+<ul><li>整数変換では先頭ゼロを保持しない。桁保持が必要なら文字列変換を使う。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/bcd.html#api-function-ToInt-59">bcd::ToInt</a></td><td>function</td><td>2桁固定幅パックBCDの10進整数変換。</td></tr><tr><td><a href="../modules/bcd.html#api-function-ToInt-74">bcd::ToInt</a></td><td>function</td><td>4桁固定幅パックBCDの10進整数変換。</td></tr><tr><td><a href="../modules/bcd.html#api-function-ToInt-89">bcd::ToInt</a></td><td>function</td><td>8桁固定幅パックBCDの10進整数変換。</td></tr><tr><td><a href="../modules/bcd.html#api-function-FromInt-107">bcd::FromInt</a></td><td>function</td><td>固定幅パックBCDへの10進整数変換。</td></tr><tr><td><a href="../modules/bcd.html#api-function-Format-127">bcd::Format</a></td><td>function</td><td>任意バイト長パックBCDの10進文字列変換。</td></tr><tr><td><a href="../modules/bcd.html#api-function-Parse-143">bcd::Parse</a></td><td>function</td><td>10進文字列の任意バイト長パックBCD変換。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-ToInt-59">
+<h3>ToInt <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr std::optional&lt;int&gt; ToInt(std::uint8_t value) noexcept</code></pre>
+<p>2桁固定幅パックBCDの10進整数変換。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 変換対象のパックBCD値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後の10進整数。</li><li>std::nullopt: 不正nibble、またはint範囲外。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>整数変換のため、先頭ゼロは保持なし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = ket::bcd::ToInt(static_cast&lt;std::uint8_t&gt;(0x42U));
+// value == std::optional&lt;int&gt;(42)</code></pre>
+</section>
+<section class="api-entry" id="api-function-ToInt-74">
+<h3>ToInt <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr std::optional&lt;int&gt; ToInt(std::uint16_t value) noexcept</code></pre>
+<p>4桁固定幅パックBCDの10進整数変換。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 変換対象のパックBCD値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後の10進整数。</li><li>std::nullopt: 不正nibble、またはint範囲外。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>整数変換のため、先頭ゼロは保持なし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = ket::bcd::ToInt(static_cast&lt;std::uint16_t&gt;(0x1234U));
+// value == std::optional&lt;int&gt;(1234)</code></pre>
+</section>
+<section class="api-entry" id="api-function-ToInt-89">
+<h3>ToInt <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr std::optional&lt;int&gt; ToInt(std::uint32_t value) noexcept</code></pre>
+<p>8桁固定幅パックBCDの10進整数変換。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 変換対象のパックBCD値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後の10進整数。</li><li>std::nullopt: 不正nibble、またはint範囲外。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>整数変換のため、先頭ゼロは保持なし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = ket::bcd::ToInt(static_cast&lt;std::uint32_t&gt;(0x20260613U));
+// value == std::optional&lt;int&gt;(20260613)</code></pre>
+</section>
+<section class="api-entry" id="api-function-FromInt-107">
+<h3>FromInt <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Packed&gt; constexpr std::optional&lt;Packed&gt; FromInt(int value) noexcept</code></pre>
+<p>固定幅パックBCDへの10進整数変換。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 変換対象の10進整数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後のパックBCD値。</li><li>std::nullopt: 負数、または`Packed`の固定幅桁数を超える値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。負数と桁数超過は失敗値として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`std::uint8_t`は2桁、`std::uint16_t`は4桁、`std::uint32_t`は8桁の fixed-width packed BCDとして表現。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = ket::bcd::FromInt&lt;std::uint8_t&gt;(42);
+// value == std::optional&lt;std::uint8_t&gt;(0x42)</code></pre>
+</section>
+<section class="api-entry" id="api-function-Format-127">
+<h3>Format <span class="meta">function</span></h3>
+<pre class="signature"><code>std::optional&lt;std::string&gt; Format(const std::uint8_t* data, std::size_t size)</code></pre>
+<p>任意バイト長パックBCDの10進文字列変換。</p>
+<h4>Parameters</h4>
+<ul><li>in data: 変換対象のパックBCD列。</li><li>in size: `data`のバイト数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後の10進文字列。</li><li>std::nullopt: `nullptr`、空入力、または不正nibble。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`data`は`size`バイト以上読み取り可能な配列を指す。`nullptr` と空入力は失敗値として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>入力BCDの桁数を保ち、先頭の0も文字&#x27;0&#x27;として出力。</li><li>std::stringの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x00U, 0x42U};
+const auto value = ket::bcd::Format(data, 2U);
+// value == std::optional&lt;std::string&gt;(&quot;0042&quot;)</code></pre>
+</section>
+<section class="api-entry" id="api-function-Parse-143">
+<h3>Parse <span class="meta">function</span></h3>
+<pre class="signature"><code>std::optional&lt;std::vector&lt;std::uint8_t&gt;&gt; Parse(std::string_view text)</code></pre>
+<p>10進文字列の任意バイト長パックBCD変換。</p>
+<h4>Parameters</h4>
+<ul><li>in text: 変換対象の10進文字列。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後のパックBCD列。</li><li>std::nullopt: 空入力、または10進数字以外を含む入力。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。空入力と10進数字以外は失敗値として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>偶数桁は2桁ずつpacked BCDへ変換し、奇数桁は先頭に0を補って変換。</li><li>std::vectorの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = ket::bcd::Parse(&quot;123&quot;);
+// value == std::optional&lt;std::vector&lt;std::uint8_t&gt;&gt;({0x01, 0x23})</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

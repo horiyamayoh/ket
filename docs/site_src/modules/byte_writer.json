@@ -1,0 +1,14 @@
+{
+  "module": "byte_writer",
+  "title": "fixed buffer逐次書き込み",
+  "summary": "固定bufferへ成功時だけoffsetとbufferを更新してbyte列を書く。",
+  "categories": ["binary"],
+  "use_cases": ["binary-io", "protocol-payload"],
+  "when_to_use": [
+    "既存固定長bufferへ安全にfieldを書きたい時。",
+    "容量不足時にoffsetとbufferを不変にしたい時。"
+  ],
+  "when_not_to_use": ["可変長vectorを構築したい時。", "streamやfileへ直接書きたい時。"],
+  "related_modules": ["bytes", "byte_reader", "endian", "hex"],
+  "notes": ["可変長payloadの所有構築は bytes module に分ける。"]
+}

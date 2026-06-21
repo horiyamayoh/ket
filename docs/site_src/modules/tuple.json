@@ -1,0 +1,17 @@
+{
+  "module": "tuple",
+  "title": "tuple反復と変換",
+  "summary": "tuple要素のindex順反復と変換を扱う。",
+  "categories": ["language", "data"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "heterogeneous tupleの各要素を順に処理したい時。",
+    "tuple要素を別tupleへ変換したい時。"
+  ],
+  "when_not_to_use": [
+    "C++17 structured bindingだけで十分な時。",
+    "range algorithmとして扱いたい時。"
+  ],
+  "related_modules": ["meta", "variant", "optional"],
+  "notes": ["要素の参照性と評価順をDoxygen契約で確認する。"]
+}

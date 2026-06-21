@@ -1,0 +1,17 @@
+{
+  "module": "container",
+  "title": "container lookupと生成補助",
+  "summary": "map/vectorの小さいlookup、生成、削除補助を集める。",
+  "categories": ["data"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "findやerase-removeの儀式が呼び出し側の意図を隠す時。",
+    "小さいcontainer操作を名前で読みたい時。"
+  ],
+  "when_not_to_use": [
+    "標準algorithmをそのまま使う方が明確な時。",
+    "複雑なcollection abstractionを作りたい時。"
+  ],
+  "related_modules": ["enums", "optional", "tuple"],
+  "notes": ["標準containerの意味は変えない。"]
+}

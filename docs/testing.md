@@ -42,10 +42,12 @@ python3 tools/check_repository.py
 python3 tools/check_python.py
 python3 tools/check_layout.py
 python3 tools/check_format.py
+python3 tools/check_site.py
 cmake --preset dev
 cmake --build --preset dev
 cmake --build --preset dev --target check-static
 cmake --build --preset dev --target check-conventions
+cmake --build --preset dev --target check-site
 ctest --preset dev
 cmake --preset sanitize
 cmake --build --preset sanitize

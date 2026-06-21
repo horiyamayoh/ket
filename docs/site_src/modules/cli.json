@@ -1,0 +1,17 @@
+{
+  "module": "cli",
+  "title": "小さいCLI option取得",
+  "summary": "argc/argvからoption有無、値、positional argumentsを取得する。",
+  "categories": ["boundary"],
+  "use_cases": ["cli-config"],
+  "when_to_use": [
+    "小さいツールで --key value や --key=value を扱いたい時。",
+    "CLI frameworkを入れるほどではない時。"
+  ],
+  "when_not_to_use": [
+    "subcommand、help生成、shell風quote処理が必要な時。",
+    "設定fileや環境変数の統合管理をしたい時。"
+  ],
+  "related_modules": ["parse", "port", "ipv4", "enums"],
+  "notes": ["値のparseは cli ではなく parse やdomain moduleへ渡す。"]
+}

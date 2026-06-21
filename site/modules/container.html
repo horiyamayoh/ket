@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::container - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::container</h1>
+<p class="lead">map/vectorの小さいlookup、生成、削除補助を集める。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/container/ket_container.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>map/vector の小さいlookup、生成、削除補助</td></tr>
+<tr><th>Drop-in</th><td>`ket_container.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::container 内部実装：ket::container::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>findやerase-removeの儀式が呼び出し側の意図を隠す時。</li><li>小さいcontainer操作を名前で読みたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>標準algorithmをそのまま使う方が明確な時。</li><li>複雑なcollection abstractionを作りたい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/data.html">データ構造・合成</a></span><span class="pill"><a href="../use-cases/template-type.html">template、tuple、variantの儀式を短くする</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/enums.html">enums</a></span> <span class="pill"><a href="../modules/optional.html">optional</a></span> <span class="pill"><a href="../modules/tuple.html">tuple</a></span></p>
+<h2>Notes</h2>
+<ul><li>標準containerの意味は変えない。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/container.html#api-function-Contains-59">container::Contains</a></td><td>function</td><td>range内の値存在確認。</td></tr><tr><td><a href="../modules/container.html#api-function-ContainsKey-78">container::ContainsKey</a></td><td>function</td><td>map内のkey存在確認。</td></tr><tr><td><a href="../modules/container.html#api-function-AtOrNull-98">container::AtOrNull</a></td><td>function</td><td>map内の値へのmutable pointer取得。</td></tr><tr><td><a href="../modules/container.html#api-function-AtOrNull-118">container::AtOrNull</a></td><td>function</td><td>map内の値へのconst pointer取得。</td></tr><tr><td><a href="../modules/container.html#api-function-AtOr-137">container::AtOr</a></td><td>function</td><td>map内の値またはdefault値取得。</td></tr><tr><td><a href="../modules/container.html#api-function-AtOrCreate-160">container::AtOrCreate</a></td><td>function</td><td>map内の値取得またはfactory生成。</td></tr><tr><td><a href="../modules/container.html#api-function-EraseIf-182">container::EraseIf</a></td><td>function</td><td>条件に一致するsequence要素の削除。</td></tr><tr><td><a href="../modules/container.html#api-function-SortUnique-200">container::SortUnique</a></td><td>function</td><td>vector-like値列のsortと重複削除。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-Contains-59">
+<h3>Contains <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Container, typename Value&gt; bool Contains(const Container&amp; container, const Value&amp; value)</code></pre>
+<p>range内の値存在確認。</p>
+<h4>Parameters</h4>
+<ul><li>in container: 検索対象のコンテナ。</li><li>in value: 検索値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `value`と等値比較される要素あり。</li><li>false: `value`と等値比較される要素なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`container`は有効なrange。要素と`value`の等値比較が有効。</td><td>引数と外部状態の変更なし。iterator取得や等値比較の例外は呼び出し元へ伝播。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto found = ket::container::Contains(values, 42);
+// found == true if values contains 42</code></pre>
+</section>
+<section class="api-entry" id="api-function-ContainsKey-78">
+<h3>ContainsKey <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Map, typename Key&gt; bool ContainsKey(const Map&amp; map, const Key&amp; key)</code></pre>
+<p>map内のkey存在確認。</p>
+<h4>Parameters</h4>
+<ul><li>in map: 検索対象のmap。</li><li>in key: 検索key。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `key`に対応する要素あり。</li><li>false: `key`に対応する要素なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`map.find(key)`が有効。</td><td>引数と外部状態の変更なし。lookup時の例外は呼び出し元へ伝播。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::map&lt;std::string, int&gt; values = {{&quot;one&quot;, 1}};
+const auto found = ket::container::ContainsKey(values, std::string(&quot;one&quot;));
+// found == true</code></pre>
+</section>
+<section class="api-entry" id="api-function-AtOrNull-98">
+<h3>AtOrNull <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Map, typename Key&gt; typename Map::mapped_type* AtOrNull(Map&amp; map, const Key&amp; key)</code></pre>
+<p>map内の値へのmutable pointer取得。</p>
+<h4>Parameters</h4>
+<ul><li>in,out map: 検索対象のmap。返却pointer経由で値変更可能。</li><li>in key: 検索key。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `key`に対応するmap内要素へのpointer。</li><li>nullptr: `key`に対応する要素なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`map.find(key)`が有効。</td><td>map構造の変更なし。返却pointerは標準コンテナ規則に従ってinvalidation。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>copyを避け、不在をnullptrで表すためpointerを返す。</li></ul>
+<h4>Example</h4>
+<pre><code>std::map&lt;std::string, int&gt; values = {{&quot;one&quot;, 1}};
+int* const value = ket::container::AtOrNull(values, std::string(&quot;one&quot;));
+// value != nullptr &amp;&amp; *value == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-AtOrNull-118">
+<h3>AtOrNull <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Map, typename Key&gt; const typename Map::mapped_type* AtOrNull(const Map&amp; map, const Key&amp; key)</code></pre>
+<p>map内の値へのconst pointer取得。</p>
+<h4>Parameters</h4>
+<ul><li>in map: 検索対象のmap。</li><li>in key: 検索key。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `key`に対応するmap内要素へのconst pointer。</li><li>nullptr: `key`に対応する要素なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`map.find(key)`が有効。</td><td>map構造の変更なし。返却pointerは標準コンテナ規則に従ってinvalidation。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>copyを避け、不在をnullptrで表すためpointerを返す。</li></ul>
+<h4>Example</h4>
+<pre><code>const std::map&lt;std::string, int&gt; values = {{&quot;one&quot;, 1}};
+const int* const value = ket::container::AtOrNull(values, std::string(&quot;two&quot;));
+// value == nullptr</code></pre>
+</section>
+<section class="api-entry" id="api-function-AtOr-137">
+<h3>AtOr <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Map, typename Key&gt; typename Map::mapped_type AtOr(const Map&amp; map, const Key&amp; key, typename Map::mapped_type default_value)</code></pre>
+<p>map内の値またはdefault値取得。</p>
+<h4>Parameters</h4>
+<ul><li>in map: 検索対象のmap。</li><li>in key: 検索key。</li><li>in default_value: `key`が無い場合に返す値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `key`があればmap内要素のcopy、無ければ`default_value`。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`map.find(key)`が有効。`Map::mapped_type`はcopy constructible。</td><td>引数と外部状態の変更なし。lookupやcopy/moveの例外は呼び出し元へ伝播。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::map&lt;std::string, int&gt; values = {{&quot;one&quot;, 1}};
+const auto value = ket::container::AtOr(values, std::string(&quot;missing&quot;), 7);
+// value == 7</code></pre>
+</section>
+<section class="api-entry" id="api-function-AtOrCreate-160">
+<h3>AtOrCreate <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Map, typename Key, typename Factory&gt; typename Map::mapped_type&amp; AtOrCreate(Map&amp; map, const Key&amp; key, Factory factory)</code></pre>
+<p>map内の値取得またはfactory生成。</p>
+<h4>Parameters</h4>
+<ul><li>in,out map: 検索と必要時の挿入対象。</li><li>in key: 検索key。</li><li>in factory: `key`が無い場合だけ呼ぶ生成処理。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 既存または新規挿入されたmap内要素への参照。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`map.find(key)`、`Map::key_type`の`key`からの構築、factory結果の`Map::mapped_type` 化、`map.emplace(...)`が有効。factoryは`map`を変更しない。</td><td>既存keyではmap構造を変更せず、factory呼び出しなし。keyが無い場合はkeyをmaterialize してからfactoryを呼び、生成値を挿入。生成、lookup、挿入の例外は呼び出し元へ伝播。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::map&lt;std::string, int&gt; values;
+int&amp; value = ket::container::AtOrCreate(values, std::string(&quot;one&quot;), [] { return 1; });
+// value == 1 &amp;&amp; values.size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-EraseIf-182">
+<h3>EraseIf <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Sequence, typename Predicate&gt; std::size_t EraseIf(Sequence&amp; sequence, Predicate predicate)</code></pre>
+<p>条件に一致するsequence要素の削除。</p>
+<h4>Parameters</h4>
+<ul><li>in,out sequence: 削除対象のsequence。</li><li>in predicate: 削除対象ならtrueを返す述語。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 削除した要素数。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`std::remove_if`と`sequence.erase(first, last)`が有効。associative containerは対象外。</td><td>成功時は条件一致要素を削除し、相対順序は標準erase-removeの性質に従う。 述語や要素移動の例外は呼び出し元へ伝播し、例外時のsequence状態は標準アルゴリズムの規則に従う。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::vector&lt;int&gt; values = {1, 2, 3, 4};
+const auto removed = ket::container::EraseIf(values, [](int value) {
+    return value % 2 == 0;
+});
+// removed == 2 &amp;&amp; values == {1, 3}</code></pre>
+</section>
+<section class="api-entry" id="api-function-SortUnique-200">
+<h3>SortUnique <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename Vector&gt; void SortUnique(Vector&amp; values)</code></pre>
+<p>vector-like値列のsortと重複削除。</p>
+<h4>Parameters</h4>
+<ul><li>in,out values: sortと重複削除の対象。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>void: 戻り値なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`std::sort`、`std::unique`、`values.erase(first, last)`が有効。`operator&lt;` の同値関係と`operator==`が同じ重複集合を表す。</td><td>`values`は昇順に並び、等値の重複要素は1つだけ残る。 比較、移動、eraseの例外は呼び出し元へ伝播。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::vector&lt;int&gt; values = {3, 1, 3, 2};
+ket::container::SortUnique(values);
+// values == {1, 2, 3}</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

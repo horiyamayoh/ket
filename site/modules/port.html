@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::port - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::port</h1>
+<p class="lead">port番号の値型、範囲確認、parse/formatを扱う。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/port/ket_port.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++17</td></tr>
+<tr><th>Tests</th><td>GoogleTest</td></tr>
+<tr><th>Progress note</th><td>TCP/UDP port番号の値型とparse/format</td></tr>
+<tr><th>Drop-in</th><td>`ket_port.h` と `ket_port.cpp` を対象プロジェクトへコピー。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::port 内部実装：ket::port::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>0から65535のport値を裸intから分けたい時。</li><li>CLIや設定値からportを読む時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>service name解決やsocket addressを扱う時。</li><li>IPv6 endpoint全体を表したい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/value.html">値型・validation</a></span> <span class="pill"><a href="../categories/boundary.html">入力境界・外部境界</a></span><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span> <span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="../modules/cli.html">cli</a></span> <span class="pill"><a href="../modules/parse.html">parse</a></span></p>
+<h2>Notes</h2>
+<ul><li>leading zeroや符号の扱いはDoxygen契約を正とする。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/port.html#api-type-Port-48">port::Port</a></td><td>type</td><td>TCP/UDP port番号の値型。</td></tr><tr><td><a href="../modules/port.html#api-function-TryFromUInt-67">port::TryFromUInt</a></td><td>function</td><td>wide unsigned整数からport値型への範囲確認付き変換。</td></tr><tr><td><a href="../modules/port.html#api-function-Parse-82">port::Parse</a></td><td>function</td><td>10進文字列からport値型へのparse。</td></tr><tr><td><a href="../modules/port.html#api-function-Format-96">port::Format</a></td><td>function</td><td>port値型の10進文字列format。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-Port-48">
+<h3>Port <span class="meta">type</span></h3>
+<pre class="signature"><code>struct Port</code></pre>
+<p>TCP/UDP port番号の値型。</p>
+<h4>Notes</h4>
+<ul><li>`value`は0から65535までのport番号。0はOSによる自動割り当て用途の有効値。</li></ul>
+</section>
+<section class="api-entry" id="api-function-TryFromUInt-67">
+<h3>TryFromUInt <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr bool TryFromUInt(std::uintmax_t value, Port&amp; out) noexcept</code></pre>
+<p>wide unsigned整数からport値型への範囲確認付き変換。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 変換対象の整数値。</li><li>out out: 成功時の格納先。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `value`が0から65535の範囲内で、`out`に変換結果を格納。</li><li>false: `value`が65535を超過し、`out`は入力時の値を保持。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。</td><td>成功時は`out.value == value`。失敗時は`out`を変更しない。外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>ket::port::Port port;
+const auto ok = ket::port::TryFromUInt(443U, port);
+// ok == true, port.value == 443</code></pre>
+</section>
+<section class="api-entry" id="api-function-Parse-82">
+<h3>Parse <span class="meta">function</span></h3>
+<pre class="signature"><code>std::optional&lt;Port&gt; Parse(std::string_view text) noexcept</code></pre>
+<p>10進文字列からport値型へのparse。</p>
+<h4>Parameters</h4>
+<ul><li>in text: 変換対象の10進文字列。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後のport値。</li><li>std::nullopt: 空文字列、空白、符号、不正文字、範囲外、または複数桁のleading zero。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`text`が参照する範囲は呼び出し中読み取り可能。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>入力はtrimしない。10進数字だけを完全消費し、`&quot;0&quot;`以外のleading zeroは失敗値。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto port = ket::port::Parse(&quot;8080&quot;);
+// port.has_value() == true, port-&gt;value == 8080</code></pre>
+</section>
+<section class="api-entry" id="api-function-Format-96">
+<h3>Format <span class="meta">function</span></h3>
+<pre class="signature"><code>std::string Format(Port port)</code></pre>
+<p>port値型の10進文字列format。</p>
+<h4>Parameters</h4>
+<ul><li>in port: 変換対象のport値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: leading zeroなしの10進文字列。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。`Port::value`は`std::uint16_t`の全値を有効なport番号として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`std::string`の生成がallocationを伴うためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto text = ket::port::Format(ket::port::Port{443U});
+// text == &quot;443&quot;</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

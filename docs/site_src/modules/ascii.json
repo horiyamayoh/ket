@@ -1,0 +1,17 @@
+{
+  "module": "ascii",
+  "title": "ASCII文字列処理",
+  "summary": "ASCII前提のtrim、split、case変換、置換を小さいAPIへ分離する。",
+  "categories": ["text", "boundary"],
+  "use_cases": ["text-processing", "cli-config"],
+  "when_to_use": [
+    "入力がASCII前提であることを呼び出し側で固定できる時。",
+    "trimやsplitの手順より、ASCII限定の意図を読みたい時。"
+  ],
+  "when_not_to_use": [
+    "Unicodeのcase foldingやgrapheme clusterを扱う時。",
+    "locale依存の文字分類が必要な時。"
+  ],
+  "related_modules": ["string", "utf8", "parse"],
+  "notes": ["UTF-8全般の検査は utf8 module に分ける。"]
+}

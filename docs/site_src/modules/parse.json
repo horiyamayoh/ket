@@ -1,0 +1,14 @@
+{
+  "module": "parse",
+  "title": "文字列から値へのparse",
+  "summary": "from_chars境界条件とbool parseを固定する。",
+  "categories": ["text", "boundary"],
+  "use_cases": ["cli-config", "text-processing", "value-validation"],
+  "when_to_use": [
+    "数値やboolのparse規則を呼び出し側ごとにぶらしたくない時。",
+    "空白、符号、overflowなどの扱いを固定したい時。"
+  ],
+  "when_not_to_use": ["domain値の専用parseがある時。", "locale依存parseやformatが必要な時。"],
+  "related_modules": ["cli", "port", "ipv4", "version"],
+  "notes": ["対象domainが明確な場合はdomain moduleを優先する。"]
+}

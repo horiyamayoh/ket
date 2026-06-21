@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagrams - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="index.html">ket reference</a></div>
+<nav><a href="index.html">概要</a><a href="modules/index.html">Modules</a><a href="api/index.html">API</a><a href="use-cases/index.html">Use cases</a><a href="categories/index.html">Categories</a><a href="diagrams.html">Diagrams</a><a href="search.html">Search</a></nav>
+</header>
+<main>
+<h1>Diagrams</h1>
+<p class="lead">依存図ではなく、用途からmoduleへ進むための図表。</p>
+<h2>Input Decision Tree</h2>
+<svg class="diagram" viewBox="0 0 1180 180" role="img" aria-label="入力種別からmoduleへ進む判断図">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#176b51" /></marker></defs>
+<line x1="170" y1="58" x2="252" y2="38" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<line x1="170" y1="58" x2="252" y2="118" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<line x1="390" y1="38" x2="472" y2="38" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<line x1="390" y1="118" x2="472" y2="118" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<line x1="390" y1="38" x2="712" y2="38" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<line x1="390" y1="118" x2="712" y2="118" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<line x1="610" y1="38" x2="952" y2="38" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<line x1="610" y1="118" x2="952" y2="118" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />
+<rect x="40" y="40" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="130" y="63" text-anchor="middle" font-size="13" fill="#202124">外部入力</text>
+<rect x="260" y="20" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="350" y="43" text-anchor="middle" font-size="13" fill="#202124">文字列</text>
+<rect x="260" y="100" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="350" y="123" text-anchor="middle" font-size="13" fill="#202124">byte列</text>
+<rect x="480" y="20" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="570" y="43" text-anchor="middle" font-size="13" fill="#202124">値domain</text>
+<rect x="480" y="100" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="570" y="123" text-anchor="middle" font-size="13" fill="#202124">処理flow</text>
+<rect x="720" y="20" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="810" y="43" text-anchor="middle" font-size="13" fill="#202124">parse / cli / ascii / utf8</text>
+<rect x="720" y="100" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="810" y="123" text-anchor="middle" font-size="13" fill="#202124">byte_view / reader / writer / endian</text>
+<rect x="960" y="20" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="1050" y="43" text-anchor="middle" font-size="13" fill="#202124">port / ipv4 / version / color</text>
+<rect x="960" y="100" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />
+<text x="1050" y="123" text-anchor="middle" font-size="13" fill="#202124">scope / optional / state / contract</text>
+</svg>
+<h2>Module x Use Case Matrix</h2>
+<table class="matrix"><tr><th>Use case</th>
+<th>bcd</th>
+<th>bits</th>
+<th>container</th>
+<th>ascii</th>
+<th>cli</th>
+<th>date</th>
+<th>deadline</th>
+<th>scope</th>
+<th>parse</th>
+<th>string</th>
+<th>object</th>
+<th>math</th>
+<th>lang</th>
+<th>state</th>
+<th>color</th>
+<th>contract</th>
+<th>memory</th>
+<th>version</th>
+<th>testing</th>
+<th>ipv4</th>
+<th>port</th>
+<th>variant</th>
+<th>utf8</th>
+<th>tuple</th>
+<th>optional</th>
+<th>meta</th>
+<th>numeric</th>
+<th>byte_reader</th>
+<th>endian</th>
+<th>bytes</th>
+<th>byte_writer</th>
+<th>byte_view</th>
+<th>hex</th>
+<th>enums</th>
+</tr>
+<tr><th><a href="use-cases/binary-io.html">固定bufferから安全に読む・書く</a></th>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+</tr>
+<tr><th><a href="use-cases/cli-config.html">CLI引数や設定文字列を読む</a></th>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+</tr>
+<tr><th><a href="use-cases/diagnostics-testing.html">失敗時に読みやすい診断を出す</a></th>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+</tr>
+<tr><th><a href="use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></th>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+</tr>
+<tr><th><a href="use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></th>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+</tr>
+<tr><th><a href="use-cases/template-type.html">template、tuple、variantの儀式を短くする</a></th>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+</tr>
+<tr><th><a href="use-cases/text-processing.html">文字列の小処理を読みやすくする</a></th>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+</tr>
+<tr><th><a href="use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></th>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+</tr>
+</table>
+<h2>Category Landscape</h2>
+<div class="grid">
+<section class="card"><h3><a href="categories/binary.html">バイナリ・byte列</a></h3><p>byte列、endianness、payload構築、診断用hex表現を扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/bcd.html">bcd</a></span> <span class="pill"><a href="modules/bits.html">bits</a></span> <span class="pill"><a href="modules/byte_reader.html">byte_reader</a></span> <span class="pill"><a href="modules/byte_view.html">byte_view</a></span> <span class="pill"><a href="modules/byte_writer.html">byte_writer</a></span> <span class="pill"><a href="modules/bytes.html">bytes</a></span> <span class="pill"><a href="modules/endian.html">endian</a></span> <span class="pill"><a href="modules/hex.html">hex</a></span> <span class="pill"><a href="modules/memory.html">memory</a></span> <span class="pill"><a href="modules/numeric.html">numeric</a></span> <span class="pill"><a href="modules/testing.html">testing</a></span></p></section>
+<section class="card"><h3><a href="categories/text.html">文字列・text・parse</a></h3><p>ASCII前提処理、UTF-8検査、文字列片連結、文字列から値への変換を扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/ascii.html">ascii</a></span> <span class="pill"><a href="modules/parse.html">parse</a></span> <span class="pill"><a href="modules/string.html">string</a></span> <span class="pill"><a href="modules/utf8.html">utf8</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
+<section class="card"><h3><a href="categories/value.html">値型・validation</a></h3><p>範囲、形式、domain制約を小さい値型や変換APIに固定するmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/color.html">color</a></span> <span class="pill"><a href="modules/date.html">date</a></span> <span class="pill"><a href="modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="modules/math.html">math</a></span> <span class="pill"><a href="modules/numeric.html">numeric</a></span> <span class="pill"><a href="modules/port.html">port</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
+<section class="card"><h3><a href="categories/language.html">C++言語・型補助</a></h3><p>C++の構文、型、copy/move、template周りの小さい儀式を名前にするmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/lang.html">lang</a></span> <span class="pill"><a href="modules/meta.html">meta</a></span> <span class="pill"><a href="modules/object.html">object</a></span> <span class="pill"><a href="modules/tuple.html">tuple</a></span> <span class="pill"><a href="modules/variant.html">variant</a></span></p></section>
+<section class="card"><h3><a href="categories/flow.html">制御・状態・失敗</a></h3><p>optional合成、状態遷移、契約、scope cleanup、deadlineを扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/contract.html">contract</a></span> <span class="pill"><a href="modules/deadline.html">deadline</a></span> <span class="pill"><a href="modules/optional.html">optional</a></span> <span class="pill"><a href="modules/scope.html">scope</a></span> <span class="pill"><a href="modules/state.html">state</a></span></p></section>
+<section class="card"><h3><a href="categories/boundary.html">入力境界・外部境界</a></h3><p>CLI、network値、日付時刻、外部入力の検証を小さく閉じるmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/cli.html">cli</a></span> <span class="pill"><a href="modules/date.html">date</a></span> <span class="pill"><a href="modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="modules/parse.html">parse</a></span> <span class="pill"><a href="modules/port.html">port</a></span> <span class="pill"><a href="modules/utf8.html">utf8</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
+<section class="card"><h3><a href="categories/data.html">データ構造・合成</a></h3><p>container、enum、tuple、variant、optionalの小さい組み合わせ補助。</p><p class="pillrow"><span class="pill"><a href="modules/container.html">container</a></span> <span class="pill"><a href="modules/enums.html">enums</a></span> <span class="pill"><a href="modules/optional.html">optional</a></span> <span class="pill"><a href="modules/state.html">state</a></span> <span class="pill"><a href="modules/tuple.html">tuple</a></span> <span class="pill"><a href="modules/variant.html">variant</a></span></p></section>
+<section class="card"><h3><a href="categories/diagnostic.html">診断・testing</a></h3><p>人間が差分や異常を読みやすくする診断・テスト補助。</p><p class="pillrow"><span class="pill"><a href="modules/contract.html">contract</a></span> <span class="pill"><a href="modules/hex.html">hex</a></span> <span class="pill"><a href="modules/testing.html">testing</a></span></p></section>
+</div>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

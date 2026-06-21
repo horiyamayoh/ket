@@ -1,0 +1,17 @@
+{
+  "module": "meta",
+  "title": "type traits小補助",
+  "summary": "C++11/14で欠けるtype traitsを小さく補う。",
+  "categories": ["language"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "remove_cvrefやvoid_tなどの小さい型操作をC++11/14で使いたい時。",
+    "templateコードの意図を短い名前へ寄せたい時。"
+  ],
+  "when_not_to_use": [
+    "conceptsや大規模なdetection frameworkが必要な時。",
+    "標準type traitsで十分に明確な時。"
+  ],
+  "related_modules": ["lang", "tuple", "optional"],
+  "notes": ["alias中心で、実行時動作は持たない。"]
+}

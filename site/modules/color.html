@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::color - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::color</h1>
+<p class="lead">RGB値と6桁hex文字列を相互変換する。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/color/ket_color.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>RGB小値型と6桁hex文字列を相互変換</td></tr>
+<tr><th>Drop-in</th><td>`ket_color.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::color 内部実装：ket::color::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>RGB 24bit値を小さい値型として扱いたい時。</li><li>先頭#の有無やhex文字を固定したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>alpha、色空間変換、CSS color全般を扱いたい時。</li><li>画像処理や描画frameworkが必要な時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/value.html">値型・validation</a></span><span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/hex.html">hex</a></span> <span class="pill"><a href="../modules/parse.html">parse</a></span> <span class="pill"><a href="../modules/numeric.html">numeric</a></span></p>
+<h2>Notes</h2>
+<ul><li>C++11対応のため失敗はTry系APIで扱う。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/color.html#api-type-Rgb-45">color::Rgb</a></td><td>type</td><td>RGBの8 bit channel値。</td></tr><tr><td><a href="../modules/color.html#api-function-b-70">color::b</a></td><td>function</td><td>channel値を明示したRGB値の生成。</td></tr><tr><td><a href="../modules/color.html#api-type-FormatOptions-89">color::FormatOptions</a></td><td>type</td><td>RGB hex文字列化の出力設定。</td></tr><tr><td><a href="../modules/color.html#api-function-TryParse-167">color::TryParse</a></td><td>function</td><td>RGBの6桁hex文字列解析。</td></tr><tr><td><a href="../modules/color.html#api-function-TryParse-186">color::TryParse</a></td><td>function</td><td>RGBの6桁hex文字列解析。</td></tr><tr><td><a href="../modules/color.html#api-function-Format-201">color::Format</a></td><td>function</td><td>RGB値のhash付き6桁lower-case hex文字列化。</td></tr><tr><td><a href="../modules/color.html#api-function-Format-217">color::Format</a></td><td>function</td><td>RGB値の6桁lower-case hex文字列化。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-Rgb-45">
+<h3>Rgb <span class="meta">type</span></h3>
+<pre class="signature"><code>struct Rgb</code></pre>
+<p>RGBの8 bit channel値。</p>
+</section>
+<section class="api-entry" id="api-function-b-70">
+<h3>b <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr Rgb(std::uint8_t red, std::uint8_t green, std::uint8_t blue) noexcept : r(red), g(green), b(blue)</code></pre>
+<p>channel値を明示したRGB値の生成。</p>
+<h4>Parameters</h4>
+<ul><li>in red: red channel値。</li><li>in green: green channel値。</li><li>in blue: blue channel値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。各引数は0から255のbyte値。</td><td>各channelに対応する引数値を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>constexpr ket::color::Rgb color(0x0aU, 0xffU, 0x10U);
+// color.r == 0x0a, color.g == 0xff, color.b == 0x10</code></pre>
+</section>
+<section class="api-entry" id="api-type-FormatOptions-89">
+<h3>FormatOptions <span class="meta">type</span></h3>
+<pre class="signature"><code>struct FormatOptions</code></pre>
+<p>RGB hex文字列化の出力設定。</p>
+</section>
+<section class="api-entry" id="api-function-TryParse-167">
+<h3>TryParse <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryParse(const char* text, std::size_t size, Rgb&amp; out) noexcept</code></pre>
+<p>RGBの6桁hex文字列解析。</p>
+<h4>Parameters</h4>
+<ul><li>in text: 解析対象の文字列。`RRGGBB`、または`#RRGGBB`を受け付ける。</li><li>in size: `text`のbyte数。終端NULは含めない。</li><li>out out: 成功時に解析後のRGB値を格納。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 6桁RGB hexとして解析成功。</li><li>false: null pointer、不正長、不正hex、3桁短縮形、またはalpha付き入力。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。null pointerや不正入力はfalse。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>hex digitの大文字小文字混在は許容。CSS color nameとalphaは対象外。</li></ul>
+<h4>Example</h4>
+<pre><code>ket::color::Rgb color;
+const auto parsed = ket::color::TryParse(&quot;#0aFF10&quot;, 7U, color);
+// parsed == true, color.r == 0x0a, color.g == 0xff, color.b == 0x10</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryParse-186">
+<h3>TryParse <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryParse(const std::string&amp; text, Rgb&amp; out) noexcept</code></pre>
+<p>RGBの6桁hex文字列解析。</p>
+<h4>Parameters</h4>
+<ul><li>in text: 解析対象の文字列。`RRGGBB`、または`#RRGGBB`を受け付ける。</li><li>out out: 成功時に解析後のRGB値を格納。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 6桁RGB hexとして解析成功。</li><li>false: 不正長、不正hex、3桁短縮形、またはalpha付き入力。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。任意のstd::stringを入力として扱い、不正入力はfalse。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>hex digitの大文字小文字混在は許容。文字列リテラルを確保なしで扱う場合はpointer overloadを使用。</li></ul>
+<h4>Example</h4>
+<pre><code>ket::color::Rgb color;
+const std::string text = &quot;#0aFF10&quot;;
+const auto parsed = ket::color::TryParse(text, color);
+// parsed == true, color.r == 0x0a, color.g == 0xff, color.b == 0x10</code></pre>
+</section>
+<section class="api-entry" id="api-function-Format-201">
+<h3>Format <span class="meta">function</span></h3>
+<pre class="signature"><code>inline std::string Format(Rgb color)</code></pre>
+<p>RGB値のhash付き6桁lower-case hex文字列化。</p>
+<h4>Parameters</h4>
+<ul><li>in color: 文字列化対象のRGB値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `color`を表すhash付き6桁lower-case hex文字列。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。各channelは0から255のbyte値として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>std::stringの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const ket::color::Rgb color(0x0aU, 0xffU, 0x10U);
+const auto text = ket::color::Format(color);
+// text == &quot;#0aff10&quot;</code></pre>
+</section>
+<section class="api-entry" id="api-function-Format-217">
+<h3>Format <span class="meta">function</span></h3>
+<pre class="signature"><code>inline std::string Format(Rgb color, FormatOptions options)</code></pre>
+<p>RGB値の6桁lower-case hex文字列化。</p>
+<h4>Parameters</h4>
+<ul><li>in color: 文字列化対象のRGB値。</li><li>in options: 出力形式の設定。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `color`を表す6桁lower-case hex文字列。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。各channelは0から255のbyte値として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>std::stringの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const ket::color::Rgb color(0x0aU, 0xffU, 0x10U);
+const auto text = ket::color::Format(color);
+// text == &quot;#0aff10&quot;</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

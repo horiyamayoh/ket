@@ -1,0 +1,17 @@
+{
+  "module": "byte_view",
+  "title": "non-owning byte view",
+  "summary": "所有しないbyte範囲とslice境界を明示する。",
+  "categories": ["binary"],
+  "use_cases": ["binary-io"],
+  "when_to_use": [
+    "byte配列を所有せずに渡したい時。",
+    "nullptr+0とnullptr+非0の意味を固定したい時。"
+  ],
+  "when_not_to_use": [
+    "payloadを所有して構築したい時。",
+    "C++20 std::span が利用でき、制約が十分に表現できる時。"
+  ],
+  "related_modules": ["bytes", "byte_reader", "memory"],
+  "notes": ["lifetimeは呼び出し側責任。所有が必要なら bytes を使う。"]
+}

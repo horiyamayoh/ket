@@ -1,0 +1,14 @@
+{
+  "module": "contract",
+  "title": "常時評価する契約",
+  "summary": "precondition、postcondition、invariantをNDEBUGに連動せず評価する。",
+  "categories": ["flow", "diagnostic"],
+  "use_cases": ["raii-cleanup", "diagnostics-testing"],
+  "when_to_use": [
+    "debug build限定では困る前提違反を即時検出したい時。",
+    "nullやboundsの前提を呼び出し箇所に明示したい時。"
+  ],
+  "when_not_to_use": ["回復可能な入力エラーを表現したい時。", "例外で契約違反を通知したい時。"],
+  "related_modules": ["scope", "memory", "testing"],
+  "notes": ["違反時はterminate。外部入力の通常失敗とは分ける。"]
+}

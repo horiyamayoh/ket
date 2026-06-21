@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::memory - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::memory</h1>
+<p class="lead">alignment判定、secure zero、object representationの小さい補助。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/memory/ket_memory.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>alignment判定、secure zero、object bytes</td></tr>
+<tr><th>Drop-in</th><td>`ket_memory.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。pointer alignment APIは`std::uintptr_t`を使用する。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::memory 内部実装：ket::memory::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>pointer alignmentやobject bytesの意図を名前で明示したい時。</li><li>secure zeroをbest-effortで行いたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>allocator、object lifetime、provenanceを抽象化したい時。</li><li>暗号library並みの消去保証が必要な時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="../categories/flow.html">制御・状態・失敗</a></span><span class="pill"><a href="../use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></span> <span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/numeric.html">numeric</a></span> <span class="pill"><a href="../modules/byte_view.html">byte_view</a></span> <span class="pill"><a href="../modules/contract.html">contract</a></span></p>
+<h2>Notes</h2>
+<ul><li>返すpointerのdereference可能性やobject boundsは保証しない。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/memory.html#api-function-IsAligned-60">memory::IsAligned</a></td><td>function</td><td>pointerが指定alignment境界上にあるかの判定。</td></tr><tr><td><a href="../modules/memory.html#api-function-TryAlignUp-80">memory::TryAlignUp</a></td><td>function</td><td>pointerを指定alignment境界へ切り上げる。</td></tr><tr><td><a href="../modules/memory.html#api-function-TryAlignUp-100">memory::TryAlignUp</a></td><td>function</td><td>mutable pointerを指定alignment境界へ切り上げる。</td></tr><tr><td><a href="../modules/memory.html#api-function-TryAlignUp-121">memory::TryAlignUp</a></td><td>function</td><td>object pointerを指定alignment境界へ切り上げ、入力pointer型で返す。</td></tr><tr><td><a href="../modules/memory.html#api-function-TryAlignDown-142">memory::TryAlignDown</a></td><td>function</td><td>pointerを指定alignment境界へ切り下げる。</td></tr><tr><td><a href="../modules/memory.html#api-function-TryAlignDown-162">memory::TryAlignDown</a></td><td>function</td><td>mutable pointerを指定alignment境界へ切り下げる。</td></tr><tr><td><a href="../modules/memory.html#api-function-TryAlignDown-183">memory::TryAlignDown</a></td><td>function</td><td>object pointerを指定alignment境界へ切り下げ、入力pointer型で返す。</td></tr><tr><td><a href="../modules/memory.html#api-function-Zero-203">memory::Zero</a></td><td>function</td><td>指定byte範囲の通常zeroing。</td></tr><tr><td><a href="../modules/memory.html#api-function-SecureZero-223">memory::SecureZero</a></td><td>function</td><td>指定byte範囲のbest-effort secure zeroing。</td></tr><tr><td><a href="../modules/memory.html#api-function-ObjectBytes-240">memory::ObjectBytes</a></td><td>function</td><td>trivially copyable objectのobject representation先頭pointer取得。</td></tr><tr><td><a href="../modules/memory.html#api-function-ObjectByteSize-258">memory::ObjectByteSize</a></td><td>function</td><td>trivially copyable objectのobject representation byte数取得。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-IsAligned-60">
+<h3>IsAligned <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool IsAligned(const void* ptr, std::size_t alignment) noexcept</code></pre>
+<p>pointerが指定alignment境界上にあるかの判定。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 判定対象のpointer。</li><li>in alignment: 要求alignment。power-of-twoだけを有効値として扱う。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `ptr`が非nullで、`alignment`がpower-of-twoかつ境界上。</li><li>false: `nullptr`、`alignment == 0`、非power-of-two、または境界外。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。null pointerと不正alignmentはfalseとして扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>pointer値は`std::uintptr_t`へ変換して判定する。</li></ul>
+<h4>Example</h4>
+<pre><code>alignas(16) unsigned char buffer[16] = {};
+const auto aligned = ket::memory::IsAligned(buffer, 16U);
+// aligned == true</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryAlignUp-80">
+<h3>TryAlignUp <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryAlignUp(const void* ptr, std::size_t alignment, const void*&amp; out) noexcept</code></pre>
+<p>pointerを指定alignment境界へ切り上げる。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 計算対象のpointer。</li><li>in alignment: 要求alignment。power-of-twoだけを有効値として扱う。</li><li>out out: 成功時のaligned pointer。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `ptr`が非nullで、`alignment`がpower-of-twoかつ切り上げ結果を表現可能。</li><li>false: `nullptr`、`alignment == 0`、非power-of-two、またはaddress計算overflow。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>pointer値は`std::uintptr_t`へ変換し、結果を`const void*`へ戻す。 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。</li></ul>
+<h4>Example</h4>
+<pre><code>alignas(8) unsigned char buffer[16] = {};
+const void* out = nullptr;
+const auto ok = ket::memory::TryAlignUp(buffer + 1U, 8U, out);
+// ok == true, out == buffer + 8</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryAlignUp-100">
+<h3>TryAlignUp <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryAlignUp(void* ptr, std::size_t alignment, void*&amp; out) noexcept</code></pre>
+<p>mutable pointerを指定alignment境界へ切り上げる。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 計算対象のmutable pointer。</li><li>in alignment: 要求alignment。power-of-twoだけを有効値として扱う。</li><li>out out: 成功時のaligned mutable pointer。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `ptr`が非nullで、`alignment`がpower-of-twoかつ切り上げ結果を表現可能。</li><li>false: `nullptr`、`alignment == 0`、非power-of-two、またはaddress計算overflow。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>pointer値は`std::uintptr_t`へ変換し、結果を`void*`へ戻す。 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。</li></ul>
+<h4>Example</h4>
+<pre><code>alignas(8) unsigned char buffer[16] = {};
+void* out = nullptr;
+const auto ok = ket::memory::TryAlignUp(buffer + 1U, 8U, out);
+// ok == true, out == buffer + 8</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryAlignUp-121">
+<h3>TryAlignUp <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; bool TryAlignUp(T* ptr, std::size_t alignment, T*&amp; out) noexcept</code></pre>
+<p>object pointerを指定alignment境界へ切り上げ、入力pointer型で返す。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 計算対象のtyped pointer。</li><li>in alignment: 要求alignment。power-of-twoだけを有効値として扱う。</li><li>out out: 成功時のaligned typed pointer。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `ptr`が非nullで、`alignment`がpower-of-twoかつ切り上げ結果を表現可能。</li><li>false: `nullptr`、`alignment == 0`、非power-of-two、またはaddress計算overflow。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>pointer値は`std::uintptr_t`へ変換し、結果を`T*`へ戻す。 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。</li></ul>
+<h4>Example</h4>
+<pre><code>alignas(8) unsigned char buffer[16] = {};
+unsigned char* out = nullptr;
+const auto ok = ket::memory::TryAlignUp(buffer + 1U, 8U, out);
+// ok == true, out == buffer + 8</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryAlignDown-142">
+<h3>TryAlignDown <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryAlignDown(const void* ptr, std::size_t alignment, const void*&amp; out) noexcept</code></pre>
+<p>pointerを指定alignment境界へ切り下げる。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 計算対象のpointer。</li><li>in alignment: 要求alignment。power-of-twoだけを有効値として扱う。</li><li>out out: 成功時のaligned pointer。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `ptr`が非nullで、`alignment`がpower-of-two。</li><li>false: `nullptr`、`alignment == 0`、または非power-of-two。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>pointer値は`std::uintptr_t`へ変換し、結果を`const void*`へ戻す。 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。</li></ul>
+<h4>Example</h4>
+<pre><code>alignas(8) unsigned char buffer[16] = {};
+const void* out = nullptr;
+const auto ok = ket::memory::TryAlignDown(buffer + 7U, 8U, out);
+// ok == true, out == buffer</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryAlignDown-162">
+<h3>TryAlignDown <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryAlignDown(void* ptr, std::size_t alignment, void*&amp; out) noexcept</code></pre>
+<p>mutable pointerを指定alignment境界へ切り下げる。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 計算対象のmutable pointer。</li><li>in alignment: 要求alignment。power-of-twoだけを有効値として扱う。</li><li>out out: 成功時のaligned mutable pointer。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `ptr`が非nullで、`alignment`がpower-of-two。</li><li>false: `nullptr`、`alignment == 0`、または非power-of-two。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>pointer値は`std::uintptr_t`へ変換し、結果を`void*`へ戻す。 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。</li></ul>
+<h4>Example</h4>
+<pre><code>alignas(8) unsigned char buffer[16] = {};
+void* out = nullptr;
+const auto ok = ket::memory::TryAlignDown(buffer + 7U, 8U, out);
+// ok == true, out == buffer</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryAlignDown-183">
+<h3>TryAlignDown <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; bool TryAlignDown(T* ptr, std::size_t alignment, T*&amp; out) noexcept</code></pre>
+<p>object pointerを指定alignment境界へ切り下げ、入力pointer型で返す。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 計算対象のtyped pointer。</li><li>in alignment: 要求alignment。power-of-twoだけを有効値として扱う。</li><li>out out: 成功時のaligned typed pointer。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `ptr`が非nullで、`alignment`がpower-of-two。</li><li>false: `nullptr`、`alignment == 0`、または非power-of-two。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。null pointerと不正alignmentは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>pointer値は`std::uintptr_t`へ変換し、結果を`T*`へ戻す。 返されたpointerのobject bounds、lifetime、provenance、dereference可能性は保証しない。</li></ul>
+<h4>Example</h4>
+<pre><code>alignas(8) unsigned char buffer[16] = {};
+unsigned char* out = nullptr;
+const auto ok = ket::memory::TryAlignDown(buffer + 7U, 8U, out);
+// ok == true, out == buffer</code></pre>
+</section>
+<section class="api-entry" id="api-function-Zero-203">
+<h3>Zero <span class="meta">function</span></h3>
+<pre class="signature"><code>inline void Zero(void* ptr, std::size_t size) noexcept</code></pre>
+<p>指定byte範囲の通常zeroing。</p>
+<h4>Parameters</h4>
+<ul><li>in,out ptr: zeroing対象の先頭pointer。</li><li>in size: zeroing対象のbyte数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>void: 戻り値なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`size &gt; 0`の場合、`ptr`は`size`バイト以上書き込み可能な領域を指す。 `ptr == nullptr &amp;&amp; size &gt; 0`はprecondition違反。</td><td>`ptr != nullptr &amp;&amp; size &gt; 0`の場合、対象範囲のbyteを0へ変更。 `ptr == nullptr &amp;&amp; size == 0`はno-op。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`std::memset`による通常のzeroing。最適化除去への対策は`SecureZero`を使用。 `ptr == nullptr &amp;&amp; size &gt; 0`は呼び出し側の契約違反で、`std::terminate`を呼ぶ。</li></ul>
+<h4>Example</h4>
+<pre><code>unsigned char bytes[4] = {1U, 2U, 3U, 4U};
+ket::memory::Zero(bytes, 4U);
+// bytes == {0, 0, 0, 0}</code></pre>
+</section>
+<section class="api-entry" id="api-function-SecureZero-223">
+<h3>SecureZero <span class="meta">function</span></h3>
+<pre class="signature"><code>inline void SecureZero(void* ptr, std::size_t size) noexcept</code></pre>
+<p>指定byte範囲のbest-effort secure zeroing。</p>
+<h4>Parameters</h4>
+<ul><li>in,out ptr: zeroing対象の先頭pointer。</li><li>in size: zeroing対象のbyte数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>void: 戻り値なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`size &gt; 0`の場合、`ptr`は`size`バイト以上書き込み可能な領域を指す。 `ptr == nullptr &amp;&amp; size &gt; 0`はprecondition違反。</td><td>`ptr != nullptr &amp;&amp; size &gt; 0`の場合、対象範囲のbyteを0へ変更。 `ptr == nullptr &amp;&amp; size == 0`はno-op。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`volatile unsigned char*`経由のwriteで最適化除去を防ぐbest-effort。 `ptr == nullptr &amp;&amp; size &gt; 0`は呼び出し側の契約違反で、`std::terminate`を呼ぶ。 暗号学的な完全消去保証なし。</li></ul>
+<h4>Example</h4>
+<pre><code>unsigned char secret[4] = {1U, 2U, 3U, 4U};
+ket::memory::SecureZero(secret, 4U);
+// secret == {0, 0, 0, 0}</code></pre>
+</section>
+<section class="api-entry" id="api-function-ObjectBytes-240">
+<h3>ObjectBytes <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; const unsigned char* ObjectBytes(const T&amp; object) noexcept</code></pre>
+<p>trivially copyable objectのobject representation先頭pointer取得。</p>
+<h4>Parameters</h4>
+<ul><li>in object: 読み取り対象object。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `object`のobject representation先頭を指す`const unsigned char*`。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はtrivially copyable。`object`のlifetime中だけ戻り値を利用可能。</td><td>引数と外部状態の変更なし。object representationを読む入口だけを提供。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>object lifetime操作、placement new、type punningは行わない。 padding、endianness、layoutを含む処理系依存のbyte列であり、serializationや安定比較には使わない。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = std::uint32_t{0x01020304U};
+const auto* bytes = ket::memory::ObjectBytes(value);
+const auto size = ket::memory::ObjectByteSize(value);</code></pre>
+</section>
+<section class="api-entry" id="api-function-ObjectByteSize-258">
+<h3>ObjectByteSize <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr std::size_t ObjectByteSize(const T&amp; object) noexcept</code></pre>
+<p>trivially copyable objectのobject representation byte数取得。</p>
+<h4>Parameters</h4>
+<ul><li>in object: byte数取得対象object。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `sizeof(T)`。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はtrivially copyable。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>引数は型推論のために受け取り、値の読み取りなし。 byte列の意味はpadding、endianness、layoutに依存する。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = std::uint32_t{0x01020304U};
+const auto size = ket::memory::ObjectByteSize(value);
+// size == sizeof(std::uint32_t)</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

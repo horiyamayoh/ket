@@ -1,0 +1,17 @@
+{
+  "module": "bytes",
+  "title": "可変長byte payload構築",
+  "summary": "owning byte payloadを短いAPIで構築する。",
+  "categories": ["binary"],
+  "use_cases": ["protocol-payload", "binary-io"],
+  "when_to_use": [
+    "std::vector<std::uint8_t>へfieldを順に追加したい時。",
+    "BE/LEやbyte列追加の意図を呼び出し側で読みたい時。"
+  ],
+  "when_not_to_use": [
+    "固定bufferへ書く必要がある時。",
+    "巨大なserialization frameworkが必要な時。"
+  ],
+  "related_modules": ["byte_writer", "endian", "bcd", "hex"],
+  "notes": ["allocation例外は標準containerの規約に従う。"]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "value-validation",
+  "title": "値の範囲と表記を小さいAPIに固定する",
+  "summary": "裸のintや文字列で扱うとぶれやすいdomain値を、moduleごとの値型やparseで固定する。",
+  "flow": [
+    "port番号は port を使う。",
+    "IPv4 dotted decimalは ipv4 を使う。",
+    "version tripletは version を使う。",
+    "RGB hexは color を使う。",
+    "日付妥当性は date を使う。",
+    "汎用overflowやcast境界は numeric を使う。"
+  ],
+  "modules": [
+    {
+      "module": "port",
+      "role": "0から65535のport値とparse/format。"
+    },
+    {
+      "module": "ipv4",
+      "role": "IPv4文字列表現とBE 32bit値。"
+    },
+    {
+      "module": "version",
+      "role": "numeric tripletの比較と表記。"
+    },
+    {
+      "module": "color",
+      "role": "RGB小値型と6桁hex文字列。"
+    },
+    {
+      "module": "date",
+      "role": "Gregorian日付と時刻の妥当性。"
+    },
+    {
+      "module": "numeric",
+      "role": "overflow、align、cast境界。"
+    }
+  ],
+  "recipe": [
+    "入力直後にdomain moduleへ変換する。",
+    "変換後は裸値ではなく意味のある型や名前のAPIで扱う。",
+    "formatも同じmoduleへ戻して表記を固定する。"
+  ],
+  "see_also": ["cli-config", "protocol-payload"]
+}

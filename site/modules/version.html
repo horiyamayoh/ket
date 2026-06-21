@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::version - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::version</h1>
+<p class="lead">numeric version tripletのparse、format、compareを扱う。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/version/ket_version.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++17</td></tr>
+<tr><th>Tests</th><td>GoogleTest</td></tr>
+<tr><th>Progress note</th><td>numeric version tripletのparse/format/compare</td></tr>
+<tr><th>Drop-in</th><td>`ket_version.h` と `ket_version.cpp` を対象プロジェクトへコピー。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::version 内部実装：.cpp の無名 namespace</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>major.minor.patchの数値tripletだけを扱いたい時。</li><li>leading zeroやoverflowの扱いを固定したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>full SemVer、pre-release、build metadataが必要な時。</li><li>任意形式のversion rangeを扱いたい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/text.html">文字列・text・parse</a></span> <span class="pill"><a href="../categories/value.html">値型・validation</a></span> <span class="pill"><a href="../categories/boundary.html">入力境界・外部境界</a></span><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span> <span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/parse.html">parse</a></span> <span class="pill"><a href="../modules/string.html">string</a></span> <span class="pill"><a href="../modules/cli.html">cli</a></span></p>
+<h2>Notes</h2>
+<ul><li>full SemVer moduleではない。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/version.html#api-type-Triplet-47">version::Triplet</a></td><td>type</td><td>`major.minor.patch`の数値3要素。</td></tr><tr><td><a href="../modules/version.html#api-function-Parse-74">version::Parse</a></td><td>function</td><td>`major.minor.patch`形式のnumeric version triplet parse。</td></tr><tr><td><a href="../modules/version.html#api-function-Format-88">version::Format</a></td><td>function</td><td>numeric version tripletの文字列化。</td></tr><tr><td><a href="../modules/version.html#api-function-Compare-105">version::Compare</a></td><td>function</td><td>numeric version tripletの要素順比較。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-Triplet-47">
+<h3>Triplet <span class="meta">type</span></h3>
+<pre class="signature"><code>struct Triplet</code></pre>
+<p>`major.minor.patch`の数値3要素。</p>
+<h4>Notes</h4>
+<ul><li>各要素は`std::uint32_t`として保持。SemVerのprereleaseやbuild metadataは保持なし。</li></ul>
+</section>
+<section class="api-entry" id="api-function-Parse-74">
+<h3>Parse <span class="meta">function</span></h3>
+<pre class="signature"><code>std::optional&lt;Triplet&gt; Parse(std::string_view text) noexcept</code></pre>
+<p>`major.minor.patch`形式のnumeric version triplet parse。</p>
+<h4>Parameters</h4>
+<ul><li>in text: parse対象の文字列。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: parse済みの数値3要素。</li><li>std::nullopt: 空、要素不足/過多、空要素、非数字、符号、空白、overflow、 複数桁のleading zero、またはprerelease/build metadata。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。不正入力は失敗値として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>各要素は`std::uint32_t`範囲の10進ASCII数字列。`0`単体は許可。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = ket::version::Parse(&quot;1.20.300&quot;);
+// value.has_value() == true
+// value-&gt;major == 1U
+// value-&gt;minor == 20U
+// value-&gt;patch == 300U
+
+const auto invalid = ket::version::Parse(&quot;1.2.3-alpha&quot;);
+// invalid == std::nullopt</code></pre>
+</section>
+<section class="api-entry" id="api-function-Format-88">
+<h3>Format <span class="meta">function</span></h3>
+<pre class="signature"><code>std::string Format(Triplet version)</code></pre>
+<p>numeric version tripletの文字列化。</p>
+<h4>Parameters</h4>
+<ul><li>in version: 文字列化対象の数値3要素。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `major.minor.patch`形式の文字列。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>std::stringの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto text = ket::version::Format({1U, 20U, 300U});
+// text == &quot;1.20.300&quot;</code></pre>
+</section>
+<section class="api-entry" id="api-function-Compare-105">
+<h3>Compare <span class="meta">function</span></h3>
+<pre class="signature"><code>int Compare(Triplet a, Triplet b) noexcept</code></pre>
+<p>numeric version tripletの要素順比較。</p>
+<h4>Parameters</h4>
+<ul><li>in a: 比較左辺の数値3要素。</li><li>in b: 比較右辺の数値3要素。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>negative: `a`が`b`より小さい。</li><li>0: `a`と`b`が等しい。</li><li>positive: `a`が`b`より大きい。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>比較順はmajor、minor、patch。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto order = ket::version::Compare({1U, 2U, 3U}, {1U, 3U, 0U});
+// order &lt; 0</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

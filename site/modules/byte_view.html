@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::byte_view - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::byte_view</h1>
+<p class="lead">所有しないbyte範囲とslice境界を明示する。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/byte_view/ket_byte_view.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>non-owning byte span</td></tr>
+<tr><th>Drop-in</th><td>`ket_byte_view.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::byte_view 内部実装：ket::byte_view::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>byte配列を所有せずに渡したい時。</li><li>nullptr+0とnullptr+非0の意味を固定したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>payloadを所有して構築したい時。</li><li>C++20 std::span が利用でき、制約が十分に表現できる時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span><span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/bytes.html">bytes</a></span> <span class="pill"><a href="../modules/byte_reader.html">byte_reader</a></span> <span class="pill"><a href="../modules/memory.html">memory</a></span></p>
+<h2>Notes</h2>
+<ul><li>lifetimeは呼び出し側責任。所有が必要なら bytes を使う。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/byte_view.html#api-type-View-45">byte_view::View</a></td><td>type</td><td>読み取り専用のnon-owning byte view。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-size_-75">byte_view::size_</a></td><td>function</td><td>読み取り専用byte列を参照するview構築。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-View-92">byte_view::View</a></td><td>function</td><td>view状態のcopy構築。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-View-122">byte_view::View</a></td><td>function</td><td>view状態のmove構築。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-TryAt-199">byte_view::TryAt</a></td><td>function</td><td>指定indexのbyte取得。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-TrySlice-219">byte_view::TrySlice</a></td><td>function</td><td>指定範囲の読み取り専用subview取得。</td></tr><tr><td><a href="../modules/byte_view.html#api-type-MutableView-230">byte_view::MutableView</a></td><td>type</td><td>書き込み可能なnon-owning byte view。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-size_-260">byte_view::size_</a></td><td>function</td><td>書き込み可能byte列を参照するview構築。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-MutableView-277">byte_view::MutableView</a></td><td>function</td><td>mutable view状態のcopy構築。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-MutableView-308">byte_view::MutableView</a></td><td>function</td><td>mutable view状態のmove構築。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-TrySet-402">byte_view::TrySet</a></td><td>function</td><td>指定indexのbyte更新。</td></tr><tr><td><a href="../modules/byte_view.html#api-function-TrySlice-423">byte_view::TrySlice</a></td><td>function</td><td>指定範囲の書き込み可能subview取得。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-View-45">
+<h3>View <span class="meta">type</span></h3>
+<pre class="signature"><code>class View</code></pre>
+<p>読み取り専用のnon-owning byte view。</p>
+<h4>Notes</h4>
+<ul><li>viewは元bufferを所有せず、利用者がbuffer lifetimeを保持。</li></ul>
+</section>
+<section class="api-entry" id="api-function-size_-75">
+<h3>size_ <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr View(const std::uint8_t* data, std::size_t size) noexcept : data_(data), size_(size)</code></pre>
+<p>読み取り専用byte列を参照するview構築。</p>
+<h4>Parameters</h4>
+<ul><li>in data: 参照対象bufferの先頭。`nullptr`は`size == 0`の場合のみ空view。</li><li>in size: 参照対象bufferのbyte数。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`data`は`size`byte以上読み取り可能な配列を指す。`nullptr + 非0`はinvalid viewとして保持。</td><td>`data`と`size`を保持し、bufferの所有権は取得なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x10U, 0x20U};
+ket::byte_view::View view(data, 2U);
+// view.Data() == data
+// view.Size() == 2</code></pre>
+</section>
+<section class="api-entry" id="api-function-View-92">
+<h3>View <span class="meta">function</span></h3>
+<pre class="signature"><code>View(const View&amp; other) noexcept = default</code></pre>
+<p>view状態のcopy構築。</p>
+<h4>Parameters</h4>
+<ul><li>in other: copy元view。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>non-owning pointerとsizeを`other`と同じ値で保持。元bufferの変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x10U};
+ket::byte_view::View source(data, 1U);
+ket::byte_view::View copied(source);
+// copied.Data() == data, copied.Size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-View-122">
+<h3>View <span class="meta">function</span></h3>
+<pre class="signature"><code>View(View&amp;&amp; other) noexcept = default</code></pre>
+<p>view状態のmove構築。</p>
+<h4>Parameters</h4>
+<ul><li>in,out other: move元view。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>non-owning pointerとsizeをmove前の`other`と同じ値で保持。元bufferの変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x10U};
+ket::byte_view::View source(data, 1U);
+ket::byte_view::View moved(static_cast&lt;ket::byte_view::View&amp;&amp;&gt;(source));
+// moved.Data() == data, moved.Size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryAt-199">
+<h3>TryAt <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TryAt(std::size_t index, std::uint8_t&amp; out) const noexcept</code></pre>
+<p>指定indexのbyte取得。</p>
+<h4>Parameters</h4>
+<ul><li>in index: 取得対象の0始まりindex。</li><li>out out: 取得したbyteの格納先。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: viewがvalidかつ`index &lt; Size()`で、`out`へbyteを格納。</li><li>false: invalid view、または範囲外index。`out`は変更なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。viewの元buffer lifetimeは呼び出し中維持。</td><td>成功時のみ`out`を変更。viewと元bufferの変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x10U, 0x20U};
+ket::byte_view::View view(data, 2U);
+std::uint8_t value = 0U;
+const bool ok = view.TryAt(1U, value);
+// ok == true, value == 0x20</code></pre>
+</section>
+<section class="api-entry" id="api-function-TrySlice-219">
+<h3>TrySlice <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TrySlice(std::size_t offset, std::size_t count, View&amp; out) const noexcept</code></pre>
+<p>指定範囲の読み取り専用subview取得。</p>
+<h4>Parameters</h4>
+<ul><li>in offset: subview開始位置。</li><li>in count: subview byte数。</li><li>out out: 取得したsubviewの格納先。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: viewがvalidかつ`offset`から`count`byteが範囲内で、`out`へsubviewを格納。</li><li>false: invalid view、または範囲外slice。`out`は変更なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。viewの元buffer lifetimeはsubview利用中も維持。</td><td>成功時のみ`out`を変更。viewと元bufferの変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`offset == Size()`かつ`count == 0`の空subviewは成功。</li></ul>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
+ket::byte_view::View view(data, 3U);
+ket::byte_view::View slice;
+const auto ok = view.TrySlice(1U, 2U, slice);
+// ok == true, slice.Data() == data + 1, slice.Size() == 2</code></pre>
+</section>
+<section class="api-entry" id="api-type-MutableView-230">
+<h3>MutableView <span class="meta">type</span></h3>
+<pre class="signature"><code>class MutableView</code></pre>
+<p>書き込み可能なnon-owning byte view。</p>
+<h4>Notes</h4>
+<ul><li>viewは元bufferを所有せず、利用者がbuffer lifetimeと書き込み可能性を保持。</li></ul>
+</section>
+<section class="api-entry" id="api-function-size_-260">
+<h3>size_ <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr MutableView(std::uint8_t* data, std::size_t size) noexcept : data_(data), size_(size)</code></pre>
+<p>書き込み可能byte列を参照するview構築。</p>
+<h4>Parameters</h4>
+<ul><li>in data: 参照対象bufferの先頭。`nullptr`は`size == 0`の場合のみ空view。</li><li>in size: 参照対象bufferのbyte数。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`data`は`size`byte以上読み書き可能な配列を指す。`nullptr + 非0`はinvalid viewとして保持。</td><td>`data`と`size`を保持し、bufferの所有権は取得なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t data[] = {0x10U, 0x20U};
+ket::byte_view::MutableView view(data, 2U);
+// view.Data() == data
+// view.Size() == 2</code></pre>
+</section>
+<section class="api-entry" id="api-function-MutableView-277">
+<h3>MutableView <span class="meta">function</span></h3>
+<pre class="signature"><code>MutableView(const MutableView&amp; other) noexcept = default</code></pre>
+<p>mutable view状態のcopy構築。</p>
+<h4>Parameters</h4>
+<ul><li>in other: copy元mutable view。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>non-owning pointerとsizeを`other`と同じ値で保持。元bufferの変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t data[] = {0x10U};
+ket::byte_view::MutableView source(data, 1U);
+ket::byte_view::MutableView copied(source);
+// copied.Data() == data, copied.Size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-MutableView-308">
+<h3>MutableView <span class="meta">function</span></h3>
+<pre class="signature"><code>MutableView(MutableView&amp;&amp; other) noexcept = default</code></pre>
+<p>mutable view状態のmove構築。</p>
+<h4>Parameters</h4>
+<ul><li>in,out other: move元mutable view。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>non-owning pointerとsizeをmove前の`other`と同じ値で保持。元bufferの変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t data[] = {0x10U};
+ket::byte_view::MutableView source(data, 1U);
+ket::byte_view::MutableView moved(
+    static_cast&lt;ket::byte_view::MutableView&amp;&amp;&gt;(source));
+// moved.Data() == data, moved.Size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-TrySet-402">
+<h3>TrySet <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TrySet(std::size_t index, std::uint8_t value) noexcept</code></pre>
+<p>指定indexのbyte更新。</p>
+<h4>Parameters</h4>
+<ul><li>in index: 更新対象の0始まりindex。</li><li>in value: 書き込むbyte値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: viewがvalidかつ`index &lt; Size()`で、元bufferへ`value`を書き込み。</li><li>false: invalid view、または範囲外index。元bufferは変更なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>viewの元buffer lifetimeと書き込み可能性は呼び出し中維持。</td><td>成功時のみ元bufferの`index`位置を変更。view自体の状態変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t data[] = {0x10U, 0x20U};
+ket::byte_view::MutableView view(data, 2U);
+const bool ok = view.TrySet(1U, 0x30U);
+// ok == true, data[1] == 0x30</code></pre>
+</section>
+<section class="api-entry" id="api-function-TrySlice-423">
+<h3>TrySlice <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TrySlice(std::size_t offset, std::size_t count, MutableView&amp; out) const noexcept</code></pre>
+<p>指定範囲の書き込み可能subview取得。</p>
+<h4>Parameters</h4>
+<ul><li>in offset: subview開始位置。</li><li>in count: subview byte数。</li><li>out out: 取得したsubviewの格納先。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: viewがvalidかつ`offset`から`count`byteが範囲内で、`out`へsubviewを格納。</li><li>false: invalid view、または範囲外slice。`out`は変更なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効な参照。viewの元buffer lifetimeと書き込み可能性はsubview利用中も維持。</td><td>成功時のみ`out`を変更。viewと元bufferの変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`offset == Size()`かつ`count == 0`の空subviewは成功。</li></ul>
+<h4>Example</h4>
+<pre><code>std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
+ket::byte_view::MutableView view(data, 3U);
+ket::byte_view::MutableView slice;
+const auto ok = view.TrySlice(1U, 2U, slice);
+// ok == true, slice.Data() == data + 1, slice.Size() == 2</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

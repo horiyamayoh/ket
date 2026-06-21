@@ -1,0 +1,17 @@
+{
+  "module": "lang",
+  "title": "C++言語の小さい儀式",
+  "summary": "未使用無視、raw配列長、const参照化を扱う。",
+  "categories": ["language"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "C++11/14でも意図を名前にして短く書きたい時。",
+    "標準代替の登場版差を局所化したい時。"
+  ],
+  "when_not_to_use": [
+    "標準APIが利用でき、呼び出し側で十分に明確な時。",
+    "言語機能の大きな抽象化を作りたい時。"
+  ],
+  "related_modules": ["meta", "object", "tuple"],
+  "notes": ["API別に標準代替の登場版を確認する。"]
+}

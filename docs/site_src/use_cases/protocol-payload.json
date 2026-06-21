@@ -1,0 +1,40 @@
+{
+  "id": "protocol-payload",
+  "title": "小さい電文payloadを組み立てる",
+  "summary": "業務固有protocolをframework化せず、byte列構築、BCD、endian、overflow確認を組み合わせる。",
+  "flow": [
+    "固定bufferへ詰めるなら byte_writer を使う。",
+    "可変長payloadを所有して作るなら bytes を使う。",
+    "数値幅とoverflowは numeric で先に固定する。",
+    "BCD表現が必要なfieldだけ bcd を使う。",
+    "完成payloadの確認には hex を使う。"
+  ],
+  "modules": [
+    {
+      "module": "bytes",
+      "role": "owning payload builder。"
+    },
+    {
+      "module": "byte_writer",
+      "role": "固定bufferへの逐次書き込み。"
+    },
+    {
+      "module": "bcd",
+      "role": "packed BCD fieldの変換。"
+    },
+    {
+      "module": "numeric",
+      "role": "桁、幅、overflow境界の確認。"
+    },
+    {
+      "module": "hex",
+      "role": "golden bytesとの比較や診断表示。"
+    }
+  ],
+  "recipe": [
+    "fieldごとに値の範囲を先に確認する。",
+    "byte orderが意味を持つfieldでは名前にBE/LEを出すAPIを選ぶ。",
+    "payload完成後にhex表現で期待値と比較する。"
+  ],
+  "see_also": ["binary-io", "value-validation"]
+}

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::hex - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::hex</h1>
+<p class="lead">byte列、整数、診断用hexdumpをhex文字列へ変換する。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/hex/ket_hex.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++17</td></tr>
+<tr><th>Tests</th><td>GoogleTest</td></tr>
+<tr><th>Progress note</th><td>byte列、整数、診断用hexdumpのhex文字列化</td></tr>
+<tr><th>Drop-in</th><td>`ket_hex.h` と `ket_hex.cpp` を対象プロジェクトへコピー。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::hex 内部実装：.cpp の無名 namespace</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>byte列の期待値や差分を人間が読みたい時。</li><li>diagnostic用hexdumpを小さく出したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>binary codec全般やbase64等を扱う時。</li><li>高性能dump viewerを作りたい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="../categories/diagnostic.html">診断・testing</a></span><span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span> <span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span> <span class="pill"><a href="../use-cases/diagnostics-testing.html">失敗時に読みやすい診断を出す</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/testing.html">testing</a></span> <span class="pill"><a href="../modules/bytes.html">bytes</a></span> <span class="pill"><a href="../modules/byte_view.html">byte_view</a></span></p>
+<h2>Notes</h2>
+<ul><li>診断用表現に絞る。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/hex.html#api-type-NOLINT-48">hex::NOLINT</a></td><td>type</td><td>hex英字の大文字小文字指定。</td></tr><tr><td><a href="../modules/hex.html#api-type-FormatOptions-57">hex::FormatOptions</a></td><td>type</td><td>byte列hex文字列化の表記option。</td></tr><tr><td><a href="../modules/hex.html#api-function-Format-78">hex::Format</a></td><td>function</td><td>整数のhex文字列化。</td></tr><tr><td><a href="../modules/hex.html#api-function-Decode-116">hex::Decode</a></td><td>function</td><td>hex文字列のbyte列変換。</td></tr><tr><td><a href="../modules/hex.html#api-function-Dump-137">hex::Dump</a></td><td>function</td><td>byte列の固定形式hexdump生成。</td></tr><tr><td><a href="../modules/hex.html#api-function-DumpMemory-155">hex::DumpMemory</a></td><td>function</td><td>型なしメモリ範囲の固定形式hexdump生成。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-NOLINT-48">
+<h3>NOLINT <span class="meta">type</span></h3>
+<pre class="signature"><code>enum class LetterCase // NOLINT(performance-enum-size)</code></pre>
+<p>hex英字の大文字小文字指定。</p>
+</section>
+<section class="api-entry" id="api-type-FormatOptions-57">
+<h3>FormatOptions <span class="meta">type</span></h3>
+<pre class="signature"><code>struct FormatOptions</code></pre>
+<p>byte列hex文字列化の表記option。</p>
+</section>
+<section class="api-entry" id="api-function-Format-78">
+<h3>Format <span class="meta">function</span></h3>
+<pre class="signature"><code>std::string Format(std::uint64_t value, unsigned min_width = 0, LetterCase letter_case = LetterCase::kUpper)</code></pre>
+<p>整数のhex文字列化。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 文字列化対象の整数。</li><li>in min_width: 出力する最小hex桁数。桁数不足分は左側を0で埋める。</li><li>in letter_case: 10以上のhex digitに使う英字の大文字小文字。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: hex文字列。`value`の実桁が`min_width`を超える場合は実桁を保持。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`value == 0` では `min_width == 0` でも1桁の`&quot;0&quot;`を返す。</li><li>std::stringの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto text = ket::hex::Format(0x2aU, 4U, ket::hex::LetterCase::kLower);
+// text == &quot;002a&quot;</code></pre>
+</section>
+<section class="api-entry" id="api-function-Decode-116">
+<h3>Decode <span class="meta">function</span></h3>
+<pre class="signature"><code>std::optional&lt;std::vector&lt;std::uint8_t&gt;&gt; Decode(std::string_view text)</code></pre>
+<p>hex文字列のbyte列変換。</p>
+<h4>Parameters</h4>
+<ul><li>in text: 変換対象のhex文字列。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 変換後のbyte列。空入力またはASCII whitespaceのみの入力では空vector。</li><li>std::nullopt: 奇数桁、不正hex文字、またはASCII whitespace以外の非hex文字。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。空入力と不正入力は戻り値で区別。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>ASCII whitespaceは`0x09`から`0x0d`と`0x20`のみ許容。</li><li>separatorつきhexの自動parseは行わない。separatorは不正文字として扱う。</li><li>std::vectorの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto bytes = ket::hex::Decode(&quot;de ad BE EF&quot;);
+// bytes == std::optional&lt;std::vector&lt;std::uint8_t&gt;&gt;({0xde, 0xad, 0xbe, 0xef})</code></pre>
+</section>
+<section class="api-entry" id="api-function-Dump-137">
+<h3>Dump <span class="meta">function</span></h3>
+<pre class="signature"><code>std::string Dump(const std::uint8_t* data, std::size_t size)</code></pre>
+<p>byte列の固定形式hexdump生成。</p>
+<h4>Parameters</h4>
+<ul><li>in data: dump対象のbyte列。</li><li>in size: `data`のバイト数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 固定形式hexdump文字列。`size == 0` の場合は空文字列。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`data`は`size`バイト以上読み取り可能な配列を指す。`nullptr` は `size == 0` の場合だけ許容し、`nullptr` かつ非0 sizeはprecondition違反。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>16 bytes/row、最小8桁zero-pad lower hex offset、lower hex byte、8 byteごとの 追加space、`|...|`で囲むASCII previewの固定形式。ASCII previewは`0x20`から`0x7e` をそのまま表示し、それ以外は`.`。最終行のhex欠落分はspace padding。行末のnewlineは付けない。</li><li>std::stringの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x00U, 0x41U};
+const auto text = ket::hex::Dump(data, 2U);
+// text == &quot;00000000  00 41                                             |.A|&quot;</code></pre>
+</section>
+<section class="api-entry" id="api-function-DumpMemory-155">
+<h3>DumpMemory <span class="meta">function</span></h3>
+<pre class="signature"><code>std::string DumpMemory(const void* data, std::size_t size)</code></pre>
+<p>型なしメモリ範囲の固定形式hexdump生成。</p>
+<h4>Parameters</h4>
+<ul><li>in data: dump対象のメモリ範囲。</li><li>in size: `data`のバイト数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 固定形式hexdump文字列。`size == 0` の場合は空文字列。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`data`は`size`バイト以上読み取り可能なメモリ範囲を指す。`nullptr` は `size == 0` の場合だけ許容し、`nullptr` かつ非0 sizeはprecondition違反。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>C API境界の`void*` bufferをbyte列としてdumpするための明示API。</li><li>std::stringの確保があるためnoexceptなし。</li></ul>
+<h4>Example</h4>
+<pre><code>const std::uint32_t value = 0x12345678U;
+const auto text = ket::hex::DumpMemory(&amp;value, sizeof(value));
+// textは`value`のobject representationをdumpした文字列</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

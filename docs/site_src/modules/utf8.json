@@ -1,0 +1,14 @@
+{
+  "module": "utf8",
+  "title": "UTF-8 byte列検査",
+  "summary": "UTF-8 byte列の妥当性検査とcode point数取得を扱う。",
+  "categories": ["text", "boundary"],
+  "use_cases": ["text-processing", "value-validation"],
+  "when_to_use": ["入力byte列がUTF-8として妥当か確認したい時。", "code point数を数えたい時。"],
+  "when_not_to_use": [
+    "Unicode正規化、grapheme cluster、case foldingが必要な時。",
+    "文字列の所有や変換を行いたい時。"
+  ],
+  "related_modules": ["ascii", "string", "parse"],
+  "notes": ["grapheme数ではなくcode point数を扱う。"]
+}

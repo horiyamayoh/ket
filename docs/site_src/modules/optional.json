@@ -1,0 +1,14 @@
+{
+  "module": "optional",
+  "title": "std::optional合成",
+  "summary": "optionalの値変換、合成、遅延fallback評価を扱う。",
+  "categories": ["flow", "data"],
+  "use_cases": ["cli-config", "template-type"],
+  "when_to_use": [
+    "optional保持値をmap/and_then風に合成したい時。",
+    "fallbackを必要時だけ評価したい時。"
+  ],
+  "when_not_to_use": ["C++23標準optional memberで十分な時。", "error理由を保持したい時。"],
+  "related_modules": ["parse", "variant", "meta"],
+  "notes": ["参照保持はstd::reference_wrapperを明示的に使う。"]
+}

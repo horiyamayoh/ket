@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::byte_writer - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::byte_writer</h1>
+<p class="lead">固定bufferへ成功時だけoffsetとbufferを更新してbyte列を書く。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/byte_writer/ket_byte_writer.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>fixed bufferへの逐次書き込み</td></tr>
+<tr><th>Drop-in</th><td>`ket_byte_writer.h` と `ket_byte_writer.cpp` を対象プロジェクトへコピー。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::byte_writer 内部実装：.cpp の無名 namespace</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>既存固定長bufferへ安全にfieldを書きたい時。</li><li>容量不足時にoffsetとbufferを不変にしたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>可変長vectorを構築したい時。</li><li>streamやfileへ直接書きたい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span><span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span> <span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/bytes.html">bytes</a></span> <span class="pill"><a href="../modules/byte_reader.html">byte_reader</a></span> <span class="pill"><a href="../modules/endian.html">endian</a></span> <span class="pill"><a href="../modules/hex.html">hex</a></span></p>
+<h2>Notes</h2>
+<ul><li>可変長payloadの所有構築は bytes module に分ける。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/byte_writer.html#api-type-Writer-47">byte_writer::Writer</a></td><td>type</td><td>fixed bufferへ逐次書き込むnon-owning writer。 `data == nullptr &amp;&amp; size == 0`は有効な空writer。`data == nullptr &amp;&amp; size &gt; 0`は invalid writerとして扱い、書き込みとskipは失敗。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-64">byte_writer::Writer</a></td><td>function</td><td>書き込み先bufferを参照するwriter生成。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-79">byte_writer::Writer</a></td><td>function</td><td>writer状態のcopy constructor。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-109">byte_writer::Writer</a></td><td>function</td><td>writer状態のmove constructor。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Skip-199">byte_writer::Skip</a></td><td>function</td><td>指定byte数だけoffsetを進める。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteU8-215">byte_writer::WriteU8</a></td><td>function</td><td>1byte値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBe16-232">byte_writer::WriteBe16</a></td><td>function</td><td>big-endian 16bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBe32-249">byte_writer::WriteBe32</a></td><td>function</td><td>big-endian 32bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteLe16-266">byte_writer::WriteLe16</a></td><td>function</td><td>little-endian 16bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteLe32-283">byte_writer::WriteLe32</a></td><td>function</td><td>little-endian 32bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBytes-303">byte_writer::WriteBytes</a></td><td>function</td><td>byte列の書き込み。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-Writer-47">
+<h3>Writer <span class="meta">type</span></h3>
+<pre class="signature"><code>class Writer</code></pre>
+<p>fixed bufferへ逐次書き込むnon-owning writer。 `data == nullptr &amp;&amp; size == 0`は有効な空writer。`data == nullptr &amp;&amp; size &gt; 0`は invalid writerとして扱い、書き込みとskipは失敗。</p>
+</section>
+<section class="api-entry" id="api-function-Writer-64">
+<h3>Writer <span class="meta">function</span></h3>
+<pre class="signature"><code>Writer(std::uint8_t* data, std::size_t size) noexcept</code></pre>
+<p>書き込み先bufferを参照するwriter生成。</p>
+<h4>Parameters</h4>
+<ul><li>in,out data: 書き込み先buffer先頭。`size == 0`のときだけnullptr可。</li><li>in size: 書き込み先bufferのbyte数。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`data`は`size`バイト以上書き込み可能な配列を指す。`nullptr`と非0 sizeの組はinvalid writerとして構築。</td><td>offsetは0。buffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 2U);
+// writer.Size() == 2
+// writer.Offset() == 0</code></pre>
+</section>
+<section class="api-entry" id="api-function-Writer-79">
+<h3>Writer <span class="meta">function</span></h3>
+<pre class="signature"><code>Writer(const Writer&amp; other) noexcept = default</code></pre>
+<p>writer状態のcopy constructor。</p>
+<h4>Parameters</h4>
+<ul><li>in other: copy元writer。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`other`は有効またはinvalidなWriter object。</td><td>non-owning pointer、size、offsetをそのまま複製。buffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U};
+ket::byte_writer::Writer source(buffer, 1U);
+ket::byte_writer::Writer copied(source);
+// copied.Size() == 1
+// copied.Offset() == 0</code></pre>
+</section>
+<section class="api-entry" id="api-function-Writer-109">
+<h3>Writer <span class="meta">function</span></h3>
+<pre class="signature"><code>Writer(Writer&amp;&amp; other) noexcept = default</code></pre>
+<p>writer状態のmove constructor。</p>
+<h4>Parameters</h4>
+<ul><li>in,out other: move元writer。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`other`は有効またはinvalidなWriter object。</td><td>non-owning pointer、size、offsetをそのまま移動。buffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U};
+ket::byte_writer::Writer source(buffer, 1U);
+ket::byte_writer::Writer moved(static_cast&lt;ket::byte_writer::Writer&amp;&amp;&gt;(source));
+// moved.Size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-Skip-199">
+<h3>Skip <span class="meta">function</span></h3>
+<pre class="signature"><code>bool Skip(std::size_t size) noexcept</code></pre>
+<p>指定byte数だけoffsetを進める。</p>
+<h4>Parameters</h4>
+<ul><li>in size: skipするbyte数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 指定byte数のskipに成功。</li><li>false: invalid writer、または残りbyte数不足。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。size不足は失敗値として扱う。</td><td>成功時だけoffsetを`size`だけ進める。buffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 2U);
+const auto ok = writer.Skip(1U);
+// ok == true
+// writer.Offset() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-WriteU8-215">
+<h3>WriteU8 <span class="meta">function</span></h3>
+<pre class="signature"><code>bool WriteU8(std::uint8_t value) noexcept</code></pre>
+<p>1byte値の書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 書き込む値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 書き込みに成功。</li><li>false: invalid writer、または残りbyte数不足。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。size不足は失敗値として扱う。</td><td>成功時だけoffsetを1進め、対象byteを更新。失敗時はoffsetとbuffer内容を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U};
+ket::byte_writer::Writer writer(buffer, 1U);
+const auto ok = writer.WriteU8(0x12U);
+// ok == true, buffer[0] == 0x12U, writer.Offset() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-WriteBe16-232">
+<h3>WriteBe16 <span class="meta">function</span></h3>
+<pre class="signature"><code>bool WriteBe16(std::uint16_t value) noexcept</code></pre>
+<p>big-endian 16bit値の書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 書き込む値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 書き込みに成功。</li><li>false: invalid writer、または残りbyte数不足。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。size不足は失敗値として扱う。</td><td>成功時だけoffsetを2進め、対象byteをbig-endian順に更新。失敗時はoffsetとbuffer内容を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 2U);
+const auto ok = writer.WriteBe16(0x1234U);
+// ok == true, buffer[0] == 0x12U, buffer[1] == 0x34U</code></pre>
+</section>
+<section class="api-entry" id="api-function-WriteBe32-249">
+<h3>WriteBe32 <span class="meta">function</span></h3>
+<pre class="signature"><code>bool WriteBe32(std::uint32_t value) noexcept</code></pre>
+<p>big-endian 32bit値の書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 書き込む値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 書き込みに成功。</li><li>false: invalid writer、または残りbyte数不足。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。size不足は失敗値として扱う。</td><td>成功時だけoffsetを4進め、対象byteをbig-endian順に更新。失敗時はoffsetとbuffer内容を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U, 0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 4U);
+const auto ok = writer.WriteBe32(0x12345678U);
+// ok == true, buffer[0] == 0x12U, buffer[3] == 0x78U</code></pre>
+</section>
+<section class="api-entry" id="api-function-WriteLe16-266">
+<h3>WriteLe16 <span class="meta">function</span></h3>
+<pre class="signature"><code>bool WriteLe16(std::uint16_t value) noexcept</code></pre>
+<p>little-endian 16bit値の書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 書き込む値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 書き込みに成功。</li><li>false: invalid writer、または残りbyte数不足。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。size不足は失敗値として扱う。</td><td>成功時だけoffsetを2進め、対象byteをlittle-endian順に更新。失敗時はoffsetとbuffer内容を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 2U);
+const auto ok = writer.WriteLe16(0x1234U);
+// ok == true, buffer[0] == 0x34U, buffer[1] == 0x12U</code></pre>
+</section>
+<section class="api-entry" id="api-function-WriteLe32-283">
+<h3>WriteLe32 <span class="meta">function</span></h3>
+<pre class="signature"><code>bool WriteLe32(std::uint32_t value) noexcept</code></pre>
+<p>little-endian 32bit値の書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 書き込む値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 書き込みに成功。</li><li>false: invalid writer、または残りbyte数不足。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。size不足は失敗値として扱う。</td><td>成功時だけoffsetを4進め、対象byteをlittle-endian順に更新。失敗時はoffsetとbuffer内容を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U, 0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 4U);
+const auto ok = writer.WriteLe32(0x12345678U);
+// ok == true, buffer[0] == 0x78U, buffer[3] == 0x12U</code></pre>
+</section>
+<section class="api-entry" id="api-function-WriteBytes-303">
+<h3>WriteBytes <span class="meta">function</span></h3>
+<pre class="signature"><code>bool WriteBytes(const std::uint8_t* data, std::size_t size) noexcept</code></pre>
+<p>byte列の書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in data: 書き込むbyte列先頭。`size == 0`のときだけnullptr可。</li><li>in size: 書き込むbyte数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 書き込みに成功。valid writerの`size == 0`はno-op成功。</li><li>false: null source、invalid writer、または残りbyte数不足。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`data`は`size`バイト以上読み取り可能な配列を指す。`nullptr`と非0 sizeの組は失敗値として扱う。</td><td>成功時だけoffsetを`size`だけ進め、対象範囲を更新。失敗時はoffsetとbuffer内容を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U};
+const std::uint8_t source[] = {0x10U, 0x20U};
+ket::byte_writer::Writer writer(buffer, 2U);
+const auto ok = writer.WriteBytes(source, 2U);
+// ok == true, buffer[0] == 0x10U, writer.Offset() == 2</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

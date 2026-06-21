@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::math - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::math</h1>
+<p class="lead">補間、角度、byte単位変換などの小さい補助を扱う。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/math/ket_math.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>補間、角度、byte単位変換の小さい補助</td></tr>
+<tr><th>Drop-in</th><td>`ket_math.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::math 内部実装：ket::math::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>境界値のある小さい計算を名前で読みたい時。</li><li>byte単位変換のoverflowを固定したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>線形代数、統計、units frameworkが必要な時。</li><li>数値計算libraryの代替を探している時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/value.html">値型・validation</a></span><span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/numeric.html">numeric</a></span> <span class="pill"><a href="../modules/bits.html">bits</a></span> <span class="pill"><a href="../modules/memory.html">memory</a></span></p>
+<h2>Notes</h2>
+<ul><li>units frameworkには広げない。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/math.html#api-function-Lerp-57">math::Lerp</a></td><td>function</td><td>2値間の線形補間。</td></tr><tr><td><a href="../modules/math.html#api-function-ToRadians-72">math::ToRadians</a></td><td>function</td><td>degreeをradianへ変換。</td></tr><tr><td><a href="../modules/math.html#api-function-ToDegrees-87">math::ToDegrees</a></td><td>function</td><td>radianをdegreeへ変換。</td></tr><tr><td><a href="../modules/math.html#api-function-NearlyEqual-107">math::NearlyEqual</a></td><td>function</td><td>正の絶対許容差による浮動小数点近似比較。</td></tr><tr><td><a href="../modules/math.html#api-function-TryBytesFromKiB-124">math::TryBytesFromKiB</a></td><td>function</td><td>KiB単位の整数値をbyte数へ変換。</td></tr><tr><td><a href="../modules/math.html#api-function-TryBytesFromMiB-140">math::TryBytesFromMiB</a></td><td>function</td><td>MiB単位の整数値をbyte数へ変換。</td></tr><tr><td><a href="../modules/math.html#api-function-BytesToKiB-153">math::BytesToKiB</a></td><td>function</td><td>byte数をKiB単位のdoubleへ変換。</td></tr><tr><td><a href="../modules/math.html#api-function-BytesToMiB-166">math::BytesToMiB</a></td><td>function</td><td>byte数をMiB単位のdoubleへ変換。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-Lerp-57">
+<h3>Lerp <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr T Lerp(T a, T b, T t) noexcept</code></pre>
+<p>2値間の線形補間。</p>
+<h4>Parameters</h4>
+<ul><li>in a: `t == 0`の端点値。</li><li>in b: `t == 1`の端点値。</li><li>in t: 補間係数。0から1の範囲外では外挿。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `t == 0`では`a`、`t == 1`では`b`、それ以外は`a + (b - a) * t`で求めた値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はfloating-point型。</td><td>引数と外部状態の変更なし。端点以外の丸め、overflow、NaN伝播は通常の浮動小数点演算に従う。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto value = ket::math::Lerp(10.0, 20.0, 0.25);
+// value == 12.5</code></pre>
+</section>
+<section class="api-entry" id="api-function-ToRadians-72">
+<h3>ToRadians <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr T ToRadians(T degrees) noexcept</code></pre>
+<p>degreeをradianへ変換。</p>
+<h4>Parameters</h4>
+<ul><li>in degrees: degree単位の角度。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: radian単位の角度。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はfloating-point型。</td><td>引数と外部状態の変更なし。円周率定数は`T`へ丸めてから演算。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto radians = ket::math::ToRadians(180.0);
+// radians ~= 3.141592653589793</code></pre>
+</section>
+<section class="api-entry" id="api-function-ToDegrees-87">
+<h3>ToDegrees <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr T ToDegrees(T radians) noexcept</code></pre>
+<p>radianをdegreeへ変換。</p>
+<h4>Parameters</h4>
+<ul><li>in radians: radian単位の角度。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: degree単位の角度。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はfloating-point型。</td><td>引数と外部状態の変更なし。円周率定数は`T`へ丸めてから演算。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto degrees = ket::math::ToDegrees(3.141592653589793);
+// degrees ~= 180.0</code></pre>
+</section>
+<section class="api-entry" id="api-function-NearlyEqual-107">
+<h3>NearlyEqual <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr bool NearlyEqual(T a, T b, T epsilon) noexcept</code></pre>
+<p>正の絶対許容差による浮動小数点近似比較。</p>
+<h4>Parameters</h4>
+<ul><li>in a: 比較対象の値。</li><li>in b: 比較対象の値。</li><li>in epsilon: 有限で正の絶対許容差。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `epsilon`が有限の正値で、NaN入力がなく、`a == b`または有限値同士の絶対差が`epsilon`以下。</li><li>false: `epsilon &lt;= 0`、NaN/Infのepsilon、NaN入力、非等価なInf入力、または絶対差が`epsilon`を超える値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はfloating-point型。</td><td>引数と外部状態の変更なし。同符号Inf同士は通常の等価比較結果を先に使う。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto close = ket::math::NearlyEqual(1.0, 1.001, 0.01);
+// close == true</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryBytesFromKiB-124">
+<h3>TryBytesFromKiB <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryBytesFromKiB(std::uint64_t kib, std::uint64_t&amp; out) noexcept</code></pre>
+<p>KiB単位の整数値をbyte数へ変換。</p>
+<h4>Parameters</h4>
+<ul><li>in kib: KiB単位の値。1 KiBは1024 bytes。</li><li>out out: 変換後のbyte数。成功時だけ更新。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `kib * 1024`が`std::uint64_t`へ収まった。</li><li>false: byte数への変換でoverflowする値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。overflowは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint64_t bytes = 0;
+const auto ok = ket::math::TryBytesFromKiB(4, bytes);
+// ok == true, bytes == 4096</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryBytesFromMiB-140">
+<h3>TryBytesFromMiB <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryBytesFromMiB(std::uint64_t mib, std::uint64_t&amp; out) noexcept</code></pre>
+<p>MiB単位の整数値をbyte数へ変換。</p>
+<h4>Parameters</h4>
+<ul><li>in mib: MiB単位の値。1 MiBは1048576 bytes。</li><li>out out: 変換後のbyte数。成功時だけ更新。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `mib * 1048576`が`std::uint64_t`へ収まった。</li><li>false: byte数への変換でoverflowする値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。overflowは失敗値として扱う。</td><td>成功時だけ`out`を更新。失敗時は`out`と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint64_t bytes = 0;
+const auto ok = ket::math::TryBytesFromMiB(2, bytes);
+// ok == true, bytes == 2097152</code></pre>
+</section>
+<section class="api-entry" id="api-function-BytesToKiB-153">
+<h3>BytesToKiB <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr double BytesToKiB(std::uint64_t bytes) noexcept</code></pre>
+<p>byte数をKiB単位のdoubleへ変換。</p>
+<h4>Parameters</h4>
+<ul><li>in bytes: byte単位の値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `bytes / 1024.0`を`double`で表現した近似値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。任意の`std::uint64_t`値を受け付ける。</td><td>引数と外部状態の変更なし。大きな整数値は`double`の精度に従って丸められる。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto kib = ket::math::BytesToKiB(1536);
+// kib == 1.5</code></pre>
+</section>
+<section class="api-entry" id="api-function-BytesToMiB-166">
+<h3>BytesToMiB <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr double BytesToMiB(std::uint64_t bytes) noexcept</code></pre>
+<p>byte数をMiB単位のdoubleへ変換。</p>
+<h4>Parameters</h4>
+<ul><li>in bytes: byte単位の値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `bytes / 1048576.0`を`double`で表現した近似値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。任意の`std::uint64_t`値を受け付ける。</td><td>引数と外部状態の変更なし。大きな整数値は`double`の精度に従って丸められる。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto mib = ket::math::BytesToMiB(1572864);
+// mib == 1.5</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

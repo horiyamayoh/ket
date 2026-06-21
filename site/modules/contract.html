@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::contract - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::contract</h1>
+<p class="lead">precondition、postcondition、invariantをNDEBUGに連動せず評価する。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/contract/ket_contract.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>pre/postcondition/invariantを常時評価</td></tr>
+<tr><th>Drop-in</th><td>`ket_contract.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::contract、global macro `KET_EXPECTS`、`KET_ENSURES`、 `KET_ASSERT_INVARIANT`、`KET_REQUIRE_NON_NULL` 内部実装：ket::contract::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>debug build限定では困る前提違反を即時検出したい時。</li><li>nullやboundsの前提を呼び出し箇所に明示したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>回復可能な入力エラーを表現したい時。</li><li>例外で契約違反を通知したい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="../categories/diagnostic.html">診断・testing</a></span><span class="pill"><a href="../use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></span> <span class="pill"><a href="../use-cases/diagnostics-testing.html">失敗時に読みやすい診断を出す</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/scope.html">scope</a></span> <span class="pill"><a href="../modules/memory.html">memory</a></span> <span class="pill"><a href="../modules/testing.html">testing</a></span></p>
+<h2>Notes</h2>
+<ul><li>違反時はterminate。外部入力の通常失敗とは分ける。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/contract.html#api-type-NOLINT-45">contract::NOLINT</a></td><td>type</td><td>契約違反の種類。</td></tr><tr><td><a href="../modules/contract.html#api-function-Fail-69">contract::Fail</a></td><td>function</td><td>契約違反としてprocess terminationを実行。</td></tr><tr><td><a href="../modules/contract.html#api-function-Expects-85">contract::Expects</a></td><td>function</td><td>preconditionの成否確認。</td></tr><tr><td><a href="../modules/contract.html#api-function-Ensures-101">contract::Ensures</a></td><td>function</td><td>postconditionの成否確認。</td></tr><tr><td><a href="../modules/contract.html#api-function-AssertInvariant-117">contract::AssertInvariant</a></td><td>function</td><td>invariantの成否確認。</td></tr><tr><td><a href="../modules/contract.html#api-function-RequireNonNull-137">contract::RequireNonNull</a></td><td>function</td><td>non-null pointerの取得。</td></tr><tr><td><a href="../modules/contract.html#api-function-IsInBounds-153">contract::IsInBounds</a></td><td>function</td><td>indexがsize境界内かを判定。</td></tr><tr><td><a href="../modules/contract.html#api-macro-KET_EXPECTS-265">contract::KET_EXPECTS</a></td><td>macro</td><td>preconditionを常時評価するstatement macro。</td></tr><tr><td><a href="../modules/contract.html#api-macro-KET_ENSURES-276">contract::KET_ENSURES</a></td><td>macro</td><td>postconditionを常時評価するstatement macro。</td></tr><tr><td><a href="../modules/contract.html#api-macro-KET_ASSERT_INVARIANT-287">contract::KET_ASSERT_INVARIANT</a></td><td>macro</td><td>invariantを常時評価するstatement macro。</td></tr><tr><td><a href="../modules/contract.html#api-macro-KET_REQUIRE_NON_NULL-298">contract::KET_REQUIRE_NON_NULL</a></td><td>macro</td><td>non-null pointerを要求し、成功時に同じpointer型で返すmacro。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-NOLINT-45">
+<h3>NOLINT <span class="meta">type</span></h3>
+<pre class="signature"><code>enum class Kind // NOLINT(performance-enum-size)</code></pre>
+<p>契約違反の種類。</p>
+</section>
+<section class="api-entry" id="api-function-Fail-69">
+<h3>Fail <span class="meta">function</span></h3>
+<pre class="signature"><code>[[noreturn]] inline void Fail(Kind kind, const char* expression, const char* file, int line) noexcept</code></pre>
+<p>契約違反としてprocess terminationを実行。</p>
+<h4>Parameters</h4>
+<ul><li>in kind: 契約違反の種類。</li><li>in expression: 文字列化済みの契約式。`nullptr`でもtermination方針は不変。</li><li>in file: 呼び出し元file名。`nullptr`でもtermination方針は不変。</li><li>in line: 呼び出し元line番号。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>none: 戻らない。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。診断文字列の生成や出力には依存しない。</td><td>`std::terminate`を呼び出し、呼び出し元へ戻らない。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>`kind`、`expression`、`file`、`line`は将来の診断拡張用に受け取るが、 初回APIではhandler差し替えやloggingを提供しない。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto kind = ket::contract::Kind::kExpects;
+ket::contract::Fail(kind, &quot;count &lt;= capacity&quot;, &quot;file.cpp&quot;, 42);
+// 呼び出し元へ戻らない。</code></pre>
+</section>
+<section class="api-entry" id="api-function-Expects-85">
+<h3>Expects <span class="meta">function</span></h3>
+<pre class="signature"><code>inline void Expects(bool condition, const char* expression, const char* file, int line) noexcept</code></pre>
+<p>preconditionの成否確認。</p>
+<h4>Parameters</h4>
+<ul><li>in condition: preconditionの評価結果。</li><li>in expression: 文字列化済みの契約式。`nullptr`でも失敗時はterminate。</li><li>in file: 呼び出し元file名。`nullptr`でも失敗時はterminate。</li><li>in line: 呼び出し元line番号。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>void: 戻り値なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。`condition == false`は契約違反として扱う。</td><td>`condition == true`なら外部状態の変更なし。`condition == false`なら戻らない。</td></tr></table>
+<h4>Example</h4>
+<pre><code>KET_EXPECTS(count &lt;= capacity);</code></pre>
+</section>
+<section class="api-entry" id="api-function-Ensures-101">
+<h3>Ensures <span class="meta">function</span></h3>
+<pre class="signature"><code>inline void Ensures(bool condition, const char* expression, const char* file, int line) noexcept</code></pre>
+<p>postconditionの成否確認。</p>
+<h4>Parameters</h4>
+<ul><li>in condition: postconditionの評価結果。</li><li>in expression: 文字列化済みの契約式。`nullptr`でも失敗時はterminate。</li><li>in file: 呼び出し元file名。`nullptr`でも失敗時はterminate。</li><li>in line: 呼び出し元line番号。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>void: 戻り値なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。`condition == false`は契約違反として扱う。</td><td>`condition == true`なら外部状態の変更なし。`condition == false`なら戻らない。</td></tr></table>
+<h4>Example</h4>
+<pre><code>KET_ENSURES(result != nullptr);</code></pre>
+</section>
+<section class="api-entry" id="api-function-AssertInvariant-117">
+<h3>AssertInvariant <span class="meta">function</span></h3>
+<pre class="signature"><code>inline void AssertInvariant(bool condition, const char* expression, const char* file, int line) noexcept</code></pre>
+<p>invariantの成否確認。</p>
+<h4>Parameters</h4>
+<ul><li>in condition: invariantの評価結果。</li><li>in expression: 文字列化済みの契約式。`nullptr`でも失敗時はterminate。</li><li>in file: 呼び出し元file名。`nullptr`でも失敗時はterminate。</li><li>in line: 呼び出し元line番号。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>void: 戻り値なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。`condition == false`は契約違反として扱う。</td><td>`condition == true`なら外部状態の変更なし。`condition == false`なら戻らない。</td></tr></table>
+<h4>Example</h4>
+<pre><code>KET_ASSERT_INVARIANT(size_ &lt;= capacity_);</code></pre>
+</section>
+<section class="api-entry" id="api-function-RequireNonNull-137">
+<h3>RequireNonNull <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; T* RequireNonNull(T* ptr, const char* expression, const char* file, int line) noexcept</code></pre>
+<p>non-null pointerの取得。</p>
+<h4>Parameters</h4>
+<ul><li>in ptr: 検査対象pointer。</li><li>in expression: 文字列化済みのpointer式。`nullptr`でも失敗時はterminate。</li><li>in file: 呼び出し元file名。`nullptr`でも失敗時はterminate。</li><li>in line: 呼び出し元line番号。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>ptr: `ptr != nullptr`の場合、入力と同じpointer値。</li><li>none: `ptr == nullptr`の場合、戻らない。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`ptr`はraw pointer。smart pointerやoptional pointerのunwrapは呼び出し側の責務。</td><td>成功時は引数と外部状態の変更なし。失敗時は`std::terminate`を呼び出す。</td></tr></table>
+<h4>Example</h4>
+<pre><code>int* const value = KET_REQUIRE_NON_NULL(ptr);</code></pre>
+</section>
+<section class="api-entry" id="api-function-IsInBounds-153">
+<h3>IsInBounds <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr bool IsInBounds(std::size_t index, std::size_t size) noexcept</code></pre>
+<p>indexがsize境界内かを判定。</p>
+<h4>Parameters</h4>
+<ul><li>in index: 判定対象index。</li><li>in size: 有効範囲の要素数。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `index &lt; size`。</li><li>false: `index &gt;= size`。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。`size == 0`の場合は常にfalse。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>C++11 constexprとして利用可能。</li></ul>
+<h4>Example</h4>
+<pre><code>KET_EXPECTS(ket::contract::IsInBounds(index, size));</code></pre>
+</section>
+<section class="api-entry" id="api-macro-KET_EXPECTS-265">
+<h3>KET_EXPECTS <span class="meta">macro</span></h3>
+<pre class="signature"><code>#define KET_EXPECTS(condition) ::ket::contract::Expects( ::ket::contract::detail::ToBool((condition)), #condition, __FILE__, __LINE__)</code></pre>
+<p>preconditionを常時評価するstatement macro。</p>
+<h4>Parameters</h4>
+<ul><li>condition: 評価対象のprecondition式。</li></ul>
+<h4>Example</h4>
+<pre><code>KET_EXPECTS(count &lt;= capacity);</code></pre>
+</section>
+<section class="api-entry" id="api-macro-KET_ENSURES-276">
+<h3>KET_ENSURES <span class="meta">macro</span></h3>
+<pre class="signature"><code>#define KET_ENSURES(condition) ::ket::contract::Ensures( ::ket::contract::detail::ToBool((condition)), #condition, __FILE__, __LINE__)</code></pre>
+<p>postconditionを常時評価するstatement macro。</p>
+<h4>Parameters</h4>
+<ul><li>condition: 評価対象のpostcondition式。</li></ul>
+<h4>Example</h4>
+<pre><code>KET_ENSURES(result != nullptr);</code></pre>
+</section>
+<section class="api-entry" id="api-macro-KET_ASSERT_INVARIANT-287">
+<h3>KET_ASSERT_INVARIANT <span class="meta">macro</span></h3>
+<pre class="signature"><code>#define KET_ASSERT_INVARIANT(condition) ::ket::contract::AssertInvariant( ::ket::contract::detail::ToBool((condition)), #condition, __FILE__, __LINE__)</code></pre>
+<p>invariantを常時評価するstatement macro。</p>
+<h4>Parameters</h4>
+<ul><li>condition: 評価対象のinvariant式。</li></ul>
+<h4>Example</h4>
+<pre><code>KET_ASSERT_INVARIANT(size_ &lt;= capacity_);</code></pre>
+</section>
+<section class="api-entry" id="api-macro-KET_REQUIRE_NON_NULL-298">
+<h3>KET_REQUIRE_NON_NULL <span class="meta">macro</span></h3>
+<pre class="signature"><code>#define KET_REQUIRE_NON_NULL(ptr) ::ket::contract::RequireNonNull((ptr), #ptr, __FILE__, __LINE__)</code></pre>
+<p>non-null pointerを要求し、成功時に同じpointer型で返すmacro。</p>
+<h4>Parameters</h4>
+<ul><li>ptr: 評価対象のpointer式。</li></ul>
+<h4>Example</h4>
+<pre><code>int* const value = KET_REQUIRE_NON_NULL(ptr);</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

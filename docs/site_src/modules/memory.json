@@ -1,0 +1,17 @@
+{
+  "module": "memory",
+  "title": "alignmentとobject bytes",
+  "summary": "alignment判定、secure zero、object representationの小さい補助。",
+  "categories": ["binary", "flow"],
+  "use_cases": ["raii-cleanup", "binary-io"],
+  "when_to_use": [
+    "pointer alignmentやobject bytesの意図を名前で明示したい時。",
+    "secure zeroをbest-effortで行いたい時。"
+  ],
+  "when_not_to_use": [
+    "allocator、object lifetime、provenanceを抽象化したい時。",
+    "暗号library並みの消去保証が必要な時。"
+  ],
+  "related_modules": ["numeric", "byte_view", "contract"],
+  "notes": ["返すpointerのdereference可能性やobject boundsは保証しない。"]
+}

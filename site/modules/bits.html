@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::bits - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::bits</h1>
+<p class="lead">bit、nibble、mask、rotateの境界処理を名前付きで扱う。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/bits/ket_bits.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>bit/nibble/mask/rotateの境界処理</td></tr>
+<tr><th>Drop-in</th><td>`ket_bits.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::bits 内部実装：ket::bits::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>shift幅やmask境界を毎回手書きしたくない時。</li><li>nibble抽出やpackの意図を読みやすくしたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>C++20の標準bit APIで同じ意図が十分明確な時。</li><li>CPU命令やSIMD最適化を直接制御したい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span><span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span> <span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/bcd.html">bcd</a></span> <span class="pill"><a href="../modules/endian.html">endian</a></span> <span class="pill"><a href="../modules/numeric.html">numeric</a></span></p>
+<h2>Notes</h2>
+<ul><li>unsigned integralを主対象にし、未定義動作につながるshiftを避ける。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/bits.html#api-function-IsNibble-56">bits::IsNibble</a></td><td>function</td><td>4bit nibble 範囲の判定。</td></tr><tr><td><a href="../modules/bits.html#api-function-HighNibble-69">bits::HighNibble</a></td><td>function</td><td>上位nibbleの取得。</td></tr><tr><td><a href="../modules/bits.html#api-function-LowNibble-82">bits::LowNibble</a></td><td>function</td><td>下位nibbleの取得。</td></tr><tr><td><a href="../modules/bits.html#api-function-TryPackNibbles-100">bits::TryPackNibbles</a></td><td>function</td><td>2つのnibbleからbyte値を生成。</td></tr><tr><td><a href="../modules/bits.html#api-function-TypeBitWidth-115">bits::TypeBitWidth</a></td><td>function</td><td>unsigned integral 型のbit幅取得。</td></tr><tr><td><a href="../modules/bits.html#api-function-HasBit-136">bits::HasBit</a></td><td>function</td><td>指定bitが立っているか判定。</td></tr><tr><td><a href="../modules/bits.html#api-function-TrySetBit-158">bits::TrySetBit</a></td><td>function</td><td>指定bitを立てた値の生成。</td></tr><tr><td><a href="../modules/bits.html#api-function-TryClearBit-180">bits::TryClearBit</a></td><td>function</td><td>指定bitを落とした値の生成。</td></tr><tr><td><a href="../modules/bits.html#api-function-TryToggleBit-203">bits::TryToggleBit</a></td><td>function</td><td>指定bitを反転した値の生成。</td></tr><tr><td><a href="../modules/bits.html#api-function-TryMask-225">bits::TryMask</a></td><td>function</td><td>下位`width` bitが1のmask生成。</td></tr><tr><td><a href="../modules/bits.html#api-function-PopCount-242">bits::PopCount</a></td><td>function</td><td>立っているbit数の取得。</td></tr><tr><td><a href="../modules/bits.html#api-function-IsPowerOfTwo-262">bits::IsPowerOfTwo</a></td><td>function</td><td>2の累乗値の判定。</td></tr><tr><td><a href="../modules/bits.html#api-function-Rotl-280">bits::Rotl</a></td><td>function</td><td>左rotateした値の取得。</td></tr><tr><td><a href="../modules/bits.html#api-function-Rotr-298">bits::Rotr</a></td><td>function</td><td>右rotateした値の取得。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-IsNibble-56">
+<h3>IsNibble <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr bool IsNibble(std::uint8_t value) noexcept</code></pre>
+<p>4bit nibble 範囲の判定。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 判定対象の値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `value`が0x00から0x0F。</li><li>false: `value`がnibble範囲外。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。任意のstd::uint8_t値を判定対象として扱う。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto ok = ket::bits::IsNibble(static_cast&lt;std::uint8_t&gt;(0x0FU));
+const auto too_large = ket::bits::IsNibble(static_cast&lt;std::uint8_t&gt;(0x10U));
+// ok == true
+// too_large == false</code></pre>
+</section>
+<section class="api-entry" id="api-function-HighNibble-69">
+<h3>HighNibble <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr std::uint8_t HighNibble(std::uint8_t value) noexcept</code></pre>
+<p>上位nibbleの取得。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 取得対象のbyte値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `value`のbit 7..4を0..15へ右詰めした値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。任意のstd::uint8_t値を入力可能。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto high = ket::bits::HighNibble(static_cast&lt;std::uint8_t&gt;(0xABU));
+// high == 0x0A</code></pre>
+</section>
+<section class="api-entry" id="api-function-LowNibble-82">
+<h3>LowNibble <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr std::uint8_t LowNibble(std::uint8_t value) noexcept</code></pre>
+<p>下位nibbleの取得。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 取得対象のbyte値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `value`のbit 3..0を0..15として取り出した値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。任意のstd::uint8_t値を入力可能。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto low = ket::bits::LowNibble(static_cast&lt;std::uint8_t&gt;(0xABU));
+// low == 0x0B</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryPackNibbles-100">
+<h3>TryPackNibbles <span class="meta">function</span></h3>
+<pre class="signature"><code>inline bool TryPackNibbles(std::uint8_t high, std::uint8_t low, std::uint8_t&amp; out) noexcept</code></pre>
+<p>2つのnibbleからbyte値を生成。</p>
+<h4>Parameters</h4>
+<ul><li>in high: 上位nibbleとして格納する値。</li><li>in low: 下位nibbleとして格納する値。</li><li>out out: 成功時の生成byte値。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `high`と`low`がnibble範囲内で、`out`を更新。</li><li>false: `high`または`low`がnibble範囲外。`out`は入力時の値を保持。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効なstd::uint8_t参照。</td><td>成功時だけ`out`を`(high &lt;&lt; 4) | low`へ更新。失敗時は引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t value = 0x00U;
+const auto ok = ket::bits::TryPackNibbles(0x0AU, 0x0BU, value);
+// ok == true
+// value == 0xAB</code></pre>
+</section>
+<section class="api-entry" id="api-function-TypeBitWidth-115">
+<h3>TypeBitWidth <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr unsigned TypeBitWidth() noexcept</code></pre>
+<p>unsigned integral 型のbit幅取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: `T`の値bit数。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto width = ket::bits::TypeBitWidth&lt;std::uint8_t&gt;();
+// width == 8</code></pre>
+</section>
+<section class="api-entry" id="api-function-HasBit-136">
+<h3>HasBit <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr bool HasBit(T value, unsigned bit_index) noexcept</code></pre>
+<p>指定bitが立っているか判定。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 判定対象の値。</li><li>in bit_index: 判定する0始まりbit index。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `bit_index`が範囲内で、指定bitが1。</li><li>false: `bit_index`が範囲外、または指定bitが0。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto high_set = ket::bits::HasBit&lt;std::uint8_t&gt;(0x80U, 7U);
+const auto out_of_range = ket::bits::HasBit&lt;std::uint8_t&gt;(0x80U, 8U);
+// high_set == true
+// out_of_range == false</code></pre>
+</section>
+<section class="api-entry" id="api-function-TrySetBit-158">
+<h3>TrySetBit <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; bool TrySetBit(T value, unsigned bit_index, T&amp; out) noexcept</code></pre>
+<p>指定bitを立てた値の生成。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 入力値。</li><li>in bit_index: 立てる0始まりbit index。</li><li>out out: 成功時の生成値。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `bit_index`が範囲内で、`out`を更新。</li><li>false: `bit_index`が範囲外。`out`は入力時の値を保持。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>成功時だけ`out`を`value`の指定bitが1の値へ更新。失敗時は引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t value = 0x00U;
+const auto ok = ket::bits::TrySetBit&lt;std::uint8_t&gt;(value, 7U, value);
+// ok == true
+// value == 0x80</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryClearBit-180">
+<h3>TryClearBit <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; bool TryClearBit(T value, unsigned bit_index, T&amp; out) noexcept</code></pre>
+<p>指定bitを落とした値の生成。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 入力値。</li><li>in bit_index: 落とす0始まりbit index。</li><li>out out: 成功時の生成値。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `bit_index`が範囲内で、`out`を更新。</li><li>false: `bit_index`が範囲外。`out`は入力時の値を保持。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>成功時だけ`out`を`value`の指定bitが0の値へ更新。失敗時は引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t value = 0xFFU;
+const auto ok = ket::bits::TryClearBit&lt;std::uint8_t&gt;(value, 7U, value);
+// ok == true
+// value == 0x7F</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryToggleBit-203">
+<h3>TryToggleBit <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; bool TryToggleBit(T value, unsigned bit_index, T&amp; out) noexcept</code></pre>
+<p>指定bitを反転した値の生成。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 入力値。</li><li>in bit_index: 反転する0始まりbit index。</li><li>out out: 成功時の生成値。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `bit_index`が範囲内で、`out`を更新。</li><li>false: `bit_index`が範囲外。`out`は入力時の値を保持。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>成功時だけ`out`を`value`の指定bitが反転した値へ更新。失敗時は引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t value = 0x80U;
+const auto ok = ket::bits::TryToggleBit&lt;std::uint8_t&gt;(value, 7U, value);
+// ok == true
+// value == 0x00</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryMask-225">
+<h3>TryMask <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; bool TryMask(unsigned width, T&amp; out) noexcept</code></pre>
+<p>下位`width` bitが1のmask生成。</p>
+<h4>Parameters</h4>
+<ul><li>in width: 1にする下位bit数。</li><li>out out: 成功時のmask値。失敗時は変更なし。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `width`が`TypeBitWidth&lt;T&gt;()`以下で、`out`を更新。</li><li>false: `width`が`TypeBitWidth&lt;T&gt;()`を超過。`out`は入力時の値を保持。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>成功時だけ`out`をmask値へ更新。`width == 0`は0、`width == TypeBitWidth&lt;T&gt;()`は全bit 1。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t mask = 0xEEU;
+const auto ok = ket::bits::TryMask&lt;std::uint8_t&gt;(4U, mask);
+// ok == true
+// mask == 0x0F</code></pre>
+</section>
+<section class="api-entry" id="api-function-PopCount-242">
+<h3>PopCount <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr unsigned PopCount(T value) noexcept</code></pre>
+<p>立っているbit数の取得。</p>
+<h4>Parameters</h4>
+<ul><li>in value: bit数を数える値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `value`内で1のbit数。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto count = ket::bits::PopCount&lt;std::uint8_t&gt;(0x81U);
+// count == 2</code></pre>
+</section>
+<section class="api-entry" id="api-function-IsPowerOfTwo-262">
+<h3>IsPowerOfTwo <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr bool IsPowerOfTwo(T value) noexcept</code></pre>
+<p>2の累乗値の判定。</p>
+<h4>Parameters</h4>
+<ul><li>in value: 判定対象の値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `value`が1bitだけ立つ値。</li><li>false: `value`が0、または複数bitが立つ値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto single = ket::bits::IsPowerOfTwo&lt;std::uint8_t&gt;(0x80U);
+const auto mixed = ket::bits::IsPowerOfTwo&lt;std::uint8_t&gt;(0x81U);
+// single == true
+// mixed == false</code></pre>
+</section>
+<section class="api-entry" id="api-function-Rotl-280">
+<h3>Rotl <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr T Rotl(T value, unsigned count) noexcept</code></pre>
+<p>左rotateした値の取得。</p>
+<h4>Parameters</h4>
+<ul><li>in value: rotate対象の値。</li><li>in count: 左rotateするbit数。bit幅で剰余化。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `value`を左rotateした値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto value = ket::bits::Rotl&lt;std::uint8_t&gt;(0x81U, 1U);
+// value == 0x03</code></pre>
+</section>
+<section class="api-entry" id="api-function-Rotr-298">
+<h3>Rotr <span class="meta">function</span></h3>
+<pre class="signature"><code>template &lt;typename T&gt; constexpr T Rotr(T value, unsigned count) noexcept</code></pre>
+<p>右rotateした値の取得。</p>
+<h4>Parameters</h4>
+<ul><li>in value: rotate対象の値。</li><li>in count: 右rotateするbit数。bit幅で剰余化。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: `value`を右rotateした値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`T`はbool、char、wchar_t、char16_t、char32_tを除くunsigned integral型。未対応型はcompile error。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto value = ket::bits::Rotr&lt;std::uint8_t&gt;(0x81U, 1U);
+// value == 0xC0</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

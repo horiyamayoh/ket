@@ -1,0 +1,17 @@
+{
+  "module": "version",
+  "title": "numeric version triplet",
+  "summary": "numeric version tripletのparse、format、compareを扱う。",
+  "categories": ["text", "value", "boundary"],
+  "use_cases": ["cli-config", "value-validation"],
+  "when_to_use": [
+    "major.minor.patchの数値tripletだけを扱いたい時。",
+    "leading zeroやoverflowの扱いを固定したい時。"
+  ],
+  "when_not_to_use": [
+    "full SemVer、pre-release、build metadataが必要な時。",
+    "任意形式のversion rangeを扱いたい時。"
+  ],
+  "related_modules": ["parse", "string", "cli"],
+  "notes": ["full SemVer moduleではない。"]
+}

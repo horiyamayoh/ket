@@ -1,0 +1,14 @@
+{
+  "module": "byte_reader",
+  "title": "固定buffer逐次読み取り",
+  "summary": "non-owning bufferから成功時だけoffsetを進めてbyte列を読む。",
+  "categories": ["binary"],
+  "use_cases": ["binary-io", "protocol-payload"],
+  "when_to_use": [
+    "固定bufferから順にfieldを読みたい時。",
+    "size不足時にoffsetと出力を不変にしたい時。"
+  ],
+  "when_not_to_use": ["stream I/Oや非同期I/Oを扱う時。", "buffer所有や再確保が必要な時。"],
+  "related_modules": ["byte_view", "byte_writer", "endian", "hex"],
+  "notes": ["endian読み取りもreader内に閉じ、他ket moduleへ依存しない。"]
+}

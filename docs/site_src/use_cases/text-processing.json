@@ -1,0 +1,35 @@
+{
+  "id": "text-processing",
+  "title": "文字列の小処理を読みやすくする",
+  "summary": "単純連結、ASCII限定処理、UTF-8検査、文字列から値への変換を混同しない。",
+  "flow": [
+    "文字列片を連結するだけなら string を使う。",
+    "ASCII前提のtrim、split、case変換なら ascii を使う。",
+    "UTF-8 byte列の妥当性を見るなら utf8 を使う。",
+    "値への変換は parse やdomain moduleへ渡す。"
+  ],
+  "modules": [
+    {
+      "module": "string",
+      "role": "複数文字列片の連結と追記。"
+    },
+    {
+      "module": "ascii",
+      "role": "ASCII前提のtrim、split、case、replace。"
+    },
+    {
+      "module": "utf8",
+      "role": "UTF-8妥当性とcode point数。"
+    },
+    {
+      "module": "parse",
+      "role": "文字列から数値・boolへの変換。"
+    }
+  ],
+  "recipe": [
+    "入力encodingの前提を先に決める。",
+    "ASCII限定の処理をUTF-8の一般処理として扱わない。",
+    "連結とformatを混同せず、単純な部品結合だけ string に寄せる。"
+  ],
+  "see_also": ["cli-config", "value-validation"]
+}

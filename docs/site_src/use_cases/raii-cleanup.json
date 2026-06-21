@@ -1,0 +1,40 @@
+{
+  "id": "raii-cleanup",
+  "title": "後始末、期限、契約を局所化する",
+  "summary": "scope exit、move後reset、deadline、preconditionを小さく明示する。",
+  "flow": [
+    "scopeを抜ける時の後始末は scope を使う。",
+    "copy/move方針を型定義へ出すなら object を使う。",
+    "時間切れ判定は deadline を使う。",
+    "常時評価したいpreconditionは contract を使う。",
+    "bufferやobject bytesの扱いは memory の境界を確認する。"
+  ],
+  "modules": [
+    {
+      "module": "scope",
+      "role": "scope exit cleanupと構築時の値復元。"
+    },
+    {
+      "module": "object",
+      "role": "copy/move意図のmixinとmove後reset。"
+    },
+    {
+      "module": "deadline",
+      "role": "steady_clockベースの期限と経過時間。"
+    },
+    {
+      "module": "contract",
+      "role": "pre/postcondition/invariantの常時評価。"
+    },
+    {
+      "module": "memory",
+      "role": "alignment、secure zero、object bytes。"
+    }
+  ],
+  "recipe": [
+    "所有・後始末の責務をscope単位で閉じる。",
+    "型のcopy/move制約はclass宣言近くへ置く。",
+    "debug build限定では困る契約は contract へ寄せる。"
+  ],
+  "see_also": ["binary-io", "diagnostics-testing"]
+}

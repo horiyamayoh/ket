@@ -1,0 +1,17 @@
+{
+  "module": "variant",
+  "title": "std::variant visitor補助",
+  "summary": "std::variantに対するvisitor呼び出しを短くする。",
+  "categories": ["language", "data"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "overload visitorの儀式を呼び出し側から減らしたい時。",
+    "reference categoryやconstを保ってvisitしたい時。"
+  ],
+  "when_not_to_use": [
+    "std::visitの直接利用が十分に明確な時。",
+    "variant以外の動的dispatchを抽象化したい時。"
+  ],
+  "related_modules": ["optional", "tuple", "enums"],
+  "notes": ["visitor例外は呼び出し元へ伝播する。"]
+}
