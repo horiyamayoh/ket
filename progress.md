@@ -21,6 +21,7 @@ Statusは次の値を使います。
 | cli         | CLI                 | verified | C++17   | GoogleTest                         | checked | argc/argvから小さいCLI optionを取得      |
 | date        | date                | verified | C++11   | GoogleTest + C++11/14 compile-only | checked | Gregorian日付と時刻の妥当性判定          |
 | deadline    | time                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定   |
+| parse       | parsing             | verified | C++17   | GoogleTest                         | checked | from_chars境界条件とbool parseを固定     |
 | string      | string              | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記   |
 | utf8        | text                | verified | C++17   | GoogleTest                         | checked | UTF-8 byte列の妥当性検査とcode point数取得 |
 | tuple       | tuple               | verified | C++17   | GoogleTest                         | checked | tuple要素のindex順反復と変換             |

@@ -144,6 +144,12 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_parse_test
+		SOURCES
+			modules/parse/ket_parse_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_utf8_test
 		SOURCES
 			modules/utf8/ket_utf8.cpp
