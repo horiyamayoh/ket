@@ -2,9 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <ios>
+#include <ostream> // IWYU pragma: keep
 #include <sstream>
+#include <streambuf> // IWYU pragma: keep
 #include <string>
 #include <type_traits>
 
@@ -27,14 +30,37 @@ namespace
 		return result;
 	}
 
-	static_assert(!std::is_copy_constructible_v<ket::io_stream::StateSaver>,
-				  "StateSaver copy construction is disabled");
-	static_assert(!std::is_copy_assignable_v<ket::io_stream::StateSaver>,
-				  "StateSaver copy assignment is disabled");
-	static_assert(!std::is_move_constructible_v<ket::io_stream::StateSaver>,
-				  "StateSaver move construction is disabled");
-	static_assert(!std::is_move_assignable_v<ket::io_stream::StateSaver>,
-				  "StateSaver move assignment is disabled");
+	class ShortWriteBuffer : public std::streambuf
+	{
+	  public:
+		explicit ShortWriteBuffer(std::streamsize write_limit) : write_limit_(write_limit) {}
+
+		[[nodiscard]] const std::string& Written() const noexcept
+		{
+			return written_;
+		}
+
+	  protected:
+		std::streamsize xsputn(const char* data, std::streamsize size) override
+		{
+			const auto accepted = size < write_limit_ ? size : write_limit_;
+			written_.append(data, static_cast<std::size_t>(accepted));
+			return accepted;
+		}
+
+	  private:
+		std::streamsize write_limit_;
+		std::string written_;
+	};
+
+	static_assert(!std::is_copy_constructible_v<ket::io_stream::FormatStateSaver>,
+				  "FormatStateSaver copy construction is disabled");
+	static_assert(!std::is_copy_assignable_v<ket::io_stream::FormatStateSaver>,
+				  "FormatStateSaver copy assignment is disabled");
+	static_assert(!std::is_move_constructible_v<ket::io_stream::FormatStateSaver>,
+				  "FormatStateSaver move construction is disabled");
+	static_assert(!std::is_move_assignable_v<ket::io_stream::FormatStateSaver>,
+				  "FormatStateSaver move assignment is disabled");
 
 } // namespace
 
@@ -90,12 +116,14 @@ TEST(KetIoStreamTest, RejectsShortRead)
  */
 TEST(KetIoStreamTest, ReadsZeroBytesAsSuccess)
 {
-	std::istringstream stream("");
+	std::istringstream stream("ab");
 
 	const auto result = ket::io_stream::TryReadExactly(stream, nullptr, 0U);
+	const auto next = stream.peek();
 	const auto stream_failed = stream.fail();
 
 	EXPECT_TRUE(result);
+	EXPECT_EQ(next, static_cast<int>('a'));
 	EXPECT_FALSE(stream_failed);
 }
 
@@ -191,12 +219,13 @@ TEST(KetIoStreamTest, WritesAllRequestedBytes)
 TEST(KetIoStreamTest, WritesZeroBytesAsSuccess)
 {
 	std::ostringstream stream;
+	stream << "prefix";
 
 	const auto result = ket::io_stream::TryWriteAll(stream, nullptr, 0U);
 	const auto output = stream.str();
 
 	EXPECT_TRUE(result);
-	EXPECT_EQ(output, std::string());
+	EXPECT_EQ(output, std::string("prefix"));
 }
 
 /**
@@ -241,6 +270,31 @@ TEST(KetIoStreamTest, RejectsWriteToBadStream)
 
 /**
  * @test
+ * @brief short writeの失敗確認。
+ * @details 書き込み先bufferが要求サイズより少ないbyte数だけ受理し、falseを返すことを確認。
+ * @pre C++17以降。
+ * @post streamは失敗状態となり、書き込めたbyteだけがbufferに残る。
+ */
+TEST(KetIoStreamTest, RejectsShortWrite)
+{
+	const auto input = std::array<std::uint8_t, 4>{{static_cast<std::uint8_t>('a'),
+													static_cast<std::uint8_t>('b'),
+													static_cast<std::uint8_t>('c'),
+													static_cast<std::uint8_t>('d')}};
+	ShortWriteBuffer buffer(2);
+	std::ostream stream(&buffer);
+
+	const auto result = ket::io_stream::TryWriteAll(stream, input.data(), input.size());
+	const auto stream_failed = stream.fail();
+	const auto written = buffer.Written();
+
+	EXPECT_FALSE(result);
+	EXPECT_TRUE(stream_failed);
+	EXPECT_EQ(written, std::string("ab"));
+}
+
+/**
+ * @test
  * @brief 読み取り例外の伝播確認。
  * @details failbit例外mask設定済みstreamでshort
  * readを起こし、istream例外が呼び出し側へ伝播することを確認。
@@ -271,17 +325,13 @@ TEST(KetIoStreamTest, PropagatesReadExceptions)
  */
 TEST(KetIoStreamTest, PropagatesWriteExceptions)
 {
-	const auto input = std::array<std::uint8_t, 1>{{0x42U}};
-	std::ostringstream stream;
+	const auto input = std::array<std::uint8_t, 4>{{static_cast<std::uint8_t>('a'),
+													static_cast<std::uint8_t>('b'),
+													static_cast<std::uint8_t>('c'),
+													static_cast<std::uint8_t>('d')}};
+	ShortWriteBuffer buffer(2);
+	std::ostream stream(&buffer);
 	stream.exceptions(std::ios::badbit);
-	try
-	{
-		stream.setstate(std::ios::badbit);
-	}
-	catch (const std::ios_base::failure& error)
-	{
-		static_cast<void>(error);
-	}
 
 	const auto write_operation = [&stream, &input]()
 	{
@@ -294,9 +344,10 @@ TEST(KetIoStreamTest, PropagatesWriteExceptions)
 /**
  * @test
  * @brief stream書式状態の復元確認。
- * @details flags、precision、fillを変更したscopeを抜け、StateSaver構築前の値へ戻ることを確認。
+ * @details
+ * flags、precision、fillを変更したscopeを抜け、FormatStateSaver構築前の値へ戻ることを確認。
  * @pre C++17以降。
- * @post streamのflags、precision、fillはStateSaver構築前の値。
+ * @post streamのflags、precision、fillはFormatStateSaver構築前の値。
  */
 TEST(KetIoStreamTest, RestoresStreamState)
 {
@@ -309,7 +360,7 @@ TEST(KetIoStreamTest, RestoresStreamState)
 	const auto initial_fill = stream.fill();
 
 	{
-		const auto saver = ket::io_stream::StateSaver(stream);
+		const ket::io_stream::FormatStateSaver saver(stream);
 		stream.setf(std::ios::dec, std::ios::basefield);
 		stream.precision(9);
 		stream.fill('#');
@@ -327,6 +378,34 @@ TEST(KetIoStreamTest, RestoresStreamState)
 
 /**
  * @test
+ * @brief FormatStateSaverの保存対象外状態確認。
+ * @details widthとerror stateをscope内で変更し、FormatStateSaverが復元しないことを確認。
+ * @pre C++17以降。
+ * @post streamのwidthとerror stateはscope内で設定した値を保持。
+ */
+TEST(KetIoStreamTest, DoesNotRestoreExcludedStreamState)
+{
+	std::ostringstream stream;
+	stream.width(3);
+	const auto initial_width = stream.width();
+
+	{
+		const ket::io_stream::FormatStateSaver saver(stream);
+		stream.width(9);
+		stream.setstate(std::ios::eofbit);
+		static_cast<void>(saver);
+	}
+
+	const auto current_width = stream.width();
+	const auto reached_eof = stream.eof();
+
+	EXPECT_EQ(initial_width, 3);
+	EXPECT_EQ(current_width, 9);
+	EXPECT_TRUE(reached_eof);
+}
+
+/**
+ * @test
  * @brief 行末ASCII whitespace除去付き行読み確認。
  * @details
  * 先頭spaceと行末space、tab、CRを含む1行を読み、先頭spaceを保持して行末だけ除去することを確認。
@@ -338,7 +417,7 @@ TEST(KetIoStreamTest, ReadsLineAndTrimsTrailingAsciiWhitespace)
 	std::istringstream stream("  value \t\r\nnext");
 	std::string output = "unchanged";
 
-	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+	const auto result = ket::io_stream::TryReadLineTrimRightAscii(stream, output);
 
 	EXPECT_TRUE(result);
 	EXPECT_EQ(output, std::string("  value"));
@@ -356,7 +435,7 @@ TEST(KetIoStreamTest, TrimsAllTrailingAsciiWhitespaceBytes)
 	std::istringstream stream("value \t\r\f\v\n");
 	std::string output = "unchanged";
 
-	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+	const auto result = ket::io_stream::TryReadLineTrimRightAscii(stream, output);
 
 	EXPECT_TRUE(result);
 	EXPECT_EQ(output, std::string("value"));
@@ -374,7 +453,7 @@ TEST(KetIoStreamTest, ReadsEmptyLineAsSuccess)
 	std::istringstream stream("\n");
 	std::string output = "unchanged";
 
-	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+	const auto result = ket::io_stream::TryReadLineTrimRightAscii(stream, output);
 
 	EXPECT_TRUE(result);
 	EXPECT_EQ(output, std::string());
@@ -392,7 +471,7 @@ TEST(KetIoStreamTest, ReadsFinalLineAtEofWithoutTrailingNewline)
 	std::istringstream stream("value \t");
 	std::string output = "unchanged";
 
-	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+	const auto result = ket::io_stream::TryReadLineTrimRightAscii(stream, output);
 	const auto reached_eof = stream.eof();
 
 	EXPECT_TRUE(result);
@@ -412,9 +491,30 @@ TEST(KetIoStreamTest, LeavesOutputUnchangedWhenLineReadHitsEof)
 	std::istringstream stream("");
 	std::string output = "unchanged";
 
-	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+	const auto result = ket::io_stream::TryReadLineTrimRightAscii(stream, output);
 
 	EXPECT_FALSE(result);
+	EXPECT_EQ(output, std::string("unchanged"));
+}
+
+/**
+ * @test
+ * @brief bad streamからの行読み失敗確認。
+ * @details badbit設定済みstreamから行読みを試み、falseを返してoutを変更しないことを確認。
+ * @pre C++17以降。
+ * @post streamはbad状態を保持し、outは入力時の文字列を保持。
+ */
+TEST(KetIoStreamTest, RejectsLineReadFromBadStream)
+{
+	std::istringstream stream("value\n");
+	stream.setstate(std::ios::badbit);
+	std::string output = "unchanged";
+
+	const auto result = ket::io_stream::TryReadLineTrimRightAscii(stream, output);
+	const auto stream_is_bad = stream.bad();
+
+	EXPECT_FALSE(result);
+	EXPECT_TRUE(stream_is_bad);
 	EXPECT_EQ(output, std::string("unchanged"));
 }
 
@@ -438,7 +538,7 @@ TEST(KetIoStreamTest, KeepsNonAsciiTrailingBytesDuringLineTrim)
 	expected.push_back(static_cast<char>(0xC2));
 	expected.push_back(static_cast<char>(0xA0));
 
-	const auto result = ket::io_stream::TryReadLineTrimmedAscii(stream, output);
+	const auto result = ket::io_stream::TryReadLineTrimRightAscii(stream, output);
 
 	EXPECT_TRUE(result);
 	EXPECT_EQ(output, expected);
@@ -460,7 +560,7 @@ TEST(KetIoStreamTest, PropagatesLineReadExceptions)
 
 	const auto read_operation = [&stream, &output]()
 	{
-		static_cast<void>(ket::io_stream::TryReadLineTrimmedAscii(stream, output));
+		static_cast<void>(ket::io_stream::TryReadLineTrimRightAscii(stream, output));
 	};
 
 	EXPECT_THROW(read_operation(), std::ios_base::failure);

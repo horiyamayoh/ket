@@ -25,7 +25,7 @@
  *
  * @par namespace
  * 公開API：ket::io_stream
- * 内部実装：ket::io_stream::detail
+ * 内部実装：.cpp の無名 namespace
  */
 
 #include <cstddef>
@@ -47,10 +47,10 @@ namespace ket
 		 * @param[out] data 読み取り先バッファ。
 		 * @param[in] size 読み取るバイト数。
 		 * @retval true `size`バイトを読み切った。
-		 * @retval false null buffer、short read、stream
+		 * @retval false `size > 0 && data == nullptr`、short read、stream
 		 * errorのいずれかで`size`バイトを読み切れなかった。
-		 * @pre 非0
-		 * sizeで`data`がnullptrでない場合、`data`は`size`バイト以上書き込み可能な領域を指す。
+		 * @pre `size == 0`では`data == nullptr`を許可。`size > 0`で`data != nullptr`の場合、
+		 * `data`は`size`バイト以上書き込み可能な領域を指す。
 		 * @post 成功時は`data[0, size)`へ読み取ったバイト列を格納。失敗時はstream状態と
 		 * `data`の一部が標準istreamのread結果に従って変化する場合あり。`data == nullptr &&
 		 * size > 0`の場合はstreamへアクセスせず`false`。
@@ -69,9 +69,10 @@ namespace ket
 		 * @param[in] data 書き込み元バッファ。
 		 * @param[in] size 書き込むバイト数。
 		 * @retval true `size`バイトを書き切った。
-		 * @retval false null buffer、またはstream errorにより`size`バイトを書き切れなかった。
-		 * @pre 非0
-		 * sizeで`data`がnullptrでない場合、`data`は`size`バイト以上読み取り可能な領域を指す。
+		 * @retval false `size > 0 && data == nullptr`、またはstream
+		 * errorにより`size`バイトを書き切れなかった。
+		 * @pre `size == 0`では`data == nullptr`を許可。`size > 0`で`data != nullptr`の場合、
+		 * `data`は`size`バイト以上読み取り可能な領域を指す。
 		 * @post 成功時は`data[0, size)`のバイト列をstreamへ書き込み済み。失敗時はstream状態と
 		 * 書き込み済み範囲が標準ostreamのwrite結果に従う。`data == nullptr && size > 0`の場合は
 		 * streamへアクセスせず`false`。
@@ -98,18 +99,18 @@ namespace ket
 		 * @note std::stringのallocationとstream exceptionの可能性があるためnoexceptなし。
 		 * @code
 		 * std::string line;
-		 * const auto ok = ket::io_stream::TryReadLineTrimmedAscii(stream, line);
+		 * const auto ok = ket::io_stream::TryReadLineTrimRightAscii(stream, line);
 		 * // 入力 "value \t\r\n" では ok == true, line == "value"
 		 * @endcode
 		 */
-		bool TryReadLineTrimmedAscii(std::istream& stream, std::string& out);
+		bool TryReadLineTrimRightAscii(std::istream& stream, std::string& out);
 
 		/**
 		 * @brief streamの書式状態をscope終了時に復元するRAII object。
 		 * @note 保存対象はflags、precision、fill。error state、exception mask、locale、tie、
 		 * widthは保存対象外。copy/moveは禁止。
 		 */
-		class StateSaver
+		class FormatStateSaver
 		{
 		  public:
 			/**
@@ -119,11 +120,11 @@ namespace ket
 			 * @post `stream`のflags、precision、fillを記録。構築直後のstream状態は変更なし。
 			 * @code
 			 * std::ostringstream stream;
-			 * const ket::io_stream::StateSaver saver(stream);
+			 * const ket::io_stream::FormatStateSaver saver(stream);
 			 * stream.precision(9);
 			 * @endcode
 			 */
-			explicit StateSaver(std::ios& stream);
+			explicit FormatStateSaver(std::ios& stream);
 
 			/**
 			 * @brief 保存したstream書式状態の復元。
@@ -133,13 +134,13 @@ namespace ket
 			 * std::ostringstream stream;
 			 * stream.precision(3);
 			 * {
-			 *     const ket::io_stream::StateSaver saver(stream);
+			 *     const ket::io_stream::FormatStateSaver saver(stream);
 			 *     stream.precision(9);
 			 * }
 			 * // stream.precision() == 3
 			 * @endcode
 			 */
-			~StateSaver() noexcept;
+			~FormatStateSaver() noexcept;
 
 			/**
 			 * @brief copy構築禁止。
@@ -147,11 +148,12 @@ namespace ket
 			 * @pre copy操作は利用不可。
 			 * @post 状態変更なし。
 			 * @code
-			 * const auto copyable = std::is_copy_constructible<ket::io_stream::StateSaver>::value;
+			 * const auto copyable =
+			 * std::is_copy_constructible<ket::io_stream::FormatStateSaver>::value;
 			 * // copyable == false
 			 * @endcode
 			 */
-			StateSaver(const StateSaver&) = delete;
+			FormatStateSaver(const FormatStateSaver& other) = delete;
 
 			/**
 			 * @brief copy代入禁止。
@@ -160,11 +162,12 @@ namespace ket
 			 * @pre copy操作は利用不可。
 			 * @post 状態変更なし。
 			 * @code
-			 * const auto assignable = std::is_copy_assignable<ket::io_stream::StateSaver>::value;
+			 * const auto assignable =
+			 * std::is_copy_assignable<ket::io_stream::FormatStateSaver>::value;
 			 * // assignable == false
 			 * @endcode
 			 */
-			StateSaver& operator=(const StateSaver&) = delete;
+			FormatStateSaver& operator=(const FormatStateSaver& other) = delete;
 
 			/**
 			 * @brief move構築禁止。
@@ -172,11 +175,12 @@ namespace ket
 			 * @pre move操作は利用不可。
 			 * @post 状態変更なし。
 			 * @code
-			 * const auto movable = std::is_move_constructible<ket::io_stream::StateSaver>::value;
+			 * const auto movable =
+			 * std::is_move_constructible<ket::io_stream::FormatStateSaver>::value;
 			 * // movable == false
 			 * @endcode
 			 */
-			StateSaver(StateSaver&&) = delete;
+			FormatStateSaver(FormatStateSaver&& other) = delete;
 
 			/**
 			 * @brief move代入禁止。
@@ -185,11 +189,12 @@ namespace ket
 			 * @pre move操作は利用不可。
 			 * @post 状態変更なし。
 			 * @code
-			 * const auto movable = std::is_move_assignable<ket::io_stream::StateSaver>::value;
+			 * const auto movable =
+			 * std::is_move_assignable<ket::io_stream::FormatStateSaver>::value;
 			 * // movable == false
 			 * @endcode
 			 */
-			StateSaver& operator=(StateSaver&&) = delete;
+			FormatStateSaver& operator=(FormatStateSaver&& other) = delete;
 
 		  private:
 			std::ios& stream_;
@@ -197,33 +202,6 @@ namespace ket
 			std::streamsize precision_;
 			char fill_;
 		};
-
-		// -----------------------------------------------------------------------------
-		// Internal implementation details
-		// -----------------------------------------------------------------------------
-
-		namespace detail
-		{
-			/**
-			 * @brief ASCII whitespace判定。
-			 * @param[in] value 判定対象の文字。
-			 * @retval true ASCIIのspace、tab、CR、LF、form feed、vertical tab。
-			 * @retval false ASCII whitespace以外。
-			 * @pre なし。任意のchar値を単一byteとして扱う。
-			 * @post 引数と外部状態の変更なし。
-			 * @note detail配下の関数は公開APIではない。
-			 */
-			constexpr bool IsAsciiWhitespace(char value) noexcept
-			{
-				return value == ' ' || value == '\t' || value == '\r' || value == '\n' ||
-					value == '\f' || value == '\v';
-			}
-
-		} // namespace detail
-
-		// -----------------------------------------------------------------------------
-		// Public API definitions
-		// -----------------------------------------------------------------------------
 
 	} // namespace io_stream
 

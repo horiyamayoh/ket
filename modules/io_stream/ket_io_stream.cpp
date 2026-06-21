@@ -10,6 +10,12 @@
 
 namespace
 {
+	constexpr bool IsAsciiWhitespace(char value) noexcept
+	{
+		return value == ' ' || value == '\t' || value == '\r' || value == '\n' || value == '\f' ||
+			value == '\v';
+	}
+
 	std::streamsize NextStreamChunkSize(std::size_t remaining) noexcept
 	{
 		const auto max_stream_size =
@@ -24,8 +30,7 @@ namespace
 		while (trim_size > 0U)
 		{
 			const auto last_index = trim_size - 1U;
-			const auto last_is_ascii_whitespace =
-				ket::io_stream::detail::IsAsciiWhitespace(text[last_index]);
+			const auto last_is_ascii_whitespace = IsAsciiWhitespace(text[last_index]);
 			if (!last_is_ascii_whitespace)
 			{
 				break;
@@ -108,7 +113,7 @@ namespace ket
 			return true;
 		}
 
-		bool TryReadLineTrimmedAscii(std::istream& stream, std::string& out)
+		bool TryReadLineTrimRightAscii(std::istream& stream, std::string& out)
 		{
 			std::string line;
 			std::getline(stream, line);
@@ -124,13 +129,13 @@ namespace ket
 			return true;
 		}
 
-		StateSaver::StateSaver(std::ios& stream)
+		FormatStateSaver::FormatStateSaver(std::ios& stream)
 			: stream_(stream), flags_(stream.flags()), precision_(stream.precision()),
 			  fill_(stream.fill())
 		{
 		}
 
-		StateSaver::~StateSaver() noexcept
+		FormatStateSaver::~FormatStateSaver() noexcept
 		{
 			stream_.flags(flags_);
 			stream_.precision(precision_);

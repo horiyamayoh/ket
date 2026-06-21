@@ -24,20 +24,20 @@ namespace ket_io_stream_cxx11_check
 					 bool>::value,
 		"TryWriteAll returns bool in C++11");
 	static_assert(
-		std::is_same<decltype(ket::io_stream::TryReadLineTrimmedAscii(
+		std::is_same<decltype(ket::io_stream::TryReadLineTrimRightAscii(
 						 std::declval<std::stringstream&>(), std::declval<std::string&>())),
 					 bool>::value,
-		"TryReadLineTrimmedAscii returns bool in C++11");
-	static_assert(!std::is_copy_constructible<ket::io_stream::StateSaver>::value,
-				  "StateSaver copy construction is disabled");
-	static_assert(!std::is_copy_assignable<ket::io_stream::StateSaver>::value,
-				  "StateSaver copy assignment is disabled");
-	static_assert(!std::is_move_constructible<ket::io_stream::StateSaver>::value,
-				  "StateSaver move construction is disabled");
-	static_assert(!std::is_move_assignable<ket::io_stream::StateSaver>::value,
-				  "StateSaver move assignment is disabled");
-	static_assert(noexcept(std::declval<ket::io_stream::StateSaver&>().~StateSaver()),
-				  "StateSaver destructor is noexcept");
+		"TryReadLineTrimRightAscii returns bool in C++11");
+	static_assert(!std::is_copy_constructible<ket::io_stream::FormatStateSaver>::value,
+				  "FormatStateSaver copy construction is disabled");
+	static_assert(!std::is_copy_assignable<ket::io_stream::FormatStateSaver>::value,
+				  "FormatStateSaver copy assignment is disabled");
+	static_assert(!std::is_move_constructible<ket::io_stream::FormatStateSaver>::value,
+				  "FormatStateSaver move construction is disabled");
+	static_assert(!std::is_move_assignable<ket::io_stream::FormatStateSaver>::value,
+				  "FormatStateSaver move assignment is disabled");
+	static_assert(noexcept(std::declval<ket::io_stream::FormatStateSaver&>().~FormatStateSaver()),
+				  "FormatStateSaver destructor is noexcept");
 
 	void Run()
 	{
@@ -51,10 +51,10 @@ namespace ket_io_stream_cxx11_check
 		const bool read = ket::io_stream::TryReadExactly(stream, output, 2U);
 		stream.clear();
 		stream.str("value \t\n");
-		const bool line_read = ket::io_stream::TryReadLineTrimmedAscii(stream, line);
+		const bool line_read = ket::io_stream::TryReadLineTrimRightAscii(stream, line);
 
 		{
-			const ket::io_stream::StateSaver saver(stream);
+			const ket::io_stream::FormatStateSaver saver(stream);
 			stream.precision(9);
 			static_cast<void>(saver);
 		}
