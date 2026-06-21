@@ -71,8 +71,8 @@ namespace ket
 		 * @pre `value_size > 0`の場合、`value`は`value_size`バイト以上読み取り可能な配列を指す。
 		 * `value == nullptr && value_size > 0`はprecondition違反。
 		 * @post 引数と外部状態の変更なし。
-			 * @note record sizeがstd::vector::max_size()を超える場合はstd::length_error送出。
-			 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note record sizeがstd::vector::max_size()を超える場合はstd::length_error送出。
+		 * @note std::vectorの確保があるためnoexceptなし。
 		 * @code
 		 * const std::uint8_t value[] = {0xAAU};
 		 * const auto record = ket::tlv::Encode(0x1234U, value, 1U);
@@ -93,8 +93,9 @@ namespace ket
 		 * 読み取り可能な配列を指す。`value`は`dst`の内部storageを指していてもよい。
 		 * `value == nullptr && value_size > 0`はprecondition違反。
 		 * @post `dst`の既存内容を保持し、末尾にTLV recordを追加。
-			 * @note record sizeまたは出力合計がstd::vector::max_size()を超える場合はstd::length_error送出。
-			 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note record sizeまたは出力合計がstd::vector::max_size()を超える場合は
+		 * std::length_error送出。
+		 * @note std::vectorの確保があるためnoexceptなし。
 		 * @note 例外時は`dst`を変更しない強い例外保証。
 		 * @code
 		 * std::vector<std::uint8_t> output;
