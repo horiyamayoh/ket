@@ -84,11 +84,11 @@ const auto name = ket::container::AtOr(names, id, "unknown");
 
 ### 3.1 失敗表現
 
-C++11/14 も視野に入る module では、まず `TryXxx(..., out*) -> bool` を中核にする。
+C++11/14 も視野に入る module では、まず `TryXxx(..., out&) -> bool` を中核にする。
 
 ```cpp
-bool TryParseUInt(std::string_view text, std::uint32_t* out) noexcept;
-bool TryLoadBe32(const std::uint8_t* data, std::size_t size, std::uint32_t* out) noexcept;
+bool TryParseUInt(std::string_view text, std::uint32_t& out) noexcept;
+bool TryLoadBe32(const std::uint8_t* data, std::size_t size, std::uint32_t& out) noexcept;
 ```
 
 C++17 以降の module では `std::optional<T>` を返す便利APIを追加してよい。
@@ -213,7 +213,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 6. `platform_error`
 7. `state`
 8. `cache_once`
-9. `serialization_tlv`
+9. `tlv`
 10. `tuple`
 11. `build_config`
 12. `math_small`
@@ -263,7 +263,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `version`           | P1   | C++17    | numeric version triplet parse/compare | `ket::version::Parse`, `ket::version::Format`              |
 | `ipv4`              | P1   | C++17    | IPv4 parse/format                     | `ParseIpV4`, `FormatIpV4`                                  |
 | `mac`               | P1   | C++17    | MAC address parse/format              | `ket::mac::Address`, `ket::mac::Parse`, `ket::mac::Format` |
-| `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`                                 |
+| `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`, `Noop`                         |
 | `variant_match`     | P2   | C++17    | `std::variant` visitor 補助           | `Match`, `Holds`, `GetIf`                                  |
 | `optional_ext`      | P2   | C++17    | optional の小さい合成                 | `MapOptional`, `AndThen`, `ValueOrEval`                    |
 | `contract`          | done | C++11    | precondition 明示                     | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds`        |
@@ -271,7 +271,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `platform_error`    | P2   | C++17    | errno/Windows error の文字列化        | `ErrnoMessage`, `WindowsErrorMessage`                      |
 | `state`             | P2   | C++17    | 小さい状態遷移表                      | `Next`, `IsAllowed`                                        |
 | `cache_once`        | P2   | C++11    | once/lazy value                       | `OnceValue`, `Lazy`, `GetOrCreate`                         |
-| `serialization_tlv` | P2   | C++17    | length-prefix/TLV                     | `EncodeTlv`, `TryDecodeTlv`                                |
+| `tlv`               | P2   | C++11    | length-prefix/TLV                     | `Encode`, `Append`, `TryDecode`                            |
 | `tuple`             | P2   | C++17    | tuple/pair の小さい補助               | `ForEach`, `Transform`                                     |
 | `build_config`      | P2   | C++11    | feature detection                     | `KET_HAS_STD_OPTIONAL`                                     |
 | `math_small`        | P2   | C++11    | 単位・補間など小さい数学              | `Lerp`, `MapRange`, `DegreesToRadians`                     |
@@ -1624,25 +1624,34 @@ namespace ket
 ```cpp
 namespace ket
 {
+namespace function
+{
 	template <typename... Fs>
 	struct Overload : Fs...
 	{
+		static_assert(sizeof...(Fs) > 0);
+		static_assert((std::is_class_v<Fs> && ...));
 		using Fs::operator()...;
 	};
 
 	template <typename... Fs>
-	Overload<Fs...> MakeOverload(Fs... fs);
+	Overload(Fs...) -> Overload<Fs...>;
+
+	template <typename... Fs>
+	constexpr Overload<std::decay_t<Fs>...> MakeOverload(Fs&&... fs) noexcept(...);
 
 	struct Noop
 	{
 		template <typename... Args>
-		void operator()(Args&&...) const noexcept;
+		constexpr void operator()(Args&&...) const noexcept;
 	};
 
+} // namespace function
 } // namespace ket
 ```
 
 注意: `FunctionRef` は寿命事故が多いため、最初は入れない。`Overload` は `std::visit` で価値が明確。
+実装では top-level `ket::Overload` ではなく module namespace の `ket::function::Overload` を採用する。
 
 ---
 
@@ -1873,28 +1882,36 @@ namespace ket
 
 ---
 
-### 8.9 `modules/serialization_tlv/ket_serialization_tlv.h`
+### 8.9 `modules/tlv/ket_tlv.h`
 
 ```cpp
 namespace ket
 {
-	struct TlvView
+	namespace tlv
 	{
-		std::uint16_t type = 0;
-		const std::uint8_t* value = nullptr;
-		std::size_t value_size = 0;
-	};
+		struct View
+		{
+			std::uint16_t type = 0;
+			const std::uint8_t* value = nullptr;
+			std::uint32_t value_size = 0;
+		};
 
-	void EncodeLengthPrefixed(std::vector<std::uint8_t>& dst, const std::uint8_t* data, std::size_t size);
-	bool TryDecodeLengthPrefixed(const std::uint8_t* data, std::size_t size, TlvView* out) noexcept;
+		struct DecodeResult
+		{
+			View view{};
+			std::size_t consumed = 0;
+		};
 
-	void EncodeTlv(std::vector<std::uint8_t>& dst, std::uint16_t type, const std::uint8_t* value, std::size_t value_size);
-	bool TryDecodeTlv(const std::uint8_t* data, std::size_t size, TlvView* out) noexcept;
+		std::vector<std::uint8_t> Encode(std::uint16_t type, const std::uint8_t* value, std::size_t value_size);
+		void Append(std::vector<std::uint8_t>& dst, std::uint16_t type, const std::uint8_t* value, std::size_t value_size);
+		bool TryDecode(const std::uint8_t* data, std::size_t size, DecodeResult& out) noexcept;
+
+	} // namespace tlv
 
 } // namespace ket
 ```
 
-注意: struct をそのまま bytes 化する API は入れない。field 単位 serialize を優先する。
+注意: canonical name は `tlv`。struct丸ごとbytes化、length-prefix単体API、schema language は入れない。
 
 ---
 
@@ -2165,7 +2182,7 @@ auto guard = ket::scope::MakeExit([&] { cleanup(); });
 
 独自 error 体系は巨大化しやすい。現時点では次で足りる。
 
-- `TryXxx(..., out*) -> bool`
+- `TryXxx(..., out&) -> bool`
 - `std::optional<T>`
 - 必要な場合だけ `std::error_code*`
 

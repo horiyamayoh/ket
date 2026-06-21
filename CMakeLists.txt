@@ -131,6 +131,13 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_deadline_test ket_deadline_cxx11_check)
 
 	ket_add_module_test(
+		ket_file_test
+		SOURCES
+			modules/file/ket_file.cpp
+			modules/file/ket_file_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_port_test
 		SOURCES
 			modules/port/ket_port.cpp
@@ -148,6 +155,40 @@ if(KET_BUILD_TESTS)
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_ranges_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/ranges/ket_ranges_cxx11_check.cpp
+	)
+
+	ket_add_module_test(
+		ket_ranges_test
+		SOURCES
+			modules/ranges/ket_ranges_test.cpp
+	)
+	add_dependencies(ket_ranges_test ket_ranges_cxx11_check)
+
+	ket_add_module_test(
+		ket_pointer_test
+		SOURCES
+			modules/pointer/ket_pointer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_pointer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/pointer/ket_pointer_cxx11_check.cpp
+	)
+	add_dependencies(ket_pointer_test ket_pointer_cxx11_check)
+
+	ket_add_module_test(
+		ket_function_test
+		SOURCES
+			modules/function/ket_function_test.cpp
 	)
 
 	ket_add_module_test(
@@ -332,6 +373,38 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/cli/ket_cli_test.cpp
 	)
+
+	ket_add_module_test(
+		ket_io_stream_test
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_io_stream_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream_cxx11_check.cpp
+	)
+	add_dependencies(ket_io_stream_test ket_io_stream_cxx11_check)
+
+	ket_add_module_test(
+		ket_tlv_test
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_tlv_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_cxx11_check.cpp
+	)
+	add_dependencies(ket_tlv_test ket_tlv_cxx11_check)
 
 	ket_add_module_test(
 		ket_tuple_test

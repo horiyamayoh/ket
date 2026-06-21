@@ -25,6 +25,9 @@ Statusは次の値を使います。
 | scope       | RAII                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | scope exit cleanupと構築時の値復元            |
 | parse       | parsing             | verified | C++17   | GoogleTest                         | checked | from_chars境界条件とbool parseを固定          |
 | string      | string              | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記        |
+| function    | callable            | verified | C++17   | GoogleTest                         | checked | callable/visitorの小さい儀式補助              |
+| io_stream   | stream              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | stream読み書き、行末ASCII trim、書式状態復元  |
+| ranges      | algorithm           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | index付きrange走査と最初の一致index取得       |
 | object      | object              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | copy/move意図のmixinとmove後reset             |
 | math        | math                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 補間、角度、byte単位変換の小さい補助          |
 | lang        | language            | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 未使用無視、raw配列長、const参照化            |
@@ -32,6 +35,7 @@ Statusは次の値を使います。
 | color       | value               | verified | C++11   | GoogleTest + C++11 compile-only    | checked | RGB小値型と6桁hex文字列を相互変換             |
 | contract    | contract            | verified | C++11   | GoogleTest + C++11 compile-only    | checked | pre/postcondition/invariantを常時評価         |
 | memory      | memory              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | alignment判定、secure zero、object bytes      |
+| pointer     | pointer             | verified | C++11   | GoogleTest + C++11 compile-only    | checked | null不許可raw pointerとweak/address補助       |
 | version     | parsing             | verified | C++17   | GoogleTest                         | checked | numeric version tripletのparse/format/compare |
 | testing     | testing / binary    | verified | C++17   | GoogleTest                         | checked | byte列比較用GoogleTest assertion helper       |
 | ipv4        | network             | verified | C++17   | GoogleTest                         | checked | IPv4 dotted decimalとBE 32bit表現を相互変換   |
@@ -39,6 +43,8 @@ Statusは次の値を使います。
 | mac         | network             | verified | C++17   | GoogleTest                         | checked | MAC addressのparse/format                     |
 | variant     | variant             | verified | C++17   | GoogleTest                         | checked | std::variant visitor補助                      |
 | utf8        | text                | verified | C++17   | GoogleTest                         | checked | UTF-8 byte列の妥当性検査とcode point数取得    |
+| file        | filesystem          | verified | C++17   | GoogleTest                         | checked | ファイル全読み/全書きと基本query              |
+| tlv         | binary              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 小さいTLV recordをencode/decode               |
 | tuple       | tuple               | verified | C++17   | GoogleTest                         | checked | tuple要素のindex順反復と変換                  |
 | optional    | optional            | verified | C++17   | GoogleTest                         | checked | optionalの値変換、合成、遅延fallback評価      |
 | meta        | meta                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | C++11/14欠落type traitsの小補助               |
