@@ -2602,7 +2602,11 @@ Candidate API:
 
 ```cpp
 ket::color::Rgb
+ket::color::Rgb == ket::color::Rgb
+ket::color::Rgb != ket::color::Rgb
+ket::color::TryParse(text, size, out)
 ket::color::TryParse(text, out)
+ket::color::Format(color)
 ket::color::Format(color, options)
 ```
 
@@ -2619,10 +2623,13 @@ Failure / edge cases:
 
 - invalid length
 - invalid hex
+- null pointer rejected
 - optional leading #
 - 3-digit shorthand rejected
 - alpha rejected
+- signs rejected
 - format lowercase
+- C++11 compile-only
 
 他のライブラリへの依存:
 

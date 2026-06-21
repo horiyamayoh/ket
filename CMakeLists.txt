@@ -151,6 +151,20 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_color_test
+		SOURCES
+			modules/color/ket_color_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_color_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/color/ket_color_cxx11_check.cpp
+	)
+	add_dependencies(ket_color_test ket_color_cxx11_check)
+
+	ket_add_module_test(
 		ket_contract_test
 		SOURCES
 			modules/contract/ket_contract_test.cpp

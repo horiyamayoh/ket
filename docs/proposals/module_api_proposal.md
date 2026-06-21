@@ -223,12 +223,11 @@ BCD の次に ket の価値を最も表しやすい module 群。
 1. `meta`
 2. `concurrency_small`
 3. `uuid`
-4. `color_rgb`
-5. `percent`
-6. `recipes/binary_payload`
-7. `recipes/command_parser`
-8. `recipes/c_api_wrapper`
-9. `recipes/state_transition_table`
+4. `percent`
+5. `recipes/binary_payload`
+6. `recipes/command_parser`
+7. `recipes/c_api_wrapper`
+8. `recipes/state_transition_table`
 
 ---
 
@@ -279,7 +278,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `meta`              | P3   | C++11/17 | type traits 補助                      | `RemoveCvref`, `AlwaysFalse`                       |
 | `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助          | `JoiningThread`, `FutureReady`                     |
 | `uuid`              | P3   | C++17    | UUID parse/format                     | `ParseUuid`, `FormatUuid`                          |
-| `color_rgb`         | P3   | C++11    | RGB小値型                             | `ParseColorRgb`, `FormatColorRgbHex`               |
+| `color`             | done | C++11    | RGB小値型                             | `Rgb`, `TryParse`, `Format`                        |
 | `percent`           | P3   | C++11    | percent小値型                         | `Percent::FromRatio`, `ClampPercent`               |
 | `recipes`           | P3   | mixed    | moduleの使い方実例                    | `recipes/binary_payload`, `recipes/c_api_wrapper`  |
 
