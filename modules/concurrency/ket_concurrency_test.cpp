@@ -1,38 +1,11 @@
 #include "ket_concurrency.h"
 
+#include <atomic>
+#include <chrono> // IWYU pragma: keep
 #include <future>
+#include <string> // IWYU pragma: keep
 #include <thread>
 #include <utility>
-
-#if defined(KET_CONCURRENCY_COMPILE_CHECK)
-
-int KetConcurrencyCxx11CompileCheck()
-{
-	std::promise<int> promise;
-	std::future<int> future = promise.get_future();
-	const auto future_ready = ket::concurrency::IsReady(future);
-	static_cast<void>(future_ready);
-
-	std::shared_future<int> shared_future = future.share();
-	const auto shared_future_ready = ket::concurrency::IsReady(shared_future);
-	static_cast<void>(shared_future_ready);
-
-	const ket::concurrency::JoiningThread empty;
-	const auto empty_is_joinable = empty.Joinable();
-	static_cast<void>(empty_is_joinable);
-
-	std::thread raw_thread;
-	ket::concurrency::JoiningThread moved_thread(std::move(raw_thread));
-	ket::concurrency::JoiningThread target;
-	target = std::move(moved_thread);
-
-	return 0;
-}
-
-#else
-
-#include <atomic>
-#include <string> // NOLINT(misc-include-cleaner)
 
 #include <gtest/gtest.h>
 
@@ -62,12 +35,29 @@ TEST(KetConcurrencyTest, DefaultConstructsAsNotJoinable)
 TEST(KetConcurrencyTest, JoinsOwnedThreadOnDestruction)
 {
 	std::atomic<bool> thread_finished(false);
+	std::promise<void> thread_started_promise;
+	std::future<void> thread_started = thread_started_promise.get_future();
+	std::promise<void> release_thread_promise;
+	std::shared_future<void> release_thread = release_thread_promise.get_future().share();
+	std::promise<void> thread_done_promise;
+	const std::future<void> thread_done = thread_done_promise.get_future();
+
+	std::thread releaser(
+		[&thread_started, &release_thread_promise]()
+		{
+			thread_started.wait();
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			release_thread_promise.set_value();
+		});
 
 	{
 		const ket::concurrency::JoiningThread thread(std::thread(
-			[&thread_finished]()
+			[&thread_started_promise, &release_thread, &thread_done_promise, &thread_finished]()
 			{
+				thread_started_promise.set_value();
+				release_thread.wait();
 				thread_finished.store(true);
+				thread_done_promise.set_value();
 			}));
 
 		const auto thread_is_joinable = thread.Joinable();
@@ -75,32 +65,30 @@ TEST(KetConcurrencyTest, JoinsOwnedThreadOnDestruction)
 		EXPECT_TRUE(thread_is_joinable);
 	}
 
+	const auto thread_done_status = thread_done.wait_for(std::chrono::seconds(0));
+	const auto thread_done_is_ready = thread_done_status == std::future_status::ready;
 	const auto finished = thread_finished.load();
 
+	releaser.join();
+
+	EXPECT_TRUE(thread_done_is_ready);
 	EXPECT_TRUE(finished);
 }
 
 /**
  * @test
- * @brief Getで取得したstd::thread参照の直接操作確認。
- * @details Getから得た参照でjoinし、JoiningThread側のJoinable結果へ反映されることを確認。
- * @pre C++17以降。取得した参照は所有objectより長く保持しない。
- * @post 所有threadはjoin済み。
+ * @brief 非joinableなstd::threadの所有確認。
+ * @details default構築されたstd::threadを渡し、JoiningThreadが非joinable状態を保つことを確認。
+ * @pre C++17以降。
+ * @post 所有threadはjoinableではなく、外部状態の変更なし。
  */
-TEST(KetConcurrencyTest, GetReturnsMutableThreadReference)
+TEST(KetConcurrencyTest, AcceptsNonJoinableThread)
 {
-	ket::concurrency::JoiningThread thread{std::thread(
-		[]()
-		{
-		})};
-
-	std::thread& raw_thread = thread.Get();
-	const auto raw_thread_is_joinable = raw_thread.joinable();
-	EXPECT_TRUE(raw_thread_is_joinable);
-
-	raw_thread.join();
+	std::thread raw_thread;
+	const ket::concurrency::JoiningThread thread(std::move(raw_thread));
 
 	const auto thread_is_joinable = thread.Joinable();
+
 	EXPECT_FALSE(thread_is_joinable);
 }
 
@@ -126,9 +114,13 @@ TEST(KetConcurrencyTest, MoveConstructsByTransferringThreadOwnership)
 		const ket::concurrency::JoiningThread moved(std::move(source));
 
 		const auto moved_is_joinable = moved.Joinable();
+		// cppcheck-suppress accessMoved
+		// NOLINTNEXTLINE(bugprone-use-after-move, clang-analyzer-cplusplus.Move)
+		const auto source_is_joinable_after_move = source.Joinable();
 
 		EXPECT_TRUE(source_was_joinable);
 		EXPECT_TRUE(moved_is_joinable);
+		EXPECT_FALSE(source_is_joinable_after_move);
 	}
 
 	const auto finished = thread_finished.load();
@@ -220,11 +212,11 @@ TEST(KetConcurrencyTest, MoveAssignmentJoinsPreviousThreadBeforeTakingNewOwnersh
 TEST(KetConcurrencyTest, DetectsReadyFutureAndSharedFuture)
 {
 	std::promise<int> future_promise;
-	std::future<int> future = future_promise.get_future();
+	const std::future<int> future = future_promise.get_future();
 	future_promise.set_value(42);
 
 	std::promise<int> shared_promise;
-	std::shared_future<int> shared_future = shared_promise.get_future().share();
+	const std::shared_future<int> shared_future = shared_promise.get_future().share();
 	shared_promise.set_value(7);
 
 	const auto future_is_ready = ket::concurrency::IsReady(future);
@@ -244,11 +236,15 @@ TEST(KetConcurrencyTest, DetectsReadyFutureAndSharedFuture)
 TEST(KetConcurrencyTest, ReturnsFalseForPendingFuture)
 {
 	std::promise<int> promise;
-	std::future<int> future = promise.get_future();
+	const std::future<int> future = promise.get_future();
+	std::promise<int> shared_promise;
+	const std::shared_future<int> shared_future = shared_promise.get_future().share();
 
 	const auto future_is_ready = ket::concurrency::IsReady(future);
+	const auto shared_future_is_ready = ket::concurrency::IsReady(shared_future);
 
 	EXPECT_FALSE(future_is_ready);
+	EXPECT_FALSE(shared_future_is_ready);
 }
 
 /**
@@ -260,15 +256,23 @@ TEST(KetConcurrencyTest, ReturnsFalseForPendingFuture)
  */
 TEST(KetConcurrencyTest, ReturnsFalseForDeferredFuture)
 {
-	std::future<int> future = std::async(std::launch::deferred,
-										 []()
-										 {
-											 return 42;
-										 });
+	const std::future<int> future = std::async(std::launch::deferred,
+											   []()
+											   {
+												   return 42;
+											   });
+	const std::shared_future<int> shared_future = std::async(std::launch::deferred,
+															 []()
+															 {
+																 return 7;
+															 })
+													  .share();
 
 	const auto future_is_ready = ket::concurrency::IsReady(future);
+	const auto shared_future_is_ready = ket::concurrency::IsReady(shared_future);
 
 	EXPECT_FALSE(future_is_ready);
+	EXPECT_FALSE(shared_future_is_ready);
 }
 
 /**
@@ -286,5 +290,3 @@ TEST(KetConcurrencyTest, DocumentsInvalidFuturePrecondition)
 
 	EXPECT_FALSE(invalid_future_is_valid);
 }
-
-#endif

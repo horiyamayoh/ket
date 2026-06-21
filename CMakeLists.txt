@@ -146,7 +146,7 @@ if(KET_BUILD_TESTS)
 		ket_concurrency_cxx11_check
 		CXX_STANDARD 11
 		SOURCES
-			modules/concurrency/ket_concurrency_test.cpp
+			modules/concurrency/ket_concurrency_cxx11_check.cpp
 	)
-	target_compile_definitions(ket_concurrency_cxx11_check PRIVATE KET_CONCURRENCY_COMPILE_CHECK)
+	add_dependencies(ket_concurrency_test ket_concurrency_cxx11_check)
 endif()

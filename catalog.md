@@ -2434,6 +2434,7 @@ Failure / edge cases:
 - join exception terminates
 - invalid future precondition
 - deferred is not ready
+- internal thread is not directly exposed
 
 他のライブラリへの依存:
 
@@ -2445,8 +2446,10 @@ Tests:
 - default
 - joinable
 - move / self-move
+- non-joinable thread
 - old thread joined on move assignment
 - ready / not ready / deferred
+- const future / shared_future
 - C++11 compile-only
 
 ## Idea: Uuid

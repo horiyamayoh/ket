@@ -1464,23 +1464,18 @@ ket::ToSeconds(duration)
 
 目的: 並行処理の小さい事故を減らす。
 
-候補:
+採用API:
 
 ```cpp
-ket::ThreadJoiner
-ket::JoiningThread
-ket::LockGuardIf(mutex, condition)
-ket::AtomicFlagGuard
-ket::Synchronized<T>
-ket::CallOnce(flag, f)
-ket::FutureReady(future)
-ket::WaitUntilDeadline(...)
+ket::concurrency::JoiningThread
+ket::concurrency::IsReady(future)
 ```
 
 注意:
 
 - thread poolやasync frameworkを作らない
-- join忘れ、lock忘れ、timeout計算など局所的な事故防止に絞る
+- lock framework、atomic wrapper、deadline待機は今回採用しない
+- join忘れとfuture ready判定に絞る
 
 ---
 
