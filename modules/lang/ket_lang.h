@@ -5,8 +5,8 @@
  * @brief C++言語の小さい儀式を名前付きAPIにする補助。
  *
  * @details 未使用値の明示破棄、raw配列長の取得、lvalueのconst参照化を小さいAPIへ集約する。
- * ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。状態やコピー・ムーブ制御は扱わず、
- * C++11/14で冗長になりやすい言語儀式に限定する。
+ * ヘッダオンリーmoduleのため、drop-in時はヘッダ単体で持ち出す。AsConstはrvalueを拒否し、
+ * 状態やコピー・ムーブ制御は扱わず、C++11/14で冗長になりやすい言語儀式に限定する。
  *
  * @par プロジェクトへの適用方法
  * `ket_lang.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。
@@ -77,12 +77,26 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。戻り値は入力objectの寿命に従う。
 		 * @note C++17 `std::as_const` のC++11代替。
 		 * @code
-		 * std::string text = "id";
-		 * const std::string& view = ket::lang::AsConst(text);
+		 * int value = 42;
+		 * const int& view = ket::lang::AsConst(value);
 		 * @endcode
 		 */
 		template <typename T>
 		constexpr typename std::add_const<T>::type& AsConst(T& value) noexcept;
+
+		/**
+		 * @brief rvalueのconst参照化を禁止。
+		 * @param[in] value 参照寿命が呼び出し直後に終わりうるrvalue。
+		 * @retval void 使用不可。rvalue入力はcompile error。
+		 * @pre 呼び出し不可。danglingしうる参照生成を削除overloadで拒否する。
+		 * @post なし。overload resolutionで削除関数として扱われる。
+		 * @note C++17 `std::as_const` と同じくconst rvalueも拒否する。
+		 * @code
+		 * // ket::lang::AsConst(123); // compile error
+		 * @endcode
+		 */
+		template <typename T>
+		void AsConst(const T&& value) = delete;
 		// NOLINTEND(modernize-type-traits)
 
 		// -----------------------------------------------------------------------------

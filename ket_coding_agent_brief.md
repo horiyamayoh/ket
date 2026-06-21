@@ -670,24 +670,15 @@ ket の「広大な視野」を保つための地図である。
 候補:
 
 ```cpp
-ket::IgnoreUnused(...)
-ket::Unreachable()
-ket::Exchange(obj, new_value)
-ket::ArraySize(array)
-ket::AsConst(x)
-ket::Identity(x)
-```
-
-関連する型:
-
-```cpp
-ket::NonCopyable
-ket::NonMovable
+ket::lang::IgnoreUnused(...)
+ket::lang::ArraySize(array)
+ket::lang::AsConst(x)
 ```
 
 注意:
 
 - `ToUnderlying` は `language` でも `enum` でもよいが、enum module に寄せてもよい
+- 未到達動作、exchange、identity、copy/move制御は初回の language module には含めない
 - マクロは最小限にする
 
 ---
