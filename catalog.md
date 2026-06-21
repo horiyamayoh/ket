@@ -1372,19 +1372,21 @@ ket::ranges::FindIndexIf(range, predicate, out)
 C++バージョン要件:
 
 - 最小要件：C++11
-- 本ライブラリの適用を推奨する C++ バージョン：C++11〜17
-- 推奨理由：C++17以前で index 付き range 走査を小さく書ける
-- 本ライブラリの適用を推奨しない C++ バージョン：C++20以降
-- 非推奨理由：C++20以降は `std::ranges` を優先できる
-- 標準代替：C++20 ranges
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：index 付き range 走査を小さく書ける
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：C++20 ranges algorithmで一部用途を置き換え可能。ただしindex付き走査の直接代替ではない
 
 Failure / edge cases:
 
 - empty range
 - not found
-- predicate exception
+- callable / predicate exception
 - out 不変
 - const / non-const element reference
+- ADL begin/end
+- callable / predicate をAPI内でcopyしない
 
 他のライブラリへの依存:
 
@@ -1399,6 +1401,7 @@ Tests:
 - first match
 - not found out unchanged
 - predicate exception propagation
+- C++11 compile-only
 
 ## Idea: Memory
 
@@ -1479,14 +1482,17 @@ C++バージョン要件:
 - 推奨理由：null許容性と所有権の有無を型名や関数名で明示できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：なし
+- 標準代替：API別。`NotNull` は直接代替なし。`LockWeak` は `std::weak_ptr::lock`、
+  `AddressOf` は `std::addressof` を意図名で薄く包む。
 
 Failure / edge cases:
 
-- NotNull(nullptr) throws
+- NotNull(nullptr) throws `std::invalid_argument`
 - non-owning lifetime
+- void pointee unsupported
 - weak expired
 - overloaded operator&
+- AddressOf rvalue rejected
 
 他のライブラリへの依存:
 
@@ -1497,8 +1503,10 @@ Tests:
 
 - nullptr rejected
 - dereference / operator->
+- conversion constraints
 - weak alive / expired
 - AddressOf ignores overloaded operator&
+- AddressOf rejects rvalues
 
 ## Idea: TestingBytes
 
@@ -2139,7 +2147,7 @@ Tests:
 - address stability
 - copy/move disabled compile-only
 
-## Idea: SerializationTlv
+## Idea: Tlv
 
 Category: binary / serialization
 
@@ -2161,9 +2169,9 @@ ket::tlv::DecodeResult
 
 C++バージョン要件:
 
-- 最小要件：C++17
-- 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::vector<std::uint8_t>` と bool+out で wire format 境界を固定できる
+- 最小要件：C++11
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：raw pointer、`std::vector<std::uint8_t>`、bool+out参照で wire format 境界を固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -2172,8 +2180,10 @@ Failure / edge cases:
 
 - header shorter than 6 bytes
 - declared length exceeds remaining size
-- null + 0 value
+- null decode input
+- null + 0 encode value
 - null + non-zero precondition
+- value_size > uint32 max
 - size_t overflow
 - decode failure leaves out unchanged
 - view lifetime
@@ -2186,12 +2196,19 @@ Failure / edge cases:
 Tests:
 
 - empty value
+- type 0 / 65535
+- length 256
+- length 65536
 - roundtrip
 - multiple records decode first
+- append empty value
+- self-overlap append
 - short header / value
 - big-endian golden bytes
 - max uint32 length header
 - out unchanged on failure
+- size_t over uint32 max
+- C++11 compile-only
 
 ## Idea: Tuple
 
