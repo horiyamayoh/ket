@@ -131,6 +131,13 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_deadline_test ket_deadline_cxx11_check)
 
 	ket_add_module_test(
+		ket_hex_test
+		SOURCES
+			modules/hex/ket_hex.cpp
+			modules/hex/ket_hex_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp

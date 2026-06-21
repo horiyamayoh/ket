@@ -417,8 +417,9 @@ Candidate API:
 ```cpp
 ket::hex::Encode(data, size, options)
 ket::hex::Decode(text)
-ket::hex::Dump(data, size, options)
-ket::hex::Encode(value, width)
+ket::hex::Dump(data, size)
+ket::hex::DumpMemory(data, size)
+ket::hex::Format(value, width)
 ```
 
 C++バージョン要件:

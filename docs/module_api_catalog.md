@@ -452,14 +452,15 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Public API Signatures（`namespace ket::hex`）:
   - `enum class LetterCase { kLower, kUpper };`
   - `struct FormatOptions { LetterCase letter_case = LetterCase::kUpper; char separator = '\0'; };`
-  - `std::string Encode(std::uint64_t value, unsigned min_width = 0, LetterCase letter_case = LetterCase::kUpper)`
+  - `std::string Format(std::uint64_t value, unsigned min_width = 0, LetterCase letter_case = LetterCase::kUpper)`
   - `std::string Encode(const std::uint8_t* data, std::size_t size, FormatOptions options = {})`
   - `std::optional<std::vector<std::uint8_t>> Decode(std::string_view text)`
   - `std::string Dump(const std::uint8_t* data, std::size_t size)`
-  - `std::string Dump(const void* data, std::size_t size)`
-- Behavior: `Encode` は upper/lower と任意 separator を指定可能。`Decode` は hex digit と
+  - `std::string DumpMemory(const void* data, std::size_t size)`
+- Behavior: `Format` は整数を最小幅zero paddingつきhex文字列へ変換する。`Encode` は upper/lower と任意 separator を指定可能。`Decode` は hex digit と
   ASCII whitespace を受け付け、完全な偶数桁だけ変換する。`Dump` は offset、hex bytes、
-  ASCII preview の固定形式。`Dump` は 16 bytes/row、8桁 zero-pad lower hex offset、lower hex byte、
+  ASCII preview の固定形式。`DumpMemory` はC API境界の`void*` bufferをobject representationとしてdumpする明示API。
+  `Dump` は 16 bytes/row、最小8桁 zero-pad lower hex offset、lower hex byte、
   8 byte ごとの追加 space、ASCII preview を `|...|` で囲む形式に固定する。ASCII preview は `0x20`〜`0x7e`
   をそのまま出し、それ以外は `.`。最終行の hex 欠落分は space padding で ASCII column を揃える。空入力は
   空文字列、非空入力は行を `\n` で区切り、末尾 newline は付けない。
@@ -471,12 +472,12 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
   "00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|"
   ```
 
-- Failure/edge cases: `Encode(nullptr, 0)` は空文字列。`nullptr` かつ非0 size は precondition
-  違反。`Decode` の奇数桁、不正文字は `std::nullopt`。
+- Failure/edge cases: pointer API の `nullptr` かつ `size == 0` は空文字列。`nullptr` かつ非0 size は
+  precondition違反。`Decode` の奇数桁、不正文字は `std::nullopt`。
 - Complexity/performance: byte列の `Encode`/`Dump` は入力長 O(n)で出力 string を 1回確保。
-  `Decode` は O(n)で vector を 1回確保。整数の `Encode` は桁数分の O(1)。
+  `Decode` は O(n)で vector を 1回確保。整数の `Format` は桁数分の O(1)。
 - Tests: 空入力、lower/upper、separator、ASCII whitespace、不正文字、奇数桁、dump空入力、dump 16 byte行、
-  dump ASCII printable/non-printable、dump末尾 newline なし。
+  dump複数行、dump ASCII printable/non-printable、dump末尾 newline なし。
 - Do not implement: Base64、binary viewer framework、任意 separator の parse 自動対応。
 
 ### parse Module
