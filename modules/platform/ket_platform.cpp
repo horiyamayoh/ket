@@ -1,11 +1,11 @@
 #include "ket_platform.h"
 
-#include <array>
 #include <cerrno>
 #include <cstdlib>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #ifdef _WIN32
 #include <cstring>
@@ -20,7 +20,8 @@
 
 namespace
 {
-	constexpr std::size_t kErrnoMessageBufferSize = 256U;
+	constexpr std::size_t kErrnoMessageInitialBufferSize = 256U;
+	constexpr std::size_t kErrnoMessageMaxBufferSize = 4096U;
 
 	class ErrnoRestorer
 	{
@@ -72,6 +73,17 @@ namespace
 		}
 
 		return {message};
+	}
+
+	std::size_t NextErrnoMessageBufferSize(std::size_t current_size) noexcept
+	{
+		const auto can_double_without_cap = current_size <= (kErrnoMessageMaxBufferSize / 2U);
+		if (can_double_without_cap)
+		{
+			return current_size * 2U;
+		}
+
+		return kErrnoMessageMaxBufferSize;
 	}
 
 #ifdef _WIN32
@@ -219,19 +231,25 @@ namespace
 		HLOCAL handle_ = nullptr;
 	};
 #else
-	[[maybe_unused]] std::string
+	[[maybe_unused]] std::optional<std::string>
 	FormatStrerrorResult(int result, const char* buffer, int error_number)
 	{
 		const auto succeeded = result == 0;
-		if (!succeeded)
+		if (succeeded)
 		{
-			return FormatUnknownErrno(error_number);
+			return CopyErrnoMessageOrFallback(buffer, error_number);
 		}
 
-		return CopyErrnoMessageOrFallback(buffer, error_number);
+		const auto buffer_was_too_small = result == ERANGE;
+		if (buffer_was_too_small)
+		{
+			return std::nullopt;
+		}
+
+		return FormatUnknownErrno(error_number);
 	}
 
-	[[maybe_unused]] std::string
+	[[maybe_unused]] std::optional<std::string>
 	FormatStrerrorResult(const char* message, const char* buffer, int error_number)
 	{
 		const char* const selected_message = message != nullptr ? message : buffer;
@@ -248,21 +266,48 @@ namespace ket
 		std::string FormatErrno(int error_number)
 		{
 			const ErrnoRestorer errno_restorer;
-			std::array<char, kErrnoMessageBufferSize> buffer{};
+			std::vector<char> buffer(kErrnoMessageInitialBufferSize, '\0');
 
 #ifdef _WIN32
-			const auto result = strerror_s(buffer.data(), buffer.size(), error_number);
-			const auto succeeded = result == 0;
-			if (!succeeded)
+			while (true)
 			{
-				return FormatUnknownErrno(error_number);
-			}
+				const auto result = strerror_s(buffer.data(), buffer.size(), error_number);
+				const auto succeeded = result == 0;
+				if (succeeded)
+				{
+					return CopyErrnoMessageOrFallback(buffer.data(), error_number);
+				}
 
-			return CopyErrnoMessageOrFallback(buffer.data(), error_number);
+				const auto buffer_was_too_small = result == ERANGE;
+				const auto can_grow = buffer.size() < kErrnoMessageMaxBufferSize;
+				if (!buffer_was_too_small || !can_grow)
+				{
+					return FormatUnknownErrno(error_number);
+				}
+
+				buffer.assign(NextErrnoMessageBufferSize(buffer.size()), '\0');
+			}
 #else
-			return FormatStrerrorResult(strerror_r(error_number, buffer.data(), buffer.size()),
-										buffer.data(),
-										error_number);
+			while (true)
+			{
+				const auto message =
+					FormatStrerrorResult(strerror_r(error_number, buffer.data(), buffer.size()),
+										 buffer.data(),
+										 error_number);
+				const auto message_has_value = message.has_value();
+				if (message_has_value)
+				{
+					return *message;
+				}
+
+				const auto can_grow = buffer.size() < kErrnoMessageMaxBufferSize;
+				if (!can_grow)
+				{
+					return FormatUnknownErrno(error_number);
+				}
+
+				buffer.assign(NextErrnoMessageBufferSize(buffer.size()), '\0');
+			}
 #endif
 		}
 

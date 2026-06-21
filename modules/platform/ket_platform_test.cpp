@@ -80,6 +80,74 @@ namespace
 	{
 		return std::string("Unknown Windows error ") + std::to_string(code);
 	}
+
+	std::optional<std::wstring> ReadWideEnvironmentVariableForTest(const wchar_t* name)
+	{
+		::SetLastError(ERROR_SUCCESS);
+		const auto capacity = ::GetEnvironmentVariableW(name, nullptr, 0U);
+		const auto initial_lookup_failed = capacity == 0U;
+		if (initial_lookup_failed)
+		{
+			const auto last_error = ::GetLastError();
+			const auto empty_value = last_error == ERROR_SUCCESS;
+			if (empty_value)
+			{
+				return std::wstring();
+			}
+
+			return std::nullopt;
+		}
+
+		std::wstring value(static_cast<std::size_t>(capacity), L'\0');
+		::SetLastError(ERROR_SUCCESS);
+		const auto copied_size = ::GetEnvironmentVariableW(name, &value[0], capacity);
+		const auto lookup_failed = copied_size == 0U;
+		if (lookup_failed)
+		{
+			const auto last_error = ::GetLastError();
+			const auto empty_value = last_error == ERROR_SUCCESS;
+			if (empty_value)
+			{
+				return std::wstring();
+			}
+
+			return std::nullopt;
+		}
+
+		value.resize(static_cast<std::size_t>(copied_size));
+		return value;
+	}
+
+	class WideEnvironmentVariableRestorer
+	{
+	  public:
+		explicit WideEnvironmentVariableRestorer(const wchar_t* name)
+			: name_(name), original_(ReadWideEnvironmentVariableForTest(name))
+		{
+		}
+
+		WideEnvironmentVariableRestorer(const WideEnvironmentVariableRestorer&) = delete;
+		WideEnvironmentVariableRestorer& operator=(const WideEnvironmentVariableRestorer&) = delete;
+
+		~WideEnvironmentVariableRestorer()
+		{
+			const auto original_has_value = original_.has_value();
+			if (original_has_value)
+			{
+				const auto restored =
+					::SetEnvironmentVariableW(name_, original_.value().c_str()) != 0;
+				static_cast<void>(restored);
+				return;
+			}
+
+			const auto removed = ::SetEnvironmentVariableW(name_, nullptr) != 0;
+			static_cast<void>(removed);
+		}
+
+	  private:
+		const wchar_t* name_ = nullptr;
+		std::optional<std::wstring> original_;
+	};
 #endif
 
 } // namespace
@@ -331,9 +399,79 @@ TEST(KetPlatformTest, ReadsAndFormatsWindowsLastError)
 	const auto expected = static_cast<ket::platform::WindowsErrorCode>(ERROR_FILE_NOT_FOUND);
 	const auto message = ket::platform::FormatWindowsError(code);
 	const auto message_is_empty = message.empty();
+	const auto fallback = UnknownWindowsErrorMessage(code);
 
 	EXPECT_EQ(code, expected);
 	EXPECT_FALSE(message_is_empty);
+	EXPECT_NE(message, fallback);
+}
+
+/**
+ * @test
+ * @brief Windows UTF-8 environment variable取得確認。
+ * @details Windows wide
+ * APIで非ASCIIのname/valueを設定し、UTF-8文字列で同じ値を取得できることを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post 対象environment variableはテスト前の状態へ復元。
+ */
+TEST(KetPlatformTest, ReadsUtf8EnvironmentVariableOnWindows)
+{
+	constexpr const wchar_t* kWideName = L"KET_PLATFORM_TEST_UTF8_\u30e6";
+	constexpr const wchar_t* kWideValue = L"value-\u30c6\u30b9\u30c8";
+	const auto restorer = WideEnvironmentVariableRestorer(kWideName);
+	static_cast<void>(restorer);
+	const auto set_succeeded = ::SetEnvironmentVariableW(kWideName, kWideValue) != 0;
+
+	ASSERT_TRUE(set_succeeded);
+
+	const auto name = std::string("KET_PLATFORM_TEST_UTF8_") + "\xe3\x83\xa6";
+	const auto value = ket::platform::ReadEnvironmentVariable(name);
+	const auto expected =
+		std::optional<std::string>(std::string("value-") + "\xe3\x83\x86\xe3\x82\xb9\xe3\x83\x88");
+
+	EXPECT_EQ(value, expected);
+}
+
+/**
+ * @test
+ * @brief Windows UTF-8 environment variable名の変換失敗確認。
+ * @details invalid UTF-8 byte列を含むnameを入力し、wide APIへ渡さずstd::nulloptを返すことを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post process environmentの変更なし。
+ */
+TEST(KetPlatformTest, RejectsInvalidUtf8EnvironmentVariableNameOnWindows)
+{
+	std::string name = "KET_PLATFORM_TEST_INVALID_UTF8_";
+	name.push_back(static_cast<char>(0xffU));
+
+	const auto value = ket::platform::ReadEnvironmentVariable(name);
+	const auto value_has_value = value.has_value();
+
+	EXPECT_FALSE(value_has_value);
+}
+
+/**
+ * @test
+ * @brief Windows environment variable値のUTF-8変換失敗確認。
+ * @details UTF-8へ変換できないwide valueを設定し、std::nulloptを返すことを確認。
+ * @pre C++17以降かつWindows環境。
+ * @post 対象environment variableはテスト前の状態へ復元。
+ */
+TEST(KetPlatformTest, ReturnsNulloptForInvalidUtf16EnvironmentVariableValueOnWindows)
+{
+	constexpr const wchar_t* kWideName = L"KET_PLATFORM_TEST_INVALID_UTF16_VALUE";
+	const auto restorer = WideEnvironmentVariableRestorer(kWideName);
+	static_cast<void>(restorer);
+	const std::wstring invalid_value(1U, static_cast<wchar_t>(0xd800U));
+	const auto set_succeeded = ::SetEnvironmentVariableW(kWideName, invalid_value.c_str()) != 0;
+
+	ASSERT_TRUE(set_succeeded);
+
+	const auto value =
+		ket::platform::ReadEnvironmentVariable("KET_PLATFORM_TEST_INVALID_UTF16_VALUE");
+	const auto value_has_value = value.has_value();
+
+	EXPECT_FALSE(value_has_value);
 }
 
 /**
