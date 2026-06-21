@@ -1015,7 +1015,7 @@ C++バージョン要件:
 
 - 最小要件：C++17
 - 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::string_view` で argv lifetime に依存する値を明示しながら扱える
+- 推奨理由：`std::string_view` で argv lifetime に依存する値を明示し、`std::optional` で option値の不在を小さく扱える
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -1025,9 +1025,13 @@ Failure / edge cases:
 - argc < 0
 - argv == nullptr
 - argv[i] == nullptr
-- option name が "--" で始まらない
+- option name が "--" で始まらない、名前部分が空、または "=" を含む
+- bare "--" はoption終端
 - missing value
+- empty value は有効値
 - duplicate option は先勝ち
+- single dashで始まる次要素は値
+- PositionalArguments はschemaなしのnon-option抽出。separate option値は保持
 
 他のライブラリへの依存:
 
@@ -1042,6 +1046,9 @@ Tests:
 - missing value
 - duplicate option
 - positional args
+- option terminator
+- empty value
+- option name boundary
 
 ## Idea: ByteView
 
