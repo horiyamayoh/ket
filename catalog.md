@@ -2434,10 +2434,12 @@ C++バージョン要件:
 Failure / edge cases:
 
 - copy disabled compile
+- NonCopyable remains movable
 - move behavior
 - reset source state
 - empty base optimization
-- defaulted comparison interaction
+- self move assignment
+- user-defined comparison coexistence
 - noexcept depends on T
 
 他のライブラリへの依存:
@@ -2448,10 +2450,13 @@ Failure / edge cases:
 Tests:
 
 - copy forbidden compile-only
+- NonCopyable move allowed
 - move works
 - reset on move
+- self move assignment
 - empty base size
-- defaulted comparison coexistence
+- user-defined comparison coexistence
+- C++11 compile-only
 
 ## Idea: Meta
 

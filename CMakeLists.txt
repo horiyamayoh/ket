@@ -151,6 +151,20 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_object_test
+		SOURCES
+			modules/object/ket_object_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_object_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/object/ket_object_cxx11_check.cpp
+	)
+	add_dependencies(ket_object_test ket_object_cxx11_check)
+
+	ket_add_module_test(
 		ket_math_test
 		SOURCES
 			modules/math/ket_math_test.cpp
