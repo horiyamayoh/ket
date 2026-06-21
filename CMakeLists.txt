@@ -131,6 +131,13 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_deadline_test ket_deadline_cxx11_check)
 
 	ket_add_module_test(
+		ket_hex_test
+		SOURCES
+			modules/hex/ket_hex.cpp
+			modules/hex/ket_hex_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp
@@ -141,6 +148,31 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/utf8/ket_utf8.cpp
 			modules/utf8/ket_utf8_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_container_test
+		SOURCES
+			modules/container/ket_container_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_container_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			tests/ket_container_cxx11_check.cpp
+	)
+	target_include_directories(
+		ket_container_cxx11_check
+		PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/modules/container"
+	)
+	add_dependencies(ket_container_test ket_container_cxx11_check)
+
+	ket_add_module_test(
+		ket_cli_test
+		SOURCES
+			modules/cli/ket_cli_test.cpp
 	)
 
 	ket_add_module_test(
@@ -274,4 +306,10 @@ if(KET_BUILD_TESTS)
 			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
 	)
 	add_dependencies(ket_byte_view_test ket_byte_view_cxx11_check)
+
+	ket_add_module_test(
+		ket_enums_test
+		SOURCES
+			modules/enums/ket_enums_test.cpp
+	)
 endif()
