@@ -1201,6 +1201,8 @@ ket::file::TryReadAllText(path, out, error)
 ket::file::TryReadAllBytes(path, out, error)
 ket::file::TryWriteAllText(path, text, error)
 ket::file::TryWriteAllBytes(path, data, size, error)
+ket::file::Exists(path)
+ket::file::IsDirectory(path)
 ket::file::Size(path)
 ```
 
@@ -1218,8 +1220,14 @@ Failure / edge cases:
 - not found
 - permission
 - directory path
+- non-regular existing path
+- invalid path
 - huge file
-- short write
+- read target changed while reading
+- short read/write from stream state
+- null data with nonzero size
+- overwrite truncates existing file
+- write is not atomic and can leave a partial/truncated file after open/write/close failure
 - error_code\* は optional detail
 
 他のライブラリへの依存:
@@ -1234,6 +1242,13 @@ Tests:
 - binary
 - missing file
 - directory path
+- non-regular existing path if the environment can create one
+- invalid path
+- permission denied if enforced by environment
+- embedded NUL text
+- empty text / bytes
+- overwrite/truncate
+- null data with nonzero size
 - error_code set / ignored
 
 ## Idea: IoStream
@@ -1242,24 +1257,24 @@ Category: stream
 
 Pain:
 
-- stream の exact read/write と state 復元を毎回書くと失敗条件が曖昧になりやすい
+- stream の exact read/write と書式状態復元を毎回書くと失敗条件が曖昧になりやすい
 - short read を成功扱いしたくない
-- ASCII line trim 程度の小さい stream 補助がほしい
+- ASCII line right trim 程度の小さい stream 補助がほしい
 
 Candidate API:
 
 ```cpp
 ket::io_stream::TryReadExactly(stream, data, size)
 ket::io_stream::TryWriteAll(stream, data, size)
-ket::io_stream::StateSaver
-ket::io_stream::TryReadLineTrimmedAscii(stream, out)
+ket::io_stream::FormatStateSaver
+ket::io_stream::TryReadLineTrimRightAscii(stream, out)
 ```
 
 C++バージョン要件:
 
 - 最小要件：C++11
 - 本ライブラリの適用を推奨する C++ バージョン：C++11以降
-- 推奨理由：stream の確実な読み書きと状態復元を小さいAPIで固定できる
+- 推奨理由：stream の確実な読み書きと書式状態復元を小さいAPIで固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -1268,10 +1283,10 @@ Failure / edge cases:
 
 - short read
 - write failure
-- null buffer + 非0 size
+- null buffer + 非0 size はstreamへアクセスせずfalse
 - stream exception
-- state restore
-- ASCII trim only
+- flags、precision、fillのrestore
+- ASCII right trim only
 
 他のライブラリへの依存:
 
@@ -1283,8 +1298,9 @@ Tests:
 - exact read success
 - short read fails
 - write all success
-- stream state restored
-- trim line ASCII whitespace
+- format state restored
+- excluded stream state not restored
+- trim line right ASCII whitespace
 - exception propagation
 
 ## Idea: FormatValue
@@ -1357,19 +1373,21 @@ ket::ranges::FindIndexIf(range, predicate, out)
 C++バージョン要件:
 
 - 最小要件：C++11
-- 本ライブラリの適用を推奨する C++ バージョン：C++11〜17
-- 推奨理由：C++17以前で index 付き range 走査を小さく書ける
-- 本ライブラリの適用を推奨しない C++ バージョン：C++20以降
-- 非推奨理由：C++20以降は `std::ranges` を優先できる
-- 標準代替：C++20 ranges
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：index 付き range 走査を小さく書ける
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：C++20 ranges algorithmで一部用途を置き換え可能。ただしindex付き走査の直接代替ではない
 
 Failure / edge cases:
 
 - empty range
 - not found
-- predicate exception
+- callable / predicate exception
 - out 不変
 - const / non-const element reference
+- ADL begin/end
+- callable / predicate をAPI内でcopyしない
 
 他のライブラリへの依存:
 
@@ -1384,6 +1402,7 @@ Tests:
 - first match
 - not found out unchanged
 - predicate exception propagation
+- C++11 compile-only
 
 ## Idea: Memory
 
@@ -1464,14 +1483,17 @@ C++バージョン要件:
 - 推奨理由：null許容性と所有権の有無を型名や関数名で明示できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：なし
+- 標準代替：API別。`NotNull` は直接代替なし。`LockWeak` は `std::weak_ptr::lock`、
+  `AddressOf` は `std::addressof` を意図名で薄く包む。
 
 Failure / edge cases:
 
-- NotNull(nullptr) throws
+- NotNull(nullptr) throws `std::invalid_argument`
 - non-owning lifetime
+- void pointee unsupported
 - weak expired
 - overloaded operator&
+- AddressOf rvalue rejected
 
 他のライブラリへの依存:
 
@@ -1482,8 +1504,10 @@ Tests:
 
 - nullptr rejected
 - dereference / operator->
+- conversion constraints
 - weak alive / expired
 - AddressOf ignores overloaded operator&
+- AddressOf rejects rvalues
 
 ## Idea: TestingBytes
 
@@ -1675,6 +1699,7 @@ Candidate API:
 ket::mac::Address
 ket::mac::Parse(text)
 ket::mac::Format(address)
+address_a == address_b
 ```
 
 C++バージョン要件:
@@ -1702,9 +1727,11 @@ Failure / edge cases:
 Tests:
 
 - colon format
-- hyphen format
+- hyphen input
 - upper/lower input
+- address comparison
 - mixed separator fails
+- invalid separator fails
 - invalid hex fails
 - format golden output
 
@@ -1737,6 +1764,8 @@ C++バージョン要件:
 
 Failure / edge cases:
 
+- empty overload set
+- non-class callable
 - callable copy/move constraints
 - handler exception propagation
 - overload resolution
@@ -1752,7 +1781,8 @@ Tests:
 - std::visit with variants
 - overload resolution
 - return value
-- Noop accepts arbitrary args
+- Noop accepts arbitrary args and constexpr empty call
+- MakeOverload stores decayed callable types
 - copy / move constraints
 
 ## Idea: VariantMatch
@@ -2073,7 +2103,7 @@ Tests:
 - table empty
 - constexpr lookup
 
-## Idea: CacheOnce
+## Idea: Cache
 
 Category: cache
 
@@ -2096,7 +2126,7 @@ C++バージョン要件:
 
 - 最小要件：C++11
 - 本ライブラリの適用を推奨する C++ バージョン：C++11以降
-- 推奨理由：lazy value の thread-safety と例外後状態を局所的に固定できる
+- 推奨理由：lazy value の非 thread-safe 方針と例外後状態を局所的に固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -2108,7 +2138,7 @@ Failure / edge cases:
 - move-only value
 - copy/move of Lazy disabled
 - destructor exception terminates
-- reentrancy precondition
+- reentrancy terminates when detected
 
 他のライブラリへの依存:
 
@@ -2122,9 +2152,10 @@ Tests:
 - exception leaves empty
 - move-only value
 - address stability
+- reentrancy termination
 - copy/move disabled compile-only
 
-## Idea: SerializationTlv
+## Idea: Tlv
 
 Category: binary / serialization
 
@@ -2146,9 +2177,9 @@ ket::tlv::DecodeResult
 
 C++バージョン要件:
 
-- 最小要件：C++17
-- 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::vector<std::uint8_t>` と bool+out で wire format 境界を固定できる
+- 最小要件：C++11
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：raw pointer、`std::vector<std::uint8_t>`、bool+out参照で wire format 境界を固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -2157,8 +2188,10 @@ Failure / edge cases:
 
 - header shorter than 6 bytes
 - declared length exceeds remaining size
-- null + 0 value
+- null decode input
+- null + 0 encode value
 - null + non-zero precondition
+- value_size > uint32 max
 - size_t overflow
 - decode failure leaves out unchanged
 - view lifetime
@@ -2171,12 +2204,19 @@ Failure / edge cases:
 Tests:
 
 - empty value
+- type 0 / 65535
+- length 256
+- length 65536
 - roundtrip
 - multiple records decode first
+- append empty value
+- self-overlap append
 - short header / value
 - big-endian golden bytes
 - max uint32 length header
 - out unchanged on failure
+- size_t over uint32 max
+- C++11 compile-only
 
 ## Idea: Tuple
 
