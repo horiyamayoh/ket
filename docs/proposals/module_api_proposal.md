@@ -1530,6 +1530,10 @@ namespace ket
 
 ### 7.11 `modules/ipv4/ket_ipv4.h`
 
+この案は `docs/module_api_catalog.md` の `ipv4` moduleで置き換え済み。実装済みAPIは
+`modules/ipv4/ket_ipv4.h` の `ket::ipv4::Address`、`ket::ipv4::Parse`、`ket::ipv4::Format`、
+`ket::ipv4::ToBe32`、`ket::ipv4::FromBe32`。
+
 ```cpp
 namespace ket
 {

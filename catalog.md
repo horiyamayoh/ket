@@ -1591,7 +1591,8 @@ Pain:
 
 - IPv4 dotted decimal の parse/format を毎回書きたくない
 - octet 境界、個数不足/過多、leading zero の扱いを固定したい
-- IPv6/CIDR/DNS までは不要
+- BE 32bit表現との相互変換をhost byte order変換から分けたい
+- IPv6/CIDR/DNS/port/socket address までは不要
 
 Candidate API:
 
@@ -1599,6 +1600,8 @@ Candidate API:
 ket::ipv4::Address
 ket::ipv4::Parse(text)
 ket::ipv4::Format(address)
+ket::ipv4::ToBe32(address)
+ket::ipv4::FromBe32(value)
 ```
 
 C++バージョン要件:
@@ -1617,6 +1620,7 @@ Failure / edge cases:
 - too few / too many components
 - leading zero
 - whitespace
+- control character or embedded NUL
 - sign
 
 他のライブラリへの依存:
@@ -1628,9 +1632,12 @@ Tests:
 
 - 0.0.0.0
 - 255.255.255.255
+- 1.2.3.4 <-> 0x01020304
+- 192.168.0.1 <-> 0xC0A80001
 - octet overflow
 - missing / extra component
 - leading zero fails
+- embedded NUL fails
 - format golden output
 
 ## Idea: MacAddress
