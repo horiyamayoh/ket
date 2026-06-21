@@ -199,7 +199,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 7. `memory`
 8. `pointer`
 9. `testing_bytes`
-10. `semantic_version`
+10. `version`
 11. `ipv4`
 12. `mac_address`
 
@@ -211,7 +211,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 4. `contract`
 5. `c_interop`
 6. `platform_error`
-7. `state_table`
+7. `state`
 8. `cache_once`
 9. `serialization_tlv`
 10. `tuple`
@@ -223,65 +223,64 @@ BCD の次に ket の価値を最も表しやすい module 群。
 1. `meta`
 2. `concurrency_small`
 3. `uuid`
-4. `color_rgb`
-5. `percent`
-6. `recipes/binary_payload`
-7. `recipes/command_parser`
-8. `recipes/c_api_wrapper`
-9. `recipes/state_transition_table`
+4. `percent`
+5. `recipes/binary_payload`
+6. `recipes/command_parser`
+7. `recipes/c_api_wrapper`
+8. `recipes/state_transition_table`
 
 ---
 
 ## 5. module proposal 一覧
 
-| Module              | 優先 | C++ Min  | 狙い                             | 代表API                                            |
-| ------------------- | ---- | -------- | -------------------------------- | -------------------------------------------------- |
-| `bcd`               | done | C++17    | packed BCD 変換                  | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`         |
-| `bits`              | P0   | C++11    | bit/nibble/mask の事故防止       | `HighNibble`, `HasBit`, `Mask`                     |
-| `numeric`           | P0   | C++11    | overflow/align/cast の小さい正解 | `AlignUp`, `CheckedAdd`, `InRange`                 |
-| `endian`            | P0   | C++11    | unaligned/endian 読み書き        | `LoadBe32`, `StoreLe16`                            |
-| `hex`               | P0   | C++17    | bytes と16進文字列/hex dump      | `BytesToHex`, `HexToBytes`, `HexDump`              |
-| `parse_numeric`     | P0   | C++17    | `from_chars` 周りの儀式除去      | `ParseUInt`, `TryParseHex`                         |
-| `enum_table`        | P0   | C++17    | enum class と文字列変換          | `EnumName`, `ParseEnum`, `ToUnderlying`            |
-| `container`         | P0   | C++11/17 | map/vector の小さい儀式          | `ContainsKey`, `AtOrNull`, `GetOrDefault`          |
-| `string_ascii`      | P0   | C++17    | ASCII前提の文字列処理            | `TrimAscii`, `SplitView`, `ToLowerAscii`           |
-| `scope`             | P0   | C++11    | RAII cleanup                     | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`      |
-| `byte_reader`       | P0   | C++11    | byte列の安全な逐次読み取り       | `ReadU8`, `ReadBe16`, `Remaining`                  |
-| `byte_writer`       | P0   | C++11    | fixed buffer への安全な書き込み  | `WriteU8`, `WriteLe32`, `Remaining`                |
-| `bytes_builder`     | P0   | C++17    | owning payload builder           | `AppendU8`, `AppendBe16`, `Build`                  |
-| `date`              | P0   | C++11    | 日付・時刻の妥当性               | `IsLeapYear`, `IsValidDate`                        |
-| `deadline`          | P0   | C++11    | timeout と elapsed time          | `Stopwatch`, `Deadline`                            |
-| `cli`               | P0   | C++17    | 小さい社内CLIの option 取得      | `HasOption`, `GetOption`, `Positional`             |
-| `byte_view`         | P1   | C++11    | non-owning byte span             | `ByteView`, `SubView`, `SafeAt`                    |
-| `utf8`              | P1   | C++17    | UTF-8検査を小さく隔離            | `ValidateUtf8`, `IsUtf8`, `Utf8Length`             |
-| `file`              | P1   | C++17    | ファイル全読み/全書き            | `ReadAllText`, `WriteAllBytes`                     |
-| `io_stream`         | P1   | C++11    | stream の確実な読み書き          | `ReadExactly`, `StreamStateSaver`                  |
-| `format_value`      | P1   | C++17    | 診断用文字列                     | `ToHexString`, `FormatBytes`, `FormatDuration`     |
-| `algorithm_range`   | P1   | C++11    | iterator pair の儀式除去         | `AllOf`, `FindIf`, `IndexOf`                       |
-| `memory`            | P1   | C++11    | alignment/object bytes           | `IsAligned`, `ObjectBytes`, `SecureZeroMemory`     |
-| `pointer`           | P1   | C++11    | null/ownership の明示            | `NotNull`, `LockWeak`, `AddressOf`                 |
-| `testing_bytes`     | P1   | C++17    | bytes系テスト補助                | `BytesEq`, `HexEq`                                 |
-| `semantic_version`  | P1   | C++17    | semver-like 値の parse/compare   | `ParseSemanticVersion`, `CompareVersion`           |
-| `ipv4`              | P1   | C++17    | IPv4 parse/format                | `ParseIpV4`, `FormatIpV4`                          |
-| `mac_address`       | P1   | C++17    | MAC address parse/format         | `ParseMacAddress`, `FormatMacAddress`              |
-| `function`          | P2   | C++17    | callable/visitor の儀式除去      | `Overload`, `MakeOverload`                         |
-| `variant_match`     | P2   | C++17    | `std::variant` visitor 補助      | `Match`, `Holds`, `GetIf`                          |
-| `optional_ext`      | P2   | C++17    | optional の小さい合成            | `MapOptional`, `AndThen`, `ValueOrEval`            |
-| `contract`          | P2   | C++11    | precondition 明示                | `Expects`, `RequireNonNull`, `CheckBounds`         |
-| `c_interop`         | P2   | C++11    | C API 境界の事故防止             | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle` |
-| `platform_error`    | P2   | C++17    | errno/Windows error の文字列化   | `ErrnoMessage`, `WindowsErrorMessage`              |
-| `state_table`       | P2   | C++17    | 小さい状態遷移表                 | `NextState`, `IsValidTransition`                   |
-| `cache_once`        | P2   | C++11    | once/lazy value                  | `OnceValue`, `Lazy`, `GetOrCreate`                 |
-| `serialization_tlv` | P2   | C++17    | length-prefix/TLV                | `EncodeTlv`, `TryDecodeTlv`                        |
-| `tuple`             | P2   | C++17    | tuple/pair の小さい補助          | `ForEach`, `Transform`                             |
-| `build_config`      | P2   | C++11    | feature detection                | `KET_HAS_STD_OPTIONAL`                             |
-| `math_small`        | P2   | C++11    | 単位・補間など小さい数学         | `Lerp`, `MapRange`, `DegreesToRadians`             |
-| `meta`              | P3   | C++11/17 | type traits 補助                 | `RemoveCvref`, `AlwaysFalse`                       |
-| `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助     | `JoiningThread`, `FutureReady`                     |
-| `uuid`              | P3   | C++17    | UUID parse/format                | `ParseUuid`, `FormatUuid`                          |
-| `color_rgb`         | P3   | C++11    | RGB小値型                        | `ParseColorRgb`, `FormatColorRgbHex`               |
-| `percent`           | P3   | C++11    | percent小値型                    | `Percent::FromRatio`, `ClampPercent`               |
-| `recipes`           | P3   | mixed    | moduleの使い方実例               | `recipes/binary_payload`, `recipes/c_api_wrapper`  |
+| Module              | 優先 | C++ Min  | 狙い                                  | 代表API                                            |
+| ------------------- | ---- | -------- | ------------------------------------- | -------------------------------------------------- |
+| `bcd`               | done | C++17    | packed BCD 変換                       | `ParseBcd`, `ToBcd8`, `BcdToDecimalString`         |
+| `bits`              | P0   | C++11    | bit/nibble/mask の事故防止            | `HighNibble`, `HasBit`, `Mask`                     |
+| `numeric`           | P0   | C++11    | overflow/align/cast の小さい正解      | `AlignUp`, `CheckedAdd`, `InRange`                 |
+| `endian`            | P0   | C++11    | unaligned/endian 読み書き             | `LoadBe32`, `StoreLe16`                            |
+| `hex`               | P0   | C++17    | bytes と16進文字列/hex dump           | `BytesToHex`, `HexToBytes`, `HexDump`              |
+| `parse_numeric`     | P0   | C++17    | `from_chars` 周りの儀式除去           | `ParseUInt`, `TryParseHex`                         |
+| `enum_table`        | P0   | C++17    | enum class と文字列変換               | `EnumName`, `ParseEnum`, `ToUnderlying`            |
+| `container`         | P0   | C++11/17 | map/vector の小さい儀式               | `ContainsKey`, `AtOrNull`, `GetOrDefault`          |
+| `string_ascii`      | P0   | C++17    | ASCII前提の文字列処理                 | `TrimAscii`, `SplitView`, `ToLowerAscii`           |
+| `scope`             | P0   | C++11    | RAII cleanup                          | `ScopeExit`, `MakeScopeExit`, `RestoreOnExit`      |
+| `byte_reader`       | P0   | C++11    | byte列の安全な逐次読み取り            | `ReadU8`, `ReadBe16`, `Remaining`                  |
+| `byte_writer`       | P0   | C++11    | fixed buffer への安全な書き込み       | `WriteU8`, `WriteLe32`, `Remaining`                |
+| `bytes_builder`     | P0   | C++17    | owning payload builder                | `AppendU8`, `AppendBe16`, `Build`                  |
+| `date`              | P0   | C++11    | 日付・時刻の妥当性                    | `IsLeapYear`, `IsValidDate`                        |
+| `deadline`          | P0   | C++11    | timeout と elapsed time               | `Stopwatch`, `Deadline`                            |
+| `cli`               | P0   | C++17    | 小さい社内CLIの option 取得           | `HasOption`, `GetOption`, `Positional`             |
+| `byte_view`         | P1   | C++11    | non-owning byte span                  | `ByteView`, `SubView`, `SafeAt`                    |
+| `utf8`              | P1   | C++17    | UTF-8検査を小さく隔離                 | `ValidateUtf8`, `IsUtf8`, `Utf8Length`             |
+| `file`              | P1   | C++17    | ファイル全読み/全書き                 | `ReadAllText`, `WriteAllBytes`                     |
+| `io_stream`         | P1   | C++11    | stream の確実な読み書き               | `ReadExactly`, `StreamStateSaver`                  |
+| `format_value`      | P1   | C++17    | 診断用文字列                          | `ToHexString`, `FormatBytes`, `FormatDuration`     |
+| `algorithm_range`   | P1   | C++11    | iterator pair の儀式除去              | `AllOf`, `FindIf`, `IndexOf`                       |
+| `memory`            | P1   | C++11    | alignment/object bytes                | `IsAligned`, `TryAlignUp`, `SecureZero`            |
+| `pointer`           | P1   | C++11    | null/ownership の明示                 | `NotNull`, `LockWeak`, `AddressOf`                 |
+| `testing_bytes`     | P1   | C++17    | bytes系テスト補助                     | `BytesEq`, `HexEq`                                 |
+| `version`           | P1   | C++17    | numeric version triplet parse/compare | `ket::version::Parse`, `ket::version::Format`      |
+| `ipv4`              | P1   | C++17    | IPv4 parse/format                     | `ParseIpV4`, `FormatIpV4`                          |
+| `mac_address`       | P1   | C++17    | MAC address parse/format              | `ParseMacAddress`, `FormatMacAddress`              |
+| `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`                         |
+| `variant_match`     | P2   | C++17    | `std::variant` visitor 補助           | `Match`, `Holds`, `GetIf`                          |
+| `optional_ext`      | P2   | C++17    | optional の小さい合成                 | `MapOptional`, `AndThen`, `ValueOrEval`            |
+| `contract`          | done | C++11    | precondition 明示                     | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds` |
+| `c_interop`         | P2   | C++11    | C API 境界の事故防止                  | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle` |
+| `platform_error`    | P2   | C++17    | errno/Windows error の文字列化        | `ErrnoMessage`, `WindowsErrorMessage`              |
+| `state`             | P2   | C++17    | 小さい状態遷移表                      | `Next`, `IsAllowed`                                |
+| `cache_once`        | P2   | C++11    | once/lazy value                       | `OnceValue`, `Lazy`, `GetOrCreate`                 |
+| `serialization_tlv` | P2   | C++17    | length-prefix/TLV                     | `EncodeTlv`, `TryDecodeTlv`                        |
+| `tuple`             | P2   | C++17    | tuple/pair の小さい補助               | `ForEach`, `Transform`                             |
+| `build_config`      | P2   | C++11    | feature detection                     | `KET_HAS_STD_OPTIONAL`                             |
+| `math_small`        | P2   | C++11    | 単位・補間など小さい数学              | `Lerp`, `MapRange`, `DegreesToRadians`             |
+| `meta`              | P3   | C++11/17 | type traits 補助                      | `RemoveCvref`, `AlwaysFalse`                       |
+| `concurrency_small` | P3   | C++11    | join/lock/timeout の局所補助          | `JoiningThread`, `FutureReady`                     |
+| `uuid`              | P3   | C++17    | UUID parse/format                     | `ParseUuid`, `FormatUuid`                          |
+| `color`             | done | C++11    | RGB小値型                             | `Rgb`, `TryParse`, `Format`                        |
+| `percent`           | P3   | C++11    | percent小値型                         | `Percent::FromRatio`, `ClampPercent`               |
+| `recipes`           | P3   | mixed    | moduleの使い方実例                    | `recipes/binary_payload`, `recipes/c_api_wrapper`  |
 
 ---
 
@@ -859,6 +858,11 @@ namespace ket
 
 ### 6.9 `modules/scope/ket_scope.h`
 
+この初期案は `docs/module_api_catalog.md` の `scope` moduleで置き換え済み。
+実装済みAPIは `ket::scope::Exit`、`ket::scope::MakeExit`、`ket::scope::Restore`、
+`ket::scope::MakeRestore`。旧名 `ScopeExit`、`MakeScopeExit`、`RestoreOnExit`、
+`MakeRestoreOnExit` は採用しない。
+
 目的: cleanup 漏れ、早期 return 時の復元漏れを防ぐ。
 
 C++ Min: C++11
@@ -1423,23 +1427,34 @@ namespace ket
 ```cpp
 namespace ket
 {
+namespace memory
+{
 	bool IsAligned(const void* ptr, std::size_t alignment) noexcept;
-	bool TryAlignUpPtr(const void* ptr, std::size_t alignment, const void** out) noexcept;
-	bool TryAlignDownPtr(const void* ptr, std::size_t alignment, const void** out) noexcept;
+	bool TryAlignUp(const void* ptr, std::size_t alignment, const void*& out) noexcept;
+	bool TryAlignUp(void* ptr, std::size_t alignment, void*& out) noexcept;
+	template <typename T>
+	bool TryAlignUp(T* ptr, std::size_t alignment, T*& out) noexcept;
+	bool TryAlignDown(const void* ptr, std::size_t alignment, const void*& out) noexcept;
+	bool TryAlignDown(void* ptr, std::size_t alignment, void*& out) noexcept;
+	template <typename T>
+	bool TryAlignDown(T* ptr, std::size_t alignment, T*& out) noexcept;
 
-	void ZeroMemory(void* ptr, std::size_t size) noexcept;
-	void SecureZeroMemory(void* ptr, std::size_t size) noexcept;
+	void Zero(void* ptr, std::size_t size) noexcept;
+	void SecureZero(void* ptr, std::size_t size) noexcept;
 
 	template <typename T>
-	const std::uint8_t* ObjectBytes(const T& object) noexcept;
+	const unsigned char* ObjectBytes(const T& object) noexcept;
 
 	template <typename T>
-	std::size_t ObjectByteSize(const T& object) noexcept;
+	constexpr std::size_t ObjectByteSize(const T& object) noexcept;
 
+} // namespace memory
 } // namespace ket
 ```
 
 注意: object lifetime に踏み込む API は危険。最初は alignment と object representation の読み取りに絞る。
+実装では `TryAlignUpPtr`、`TryAlignDownPtr`、`ZeroMemory`、`SecureZeroMemory` の候補名を採用せず、
+module namespace 内の `TryAlignUp`、`TryAlignDown`、`Zero`、`SecureZero` に正規化した。
 
 ---
 
@@ -1476,6 +1491,10 @@ namespace ket
 
 ### 7.9 `modules/testing_bytes/ket_testing_bytes.h`
 
+この初期案は `docs/module_api_catalog.md` の `testing` moduleで置き換え済み。
+実装済みAPIは `ket::testing::BytesEqual` と `ket::testing::HexEqual`。
+旧名 `BytesEq` と `HexEq` は採用しない。
+
 ```cpp
 namespace ket
 {
@@ -1503,6 +1522,11 @@ namespace ket
 
 ### 7.10 `modules/semantic_version/ket_semantic_version.h`
 
+この初期案は `docs/module_api_catalog.md` の `version` moduleで置き換え済み。
+実装済みAPIは `ket::version::Triplet`、`ket::version::Parse`、
+`ket::version::Format`、`ket::version::Compare`。旧名 `SemanticVersion`、
+`ParseSemanticVersion`、`FormatSemanticVersion`、`CompareSemanticVersion` は採用しない。
+
 ```cpp
 namespace ket
 {
@@ -1529,6 +1553,10 @@ namespace ket
 ---
 
 ### 7.11 `modules/ipv4/ket_ipv4.h`
+
+この案は `docs/module_api_catalog.md` の `ipv4` moduleで置き換え済み。実装済みAPIは
+`modules/ipv4/ket_ipv4.h` の `ket::ipv4::Address`、`ket::ipv4::Parse`、`ket::ipv4::Format`、
+`ket::ipv4::ToBe32`、`ket::ipv4::FromBe32`。
 
 ```cpp
 namespace ket
@@ -1609,6 +1637,10 @@ namespace ket
 
 ### 8.2 `modules/variant_match/ket_variant_match.h`
 
+この案は `docs/module_api_catalog.md` の `variant` moduleで置き換え済み。実装済みAPIは
+`modules/variant/ket_variant.h` の `ket::variant::Match` のみで、`Holds` と `GetIf` は初回APIに
+含めない。
+
 ```cpp
 namespace ket
 {
@@ -1657,25 +1689,39 @@ namespace ket
 ```cpp
 namespace ket
 {
-	void Expects(bool condition) noexcept;
-	void Ensures(bool condition) noexcept;
-	void AssertInvariant(bool condition) noexcept;
+	namespace contract
+	{
+		enum class Kind
+		{
+			kExpects,
+			kEnsures,
+			kInvariant
+		};
 
-	template <typename T>
-	T* RequireNonNull(T* ptr) noexcept;
+		[[noreturn]] void Fail(Kind kind, const char* expression, const char* file, int line) noexcept;
+		void Expects(bool condition, const char* expression, const char* file, int line) noexcept;
+		void Ensures(bool condition, const char* expression, const char* file, int line) noexcept;
+		void AssertInvariant(bool condition, const char* expression, const char* file, int line) noexcept;
 
-	bool CheckBounds(std::size_t index, std::size_t size) noexcept;
+		template <typename T>
+		T* RequireNonNull(T* ptr, const char* expression, const char* file, int line) noexcept;
 
-	template <typename T>
-	bool RequireInRange(T value, T min_value, T max_value) noexcept;
+		constexpr bool IsInBounds(std::size_t index, std::size_t size) noexcept;
+
+	} // namespace contract
 
 } // namespace ket
+
+#define KET_EXPECTS(condition)
+#define KET_ENSURES(condition)
+#define KET_ASSERT_INVARIANT(condition)
+#define KET_REQUIRE_NON_NULL(ptr)
 ```
 
 仕様メモ:
 
 - assert/abort/terminate のポリシーを明確にする。
-- macro にしすぎない。
+- global macro は `KET_` prefixの4個に限定する。
 - `debug` とは分ける。contract は意味、debug は観測。
 
 ---
@@ -1736,31 +1782,46 @@ namespace ket
 
 ---
 
-### 8.7 `modules/state_table/ket_state_table.h`
+### 8.7 `modules/state/ket_state.h`
 
 ```cpp
 namespace ket
 {
-	template <typename State, typename Event>
-	struct Transition
+	namespace state
 	{
-		State from;
-		Event event;
-		State to;
-	};
+		template <typename State, typename Event>
+		struct Transition
+		{
+			State from;
+			Event event;
+			State to;
+		};
 
-	template <typename State, typename Event, std::size_t N>
-	bool IsValidTransition(
-		State current,
-		Event event,
-		const Transition<State, Event> (&table)[N]) noexcept;
+		template <typename State, typename Event, std::size_t N>
+		constexpr bool IsAllowed(
+			const State& current,
+			const Event& event,
+			const Transition<State, Event> (&table)[N]);
 
-	template <typename State, typename Event, std::size_t N>
-	std::optional<State> NextState(
-		State current,
-		Event event,
-		const Transition<State, Event> (&table)[N]) noexcept;
+		template <typename State, typename Event, std::size_t N>
+		constexpr bool IsAllowed(
+			const State& current,
+			const Event& event,
+			const std::array<Transition<State, Event>, N>& table);
 
+		template <typename State, typename Event, std::size_t N>
+		constexpr std::optional<State> Next(
+			const State& current,
+			const Event& event,
+			const Transition<State, Event> (&table)[N]);
+
+		template <typename State, typename Event, std::size_t N>
+		constexpr std::optional<State> Next(
+			const State& current,
+			const Event& event,
+			const std::array<Transition<State, Event>, N>& table);
+
+	} // namespace state
 } // namespace ket
 ```
 
