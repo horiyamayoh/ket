@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 
 #include <gtest/gtest.h>
 
@@ -80,6 +81,27 @@ TEST(KetMacTest, ParsesDecimalHexDigitsAndBoundaryBytes)
 
 /**
  * @test
+ * @brief 明示長string_viewのparse確認。
+ * @details 有効なMAC addressの後ろに余分なbyteを持つbufferから先頭17文字だけを
+ * string_viewとして渡し、view範囲だけでparseされることを確認。
+ * @pre C++17以降。
+ * @post テスト対象APIと外部状態の変更なし。
+ */
+TEST(KetMacTest, ParsesExplicitLengthStringView)
+{
+	const auto text = std::string("AA:BB:CC:DD:EE:FF trailing");
+	const auto view = std::string_view(text.data(), 17U);
+	const auto parsed = ket::mac::Parse(view);
+	const auto expected = ket::mac::Address{{0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0xFFU}};
+	const auto parsed_has_value = parsed.has_value();
+	ASSERT_TRUE(parsed_has_value);
+
+	const auto parsed_value = parsed.value_or(ket::mac::Address{});
+	EXPECT_EQ(parsed_value, expected);
+}
+
+/**
+ * @test
  * @brief MAC address値の比較確認。
  * @details 同じ6 byte値と異なる6
  * byte値を比較し、等価/非等価演算子とoptional比較が同じ意味になることを確認。
@@ -95,11 +117,13 @@ TEST(KetMacTest, ComparesAddressValues)
 	const std::optional<ket::mac::Address> expected = same;
 
 	const auto values_match = lhs == same;
+	const auto values_do_not_match = lhs == different;
 	const auto values_do_not_differ = lhs != same;
 	const auto values_differ = lhs != different;
 	const auto optional_matches = parsed == expected;
 
 	EXPECT_TRUE(values_match);
+	EXPECT_FALSE(values_do_not_match);
 	EXPECT_FALSE(values_do_not_differ);
 	EXPECT_TRUE(values_differ);
 	EXPECT_TRUE(optional_matches);
@@ -168,10 +192,16 @@ TEST(KetMacTest, RejectsInvalidHexDigit)
 	const auto invalid_first = ket::mac::Parse("GA:BB:CC:DD:EE:FF");
 	const auto invalid_second = ket::mac::Parse("AA:BG:CC:DD:EE:FF");
 	const auto invalid_last = ket::mac::Parse("AA:BB:CC:DD:EE:FG");
+	const char embedded_null_text[] = {
+		'A', 'A', ':', 'B', 'B', ':', 'C', 'C', ':', 'D', 'D', ':', 'E', 'E', ':', '\0', 'F'};
+	const auto embedded_null_view =
+		std::string_view(embedded_null_text, sizeof(embedded_null_text));
+	const auto embedded_null = ket::mac::Parse(embedded_null_view);
 
 	EXPECT_EQ(invalid_first, std::nullopt);
 	EXPECT_EQ(invalid_second, std::nullopt);
 	EXPECT_EQ(invalid_last, std::nullopt);
+	EXPECT_EQ(embedded_null, std::nullopt);
 }
 
 /**
