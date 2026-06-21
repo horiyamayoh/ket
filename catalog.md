@@ -2103,7 +2103,7 @@ Tests:
 - table empty
 - constexpr lookup
 
-## Idea: CacheOnce
+## Idea: Cache
 
 Category: cache
 
@@ -2126,7 +2126,7 @@ C++バージョン要件:
 
 - 最小要件：C++11
 - 本ライブラリの適用を推奨する C++ バージョン：C++11以降
-- 推奨理由：lazy value の thread-safety と例外後状態を局所的に固定できる
+- 推奨理由：lazy value の非 thread-safe 方針と例外後状態を局所的に固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -2138,7 +2138,7 @@ Failure / edge cases:
 - move-only value
 - copy/move of Lazy disabled
 - destructor exception terminates
-- reentrancy precondition
+- reentrancy terminates when detected
 
 他のライブラリへの依存:
 
@@ -2152,6 +2152,7 @@ Tests:
 - exception leaves empty
 - move-only value
 - address stability
+- reentrancy termination
 - copy/move disabled compile-only
 
 ## Idea: Tlv

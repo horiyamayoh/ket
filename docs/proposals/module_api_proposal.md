@@ -212,7 +212,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 5. `c_interop`
 6. `platform_error`
 7. `state`
-8. `cache_once`
+8. `cache`
 9. `tlv`
 10. `tuple`
 11. `build_config`
@@ -270,7 +270,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `c_interop`         | P2   | C++11    | C API 境界の事故防止                  | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle`         |
 | `platform_error`    | P2   | C++17    | errno/Windows error の文字列化        | `ErrnoMessage`, `WindowsErrorMessage`                      |
 | `state`             | P2   | C++17    | 小さい状態遷移表                      | `Next`, `IsAllowed`                                        |
-| `cache_once`        | P2   | C++11    | once/lazy value                       | `OnceValue`, `Lazy`, `GetOrCreate`                         |
+| `cache`             | P2   | C++11    | once/lazy value                       | `Lazy`, `HasValue`, `GetOrCreate`                          |
 | `tlv`               | P2   | C++11    | length-prefix/TLV                     | `Encode`, `Append`, `TryDecode`                            |
 | `tuple`             | P2   | C++17    | tuple/pair の小さい補助               | `ForEach`, `Transform`                                     |
 | `build_config`      | P2   | C++11    | feature detection                     | `KET_HAS_STD_OPTIONAL`                                     |
@@ -488,10 +488,10 @@ namespace ket
 	void StoreLe32(std::uint8_t* data, std::uint32_t value) noexcept;
 	void StoreLe64(std::uint8_t* data, std::uint64_t value) noexcept;
 
-	bool TryLoadBe16(const std::uint8_t* data, std::size_t size, std::uint16_t* out) noexcept;
-	bool TryLoadBe32(const std::uint8_t* data, std::size_t size, std::uint32_t* out) noexcept;
-	bool TryLoadLe16(const std::uint8_t* data, std::size_t size, std::uint16_t* out) noexcept;
-	bool TryLoadLe32(const std::uint8_t* data, std::size_t size, std::uint32_t* out) noexcept;
+	bool TryLoadBe16(const std::uint8_t* data, std::size_t size, std::uint16_t& out) noexcept;
+	bool TryLoadBe32(const std::uint8_t* data, std::size_t size, std::uint32_t& out) noexcept;
+	bool TryLoadLe16(const std::uint8_t* data, std::size_t size, std::uint16_t& out) noexcept;
+	bool TryLoadLe32(const std::uint8_t* data, std::size_t size, std::uint32_t& out) noexcept;
 
 	bool TryStoreBe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept;
 	bool TryStoreBe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept;
@@ -1849,36 +1849,36 @@ namespace ket
 
 ---
 
-### 8.8 `modules/cache_once/ket_cache_once.h`
+### 8.8 `modules/cache/ket_cache.h`
 
 ```cpp
 namespace ket
 {
-	template <typename T>
-	class Lazy
+	namespace cache
 	{
-	public:
-		bool HasValue() const noexcept;
-		void Reset();
+		template <typename T>
+		class Lazy
+		{
+		public:
+			Lazy() noexcept;
+			~Lazy() noexcept;
+			Lazy(const Lazy&) = delete;
+			Lazy& operator=(const Lazy&) = delete;
+			Lazy(Lazy&&) = delete;
+			Lazy& operator=(Lazy&&) = delete;
 
-		template <typename Factory>
-		T& GetOrCreate(Factory factory);
-	};
+			bool HasValue() const noexcept;
+			void Reset() noexcept;
 
-	template <typename T>
-	class OnceValue
-	{
-	public:
-		bool HasValue() const noexcept;
+			template <typename Factory>
+			T& GetOrCreate(Factory&& factory);
+		};
 
-		template <typename Factory>
-		const T& Get(Factory factory);
-	};
-
+	} // namespace cache
 } // namespace ket
 ```
 
-注意: thread-safe かどうかを名前かコメントに出す。初回は non-thread-safe でよい。
+注意: canonical name は `cache`。初回は non-thread-safe の `Lazy` のみに絞り、`OnceValue` は作らない。
 
 ---
 

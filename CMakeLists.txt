@@ -199,6 +199,20 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_cache_test
+		SOURCES
+			modules/cache/ket_cache_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_cache_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/cache/ket_cache_cxx11_check.cpp
+	)
+	add_dependencies(ket_cache_test ket_cache_cxx11_check)
+
+	ket_add_module_test(
 		ket_object_test
 		SOURCES
 			modules/object/ket_object_test.cpp

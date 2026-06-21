@@ -17,6 +17,7 @@ Statusは次の値を使います。
 | ----------- | ------------------- | -------- | ------- | ---------------------------------- | ------- | --------------------------------------------- |
 | bcd         | numeric / binary    | verified | C++17   | GoogleTest                         | checked | packed BCDと10進整数・文字列を相互変換        |
 | bits        | numeric / binary    | verified | C++11   | GoogleTest + C++11 compile-only    | checked | bit/nibble/mask/rotateの境界処理              |
+| cache       | cache               | verified | C++11   | GoogleTest + C++11 compile-only    | checked | once/lazy valueの遅延生成と再利用             |
 | container   | container           | verified | C++11   | GoogleTest + C++11 compile-only    | checked | map/vector の小さいlookup、生成、削除補助     |
 | ascii       | string              | verified | C++17   | GoogleTest                         | checked | ASCII前提のtrim、split、case変換、置換        |
 | cli         | CLI                 | verified | C++17   | GoogleTest                         | checked | argc/argvから小さいCLI optionを取得           |
