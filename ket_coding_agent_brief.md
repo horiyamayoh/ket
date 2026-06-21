@@ -670,24 +670,15 @@ ket の「広大な視野」を保つための地図である。
 候補:
 
 ```cpp
-ket::IgnoreUnused(...)
-ket::Unreachable()
-ket::Exchange(obj, new_value)
-ket::ArraySize(array)
-ket::AsConst(x)
-ket::Identity(x)
-```
-
-関連する型:
-
-```cpp
-ket::NonCopyable
-ket::NonMovable
+ket::lang::IgnoreUnused(...)
+ket::lang::ArraySize(array)
+ket::lang::AsConst(x)
 ```
 
 注意:
 
 - `ToUnderlying` は `language` でも `enum` でもよいが、enum module に寄せてもよい
+- 未到達動作、exchange、identity、copy/move制御は初回の language module には含めない
 - マクロは最小限にする
 
 ---
@@ -790,12 +781,11 @@ std::visit(ket::Overload{
 候補:
 
 ```cpp
-ket::Expects(condition)
-ket::Ensures(condition)
-ket::AssertInvariant(condition)
-ket::RequireNonNull(ptr)
-ket::RequireInRange(value, min, max)
-ket::CheckBounds(index, size)
+KET_EXPECTS(condition)
+KET_ENSURES(condition)
+KET_ASSERT_INVARIANT(condition)
+KET_REQUIRE_NON_NULL(ptr)
+ket::contract::IsInBounds(index, size)
 ```
 
 注意:
@@ -944,6 +934,8 @@ ket::memory::ObjectByteSize(obj)
 
 - C++20の `std::construct_at` と重なる
 - object representation と object lifetime は危険領域なので、API名とコメントで用途を限定する
+- pointer alignment の戻り値は address-level の結果で、object bounds や dereference 可能性は保証しない
+- `ObjectBytes` は padding/endian/layout を含むため、serialization や安定比較には使わない
 
 ---
 
@@ -1649,6 +1641,7 @@ ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
 ket::version::Parse(text)
+ket::version::Format(value)
 ket::version::Compare(a, b)
 ```
 
@@ -1666,12 +1659,9 @@ ket::version::Compare(a, b)
 候補:
 
 ```cpp
-ket::Transition<State, Event>
-ket::TransitionTable<State, Event>
-ket::IsValidTransition(current, event, table)
-ket::NextState(current, event, table)
-ket::StateName(state, table)
-ket::EventName(event, table)
+ket::state::Transition<State, Event>
+ket::state::IsAllowed(current, event, table)
+ket::state::Next(current, event, table)
 ```
 
 注意:
