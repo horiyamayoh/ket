@@ -1754,8 +1754,10 @@ Failure / edge cases:
 
 - unhandled alternative is compile error
 - handler exception propagation
+- valueless_by_exception propagation
 - const / non-const
 - lvalue / rvalue
+- handler copy / move
 - void / non-void return
 
 他のライブラリへの依存:
@@ -1769,7 +1771,10 @@ Tests:
 - reference preservation
 - const variant
 - rvalue variant
+- lvalue handler copy
+- move-only rvalue handler
 - exception propagation
+- valueless_by_exception propagation
 - missing handler compile error
 
 ## Idea: OptionalExt

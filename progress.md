@@ -24,6 +24,7 @@ Statusは次の値を使います。
 | deadline    | time                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | steady_clockベースの経過時間と期限判定   |
 | parse       | parsing             | verified | C++17   | GoogleTest                         | checked | from_chars境界条件とbool parseを固定     |
 | string      | string              | verified | C++17   | GoogleTest                         | checked | 複数文字列片の連結と既存文字列への追記   |
+| variant     | variant             | verified | C++17   | GoogleTest                         | checked | std::variant visitor補助                  |
 | utf8        | text                | verified | C++17   | GoogleTest                         | checked | UTF-8 byte列の妥当性検査とcode point数取得 |
 | tuple       | tuple               | verified | C++17   | GoogleTest                         | checked | tuple要素のindex順反復と変換             |
 | optional    | optional            | verified | C++17   | GoogleTest                         | checked | optionalの値変換、合成、遅延fallback評価 |
