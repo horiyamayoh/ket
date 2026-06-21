@@ -211,7 +211,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 4. `contract`
 5. `c_interop`
 6. `platform_error`
-7. `state_table`
+7. `state`
 8. `cache_once`
 9. `serialization_tlv`
 10. `tuple`
@@ -269,7 +269,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `contract`          | done | C++11    | precondition 明示                     | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds` |
 | `c_interop`         | P2   | C++11    | C API 境界の事故防止                  | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle` |
 | `platform_error`    | P2   | C++17    | errno/Windows error の文字列化        | `ErrnoMessage`, `WindowsErrorMessage`              |
-| `state_table`       | P2   | C++17    | 小さい状態遷移表                      | `NextState`, `IsValidTransition`                   |
+| `state`             | P2   | C++17    | 小さい状態遷移表                      | `Next`, `IsAllowed`                                |
 | `cache_once`        | P2   | C++11    | once/lazy value                       | `OnceValue`, `Lazy`, `GetOrCreate`                 |
 | `serialization_tlv` | P2   | C++17    | length-prefix/TLV                     | `EncodeTlv`, `TryDecodeTlv`                        |
 | `tuple`             | P2   | C++17    | tuple/pair の小さい補助               | `ForEach`, `Transform`                             |
@@ -1782,31 +1782,46 @@ namespace ket
 
 ---
 
-### 8.7 `modules/state_table/ket_state_table.h`
+### 8.7 `modules/state/ket_state.h`
 
 ```cpp
 namespace ket
 {
-	template <typename State, typename Event>
-	struct Transition
+	namespace state
 	{
-		State from;
-		Event event;
-		State to;
-	};
+		template <typename State, typename Event>
+		struct Transition
+		{
+			State from;
+			Event event;
+			State to;
+		};
 
-	template <typename State, typename Event, std::size_t N>
-	bool IsValidTransition(
-		State current,
-		Event event,
-		const Transition<State, Event> (&table)[N]) noexcept;
+		template <typename State, typename Event, std::size_t N>
+		constexpr bool IsAllowed(
+			const State& current,
+			const Event& event,
+			const Transition<State, Event> (&table)[N]);
 
-	template <typename State, typename Event, std::size_t N>
-	std::optional<State> NextState(
-		State current,
-		Event event,
-		const Transition<State, Event> (&table)[N]) noexcept;
+		template <typename State, typename Event, std::size_t N>
+		constexpr bool IsAllowed(
+			const State& current,
+			const Event& event,
+			const std::array<Transition<State, Event>, N>& table);
 
+		template <typename State, typename Event, std::size_t N>
+		constexpr std::optional<State> Next(
+			const State& current,
+			const Event& event,
+			const Transition<State, Event> (&table)[N]);
+
+		template <typename State, typename Event, std::size_t N>
+		constexpr std::optional<State> Next(
+			const State& current,
+			const Event& event,
+			const std::array<Transition<State, Event>, N>& table);
+
+	} // namespace state
 } // namespace ket
 ```
 

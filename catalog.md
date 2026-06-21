@@ -2054,7 +2054,8 @@ Failure / edge cases:
 - undefined transition
 - duplicate transition first wins
 - table order
-- unknown enum value
+- unlisted enum value
+- empty std::array table
 - no actions / guards
 
 他のライブラリへの依存:
@@ -2068,7 +2069,9 @@ Tests:
 - unknown transition
 - duplicate first wins
 - enum class use
+- scalar state/event
 - table empty
+- constexpr lookup
 
 ## Idea: CacheOnce
 

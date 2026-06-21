@@ -151,6 +151,12 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_state_test
+		SOURCES
+			modules/state/ket_state_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_color_test
 		SOURCES
 			modules/color/ket_color_test.cpp
