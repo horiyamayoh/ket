@@ -39,6 +39,7 @@ Statusは次の値を使います。
 | port        | network / value     | verified | C++17   | GoogleTest                         | checked | TCP/UDP port番号の値型とparse/format          |
 | variant     | variant             | verified | C++17   | GoogleTest                         | checked | std::variant visitor補助                      |
 | utf8        | text                | verified | C++17   | GoogleTest                         | checked | UTF-8 byte列の妥当性検査とcode point数取得    |
+| tlv         | binary              | verified | C++11   | GoogleTest + C++11 compile-only    | checked | 小さいTLV recordをencode/decode               |
 | tuple       | tuple               | verified | C++17   | GoogleTest                         | checked | tuple要素のindex順反復と変換                  |
 | optional    | optional            | verified | C++17   | GoogleTest                         | checked | optionalの値変換、合成、遅延fallback評価      |
 | meta        | meta                | verified | C++11   | GoogleTest + C++11 compile-only    | checked | C++11/14欠落type traitsの小補助               |

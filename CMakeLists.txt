@@ -341,6 +341,22 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_tlv_test
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_tlv_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_cxx11_check.cpp
+	)
+	add_dependencies(ket_tlv_test ket_tlv_cxx11_check)
+
+	ket_add_module_test(
 		ket_tuple_test
 		SOURCES
 			modules/tuple/ket_tuple_test.cpp
