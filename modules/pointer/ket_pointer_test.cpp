@@ -192,7 +192,7 @@ TEST(KetPointerTest, AccessesMembersThroughArrow)
  * @details 所有中のshared pointerから作ったweak pointerをlockし、同じ参照先のshared
  * pointerを返すことを確認。
  * @pre C++17以降。
- * @post ownerとweakの状態変更なし。
+ * @post ownerとweak objectへの代入なし。lockedは参照先objectの共有所有権を持つ。
  */
 TEST(KetPointerTest, LocksAliveWeakPointer)
 {
@@ -202,9 +202,10 @@ TEST(KetPointerTest, LocksAliveWeakPointer)
 	const auto locked = ket::pointer::LockWeak(weak);
 	const auto* const locked_raw = locked.get();
 	const auto* const owner_raw = owner.get();
-	const auto locked_value = *locked;
+	ASSERT_NE(locked_raw, nullptr);
 
 	EXPECT_EQ(locked_raw, owner_raw);
+	const auto locked_value = *locked;
 	EXPECT_EQ(locked_value, 42);
 }
 

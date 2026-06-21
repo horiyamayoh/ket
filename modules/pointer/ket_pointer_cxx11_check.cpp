@@ -55,6 +55,21 @@ namespace
 	int kValue = 0;
 	constexpr ket::pointer::NotNull<int> kConstexprPointer(&kValue);
 
+	template <typename T>
+	struct HasAddressOfExpression
+	{
+	  private:
+		template <typename U>
+		static auto Test(int) -> decltype(ket::pointer::AddressOf(std::declval<U>()),
+										  std::true_type());
+
+		template <typename>
+		static std::false_type Test(...);
+
+	  public:
+		static const bool value = decltype(Test<T>(0))::value;
+	};
+
 	static_assert(kConstexprPointer.Get() == &kValue, "NotNull construction is constexpr");
 	static_assert(std::is_same<decltype(kConstexprPointer.Get()), int*>::value,
 				  "NotNull::Get returns the stored raw pointer type");
@@ -82,6 +97,9 @@ namespace
 	static_assert(std::is_convertible<ket::pointer::NotNull<DerivedTarget>,
 									  ket::pointer::NotNull<BaseTarget>>::value,
 				  "NotNull supports derived-to-base pointer conversion");
+	static_assert(!std::is_convertible<ket::pointer::NotNull<BaseTarget>,
+									   ket::pointer::NotNull<DerivedTarget>>::value,
+				  "NotNull rejects base-to-derived pointer conversion");
 
 	static_assert(
 		std::is_same<decltype(ket::pointer::LockWeak(std::declval<const std::weak_ptr<int>&>())),
@@ -96,6 +114,10 @@ namespace
 	static_assert(std::is_same<decltype(ket::pointer::AddressOf(std::declval<const int&>())),
 							   const int*>::value,
 				  "AddressOf returns const pointer for const lvalue");
+	static_assert(HasAddressOfExpression<int&>::value, "AddressOf accepts mutable lvalues");
+	static_assert(HasAddressOfExpression<const int&>::value, "AddressOf accepts const lvalues");
+	static_assert(!HasAddressOfExpression<int&&>::value, "AddressOf rejects mutable rvalues");
+	static_assert(!HasAddressOfExpression<const int&&>::value, "AddressOf rejects const rvalues");
 	static_assert(noexcept(ket::pointer::AddressOf(std::declval<int&>())), "AddressOf is noexcept");
 
 } // namespace

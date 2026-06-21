@@ -30,7 +30,6 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-
 namespace ket
 {
 	namespace pointer
@@ -43,7 +42,8 @@ namespace ket
 		 * @brief nullを保持しないraw pointer wrapper。
 		 * @tparam T 参照先の型。
 		 * @note 所有権は持たず、参照先のlifetimeは呼び出し側の責任。
-		 * @note `void`は対象外。参照先型があるraw pointerに限定。
+		 * @note `void`は対象外。class instantiation時のstatic_assertで拒否。
+		 * 参照先型があるraw pointerに限定。
 		 */
 		template <typename T>
 		class NotNull
@@ -109,10 +109,7 @@ namespace ket
 			 * // ptr.Get() == &value
 			 * @endcode
 			 */
-			constexpr T* Get() const noexcept // NOLINT(modernize-use-nodiscard): C++11 signature.
-			{
-				return ptr_;
-			}
+			constexpr T* Get() const noexcept; // NOLINT(modernize-use-nodiscard): C++11 signature.
 
 			/**
 			 * @brief 保持中のraw pointerの参照先取得。
@@ -127,10 +124,7 @@ namespace ket
 			 * @endcode
 			 */
 			constexpr typename std::add_lvalue_reference<T>::type // NOLINT(modernize-type-traits)
-			operator*() const noexcept
-			{
-				return *ptr_;
-			}
+			operator*() const noexcept;
 
 			/**
 			 * @brief 保持中のraw pointerのmember access。
@@ -147,10 +141,7 @@ namespace ket
 			 * // ptr->value == 42
 			 * @endcode
 			 */
-			constexpr T* operator->() const noexcept
-			{
-				return ptr_;
-			}
+			constexpr T* operator->() const noexcept;
 
 		  private:
 			constexpr NotNull(T* ptr, AlreadyChecked /*already_checked*/) noexcept : ptr_(ptr) {}
@@ -164,7 +155,8 @@ namespace ket
 		 * @retval value `weak.lock()`で得たshared pointer。
 		 * @retval empty `weak`がexpiredのときの空shared pointer。
 		 * @pre `weak`は有効なstd::weak_ptr object。
-		 * @post `weak`と外部状態の変更なし。
+		 * @post `weak` objectと参照先objectの状態変更なし。成功時は返却shared
+		 * pointerが共有所有権を持つ。
 		 * @code
 		 * const auto locked = ket::pointer::LockWeak(weak);
 		 * // expiredなら空std::shared_ptr
@@ -186,6 +178,20 @@ namespace ket
 		 */
 		template <typename T>
 		T* AddressOf(T& value) noexcept;
+
+		/**
+		 * @brief temporary objectのaddress取得を禁止。
+		 * @param[in] value address取得対象外のrvalue。
+		 * @retval ptr 呼び出し不可。
+		 * @pre 呼び出し不可。temporary objectのaddressを保持しない。
+		 * @post 呼び出し不可。
+		 * @code
+		 * struct Entry {};
+		 * // auto* ptr = ket::pointer::AddressOf(Entry{});  // compile error
+		 * @endcode
+		 */
+		template <typename T>
+		const T* AddressOf(const T&& value) noexcept = delete;
 
 		// -----------------------------------------------------------------------------
 		// Internal implementation details
@@ -223,6 +229,25 @@ namespace ket
 		constexpr NotNull<T>::operator NotNull<U>() const noexcept
 		{
 			return NotNull<U>(ptr_, typename NotNull<U>::AlreadyChecked());
+		}
+
+		template <typename T>
+		constexpr T* NotNull<T>::Get() const noexcept
+		{
+			return ptr_;
+		}
+
+		template <typename T>
+		constexpr typename std::add_lvalue_reference<T>::type // NOLINT(modernize-type-traits)
+		NotNull<T>::operator*() const noexcept
+		{
+			return *ptr_;
+		}
+
+		template <typename T>
+		constexpr T* NotNull<T>::operator->() const noexcept
+		{
+			return ptr_;
 		}
 
 		template <typename T>
