@@ -63,7 +63,6 @@ namespace ket
 			/**
 			 * @brief std::threadの所有権取得。
 			 * @param[in] thread 所有対象のstd::thread。joinableでないthreadも受け付ける。
-			 * @retval void 戻り値なし。
 			 * @pre `thread`がjoinableな場合、destructorや代入でself-joinにならない寿命関係。
 			 * @post `thread`の移動元状態を所有。引数のthread objectは移動元として破棄。
 			 * @code
