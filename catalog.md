@@ -632,11 +632,18 @@ Candidate API:
 
 ```cpp
 ket::ascii::Trim(text)
+ket::ascii::TrimLeft(text)
+ket::ascii::TrimRight(text)
 ket::ascii::SplitViews(text, delimiter)
+ket::ascii::Split(text, delimiter)
+ket::ascii::Join(parts, delimiter)
 ket::ascii::ToLower(text)
+ket::ascii::ToUpper(text)
+ket::ascii::EqualsIgnoreCase(a, b)
 ket::ascii::ReplaceAll(text, from, to)
 ket::ascii::StartsWith(text, prefix)
 ket::ascii::EndsWith(text, suffix)
+ket::ascii::Contains(text, needle)
 ket::ascii::StripPrefix(text, prefix)
 ket::ascii::StripSuffix(text, suffix)
 ```
@@ -659,9 +666,11 @@ Failure / edge cases:
 
 - ASCII whitespace のみ
 - UTF-8 byte は保持
+- ReplaceAll の空 from は std::invalid_argument
 - leading / trailing delimiter
 - empty fields
 - view lifetime
+- viewを返すAPIは一時std::stringを拒否
 - allocation 例外
 
 他のライブラリへの依存:
@@ -673,8 +682,10 @@ Tests:
 
 - Trim empty / whitespace / normal
 - SplitViews keeps empty fields
+- SplitViews rejects temporary string
 - ToLower leaves non-ASCII bytes unchanged
 - ReplaceAll no match / repeated match
+- ReplaceAll rejects empty from
 - StartsWith / EndsWith boundaries
 
 ## Idea: Scope

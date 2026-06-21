@@ -144,6 +144,13 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_ascii_test
+		SOURCES
+			modules/ascii/ket_ascii.cpp
+			modules/ascii/ket_ascii_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_parse_test
 		SOURCES
 			modules/parse/ket_parse_test.cpp
