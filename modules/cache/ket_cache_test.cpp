@@ -1,5 +1,6 @@
 #include "ket_cache.h"
 
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
@@ -136,6 +137,23 @@ namespace
 
 	  private:
 		int* call_count_;
+	};
+
+	class ClassSpecificPlacementNewValue
+	{
+	  public:
+		static void* operator new(std::size_t size, void* storage) = delete;
+
+		explicit ClassSpecificPlacementNewValue(int value) noexcept : value_(value) {}
+
+		[[nodiscard]]
+		int Value() const noexcept
+		{
+			return value_;
+		}
+
+	  private:
+		int value_;
 	};
 
 	void CreateLazyWithThrowingDestructor()
@@ -549,6 +567,29 @@ TEST(KetCacheTest, AcceptsMoveOnlyLvalueFactory)
 	EXPECT_EQ(first, 123);
 	EXPECT_EQ(second, 123);
 	EXPECT_EQ(same_address, true);
+}
+
+/**
+ * @test
+ * @brief global placement new利用の確認。
+ * @details class-specific placement newを持つ型でもLazy内部の手動storageへ構築できることを確認。
+ * @pre C++17以降。
+ * @post `value`は保持値あり。class-specific placement newは呼び出されない。
+ */
+TEST(KetCacheTest, UsesGlobalPlacementNewForManualStorage)
+{
+	ket::cache::Lazy<ClassSpecificPlacementNewValue> value;
+
+	const ClassSpecificPlacementNewValue& created = value.GetOrCreate(
+		[]
+		{
+			return 77;
+		});
+	const auto has_value = value.HasValue();
+	const auto stored_value = created.Value();
+
+	EXPECT_EQ(has_value, true);
+	EXPECT_EQ(stored_value, 77);
 }
 
 /**

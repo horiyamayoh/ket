@@ -61,7 +61,7 @@ namespace ket
 		  public:
 			/**
 			 * @brief 空状態のlazy value構築。
-			 * @pre `T`は`std::aligned_storage`で格納可能なobject type。
+			 * @pre `T`は`alignas(T)`付きbyte storageで格納可能なobject type。
 			 * @post 保持値なし。heap allocationなし。
 			 * @code
 			 * ket::cache::Lazy<int> value;
@@ -188,8 +188,7 @@ namespace ket
 			T& GetOrCreate(Factory&& factory);
 
 		  private:
-			// NOLINTNEXTLINE(modernize-type-traits): C++11最小要件のため`_t` alias不使用。
-			typename std::aligned_storage<sizeof(T), alignof(T)>::type storage_;
+			alignas(T) unsigned char storage_[sizeof(T)];
 			bool has_value_ = false;
 			bool is_constructing_ = false;
 			bool is_destroying_ = false;
@@ -343,7 +342,7 @@ namespace ket
 			try
 			{
 				T* const value = detail::MarkConstructed(
-					new (storage) T(std::forward<Factory>(factory)()), has_value_);
+					::new (storage) T(std::forward<Factory>(factory)()), has_value_);
 				is_constructing_ = false;
 
 				// cppcheck-suppress nullPointer

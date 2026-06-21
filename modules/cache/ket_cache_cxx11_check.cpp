@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <type_traits>
 
 #include "ket_cache.h"
@@ -47,6 +48,22 @@ namespace
 
 	  private:
 		int* call_count_;
+	};
+
+	class ClassSpecificPlacementNewValue
+	{
+	  public:
+		static void* operator new(std::size_t size, void* storage) = delete;
+
+		explicit ClassSpecificPlacementNewValue(int value) noexcept : value_(value) {}
+
+		int Value() const noexcept
+		{
+			return value_;
+		}
+
+	  private:
+		int value_;
 	};
 
 	struct IntFactory
@@ -101,4 +118,10 @@ void KetCacheCxx11CompileCheck()
 	const MoveOnlyValue& created_move_only = move_only_value.GetOrCreate(MoveOnlyFactory());
 	const auto stored_value = created_move_only.Value();
 	static_cast<void>(stored_value);
+
+	ket::cache::Lazy<ClassSpecificPlacementNewValue> placement_new_value;
+	const ClassSpecificPlacementNewValue& created_placement_new =
+		placement_new_value.GetOrCreate(IntFactory());
+	const auto placement_new_stored_value = created_placement_new.Value();
+	static_cast<void>(placement_new_stored_value);
 }
