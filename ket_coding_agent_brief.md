@@ -790,12 +790,11 @@ std::visit(ket::Overload{
 候補:
 
 ```cpp
-ket::Expects(condition)
-ket::Ensures(condition)
-ket::AssertInvariant(condition)
-ket::RequireNonNull(ptr)
-ket::RequireInRange(value, min, max)
-ket::CheckBounds(index, size)
+KET_EXPECTS(condition)
+KET_ENSURES(condition)
+KET_ASSERT_INVARIANT(condition)
+KET_REQUIRE_NON_NULL(ptr)
+ket::contract::IsInBounds(index, size)
 ```
 
 注意:
@@ -947,6 +946,8 @@ ket::memory::ObjectByteSize(obj)
 
 - C++20の `std::construct_at` と重なる
 - object representation と object lifetime は危険領域なので、API名とコメントで用途を限定する
+- pointer alignment の戻り値は address-level の結果で、object bounds や dereference 可能性は保証しない
+- `ObjectBytes` は padding/endian/layout を含むため、serialization や安定比較には使わない
 
 ---
 
@@ -1652,6 +1653,7 @@ ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
 ket::version::Parse(text)
+ket::version::Format(value)
 ket::version::Compare(a, b)
 ```
 
