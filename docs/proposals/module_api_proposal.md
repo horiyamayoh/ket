@@ -267,7 +267,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `function`          | P2   | C++17    | callable/visitor の儀式除去           | `Overload`, `MakeOverload`                         |
 | `variant_match`     | P2   | C++17    | `std::variant` visitor 補助           | `Match`, `Holds`, `GetIf`                          |
 | `optional_ext`      | P2   | C++17    | optional の小さい合成                 | `MapOptional`, `AndThen`, `ValueOrEval`            |
-| `contract`          | P2   | C++11    | precondition 明示                     | `Expects`, `RequireNonNull`, `CheckBounds`         |
+| `contract`          | done | C++11    | precondition 明示                     | `KET_EXPECTS`, `KET_REQUIRE_NON_NULL`, `IsInBounds` |
 | `c_interop`         | P2   | C++11    | C API 境界の事故防止                  | `ErrnoGuard`, `CopyStringToBuffer`, `UniqueHandle` |
 | `platform_error`    | P2   | C++17    | errno/Windows error の文字列化        | `ErrnoMessage`, `WindowsErrorMessage`              |
 | `state_table`       | P2   | C++17    | 小さい状態遷移表                      | `NextState`, `IsValidTransition`                   |
@@ -1690,25 +1690,39 @@ namespace ket
 ```cpp
 namespace ket
 {
-	void Expects(bool condition) noexcept;
-	void Ensures(bool condition) noexcept;
-	void AssertInvariant(bool condition) noexcept;
+	namespace contract
+	{
+		enum class Kind
+		{
+			kExpects,
+			kEnsures,
+			kInvariant
+		};
 
-	template <typename T>
-	T* RequireNonNull(T* ptr) noexcept;
+		[[noreturn]] void Fail(Kind kind, const char* expression, const char* file, int line) noexcept;
+		void Expects(bool condition, const char* expression, const char* file, int line) noexcept;
+		void Ensures(bool condition, const char* expression, const char* file, int line) noexcept;
+		void AssertInvariant(bool condition, const char* expression, const char* file, int line) noexcept;
 
-	bool CheckBounds(std::size_t index, std::size_t size) noexcept;
+		template <typename T>
+		T* RequireNonNull(T* ptr, const char* expression, const char* file, int line) noexcept;
 
-	template <typename T>
-	bool RequireInRange(T value, T min_value, T max_value) noexcept;
+		constexpr bool IsInBounds(std::size_t index, std::size_t size) noexcept;
+
+	} // namespace contract
 
 } // namespace ket
+
+#define KET_EXPECTS(condition)
+#define KET_ENSURES(condition)
+#define KET_ASSERT_INVARIANT(condition)
+#define KET_REQUIRE_NON_NULL(ptr)
 ```
 
 仕様メモ:
 
 - assert/abort/terminate のポリシーを明確にする。
-- macro にしすぎない。
+- global macro は `KET_` prefixの4個に限定する。
 - `debug` とは分ける。contract は意味、debug は観測。
 
 ---

@@ -1874,11 +1874,8 @@ KET_EXPECTS(condition)
 KET_ENSURES(condition)
 KET_ASSERT_INVARIANT(condition)
 KET_REQUIRE_NON_NULL(ptr)
-ket::contract::CheckBounds(index, size)
+ket::contract::IsInBounds(index, size)
 ```
-
-Canonical API in `docs/module_api_catalog.md`: `ket::contract::CheckBounds` is superseded by
-`ket::contract::IsInBounds`.
 
 C++バージョン要件:
 
@@ -1887,7 +1884,7 @@ C++バージョン要件:
 - 推奨理由：契約違反時のプロジェクト方針を小さいAPIへ閉じ込められる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：C++ contracts は標準化状況と利用可能性が安定していない
+- 標準代替：安定して利用できる直接代替なし。C++ contracts は標準化状況と利用可能性が安定していない
 
 Failure / edge cases:
 
@@ -1908,8 +1905,13 @@ Tests:
 - valid path
 - KET_EXPECTS death
 - KET_ENSURES death
+- KET_ASSERT_INVARIANT death
 - KET_REQUIRE_NON_NULL success / failure
 - expression one-time evaluation
+- explicit bool condition
+- pointer type preservation
+- bounds max value
+- IsInBounds constexpr
 - NDEBUG compile path
 
 ## Idea: CInterop

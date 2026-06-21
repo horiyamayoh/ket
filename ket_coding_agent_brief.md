@@ -790,12 +790,11 @@ std::visit(ket::Overload{
 候補:
 
 ```cpp
-ket::Expects(condition)
-ket::Ensures(condition)
-ket::AssertInvariant(condition)
-ket::RequireNonNull(ptr)
-ket::RequireInRange(value, min, max)
-ket::CheckBounds(index, size)
+KET_EXPECTS(condition)
+KET_ENSURES(condition)
+KET_ASSERT_INVARIANT(condition)
+KET_REQUIRE_NON_NULL(ptr)
+ket::contract::IsInBounds(index, size)
 ```
 
 注意:
