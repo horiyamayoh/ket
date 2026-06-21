@@ -746,9 +746,9 @@ ket::object::ResetOnMove<T>
 候補:
 
 ```cpp
-ket::Overload{...}
-ket::MakeOverload(...)
-ket::Noop()
+ket::function::Overload
+ket::function::MakeOverload(...)
+ket::function::Noop{}
 ket::Invoke(f, args...)
 ket::BindFront(f, args...)
 ket::FunctionRef<R(Args...)>
@@ -758,7 +758,12 @@ ket::MoveOnlyFunction<R(Args...)>
 特に欲しいもの:
 
 ```cpp
-std::visit(ket::Overload{
+std::visit(ket::function::MakeOverload(
+    [](const A&) { ... },
+    [](const B&) { ... }
+), value);
+
+std::visit(ket::function::Overload{
     [](const A&) { ... },
     [](const B&) { ... },
 }, value);
@@ -1637,6 +1642,7 @@ ket::ipv4::Parse(text)
 ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
+mac_a == mac_b
 ket::version::Parse(text)
 ket::version::Format(value)
 ket::version::Compare(a, b)
