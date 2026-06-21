@@ -161,9 +161,11 @@ TEST(KetPercentTest, RejectsInvalidPercentInputsWithoutChangingOut)
 {
 	const auto sentinel = MakePercent(1234U);
 	const auto quiet_nan = std::numeric_limits<double>::quiet_NaN();
+	const auto signaling_nan = std::numeric_limits<double>::signaling_NaN();
 	const auto infinity = std::numeric_limits<double>::infinity();
 	const auto double_max = std::numeric_limits<double>::max();
 	const auto double_lowest = std::numeric_limits<double>::lowest();
+	const auto has_signaling_nan = std::numeric_limits<double>::has_signaling_NaN;
 
 	auto negative_out = sentinel;
 	auto just_below_out = sentinel;
@@ -172,6 +174,7 @@ TEST(KetPercentTest, RejectsInvalidPercentInputsWithoutChangingOut)
 	auto max_out = sentinel;
 	auto lowest_out = sentinel;
 	auto nan_out = sentinel;
+	auto signaling_nan_out = sentinel;
 	auto positive_infinity_out = sentinel;
 	auto negative_infinity_out = sentinel;
 
@@ -182,6 +185,12 @@ TEST(KetPercentTest, RejectsInvalidPercentInputsWithoutChangingOut)
 	const auto max_created = ket::percent::Percent::TryFromPercent(double_max, max_out);
 	const auto lowest_created = ket::percent::Percent::TryFromPercent(double_lowest, lowest_out);
 	const auto nan_created = ket::percent::Percent::TryFromPercent(quiet_nan, nan_out);
+	auto signaling_nan_created = false;
+	if (has_signaling_nan)
+	{
+		signaling_nan_created =
+			ket::percent::Percent::TryFromPercent(signaling_nan, signaling_nan_out);
+	}
 	const auto positive_infinity_created =
 		ket::percent::Percent::TryFromPercent(infinity, positive_infinity_out);
 	const auto negative_infinity_created =
@@ -194,6 +203,7 @@ TEST(KetPercentTest, RejectsInvalidPercentInputsWithoutChangingOut)
 	EXPECT_FALSE(max_created);
 	EXPECT_FALSE(lowest_created);
 	EXPECT_FALSE(nan_created);
+	EXPECT_FALSE(signaling_nan_created);
 	EXPECT_FALSE(positive_infinity_created);
 	EXPECT_FALSE(negative_infinity_created);
 	EXPECT_EQ(negative_out, sentinel);
@@ -203,6 +213,7 @@ TEST(KetPercentTest, RejectsInvalidPercentInputsWithoutChangingOut)
 	EXPECT_EQ(max_out, sentinel);
 	EXPECT_EQ(lowest_out, sentinel);
 	EXPECT_EQ(nan_out, sentinel);
+	EXPECT_EQ(signaling_nan_out, sentinel);
 	EXPECT_EQ(positive_infinity_out, sentinel);
 	EXPECT_EQ(negative_infinity_out, sentinel);
 }
@@ -254,9 +265,11 @@ TEST(KetPercentTest, RejectsInvalidRatioInputsWithoutChangingOut)
 {
 	const auto sentinel = MakePercent(1234U);
 	const auto quiet_nan = std::numeric_limits<double>::quiet_NaN();
+	const auto signaling_nan = std::numeric_limits<double>::signaling_NaN();
 	const auto infinity = std::numeric_limits<double>::infinity();
 	const auto double_max = std::numeric_limits<double>::max();
 	const auto double_lowest = std::numeric_limits<double>::lowest();
+	const auto has_signaling_nan = std::numeric_limits<double>::has_signaling_NaN;
 
 	auto negative_out = sentinel;
 	auto just_below_out = sentinel;
@@ -265,6 +278,7 @@ TEST(KetPercentTest, RejectsInvalidRatioInputsWithoutChangingOut)
 	auto max_out = sentinel;
 	auto lowest_out = sentinel;
 	auto nan_out = sentinel;
+	auto signaling_nan_out = sentinel;
 	auto positive_infinity_out = sentinel;
 	auto negative_infinity_out = sentinel;
 
@@ -275,6 +289,12 @@ TEST(KetPercentTest, RejectsInvalidRatioInputsWithoutChangingOut)
 	const auto max_created = ket::percent::Percent::TryFromRatio(double_max, max_out);
 	const auto lowest_created = ket::percent::Percent::TryFromRatio(double_lowest, lowest_out);
 	const auto nan_created = ket::percent::Percent::TryFromRatio(quiet_nan, nan_out);
+	auto signaling_nan_created = false;
+	if (has_signaling_nan)
+	{
+		signaling_nan_created =
+			ket::percent::Percent::TryFromRatio(signaling_nan, signaling_nan_out);
+	}
 	const auto positive_infinity_created =
 		ket::percent::Percent::TryFromRatio(infinity, positive_infinity_out);
 	const auto negative_infinity_created =
@@ -287,6 +307,7 @@ TEST(KetPercentTest, RejectsInvalidRatioInputsWithoutChangingOut)
 	EXPECT_FALSE(max_created);
 	EXPECT_FALSE(lowest_created);
 	EXPECT_FALSE(nan_created);
+	EXPECT_FALSE(signaling_nan_created);
 	EXPECT_FALSE(positive_infinity_created);
 	EXPECT_FALSE(negative_infinity_created);
 	EXPECT_EQ(negative_out, sentinel);
@@ -296,6 +317,7 @@ TEST(KetPercentTest, RejectsInvalidRatioInputsWithoutChangingOut)
 	EXPECT_EQ(max_out, sentinel);
 	EXPECT_EQ(lowest_out, sentinel);
 	EXPECT_EQ(nan_out, sentinel);
+	EXPECT_EQ(signaling_nan_out, sentinel);
 	EXPECT_EQ(positive_infinity_out, sentinel);
 	EXPECT_EQ(negative_infinity_out, sentinel);
 }
@@ -310,11 +332,20 @@ TEST(KetPercentTest, RejectsInvalidRatioInputsWithoutChangingOut)
 TEST(KetPercentTest, ClampsPercentInputs)
 {
 	const auto quiet_nan = std::numeric_limits<double>::quiet_NaN();
+	const auto signaling_nan = std::numeric_limits<double>::signaling_NaN();
 	const auto infinity = std::numeric_limits<double>::infinity();
+	const auto has_signaling_nan = std::numeric_limits<double>::has_signaling_NaN;
 
+	const auto exact_zero = ket::percent::Percent::FromPercentClamped(0.0);
 	const auto negative = ket::percent::Percent::FromPercentClamped(-12.0);
 	const auto nan = ket::percent::Percent::FromPercentClamped(quiet_nan);
+	auto signaling_nan_clamped = ket::percent::Percent::FromPercentClamped(0.0);
+	if (has_signaling_nan)
+	{
+		signaling_nan_clamped = ket::percent::Percent::FromPercentClamped(signaling_nan);
+	}
 	const auto negative_infinity = ket::percent::Percent::FromPercentClamped(-infinity);
+	const auto exact_hundred = ket::percent::Percent::FromPercentClamped(100.0);
 	const auto too_large = ket::percent::Percent::FromPercentClamped(120.0);
 	const auto positive_infinity = ket::percent::Percent::FromPercentClamped(infinity);
 	const auto rounds_to_zero = ket::percent::Percent::FromPercentClamped(0.004);
@@ -323,9 +354,12 @@ TEST(KetPercentTest, ClampsPercentInputs)
 	const auto rounds_down_near_hundred = ket::percent::Percent::FromPercentClamped(99.994);
 	const auto rounds_to_hundred = ket::percent::Percent::FromPercentClamped(99.995);
 
+	EXPECT_EQ(exact_zero.BasisPoints(), 0U);
 	EXPECT_EQ(negative.BasisPoints(), 0U);
 	EXPECT_EQ(nan.BasisPoints(), 0U);
+	EXPECT_EQ(signaling_nan_clamped.BasisPoints(), 0U);
 	EXPECT_EQ(negative_infinity.BasisPoints(), 0U);
+	EXPECT_EQ(exact_hundred.BasisPoints(), 10000U);
 	EXPECT_EQ(too_large.BasisPoints(), 10000U);
 	EXPECT_EQ(positive_infinity.BasisPoints(), 10000U);
 	EXPECT_EQ(rounds_to_zero.BasisPoints(), 0U);

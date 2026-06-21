@@ -5,11 +5,17 @@
 namespace
 {
 	constexpr ket::percent::Percent kDefaultPercent;
+	constexpr ket::percent::Percent kOtherPercent = ket::percent::Percent();
 
 	static_assert(kDefaultPercent.BasisPoints() == 0U, "default percent is C++11 constexpr");
 	static_assert(kDefaultPercent.ToPercent() == 0.0, "percent conversion is C++11 constexpr");
 	static_assert(kDefaultPercent.ToRatio() == 0.0, "ratio conversion is C++11 constexpr");
 	static_assert(kDefaultPercent == ket::percent::Percent{}, "comparison is C++11 constexpr");
+	static_assert(!(kDefaultPercent != ket::percent::Percent{}), "inequality is C++11 constexpr");
+	static_assert(!(kDefaultPercent < kOtherPercent), "less-than is C++11 constexpr");
+	static_assert(kDefaultPercent <= kOtherPercent, "less-equal is C++11 constexpr");
+	static_assert(!(kDefaultPercent > kOtherPercent), "greater-than is C++11 constexpr");
+	static_assert(kDefaultPercent >= kOtherPercent, "greater-equal is C++11 constexpr");
 
 } // namespace
 

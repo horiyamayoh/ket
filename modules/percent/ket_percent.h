@@ -29,6 +29,8 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstring>
+#include <limits>
 
 namespace ket
 {
@@ -54,7 +56,7 @@ namespace ket
 			 * // value.BasisPoints() == 0
 			 * @endcode
 			 */
-			constexpr Percent() noexcept;
+			constexpr Percent() noexcept : basis_points_(0U) {}
 
 			/**
 			 * @brief basis points単位からPercent値を構築。
@@ -172,7 +174,10 @@ namespace ket
 			 * @pre `basis_points <= 10000`。
 			 * @post 構築後のBasisPoints()は`basis_points`。
 			 */
-			explicit constexpr Percent(std::uint16_t basis_points) noexcept;
+			explicit constexpr Percent(std::uint16_t basis_points) noexcept
+				: basis_points_(basis_points)
+			{
+			}
 
 			std::uint16_t basis_points_;
 		};
@@ -286,8 +291,80 @@ namespace ket
 		namespace detail
 		{
 			constexpr std::uint16_t kMaxBasisPoints = 10000U;
+			constexpr std::uint64_t kDoubleExponentMask = 0x7ff0000000000000ULL;
+			constexpr std::uint64_t kDoubleFractionMask = 0x000fffffffffffffULL;
 			constexpr double kMaxPercent = 100.0;
 			constexpr double kMaxRatio = 1.0;
+
+			/**
+			 * @brief IEEE-754 doubleのbit列取得。
+			 * @param[in] value 対象値。
+			 * @retval value `value`のobject representationをuint64_tとして読んだ値。
+			 * @pre `sizeof(double) == sizeof(std::uint64_t)`。
+			 * @post 引数とketオブジェクトの変更なし。
+			 * @note signaling NaNを浮動小数点演算へ渡さず分類するためのhelper。
+			 */
+			inline std::uint64_t DoubleBits(double value) noexcept
+			{
+				std::uint64_t bits = 0U;
+				std::memcpy(&bits, &value, sizeof(bits));
+				return bits;
+			}
+
+			/**
+			 * @brief IEEE-754 double bit列のNaN判定。
+			 * @param[in] value 対象値。
+			 * @retval true `value`がquiet NaNまたはsignaling NaN。
+			 * @retval false `value`がNaNではない値。
+			 * @pre `std::numeric_limits<double>::is_iec559`かつ`sizeof(double) ==
+			 * sizeof(std::uint64_t)`。
+			 * @post 引数とketオブジェクトの変更なし。
+			 */
+			inline bool IsIeeeNan(double value) noexcept
+			{
+				const auto bits = DoubleBits(value);
+				const auto exponent = bits & kDoubleExponentMask;
+				const auto fraction = bits & kDoubleFractionMask;
+
+				return exponent == kDoubleExponentMask && fraction != 0U;
+			}
+
+			/**
+			 * @brief IEEE-754 double bit列の有限判定。
+			 * @param[in] value 対象値。
+			 * @retval true `value`が有限値。
+			 * @retval false `value`がNaNまたはInf。
+			 * @pre `std::numeric_limits<double>::is_iec559`かつ`sizeof(double) ==
+			 * sizeof(std::uint64_t)`。
+			 * @post 引数とketオブジェクトの変更なし。
+			 */
+			inline bool IsIeeeFinite(double value) noexcept
+			{
+				const auto bits = DoubleBits(value);
+				const auto exponent = bits & kDoubleExponentMask;
+
+				return exponent != kDoubleExponentMask;
+			}
+
+			/**
+			 * @brief NaNの判定。
+			 * @param[in] value 判定対象の値。
+			 * @retval true NaN。
+			 * @retval false NaNではない値。
+			 * @pre なし。
+			 * @post 引数とketオブジェクトの変更なし。
+			 */
+			inline bool IsNan(double value) noexcept
+			{
+				const auto can_classify_by_bits = std::numeric_limits<double>::is_iec559 &&
+					sizeof(double) == sizeof(std::uint64_t);
+				if (can_classify_by_bits)
+				{
+					return IsIeeeNan(value);
+				}
+
+				return std::isnan(value);
+			}
 
 			/**
 			 * @brief 有限な浮動小数点値の判定。
@@ -299,6 +376,13 @@ namespace ket
 			 */
 			inline bool IsFinite(double value) noexcept
 			{
+				const auto can_classify_by_bits = std::numeric_limits<double>::is_iec559 &&
+					sizeof(double) == sizeof(std::uint64_t);
+				if (can_classify_by_bits)
+				{
+					return IsIeeeFinite(value);
+				}
+
 				return std::isfinite(value);
 			}
 
@@ -319,25 +403,6 @@ namespace ket
 		// -----------------------------------------------------------------------------
 		// Public API definitions
 		// -----------------------------------------------------------------------------
-
-		/**
-		 * @brief `Percent()`宣言側仕様に従う定義。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		constexpr Percent::Percent() noexcept : basis_points_(0U) {}
-
-		/**
-		 * @brief `Percent(std::uint16_t)`宣言側仕様に従う定義。
-		 * @param[in] basis_points 宣言側仕様の検証済みbasis points。
-		 * @retval value 宣言側仕様のPercent値。
-		 * @pre 宣言側preconditionに準拠。
-		 * @post 宣言側postconditionに準拠。
-		 */
-		constexpr Percent::Percent(std::uint16_t basis_points) noexcept
-			: basis_points_(basis_points)
-		{
-		}
 
 		/**
 		 * @brief `TryFromBasisPoints`宣言側仕様に従う定義。
@@ -415,7 +480,7 @@ namespace ket
 		 */
 		inline Percent Percent::FromPercentClamped(double percent) noexcept
 		{
-			const auto percent_is_nan = std::isnan(percent);
+			const auto percent_is_nan = detail::IsNan(percent);
 			if (percent_is_nan)
 			{
 				return {};
