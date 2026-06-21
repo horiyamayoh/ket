@@ -199,8 +199,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - value > 65535
+- wide unsigned value above `std::uint32_t` range
 - empty string
 - leading / trailing whitespace
+- control character or embedded NUL
 - `+` / `-`
 - non-digit character
 - integer overflow
@@ -216,10 +218,12 @@ Tests:
 - TryFromUInt(0) succeeds
 - TryFromUInt(65535) succeeds
 - TryFromUInt(65536) fails
+- TryFromUInt(std::uintmax_t max) fails
 - Parse("0") succeeds
 - Parse("65535") succeeds
 - Parse("65536") fails
 - Parse(" 80") fails
+- Parse("80\\0") fails
 - Parse("+80") fails
 - Parse("080") fails
 - Format(Port{80}) == "80"
