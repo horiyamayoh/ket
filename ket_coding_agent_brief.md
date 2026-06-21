@@ -678,16 +678,10 @@ ket::AsConst(x)
 ket::Identity(x)
 ```
 
-関連する型:
-
-```cpp
-ket::NonCopyable
-ket::NonMovable
-```
-
 注意:
 
 - `ToUnderlying` は `language` でも `enum` でもよいが、enum module に寄せてもよい
+- copy/move意図の型補助は `object` module へ分離済み
 - マクロは最小限にする
 
 ---
@@ -730,24 +724,20 @@ ket::concepts::Range
 
 目的: オブジェクトのコピー・ムーブ・初期化・リセットの儀式を減らす。
 
-候補:
+採用API:
 
 ```cpp
-ket::NonCopyable
-ket::NonMovable
-ket::MovableOnly
-ket::CopyableOnly
-ket::ResetOnMove<T>
-ket::DefaultInit<T>
-ket::NoInit<T>
-ket::SwapAndReset(a, b)
-ket::ResetToDefault(x)
+ket::object::NonCopyable
+ket::object::NonMovable
+ket::object::MoveOnly
+ket::object::ResetOnMove<T>
 ```
 
 注意:
 
-- C++11〜17では比較演算子やムーブ制御の儀式が多い
-- C++20以降の defaulted comparison と競合しないようにする
+- `NonCopyable` はcopyだけを禁止し、moveは禁止しない
+- `DefaultInit`、`NoInit`、`SwapAndReset`、公開`ResetToDefault`は今回採用しない
+- 比較演算を宣言せず、利用側の比較方針と競合させない
 
 ---
 

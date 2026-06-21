@@ -42,15 +42,46 @@ namespace ket
 
 		/**
 		 * @brief 派生型のcopyを禁止する継承用mixin。
+		 * @note moveは禁止しない。派生型のmove可否は派生型自身の特殊メンバに従う。
 		 * @note 空baseとして使うため、data memberと比較演算は持たない。
 		 */
 		class NonCopyable
 		{
 		  protected:
+			/**
+			 * @brief NonCopyable baseの既定構築。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たない。
+			 */
 			NonCopyable() = default;
+
+			/**
+			 * @brief NonCopyable baseのmove構築。
+			 * @param[in,out] other move元base。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たず、`other`にも状態変化なし。
+			 */
+			NonCopyable(NonCopyable&&) = default;
+			NonCopyable& operator=(NonCopyable&&) = default;
+
+			/**
+			 * @brief NonCopyable baseの破棄。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たない。
+			 */
 			~NonCopyable() = default;
 
 		  public:
+			/**
+			 * @brief copy構築を禁止。
+			 * @param[in] other copy元base。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * static_assert(!std::is_copy_constructible<ket::object::NonCopyable>::value,
+			 *               "NonCopyable is not copy constructible.");
+			 * @endcode
+			 */
 			NonCopyable(const NonCopyable&) = delete;
 			NonCopyable& operator=(const NonCopyable&) = delete;
 		};
@@ -62,12 +93,44 @@ namespace ket
 		class NonMovable
 		{
 		  protected:
+			/**
+			 * @brief NonMovable baseの既定構築。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たない。
+			 */
 			NonMovable() = default;
+
+			/**
+			 * @brief NonMovable baseの破棄。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たない。
+			 */
 			~NonMovable() = default;
 
 		  public:
+			/**
+			 * @brief copy構築を禁止。
+			 * @param[in] other copy元base。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * static_assert(!std::is_copy_constructible<ket::object::NonMovable>::value,
+			 *               "NonMovable is not copy constructible.");
+			 * @endcode
+			 */
 			NonMovable(const NonMovable&) = delete;
 			NonMovable& operator=(const NonMovable&) = delete;
+
+			/**
+			 * @brief move構築を禁止。
+			 * @param[in,out] other move元base。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * static_assert(!std::is_move_constructible<ket::object::NonMovable>::value,
+			 *               "NonMovable is not move constructible.");
+			 * @endcode
+			 */
 			NonMovable(NonMovable&&) = delete;
 			NonMovable& operator=(NonMovable&&) = delete;
 		};
@@ -79,12 +142,44 @@ namespace ket
 		class MoveOnly
 		{
 		  protected:
+			/**
+			 * @brief MoveOnly baseの既定構築。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たない。
+			 */
 			MoveOnly() = default;
+
+			/**
+			 * @brief MoveOnly baseの破棄。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たない。
+			 */
 			~MoveOnly() = default;
 
 		  public:
+			/**
+			 * @brief copy構築を禁止。
+			 * @param[in] other copy元base。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * static_assert(!std::is_copy_constructible<ket::object::MoveOnly>::value,
+			 *               "MoveOnly is not copy constructible.");
+			 * @endcode
+			 */
 			MoveOnly(const MoveOnly&) = delete;
 			MoveOnly& operator=(const MoveOnly&) = delete;
+
+			/**
+			 * @brief MoveOnly baseのmove構築。
+			 * @param[in,out] other move元base。
+			 * @pre なし。
+			 * @post mixin自体は状態を持たず、`other`にも状態変化なし。
+			 * @code
+			 * static_assert(std::is_move_constructible<ket::object::MoveOnly>::value,
+			 *               "MoveOnly is move constructible.");
+			 * @endcode
+			 */
 			MoveOnly(MoveOnly&&) = default;
 			MoveOnly& operator=(MoveOnly&&) = default;
 		};
@@ -108,7 +203,6 @@ namespace ket
 		  public:
 			/**
 			 * @brief 値初期化した保持値で構築。
-			 * @retval value 値初期化済みのwrapper。
 			 * @pre `T{}`が有効。
 			 * @post `Get()`は値初期化された`T`への参照を返す。
 			 * @code
@@ -121,7 +215,6 @@ namespace ket
 			/**
 			 * @brief 初期値を保持して構築。
 			 * @param[in] value 保持する初期値。
-			 * @retval value `value`からmove構築したwrapper。
 			 * @pre `T`は`value`からmove構築可能。
 			 * @post `Get()`は渡された値からmove構築した`T`への参照を返す。
 			 * @code
@@ -132,12 +225,37 @@ namespace ket
 			explicit ResetOnMove(T value);
 
 			/**
+			 * @brief copy構築を禁止。
+			 * @param[in] other copy元wrapper。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * static_assert(!std::is_copy_constructible<ket::object::ResetOnMove<int>>::value,
+			 *               "ResetOnMove is not copy constructible.");
+			 * @endcode
+			 */
+			ResetOnMove(const ResetOnMove& other) = delete;
+
+			/**
+			 * @brief copy代入を禁止。
+			 * @param[in] other copy元wrapper。
+			 * @retval reference 呼び出し不可。
+			 * @pre 呼び出し不可。
+			 * @post 呼び出し不可。
+			 * @code
+			 * static_assert(!std::is_copy_assignable<ket::object::ResetOnMove<int>>::value,
+			 *               "ResetOnMove is not copy assignable.");
+			 * @endcode
+			 */
+			ResetOnMove& operator=(const ResetOnMove& other) = delete;
+
+			/**
 			 * @brief move 構築後にsourceを値初期化状態へ戻す。
 			 * @param[in,out] other move元wrapper。
-			 * @retval value `other`の保持値からmove構築したwrapper。
 			 * @pre `other`は有効なwrapper。`T{}`によるresetが有効。
 			 * @post
 			 * 構築先はmove前の`other.Get()`の値を保持し、`other.Get()`は`T{}`で代入された状態。
+			 * @note 例外発生時の構築先とsourceの状態は`T`のmove/reset操作の保証に従う。
 			 * @code
 			 * ket::object::ResetOnMove<int> source(42);
 			 * ket::object::ResetOnMove<int> moved(std::move(source));
@@ -155,7 +273,9 @@ namespace ket
 			 * @retval value `*this`への参照。
 			 * @pre `*this`と`other`は有効なwrapper。`T{}`によるresetが有効。
 			 * @post
-			 * `*this`はmove前の`other.Get()`の値を保持し、`other.Get()`は`T{}`で代入された状態。
+			 * `this != &other`では`*this`がmove前の`other.Get()`の値を保持し、
+			 * `other.Get()`は`T{}`で代入された状態。自己move代入では保持値を変更しない。
+			 * @note 例外発生時の`*this`とsourceの状態は`T`のmove/reset操作の保証に従う。
 			 * @code
 			 * ket::object::ResetOnMove<int> source(42);
 			 * ket::object::ResetOnMove<int> target;

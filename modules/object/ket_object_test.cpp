@@ -60,10 +60,49 @@ namespace
 		int value_ = 0;
 	};
 
+	class ThrowingResetValue
+	{
+	  public:
+		ThrowingResetValue() noexcept(false)
+		{
+			MayThrow();
+		}
+
+		ThrowingResetValue(const ThrowingResetValue&) = delete;
+		ThrowingResetValue& operator=(const ThrowingResetValue&) = delete;
+
+		ThrowingResetValue(ThrowingResetValue&& other) noexcept(false) : value_(other.value_)
+		{
+			MayThrow();
+		}
+
+		ThrowingResetValue& operator=(ThrowingResetValue&& other) noexcept(false)
+		{
+			value_ = other.value_;
+			MayThrow();
+			return *this;
+		}
+
+	  private:
+		static void MayThrow() noexcept(false);
+
+		int value_ = 0;
+	};
+
+	ket::object::ResetOnMove<int>& MoveAssignForSelfMoveTest(ket::object::ResetOnMove<int>& target,
+															 ket::object::ResetOnMove<int>& source)
+	{
+		return target = std::move(source);
+	}
+
 	static_assert(!std::is_copy_constructible_v<CopyDisabled>,
 				  "NonCopyable derived type is not copy constructible.");
 	static_assert(!std::is_copy_assignable_v<CopyDisabled>,
 				  "NonCopyable derived type is not copy assignable.");
+	static_assert(std::is_move_constructible_v<CopyDisabled>,
+				  "NonCopyable derived type remains move constructible.");
+	static_assert(std::is_move_assignable_v<CopyDisabled>,
+				  "NonCopyable derived type remains move assignable.");
 	static_assert(!std::is_copy_constructible_v<MoveDisabled>,
 				  "NonMovable derived type is not copy constructible.");
 	static_assert(!std::is_copy_assignable_v<MoveDisabled>,
@@ -92,6 +131,11 @@ namespace
 				  "ResetOnMove<int> move construction is noexcept.");
 	static_assert(std::is_nothrow_move_assignable_v<ket::object::ResetOnMove<int>>,
 				  "ResetOnMove<int> move assignment is noexcept.");
+	static_assert(
+		!std::is_nothrow_move_constructible_v<ket::object::ResetOnMove<ThrowingResetValue>>,
+		"ResetOnMove<T> move construction is not noexcept when T can throw.");
+	static_assert(!std::is_nothrow_move_assignable_v<ket::object::ResetOnMove<ThrowingResetValue>>,
+				  "ResetOnMove<T> move assignment is not noexcept when T can throw.");
 
 } // namespace
 
@@ -105,15 +149,50 @@ namespace
 TEST(KetObjectTest, FixesCopyAndMoveTraitsAtCompileTime)
 {
 	const auto copy_disabled_is_copy_constructible = std::is_copy_constructible_v<CopyDisabled>;
+	const auto copy_disabled_is_move_constructible = std::is_move_constructible_v<CopyDisabled>;
 	const auto move_disabled_is_move_constructible = std::is_move_constructible_v<MoveDisabled>;
 	const auto move_only_is_move_constructible = std::is_move_constructible_v<MoveOnlyValue>;
 	const auto reset_on_move_is_move_assignable =
 		std::is_move_assignable_v<ket::object::ResetOnMove<int>>;
+	const auto throwing_reset_move_constructor_is_noexcept =
+		std::is_nothrow_move_constructible_v<ket::object::ResetOnMove<ThrowingResetValue>>;
+	const auto throwing_reset_move_assignment_is_noexcept =
+		std::is_nothrow_move_assignable_v<ket::object::ResetOnMove<ThrowingResetValue>>;
 
 	EXPECT_FALSE(copy_disabled_is_copy_constructible);
+	EXPECT_TRUE(copy_disabled_is_move_constructible);
 	EXPECT_FALSE(move_disabled_is_move_constructible);
 	EXPECT_TRUE(move_only_is_move_constructible);
 	EXPECT_TRUE(reset_on_move_is_move_assignable);
+	EXPECT_FALSE(throwing_reset_move_constructor_is_noexcept);
+	EXPECT_FALSE(throwing_reset_move_assignment_is_noexcept);
+}
+
+/**
+ * @test
+ * @brief ResetOnMoveのDoxygen例の確認。
+ * @details default構築、値構築、mutable参照、const参照の短い利用例を確認。
+ * @pre C++17以降。
+ * @post 各wrapperは有効で、保持値は期待値と一致。
+ */
+TEST(KetObjectTest, MatchesDocumentedResetOnMoveExamples)
+{
+	ket::object::ResetOnMove<int> default_value;
+	const auto default_current = default_value.Get();
+
+	ket::object::ResetOnMove<int> initial_value(42);
+	const auto initial_current = initial_value.Get();
+
+	default_value.Get() = 13;
+	const auto mutable_current = default_value.Get();
+
+	const ket::object::ResetOnMove<int> const_value(24);
+	const auto const_current = const_value.Get();
+
+	EXPECT_EQ(default_current, 0);
+	EXPECT_EQ(initial_current, 42);
+	EXPECT_EQ(mutable_current, 13);
+	EXPECT_EQ(const_current, 24);
 }
 
 /**
@@ -183,6 +262,28 @@ TEST(KetObjectTest, ResetsSourceAfterMoveAssignment)
 
 /**
  * @test
+ * @brief ResetOnMoveの自己move代入確認。
+ * @details wrapperへ自己move代入し、保持値を変更しないことを確認。
+ * @pre C++17以降。
+ * @post 対象wrapperは有効で、保持値は代入前の値を維持。
+ */
+TEST(KetObjectTest, KeepsValueOnSelfMoveAssignment)
+{
+	ket::object::ResetOnMove<int> value(11);
+
+	auto& source_alias = value;
+	const auto& assigned = MoveAssignForSelfMoveTest(value, source_alias);
+	const auto same_object = &assigned == &value;
+	// cppcheck-suppress accessMoved
+	// NOLINTNEXTLINE(bugprone-use-after-move, clang-analyzer-cplusplus.Move)
+	const auto current = value.Get();
+
+	EXPECT_TRUE(same_object);
+	EXPECT_EQ(current, 11);
+}
+
+/**
+ * @test
  * @brief ResetOnMoveのmove-only保持値確認。
  * @details unique_ptrを保持するwrapperをmove構築し、move元がnullptrへ戻ることを確認。
  * @pre C++17以降。
@@ -202,6 +303,30 @@ TEST(KetObjectTest, SupportsMoveOnlyResetValue)
 	EXPECT_TRUE(destination_has_value);
 	EXPECT_FALSE(source_has_value);
 	EXPECT_EQ(destination_value, 9);
+}
+
+/**
+ * @test
+ * @brief ResetOnMoveのmove-only保持値のmove代入確認。
+ * @details unique_ptrを保持するwrapperをmove代入し、代入先が元値、move元がnullptrへ戻ることを確認。
+ * @pre C++17以降。
+ * @post move元とmove先はともに有効なwrapper。
+ */
+TEST(KetObjectTest, SupportsMoveOnlyResetValueAssignment)
+{
+	ket::object::ResetOnMove<std::unique_ptr<int>> source(std::make_unique<int>(13));
+	ket::object::ResetOnMove<std::unique_ptr<int>> destination(std::make_unique<int>(4));
+
+	destination = std::move(source);
+	const auto destination_has_value = static_cast<bool>(destination.Get());
+	// cppcheck-suppress accessMoved
+	// NOLINTNEXTLINE(bugprone-use-after-move, clang-analyzer-cplusplus.Move)
+	const auto source_has_value = static_cast<bool>(source.Get());
+	const auto destination_value = *destination.Get();
+
+	EXPECT_TRUE(destination_has_value);
+	EXPECT_FALSE(source_has_value);
+	EXPECT_EQ(destination_value, 13);
 }
 
 /**
