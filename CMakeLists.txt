@@ -151,6 +151,20 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_pointer_test
+		SOURCES
+			modules/pointer/ket_pointer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_pointer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/pointer/ket_pointer_cxx11_check.cpp
+	)
+	add_dependencies(ket_pointer_test ket_pointer_cxx11_check)
+
+	ket_add_module_test(
 		ket_object_test
 		SOURCES
 			modules/object/ket_object_test.cpp

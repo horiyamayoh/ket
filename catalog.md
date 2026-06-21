@@ -1464,14 +1464,17 @@ C++バージョン要件:
 - 推奨理由：null許容性と所有権の有無を型名や関数名で明示できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：なし
+- 標準代替：API別。`NotNull` は直接代替なし。`LockWeak` は `std::weak_ptr::lock`、
+  `AddressOf` は `std::addressof` を意図名で薄く包む。
 
 Failure / edge cases:
 
-- NotNull(nullptr) throws
+- NotNull(nullptr) throws `std::invalid_argument`
 - non-owning lifetime
+- void pointee unsupported
 - weak expired
 - overloaded operator&
+- AddressOf rvalue rejected
 
 他のライブラリへの依存:
 
@@ -1482,8 +1485,10 @@ Tests:
 
 - nullptr rejected
 - dereference / operator->
+- conversion constraints
 - weak alive / expired
 - AddressOf ignores overloaded operator&
+- AddressOf rejects rvalues
 
 ## Idea: TestingBytes
 
