@@ -509,7 +509,8 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 
 ### enums Module
 
-- Purpose: `enum class` と文字列・整数・flags の変換を table-based で明示する。
+- Purpose: enum型と文字列・整数・flags の変換を table-based で明示する。flags操作は
+  unsigned underlying typeのbit mask enumを対象にする。
 - C++ version: 最小要件 C++17。推奨版 C++17以降。推奨理由:
   `std::string_view` と class template argument deduction を使い、table-based変換を短く書ける。
   非推奨版 なし。非推奨理由: 標準ライブラリに enum reflection や文字列変換の直接APIなし。
@@ -532,9 +533,10 @@ AGENTS.md、README.md、docs/module_lifecycle.md、docs/style.md、docs/testing.
 - Behavior: table は利用者が明示する。name と parse は完全一致。重複 entry は先に出たものを返す。
   C++17 では optional を返す `Name`/`Parse` と fallback 版 `NameOr` で足り、`TryXxx` の
   bool+out 版は持たない。CTAD 用の deduction guide を公開ヘッダに置き、`Entry{value, name}` の
-  短い table 初期化を許可する。
+  短い table 初期化を許可する。flag helper は unsigned underlying type だけを受け付け、
+  `HasFlag`/`HasAllFlags` の 0 mask は true、`HasAnyFlag` の 0 mask は false とする。
 - Failure/edge cases: unknown enum value、unknown text は失敗。flags は underlying type へ変換して
-  bit operation する。
+  bit operation する。signed underlying type のflag enumはcompile error。
 - Complexity/performance: `Name`/`Parse`/`IsValid` は table 線形走査 O(N)。flags 操作と
   `ToUnderlying` は `constexpr` の O(1)。allocation なし。
 - Tests: known/unknown value、known/unknown text、duplicate table、flags set/clear/has/all/any、

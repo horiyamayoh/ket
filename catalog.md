@@ -544,7 +544,7 @@ Failure / edge cases:
 - unknown enum
 - unknown text
 - duplicate table entry は先勝ち
-- flags の underlying 演算
+- flags の unsigned underlying 演算
 - case-sensitive parse
 
 他のライブラリへの依存:

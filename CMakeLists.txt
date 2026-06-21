@@ -267,4 +267,10 @@ if(KET_BUILD_TESTS)
 			"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
 	)
 	add_dependencies(ket_byte_view_test ket_byte_view_cxx11_check)
+
+	ket_add_module_test(
+		ket_enums_test
+		SOURCES
+			modules/enums/ket_enums_test.cpp
+	)
 endif()
