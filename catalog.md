@@ -2300,7 +2300,11 @@ KET_HAS_STD_STRING_VIEW
 KET_HAS_STD_SPAN
 KET_HAS_STD_FORMAT
 KET_COMPILER_CLANG
+KET_COMPILER_GCC
+KET_COMPILER_MSVC
+KET_OS_WINDOWS
 KET_OS_LINUX
+KET_OS_MACOS
 ```
 
 C++バージョン要件:
@@ -2316,6 +2320,8 @@ Failure / edge cases:
 
 - MSVC `_MSVC_LANG`
 - clang-cl
+- AndroidはLinuxに含めない
+- iOS/tvOS/watchOS/Mac CatalystはmacOSに含めない
 - unknown OS
 - `__has_include` absence
 - feature-test macro differences
@@ -2329,11 +2335,12 @@ Failure / edge cases:
 
 Tests:
 
-- C++11 compile-only
+- C++11/14/20/23 compile-only
 - all macros defined
 - values are 0/1
 - KET_CXX_AT_LEAST boundaries
 - compiler/OS mutual exclusion
+- span/format feature-test and usability
 - include order
 
 ## Idea: MathSmall

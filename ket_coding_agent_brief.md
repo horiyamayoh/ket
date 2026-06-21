@@ -1611,6 +1611,7 @@ KET_HAS_STD_FORMAT
 - マクロはグローバル汚染なので最小限にする
 - 各moduleが完全独立を目指すなら、build_configに依存しない選択肢もある
 - ただしC++11〜23を本気で跨ぐなら必要になりやすい
+- OS macro は platform family ではなく狭いtarget判定にし、AndroidをLinux、iOS系をmacOSに含めない
 
 ---
 
@@ -2003,7 +2004,7 @@ Tests:
 2. moduleは原則として単独でコピー可能にする
 3. 他のket moduleへの依存を増やさない
 4. 小さい重複は許容する
-5. 公開APIは `namespace ket` に置く
+5. 公開APIは `namespace ket` に置く。macro-only module だけは `KET_` prefix の global macro に限定する
 6. 公開ヘッダは、公開API宣言、内部helper、ヘッダ内公開API定義の順に書く
 7. 公開ヘッダで必要な標準ヘッダをすべてincludeする
 8. 失敗条件・境界条件をテストで固定する

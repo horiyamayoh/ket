@@ -154,6 +154,46 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_build_config_test
+		SOURCES
+			modules/build_config/ket_build_config_test.cpp
+			modules/build_config/ket_build_config_standard_first_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_build_config_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/build_config/ket_build_config_cxx11_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx11_check)
+
+	ket_add_compile_check(
+		ket_build_config_cxx14_check
+		CXX_STANDARD 14
+		SOURCES
+			modules/build_config/ket_build_config_cxx14_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx14_check)
+
+	ket_add_compile_check(
+		ket_build_config_cxx20_check
+		CXX_STANDARD 20
+		SOURCES
+			modules/build_config/ket_build_config_cxx20_check.cpp
+			modules/build_config/ket_build_config_cxx20_standard_first_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx20_check)
+
+	ket_add_compile_check(
+		ket_build_config_cxx23_check
+		CXX_STANDARD 23
+		SOURCES
+			modules/build_config/ket_build_config_cxx23_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx23_check)
+
+	ket_add_module_test(
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp

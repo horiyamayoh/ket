@@ -271,7 +271,7 @@ BCD の次に ket の価値を最も表しやすい module 群。
 | `cache`           | P2   | C++11    | once/lazy value                          | `Lazy`, `HasValue`, `GetOrCreate`                                 |
 | `tlv`             | P2   | C++11    | length-prefix/TLV                        | `Encode`, `Append`, `TryDecode`                                   |
 | `tuple`           | P2   | C++17    | tuple/pair の小さい補助                  | `ForEach`, `Transform`                                            |
-| `build_config`    | P2   | C++11    | feature detection                        | `KET_HAS_STD_OPTIONAL`                                            |
+| `build_config`    | done | C++11    | feature detection                        | `KET_CXX_VERSION`, `KET_CXX_AT_LEAST`, `KET_HAS_STD_OPTIONAL`     |
 | `math_small`      | P2   | C++11    | 単位・補間など小さい数学                 | `Lerp`, `MapRange`, `DegreesToRadians`                            |
 | `meta`            | P3   | C++11/17 | type traits 補助                         | `RemoveCvref`, `AlwaysFalse`                                      |
 | `concurrency`     | done | C++11    | join/future ready の局所補助             | `JoiningThread`, `IsReady`                                        |
@@ -1943,6 +1943,7 @@ namespace ket
 
 ```cpp
 #define KET_CXX_VERSION 201703L
+#define KET_CXX_AT_LEAST(value) (KET_CXX_VERSION >= (value) ? 1 : 0)
 #define KET_HAS_STD_OPTIONAL 1
 #define KET_HAS_STD_STRING_VIEW 1
 #define KET_HAS_STD_SPAN 0

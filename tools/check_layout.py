@@ -224,6 +224,42 @@ def first_doxygen_block(lines: list[str]) -> str:
 	return ""
 
 
+def check_build_config_header_preamble(
+	root: Path,
+	layout: ModuleLayout,
+	preamble: str,
+	errors: list[str],
+) -> None:
+	if "公開API：global KET_* macros" not in preamble:
+		add_error(
+			errors,
+			root,
+			layout.header,
+			"header preamble must describe global KET macro public API.",
+		)
+
+	if "内部実装：KET_DETAIL_* macros" not in preamble:
+		add_error(
+			errors,
+			root,
+			layout.header,
+			"header preamble must describe KET_DETAIL macro implementation.",
+		)
+
+	code_lines = uncommented_code_lines(layout.header)
+	namespace_pattern = re.compile(r"^namespace\b")
+	if any(namespace_pattern.match(line) is not None for line in code_lines):
+		add_error(errors, root, layout.header, "macro-only module must not declare a C++ namespace.")
+
+	if not any(line.startswith("#define KET_DETAIL_") for line in code_lines):
+		add_error(
+			errors,
+			root,
+			layout.header,
+			"macro-only module must keep KET_DETAIL macro implementation local to the header.",
+		)
+
+
 def check_header_preamble(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
 	if not layout.header.exists():
 		return
@@ -238,6 +274,10 @@ def check_header_preamble(root: Path, layout: ModuleLayout, errors: list[str]) -
 	for marker, message in HEADER_PREAMBLE_MARKERS:
 		if marker not in preamble:
 			add_error(errors, root, layout.header, message)
+
+	if layout.name == "build_config":
+		check_build_config_header_preamble(root, layout, preamble, errors)
+		return
 
 	# 公開APIはmodule毎の入れ子namespace (ket::<module>) を要求
 	public_namespace = f"公開API：ket::{layout.name}"
