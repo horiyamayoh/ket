@@ -15,6 +15,10 @@
 
 #include <gtest/gtest.h>
 
+#if defined(__unix__) || defined(__APPLE__)
+#include <sys/stat.h>
+#endif
+
 namespace
 {
 	std::filesystem::path CreateTemporaryDirectoryForTest(std::string_view name)
@@ -120,6 +124,16 @@ namespace
 		stream.close();
 		const auto write_succeeded = static_cast<bool>(stream);
 		ASSERT_TRUE(write_succeeded);
+	}
+
+	void ExpectBytesForTest(const std::filesystem::path& path,
+							const std::vector<std::uint8_t>& expected)
+	{
+		std::vector<std::uint8_t> actual;
+		const auto read_succeeded = ket::file::TryReadAllBytes(path, actual);
+
+		EXPECT_TRUE(read_succeeded);
+		EXPECT_EQ(actual, expected);
 	}
 
 } // namespace
@@ -247,19 +261,20 @@ TEST(KetFileTest, PreservesOutputsAndSetsErrorForMissingReads)
 	std::string text = "keep";
 	std::vector<std::uint8_t> bytes = {std::uint8_t{0xAAU}};
 	const auto expected_bytes = bytes;
-	std::error_code error;
+	std::error_code text_error;
+	std::error_code bytes_error;
 
-	const auto text_read = ket::file::TryReadAllText(path, text, &error);
-	const auto text_error_is_set = static_cast<bool>(error);
-	const auto bytes_read = ket::file::TryReadAllBytes(path, bytes, nullptr);
+	const auto text_read = ket::file::TryReadAllText(path, text, &text_error);
+	const auto bytes_read = ket::file::TryReadAllBytes(path, bytes, &bytes_error);
 	const auto exists = ket::file::Exists(path);
 	const auto is_directory = ket::file::IsDirectory(path);
 	const auto size = ket::file::Size(path);
 
 	EXPECT_FALSE(text_read);
-	EXPECT_TRUE(text_error_is_set);
+	EXPECT_EQ(text_error, std::make_error_code(std::errc::no_such_file_or_directory));
 	EXPECT_EQ(text, std::string("keep"));
 	EXPECT_FALSE(bytes_read);
+	EXPECT_EQ(bytes_error, std::make_error_code(std::errc::no_such_file_or_directory));
 	EXPECT_EQ(bytes, expected_bytes);
 	EXPECT_FALSE(exists);
 	EXPECT_FALSE(is_directory);
@@ -289,15 +304,13 @@ TEST(KetFileTest, RejectsDirectoryReadsAndReportsDirectoryQueries)
 	const auto exists = ket::file::Exists(path);
 	const auto is_directory = ket::file::IsDirectory(path);
 	const auto size = ket::file::Size(path);
-	const auto text_error_is_set = static_cast<bool>(text_error);
-	const auto bytes_error_is_set = static_cast<bool>(bytes_error);
 
 	EXPECT_FALSE(text_read);
 	EXPECT_FALSE(bytes_read);
 	EXPECT_EQ(text, std::string("keep"));
 	EXPECT_EQ(bytes, std::vector<std::uint8_t>({std::uint8_t{0xAAU}}));
-	EXPECT_TRUE(text_error_is_set);
-	EXPECT_TRUE(bytes_error_is_set);
+	EXPECT_EQ(text_error, std::make_error_code(std::errc::is_a_directory));
+	EXPECT_EQ(bytes_error, std::make_error_code(std::errc::is_a_directory));
 	EXPECT_TRUE(exists);
 	EXPECT_TRUE(is_directory);
 	EXPECT_EQ(size, std::nullopt);
@@ -437,9 +450,52 @@ TEST(KetFileTest, WritesEmptyBytesFromNullPointer)
 
 /**
  * @test
+ * @brief 空textと非null空bytesのtruncate書き込み確認。
+ * @details 既存内容を持つfileへ空textとsize 0の非null bytesを書き込み、0
+ * byteへ置換されることを確認。
+ * @pre C++17以降。temporary directoryへfile作成可能。
+ * @post temporary directory配下以外の外部状態の変更なし。
+ */
+TEST(KetFileTest, WritesEmptyInputsByTruncatingExistingFiles)
+{
+	const TemporaryDirectory temporary("empty_inputs");
+	const auto text_path = temporary.path() / "text.txt";
+	const auto bytes_path = temporary.path() / "payload.bin";
+	WriteStringForTest(text_path, "old");
+	WriteBytesForTest(bytes_path, std::vector<std::uint8_t>{std::uint8_t{0x10U}});
+	const auto byte = std::uint8_t{0xAAU};
+	std::error_code text_error = std::make_error_code(std::errc::permission_denied);
+	std::error_code bytes_error = std::make_error_code(std::errc::permission_denied);
+
+	const auto text_written = ket::file::TryWriteAllText(text_path, "", &text_error);
+	const auto bytes_written = ket::file::TryWriteAllBytes(bytes_path, &byte, 0U, &bytes_error);
+
+	std::string actual_text = "not empty";
+	std::vector<std::uint8_t> actual_bytes = {std::uint8_t{0xFFU}};
+	const auto text_read = ket::file::TryReadAllText(text_path, actual_text);
+	const auto bytes_read = ket::file::TryReadAllBytes(bytes_path, actual_bytes);
+	const auto text_size = ket::file::Size(text_path);
+	const auto bytes_size = ket::file::Size(bytes_path);
+	const auto text_error_is_set = static_cast<bool>(text_error);
+	const auto bytes_error_is_set = static_cast<bool>(bytes_error);
+
+	EXPECT_TRUE(text_written);
+	EXPECT_TRUE(bytes_written);
+	EXPECT_FALSE(text_error_is_set);
+	EXPECT_FALSE(bytes_error_is_set);
+	EXPECT_TRUE(text_read);
+	EXPECT_TRUE(bytes_read);
+	EXPECT_EQ(actual_text, std::string());
+	EXPECT_EQ(actual_bytes, std::vector<std::uint8_t>());
+	EXPECT_EQ(text_size, std::optional<std::uintmax_t>(std::uintmax_t{0U}));
+	EXPECT_EQ(bytes_size, std::optional<std::uintmax_t>(std::uintmax_t{0U}));
+}
+
+/**
+ * @test
  * @brief bytes書き込みのnullptr不正入力確認。
  * @details
- * dataがnullptrかつsizeが1の入力を渡し、falseを返しerror_codeを設定し、fileを作らないことを確認。
+ * dataがnullptrかつsizeが1の入力を新規pathと既存fileへ渡し、失敗と既存内容不変を確認。
  * @pre C++17以降。temporary directoryへfile作成可能。
  * @post temporary directory配下以外の外部状態の変更なし。
  */
@@ -447,15 +503,25 @@ TEST(KetFileTest, RejectsNullBytesWithNonZeroSize)
 {
 	const TemporaryDirectory temporary("null_bytes");
 	const auto path = temporary.path() / "invalid.bin";
+	const auto existing_path = temporary.path() / "existing.bin";
+	const auto expected_bytes = std::vector<std::uint8_t>{std::uint8_t{0x10U}, std::uint8_t{0x11U}};
+	WriteBytesForTest(existing_path, expected_bytes);
 	std::error_code error;
+	std::error_code existing_error;
 
 	const auto write_succeeded = ket::file::TryWriteAllBytes(path, nullptr, 1U, &error);
-	const auto error_is_set = static_cast<bool>(error);
+	const auto existing_write_succeeded =
+		ket::file::TryWriteAllBytes(existing_path, nullptr, 1U, &existing_error);
 	const auto exists = ket::file::Exists(path);
+	const auto existing_size = ket::file::Size(existing_path);
 
 	EXPECT_FALSE(write_succeeded);
-	EXPECT_TRUE(error_is_set);
+	EXPECT_EQ(error, std::make_error_code(std::errc::invalid_argument));
+	EXPECT_FALSE(existing_write_succeeded);
+	EXPECT_EQ(existing_error, std::make_error_code(std::errc::invalid_argument));
 	EXPECT_FALSE(exists);
+	EXPECT_EQ(existing_size, std::optional<std::uintmax_t>(std::uintmax_t{2U}));
+	ExpectBytesForTest(existing_path, expected_bytes);
 }
 
 /**
@@ -476,13 +542,56 @@ TEST(KetFileTest, ReportsWriteFailureForDirectoryPath)
 	const auto text_written = ket::file::TryWriteAllText(path, "x", &text_error);
 	const auto bytes_written =
 		ket::file::TryWriteAllBytes(path, bytes.data(), bytes.size(), &bytes_error);
-	const auto text_error_is_set = static_cast<bool>(text_error);
-	const auto bytes_error_is_set = static_cast<bool>(bytes_error);
 
 	EXPECT_FALSE(text_written);
 	EXPECT_FALSE(bytes_written);
-	EXPECT_TRUE(text_error_is_set);
-	EXPECT_TRUE(bytes_error_is_set);
+	EXPECT_EQ(text_error, std::make_error_code(std::errc::is_a_directory));
+	EXPECT_EQ(bytes_error, std::make_error_code(std::errc::is_a_directory));
+}
+
+/**
+ * @test
+ * @brief 通常file以外のpath拒否確認。
+ * @details POSIX環境でFIFOを作成し、read/writeがblockせず失敗値を返すことを確認。
+ * @pre C++17以降。POSIX FIFOを作成可能な環境。
+ * @post temporary directory配下以外の外部状態の変更なし。
+ */
+TEST(KetFileTest, RejectsNonRegularFilePaths)
+{
+#if defined(__unix__) || defined(__APPLE__)
+	const TemporaryDirectory temporary("non_regular");
+	const auto fifo_path = temporary.path() / "pipe";
+	const auto fifo_created = ::mkfifo(fifo_path.c_str(), S_IRUSR | S_IWUSR) == 0;
+	if (!fifo_created)
+	{
+		GTEST_SKIP() << "FIFO cannot be created in this environment";
+	}
+
+	std::string text = "keep";
+	std::vector<std::uint8_t> bytes = {std::uint8_t{0xAAU}};
+	std::error_code text_error;
+	std::error_code bytes_error;
+	std::error_code write_error;
+
+	const auto text_read = ket::file::TryReadAllText(fifo_path, text, &text_error);
+	const auto bytes_read = ket::file::TryReadAllBytes(fifo_path, bytes, &bytes_error);
+	const auto text_written = ket::file::TryWriteAllText(fifo_path, "x", &write_error);
+	const auto exists = ket::file::Exists(fifo_path);
+	const auto is_directory = ket::file::IsDirectory(fifo_path);
+
+	EXPECT_FALSE(text_read);
+	EXPECT_FALSE(bytes_read);
+	EXPECT_FALSE(text_written);
+	EXPECT_EQ(text, std::string("keep"));
+	EXPECT_EQ(bytes, std::vector<std::uint8_t>({std::uint8_t{0xAAU}}));
+	EXPECT_EQ(text_error, std::make_error_code(std::errc::operation_not_supported));
+	EXPECT_EQ(bytes_error, std::make_error_code(std::errc::operation_not_supported));
+	EXPECT_EQ(write_error, std::make_error_code(std::errc::operation_not_supported));
+	EXPECT_TRUE(exists);
+	EXPECT_FALSE(is_directory);
+#else
+	GTEST_SKIP() << "non-regular file path test requires POSIX FIFO support";
+#endif
 }
 
 /**

@@ -4,10 +4,10 @@
  * @file ket_file.h
  * @brief ファイル全読み、全書き、基本query API。
  *
- * @details 小さいファイルI/Oの定型処理を、全体読み込み、全体書き込み、存在確認、directory判定、
- * サイズ取得へ集約する。queryはpath存在やdirectory判定を扱い、通常ファイルだけに限定しない。
- * text encoding変換、path正規化、atomic write、再帰処理は扱わず、標準ライブラリのfilesystemと
- * streamを薄く包む。
+ * @details 小さい通常ファイルI/Oの定型処理を、全体読み込み、全体書き込み、存在確認、
+ * directory判定、サイズ取得へ集約する。read/writeは通常ファイルを対象とし、queryはpath存在や
+ * directory判定を扱うため通常ファイルだけに限定しない。text encoding変換、path正規化、atomic
+ * write、再帰処理は扱わず、標準ライブラリのfilesystemとstreamを薄く包む。
  *
  * @par プロジェクトへの適用方法
  * `ket_file.h` と `ket_file.cpp` を対象プロジェクトへコピー。
@@ -52,7 +52,7 @@ namespace ket
 		 * @param[out] error 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。
 		 * @retval true ファイル全体を読み込み、`out`を更新。
 		 * @retval false
-		 * path不在、directory指定、permission、短いread、読み込み中の内容増加、またはサイズ過大。
+		 * path不在、通常ファイル以外、permission、短いread、読み込み中の内容増加、またはサイズ過大。
 		 * @pre `out`は有効なstd::string。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
 		 * 成功時だけ`out`を置換。失敗時は`out`不変。成功時は`error`をclearし、失敗時は可能な範囲で原因を設定。
@@ -79,7 +79,7 @@ namespace ket
 		 * @param[out] error 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。
 		 * @retval true ファイル全体を読み込み、`out`を更新。
 		 * @retval false
-		 * path不在、directory指定、permission、短いread、読み込み中の内容増加、またはサイズ過大。
+		 * path不在、通常ファイル以外、permission、短いread、読み込み中の内容増加、またはサイズ過大。
 		 * @pre `out`は有効なstd::vector。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
 		 * 成功時だけ`out`を置換。失敗時は`out`不変。成功時は`error`をclearし、失敗時は可能な範囲で原因を設定。
@@ -104,12 +104,13 @@ namespace ket
 		 * @param[in] text 書き込むbytesを指す文字列view。
 		 * @param[out] error 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。
 		 * @retval true `text`全体を書き込み、stream closeまで成功。
-		 * @retval false pathを開けない、permission、directory指定、短いwrite、またはclose失敗。
+		 * @retval false
+		 * pathを開けない、permission、既存pathが通常ファイル以外、短いwrite、またはclose失敗。
 		 * @pre
 		 * `text`は`text.size()`バイト以上読み取り可能な範囲を指す。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
-		 * 成功時は対象pathの内容を`text`で置換。失敗時の部分書き込み有無はplatformとstream状態に従う。
-		 * fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。
+		 * 成功時は対象pathの内容を`text`で置換。未存在pathは新規作成。失敗時の部分書き込み有無はplatformと
+		 * stream状態に従う。fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。
 		 * @note text encoding変換なし。`text`のbytesをそのまま書き込む。
 		 * @note
 		 * stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。
@@ -130,12 +131,12 @@ namespace ket
 		 * @param[out] error 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。
 		 * @retval true `data[0, size)`全体を書き込み、stream closeまで成功。
 		 * @retval false
-		 * pathを開けない、permission、directory指定、短いwrite、close失敗、またはnonnull条件違反。
-		 * @pre `size >
-		 * 0`の場合、`data`は`size`バイト以上読み取り可能な配列を指す。`error`は`nullptr`または有効なstd::error_code。
+		 * pathを開けない、permission、既存pathが通常ファイル以外、短いwrite、close失敗、またはnonnull条件違反。
+		 * @pre
+		 * sizeが0より大きい場合、`data`は`size`バイト以上読み取り可能な配列を指す。`error`は`nullptr`または有効なstd::error_code。
 		 * @post
-		 * 成功時は対象pathの内容を入力bytesで置換。失敗時の部分書き込み有無はplatformとstream状態に従う。
-		 * fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。
+		 * 成功時は対象pathの内容を入力bytesで置換。未存在pathは新規作成。失敗時の部分書き込み有無はplatformと
+		 * stream状態に従う。fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。
 		 * @note raw pointerはbytes列のC API境界として扱うため採用。
 		 * @note
 		 * stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。
@@ -181,7 +182,7 @@ namespace ket
 		 * @brief 通常ファイルサイズ取得。
 		 * @param[in] path 取得対象path。
 		 * @retval value ファイルサイズbyte数。
-		 * @retval std::nullopt path不在、directory指定、またはfilesystem query失敗。
+		 * @retval std::nullopt path不在、通常ファイル以外、またはfilesystem query失敗。
 		 * @pre なし。
 		 * @post 引数と外部状態の変更なし。
 		 * @note 失敗詳細は公開しない。原因が必要な場合はstd::filesystem::file_sizeの直接利用対象。
@@ -191,6 +192,14 @@ namespace ket
 		 * @endcode
 		 */
 		std::optional<std::uintmax_t> Size(const std::filesystem::path& path) noexcept;
+
+		// -----------------------------------------------------------------------------
+		// Internal implementation details
+		// -----------------------------------------------------------------------------
+
+		// -----------------------------------------------------------------------------
+		// Public API definitions
+		// -----------------------------------------------------------------------------
 
 	} // namespace file
 

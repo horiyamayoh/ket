@@ -56,6 +56,11 @@ namespace
 		return std::make_error_code(std::errc::no_such_file_or_directory);
 	}
 
+	std::error_code MakeOperationNotSupportedError()
+	{
+		return std::make_error_code(std::errc::operation_not_supported);
+	}
+
 	std::optional<std::streamsize> TryGetStreamSize(std::uintmax_t size,
 													std::error_code* error) noexcept
 	{
@@ -111,6 +116,13 @@ namespace
 			return;
 		}
 
+		const auto path_is_regular_file = std::filesystem::is_regular_file(status);
+		if (!path_is_regular_file)
+		{
+			SetError(error, MakeOperationNotSupportedError());
+			return;
+		}
+
 		SetError(error, MakeIoError());
 	}
 
@@ -137,6 +149,54 @@ namespace
 		if (path_is_directory)
 		{
 			SetError(error, MakeIsDirectoryError());
+			return false;
+		}
+
+		const auto path_is_regular_file = std::filesystem::is_regular_file(status);
+		if (!path_is_regular_file)
+		{
+			SetError(error, MakeOperationNotSupportedError());
+			return false;
+		}
+
+		return true;
+	}
+
+	bool TryCheckWritableFilePath(const std::filesystem::path& path,
+								  std::error_code* error) noexcept
+	{
+		std::error_code status_error;
+		const auto status = std::filesystem::status(path, status_error);
+		const auto status_failed = static_cast<bool>(status_error);
+		if (status_failed)
+		{
+			const auto path_is_missing = status_error == MakeNoSuchFileError();
+			if (path_is_missing)
+			{
+				return true;
+			}
+
+			SetError(error, status_error);
+			return false;
+		}
+
+		const auto path_exists = std::filesystem::exists(status);
+		if (!path_exists)
+		{
+			return true;
+		}
+
+		const auto path_is_directory = std::filesystem::is_directory(status);
+		if (path_is_directory)
+		{
+			SetError(error, MakeIsDirectoryError());
+			return false;
+		}
+
+		const auto path_is_regular_file = std::filesystem::is_regular_file(status);
+		if (!path_is_regular_file)
+		{
+			SetError(error, MakeOperationNotSupportedError());
 			return false;
 		}
 
@@ -270,6 +330,12 @@ namespace
 		const auto stream_size = TryGetStreamSize(static_cast<std::uintmax_t>(size), error);
 		const auto stream_size_available = stream_size.has_value();
 		if (!stream_size_available)
+		{
+			return false;
+		}
+
+		const auto path_can_be_written = TryCheckWritableFilePath(path, error);
+		if (!path_can_be_written)
 		{
 			return false;
 		}
