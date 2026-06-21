@@ -99,33 +99,6 @@ function(ket_add_module_test target)
 	gtest_discover_tests(${target})
 endfunction()
 
-function(ket_resolve_compile_check_sources target output_variable)
-	set(resolved_sources)
-	set(header_index 0)
-
-	foreach(source IN LISTS KET_COMPILE_SOURCES)
-		get_filename_component(source_extension "${source}" EXT)
-
-		if(source_extension MATCHES "^\\.(h|hh|hpp|hxx)$")
-			math(EXPR header_index "${header_index} + 1")
-			get_filename_component(source_absolute "${source}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-			file(RELATIVE_PATH source_relative "${CMAKE_CURRENT_SOURCE_DIR}" "${source_absolute}")
-			file(TO_CMAKE_PATH "${source_absolute}" source_include)
-			string(MAKE_C_IDENTIFIER "${source_relative}" source_identifier)
-			set(generated_source
-				"${CMAKE_CURRENT_BINARY_DIR}/ket_compile_checks/${target}_${header_index}_${source_identifier}.cpp"
-			)
-
-			file(GENERATE OUTPUT "${generated_source}" CONTENT "#include \"${source_include}\"\n")
-			list(APPEND resolved_sources "${generated_source}")
-		else()
-			list(APPEND resolved_sources "${source}")
-		endif()
-	endforeach()
-
-	set(${output_variable} "${resolved_sources}" PARENT_SCOPE)
-endfunction()
-
 function(ket_add_compile_check target)
 	set(options)
 	set(one_value_args CXX_STANDARD)
@@ -147,8 +120,7 @@ function(ket_add_compile_check target)
 		message(FATAL_ERROR "ket_add_compile_check(${target}) requires SOURCES.")
 	endif()
 
-	ket_resolve_compile_check_sources(${target} compile_check_sources)
-	add_library(${target} OBJECT EXCLUDE_FROM_ALL ${compile_check_sources})
+	add_library(${target} OBJECT EXCLUDE_FROM_ALL ${KET_COMPILE_SOURCES})
 	set_target_properties(
 		${target}
 		PROPERTIES

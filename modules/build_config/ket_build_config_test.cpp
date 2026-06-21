@@ -68,10 +68,30 @@
 #error "KET_OS_MACOS must be defined."
 #endif
 
+#ifdef KET_DETAIL_CXX_STANDARD_VALUE
+#error "KET_DETAIL_CXX_STANDARD_VALUE must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_CXX_VERSION_VALUE
+#error "KET_DETAIL_CXX_VERSION_VALUE must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_CXX_AT_LEAST
+#error "KET_DETAIL_CXX_AT_LEAST must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_HAS_INCLUDE_OPERATOR
+#error "KET_DETAIL_HAS_INCLUDE_OPERATOR must not leak from ket_build_config.h."
+#endif
+
+#ifdef KET_DETAIL_APPLE_OSX_TARGET
+#error "KET_DETAIL_APPLE_OSX_TARGET must not leak from ket_build_config.h."
+#endif
+
 static_assert(KET_CXX_VERSION == 201103L || KET_CXX_VERSION == 201402L ||
 				  KET_CXX_VERSION == 201703L || KET_CXX_VERSION == 202002L ||
-				  KET_CXX_VERSION == 202302L,
-			  "KET_CXX_VERSION is normalized to a supported standard literal.");
+				  KET_CXX_VERSION >= 202302L,
+			  "KET_CXX_VERSION reports a supported standard literal.");
 static_assert(KET_CXX_AT_LEAST(201103L), "C++11 minimum is always satisfied.");
 static_assert(KET_HAS_STD_OPTIONAL == 0 || KET_HAS_STD_OPTIONAL == 1,
 			  "optional feature macro is normalized.");
@@ -125,7 +145,7 @@ TEST(KetBuildConfigTest, DefinesPublicMacrosAsNormalizedValues)
  * @test
  * @brief C++標準値と下限判定macroの境界確認。
  * @details
- * C++11、14、17、20、23の境界値を入力し、`KET_CXX_VERSION`との大小関係に一致することを確認。
+ * C++17 targetでC++11、14、17、20、23の境界値を入力し、期待する下限判定になることを確認。
  * @pre C++17以降。
  * @post テスト対象macroと外部状態の変更なし。
  */
@@ -136,12 +156,15 @@ TEST(KetBuildConfigTest, ReportsCxxVersionBoundaries)
 	const auto at_least_cxx17 = KET_CXX_AT_LEAST(201703L);
 	const auto at_least_cxx20 = KET_CXX_AT_LEAST(202002L);
 	const auto at_least_cxx23 = KET_CXX_AT_LEAST(202302L);
+	const auto at_least_next_after_reported = KET_CXX_AT_LEAST(KET_CXX_VERSION + 1L);
 
-	EXPECT_EQ(at_least_cxx11, KET_CXX_VERSION >= 201103L);
-	EXPECT_EQ(at_least_cxx14, KET_CXX_VERSION >= 201402L);
-	EXPECT_EQ(at_least_cxx17, KET_CXX_VERSION >= 201703L);
-	EXPECT_EQ(at_least_cxx20, KET_CXX_VERSION >= 202002L);
-	EXPECT_EQ(at_least_cxx23, KET_CXX_VERSION >= 202302L);
+	EXPECT_EQ(KET_CXX_VERSION, 201703L);
+	EXPECT_EQ(at_least_cxx11, 1);
+	EXPECT_EQ(at_least_cxx14, 1);
+	EXPECT_EQ(at_least_cxx17, 1);
+	EXPECT_EQ(at_least_cxx20, 0);
+	EXPECT_EQ(at_least_cxx23, 0);
+	EXPECT_EQ(at_least_next_after_reported, 0);
 }
 
 /**
@@ -158,11 +181,12 @@ TEST(KetBuildConfigTest, DetectsCompilerMacros)
 	const auto expected_clang = 1;
 	const auto expected_gcc = 0;
 	const auto expected_msvc = 0;
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) && \
+	!defined(__NVCOMPILER) && !defined(__PGI) && !defined(__ibmxl__) && !defined(__xlC__)
 	const auto expected_clang = 0;
 	const auto expected_gcc = 1;
 	const auto expected_msvc = 0;
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER)
 	const auto expected_clang = 0;
 	const auto expected_gcc = 0;
 	const auto expected_msvc = 1;
@@ -197,13 +221,18 @@ TEST(KetBuildConfigTest, DetectsOperatingSystemMacros)
 	const auto expected_windows = 0;
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__ANDROID__)
 	const auto expected_linux = 1;
 #else
 	const auto expected_linux = 0;
 #endif
 
-#if defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__MACH__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX && \
+	!(defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST)
+	const auto expected_macos = 1;
+#elif defined(__APPLE__) && defined(__MACH__) && defined(TARGET_OS_MAC) && TARGET_OS_MAC && \
+	defined(TARGET_OS_IPHONE) && !TARGET_OS_IPHONE && \
+	!(defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST)
 	const auto expected_macos = 1;
 #else
 	const auto expected_macos = 0;
@@ -228,26 +257,42 @@ TEST(KetBuildConfigTest, DetectsOperatingSystemMacros)
  */
 TEST(KetBuildConfigTest, DetectsStandardLibraryFeatureMacros)
 {
-#if KET_CXX_AT_LEAST(201703L) && defined(__cpp_lib_optional)
+#if KET_CXX_AT_LEAST(201703L) && defined(__has_include)
+#if __has_include(<optional>) && defined(__cpp_lib_optional)
 	const auto expected_optional = 1;
 #else
 	const auto expected_optional = 0;
 #endif
+#else
+	const auto expected_optional = 0;
+#endif
 
-#if KET_CXX_AT_LEAST(201703L) && defined(__cpp_lib_string_view)
+#if KET_CXX_AT_LEAST(201703L) && defined(__has_include)
+#if __has_include(<string_view>) && defined(__cpp_lib_string_view)
 	const auto expected_string_view = 1;
 #else
 	const auto expected_string_view = 0;
 #endif
+#else
+	const auto expected_string_view = 0;
+#endif
 
-#if KET_CXX_AT_LEAST(202002L) && defined(__cpp_lib_span)
+#if KET_CXX_AT_LEAST(202002L) && defined(__has_include)
+#if __has_include(<span>) && defined(__cpp_lib_span)
 	const auto expected_span = 1;
 #else
 	const auto expected_span = 0;
 #endif
+#else
+	const auto expected_span = 0;
+#endif
 
-#if KET_CXX_AT_LEAST(202002L) && defined(__cpp_lib_format)
+#if KET_CXX_AT_LEAST(202002L) && defined(__has_include)
+#if __has_include(<format>) && defined(__cpp_lib_format)
 	const auto expected_format = 1;
+#else
+	const auto expected_format = 0;
+#endif
 #else
 	const auto expected_format = 0;
 #endif
@@ -258,22 +303,26 @@ TEST(KetBuildConfigTest, DetectsStandardLibraryFeatureMacros)
 	EXPECT_EQ(KET_HAS_STD_FORMAT, expected_format);
 
 	const auto standard_header_probe = std::unique_ptr<int>();
-	EXPECT_EQ(standard_header_probe.get(), nullptr);
+	auto* const standard_header_pointer = standard_header_probe.get();
+	EXPECT_EQ(standard_header_pointer, nullptr);
 
 #if KET_HAS_STD_OPTIONAL
 	const auto optional_value = std::optional<int>(1);
-	EXPECT_EQ(optional_value.has_value(), true);
+	const auto optional_has_value = optional_value.has_value();
+	EXPECT_EQ(optional_has_value, true);
 #endif
 
 #if KET_HAS_STD_STRING_VIEW
 	const auto string_view_value = std::string_view("ket");
-	EXPECT_EQ(string_view_value.size(), 3U);
+	const auto string_view_size = string_view_value.size();
+	EXPECT_EQ(string_view_size, 3U);
 #endif
 
 #if KET_HAS_STD_SPAN
 	int values[] = {1, 2};
 	const auto span_value = std::span<int>(values);
-	EXPECT_EQ(span_value.size(), 2U);
+	const auto span_size = span_value.size();
+	EXPECT_EQ(span_size, 2U);
 #endif
 
 #if KET_HAS_STD_FORMAT

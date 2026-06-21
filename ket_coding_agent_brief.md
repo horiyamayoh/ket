@@ -1625,6 +1625,7 @@ KET_HAS_STD_FORMAT
 - マクロはグローバル汚染なので最小限にする
 - 各moduleが完全独立を目指すなら、build_configに依存しない選択肢もある
 - ただしC++11〜23を本気で跨ぐなら必要になりやすい
+- OS macro は platform family ではなく狭いtarget判定にし、AndroidをLinux、iOS系をmacOSに含めない
 
 ---
 

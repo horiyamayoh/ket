@@ -19,12 +19,12 @@
  * 非推奨理由：なし。
  *
  * @par 他のライブラリへの依存
- * 標準ライブラリとcompiler predefined macroのみ。
+ * 標準ライブラリ、compiler predefined macro、Apple platform では `TargetConditionals.h`。
  * 他のket moduleへの依存なし。
  *
  * @par namespace
- * 公開API：ket
- * 内部実装：ket::detail
+ * 公開API：global KET_* macros（C++ namespaceなし）。
+ * 内部実装：KET_DETAIL_* macros（ヘッダ末尾で#undef）。
  */
 
 // -----------------------------------------------------------------------------
@@ -33,14 +33,15 @@
 
 /**
  * @def KET_CXX_VERSION
- * @brief 有効なC++標準値。
+ * @brief 有効なC++標準値の下限。
  * @retval 201103L C++11。
  * @retval 201402L C++14。
  * @retval 201703L C++17。
  * @retval 202002L C++20。
- * @retval 202302L C++23以降。
+ * @retval 202302L C++23。
+ * @retval value C++23超ではcompilerが提供するC++標準値。
  * @pre C++11以降のtranslation unit。
- * @post compile-time定数のみを提供し、runtime状態を変更しない。
+ * @post compile-time定数のみを提供し、runtime状態を変更しない。C++23超の値はC++23へ丸めない。
  */
 
 /**
@@ -56,7 +57,7 @@
 /**
  * @def KET_HAS_STD_OPTIONAL
  * @brief `std::optional` feature利用可否。
- * @retval 1 C++17以降、header存在、feature-test macro確認済み。
+ * @retval 1 C++17以降、`__has_include`でheader存在、feature-test macro確認済み。
  * @retval 0 利用不能、または確認不能。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
@@ -65,7 +66,7 @@
 /**
  * @def KET_HAS_STD_STRING_VIEW
  * @brief `std::string_view` feature利用可否。
- * @retval 1 C++17以降、header存在、feature-test macro確認済み。
+ * @retval 1 C++17以降、`__has_include`でheader存在、feature-test macro確認済み。
  * @retval 0 利用不能、または確認不能。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
@@ -74,7 +75,7 @@
 /**
  * @def KET_HAS_STD_SPAN
  * @brief `std::span` feature利用可否。
- * @retval 1 C++20以降、header存在、feature-test macro確認済み。
+ * @retval 1 C++20以降、`__has_include`でheader存在、feature-test macro確認済み。
  * @retval 0 利用不能、または確認不能。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
@@ -83,7 +84,7 @@
 /**
  * @def KET_HAS_STD_FORMAT
  * @brief `std::format` feature利用可否。
- * @retval 1 C++20以降、header存在、feature-test macro確認済み。
+ * @retval 1 C++20以降、`__has_include`でheader存在、feature-test macro確認済み。
  * @retval 0 利用不能、または確認不能。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
@@ -101,7 +102,7 @@
 /**
  * @def KET_COMPILER_GCC
  * @brief GCC判定。
- * @retval 1 `__GNUC__`定義あり、かつclangではない。
+ * @retval 1 `__GNUC__`定義あり、かつ既知のGCC互換compilerではない。
  * @retval 0 GCCではない。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
@@ -110,7 +111,7 @@
 /**
  * @def KET_COMPILER_MSVC
  * @brief MSVC compiler判定。
- * @retval 1 `_MSC_VER`定義あり、かつclangではない。
+ * @retval 1 `_MSC_VER`定義あり、かつclang-clやIntel compilerではない。
  * @retval 0 MSVCではない。clang-clは0。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
@@ -128,8 +129,8 @@
 /**
  * @def KET_OS_LINUX
  * @brief Linux OS判定。
- * @retval 1 `__linux__`定義あり。
- * @retval 0 `__linux__`定義なし。
+ * @retval 1 `__linux__`定義あり、かつAndroidではない。
+ * @retval 0 `__linux__`定義なし、またはAndroid。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
  */
@@ -137,8 +138,8 @@
 /**
  * @def KET_OS_MACOS
  * @brief 現在のmacOS判定。
- * @retval 1 `__APPLE__`と`__MACH__`の定義あり。
- * @retval 0 現在のmacOSではない。Classic Mac OSは対象外。
+ * @retval 1 Apple platformのうちmacOS target。
+ * @retval 0 現在のmacOSではない。iOS、tvOS、watchOS、Mac Catalyst、Classic Mac OSは対象外。
  * @pre C++11以降のtranslation unit。
  * @post compile-time定数のみを提供し、runtime状態を変更しない。
  */
@@ -148,26 +149,26 @@
 // -----------------------------------------------------------------------------
 
 #if defined(_MSVC_LANG)
-#define KET_DETAIL_CXX_VERSION_VALUE _MSVC_LANG
+#define KET_DETAIL_CXX_STANDARD_VALUE _MSVC_LANG
 #elif defined(__cplusplus)
-#define KET_DETAIL_CXX_VERSION_VALUE __cplusplus
+#define KET_DETAIL_CXX_STANDARD_VALUE __cplusplus
+#else
+#define KET_DETAIL_CXX_STANDARD_VALUE 201103L
+#endif
+
+#if KET_DETAIL_CXX_STANDARD_VALUE > 202002L
+#define KET_DETAIL_CXX_VERSION_VALUE KET_DETAIL_CXX_STANDARD_VALUE
+#elif KET_DETAIL_CXX_STANDARD_VALUE >= 202002L
+#define KET_DETAIL_CXX_VERSION_VALUE 202002L
+#elif KET_DETAIL_CXX_STANDARD_VALUE >= 201703L
+#define KET_DETAIL_CXX_VERSION_VALUE 201703L
+#elif KET_DETAIL_CXX_STANDARD_VALUE >= 201402L
+#define KET_DETAIL_CXX_VERSION_VALUE 201402L
 #else
 #define KET_DETAIL_CXX_VERSION_VALUE 201103L
 #endif
 
-#if KET_DETAIL_CXX_VERSION_VALUE >= 202302L
-#define KET_CXX_VERSION 202302L
-#elif KET_DETAIL_CXX_VERSION_VALUE >= 202002L
-#define KET_CXX_VERSION 202002L
-#elif KET_DETAIL_CXX_VERSION_VALUE >= 201703L
-#define KET_CXX_VERSION 201703L
-#elif KET_DETAIL_CXX_VERSION_VALUE >= 201402L
-#define KET_CXX_VERSION 201402L
-#else
-#define KET_CXX_VERSION 201103L
-#endif
-
-#define KET_CXX_AT_LEAST(value) (KET_CXX_VERSION >= (value))
+#define KET_DETAIL_CXX_AT_LEAST(value) (KET_DETAIL_CXX_VERSION_VALUE >= (value) ? 1 : 0)
 
 #if defined(__has_include)
 #define KET_DETAIL_HAS_INCLUDE_OPERATOR 1
@@ -181,7 +182,7 @@
 #endif
 #endif
 
-#if KET_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
+#if KET_DETAIL_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
 #if __has_include(<optional>)
 #define KET_DETAIL_HAS_STD_OPTIONAL_HEADER 1
 #else
@@ -191,11 +192,12 @@
 #define KET_DETAIL_HAS_STD_OPTIONAL_HEADER 0
 #endif
 
-#if KET_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_STD_OPTIONAL_HEADER && !defined(__cpp_lib_optional)
+#if KET_DETAIL_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_STD_OPTIONAL_HEADER && \
+	!defined(__cpp_lib_optional)
 #include <optional>
 #endif
 
-#if KET_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
+#if KET_DETAIL_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
 #if __has_include(<string_view>)
 #define KET_DETAIL_HAS_STD_STRING_VIEW_HEADER 1
 #else
@@ -205,12 +207,12 @@
 #define KET_DETAIL_HAS_STD_STRING_VIEW_HEADER 0
 #endif
 
-#if KET_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_STD_STRING_VIEW_HEADER && \
+#if KET_DETAIL_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_STD_STRING_VIEW_HEADER && \
 	!defined(__cpp_lib_string_view)
 #include <string_view>
 #endif
 
-#if KET_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
+#if KET_DETAIL_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
 #if __has_include(<span>)
 #define KET_DETAIL_HAS_STD_SPAN_HEADER 1
 #else
@@ -220,11 +222,11 @@
 #define KET_DETAIL_HAS_STD_SPAN_HEADER 0
 #endif
 
-#if KET_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_STD_SPAN_HEADER && !defined(__cpp_lib_span)
+#if KET_DETAIL_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_STD_SPAN_HEADER && !defined(__cpp_lib_span)
 #include <span>
 #endif
 
-#if KET_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
+#if KET_DETAIL_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_INCLUDE_OPERATOR
 #if __has_include(<format>)
 #define KET_DETAIL_HAS_STD_FORMAT_HEADER 1
 #else
@@ -234,54 +236,89 @@
 #define KET_DETAIL_HAS_STD_FORMAT_HEADER 0
 #endif
 
-#if KET_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_STD_FORMAT_HEADER && !defined(__cpp_lib_format)
+#if KET_DETAIL_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_STD_FORMAT_HEADER && \
+	!defined(__cpp_lib_format)
 #include <format>
 #endif
 
-namespace ket
-{
-	namespace detail
-	{
+#if defined(__APPLE__) && defined(__MACH__)
+#include <TargetConditionals.h>
+#endif
 
-	} // namespace detail
+#if defined(TARGET_OS_OSX) && TARGET_OS_OSX
+#define KET_DETAIL_APPLE_OSX_TARGET 1
+#elif defined(TARGET_OS_MAC) && TARGET_OS_MAC && defined(TARGET_OS_IPHONE) && !TARGET_OS_IPHONE
+#define KET_DETAIL_APPLE_OSX_TARGET 1
+#else
+#define KET_DETAIL_APPLE_OSX_TARGET 0
+#endif
 
-} // namespace ket
+#if defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST
+#define KET_DETAIL_APPLE_MACCATALYST_TARGET 1
+#else
+#define KET_DETAIL_APPLE_MACCATALYST_TARGET 0
+#endif
 
 // -----------------------------------------------------------------------------
 // Public API definitions
 // -----------------------------------------------------------------------------
 
-#if KET_CXX_AT_LEAST(201703L) && \
-	((KET_DETAIL_HAS_INCLUDE_OPERATOR && KET_DETAIL_HAS_STD_OPTIONAL_HEADER) || \
-	 (!KET_DETAIL_HAS_INCLUDE_OPERATOR)) && \
-	defined(__cpp_lib_optional)
+// Public feature macros must remain preprocessor macros for #if use.
+// NOLINTBEGIN(modernize-macro-to-enum)
+
+#if defined(_MSVC_LANG)
+#if _MSVC_LANG > 202002L
+#define KET_CXX_VERSION _MSVC_LANG
+#elif _MSVC_LANG >= 202002L
+#define KET_CXX_VERSION 202002L
+#elif _MSVC_LANG >= 201703L
+#define KET_CXX_VERSION 201703L
+#elif _MSVC_LANG >= 201402L
+#define KET_CXX_VERSION 201402L
+#else
+#define KET_CXX_VERSION 201103L
+#endif
+#elif defined(__cplusplus)
+#if __cplusplus > 202002L
+#define KET_CXX_VERSION __cplusplus
+#elif __cplusplus >= 202002L
+#define KET_CXX_VERSION 202002L
+#elif __cplusplus >= 201703L
+#define KET_CXX_VERSION 201703L
+#elif __cplusplus >= 201402L
+#define KET_CXX_VERSION 201402L
+#else
+#define KET_CXX_VERSION 201103L
+#endif
+#else
+#define KET_CXX_VERSION 201103L
+#endif
+
+#define KET_CXX_AT_LEAST(value) (KET_CXX_VERSION >= (value) ? 1 : 0)
+
+#if KET_DETAIL_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_INCLUDE_OPERATOR && \
+	KET_DETAIL_HAS_STD_OPTIONAL_HEADER && defined(__cpp_lib_optional)
 #define KET_HAS_STD_OPTIONAL 1
 #else
 #define KET_HAS_STD_OPTIONAL 0
 #endif
 
-#if KET_CXX_AT_LEAST(201703L) && \
-	((KET_DETAIL_HAS_INCLUDE_OPERATOR && KET_DETAIL_HAS_STD_STRING_VIEW_HEADER) || \
-	 (!KET_DETAIL_HAS_INCLUDE_OPERATOR)) && \
-	defined(__cpp_lib_string_view)
+#if KET_DETAIL_CXX_AT_LEAST(201703L) && KET_DETAIL_HAS_INCLUDE_OPERATOR && \
+	KET_DETAIL_HAS_STD_STRING_VIEW_HEADER && defined(__cpp_lib_string_view)
 #define KET_HAS_STD_STRING_VIEW 1
 #else
 #define KET_HAS_STD_STRING_VIEW 0
 #endif
 
-#if KET_CXX_AT_LEAST(202002L) && \
-	((KET_DETAIL_HAS_INCLUDE_OPERATOR && KET_DETAIL_HAS_STD_SPAN_HEADER) || \
-	 (!KET_DETAIL_HAS_INCLUDE_OPERATOR)) && \
-	defined(__cpp_lib_span)
+#if KET_DETAIL_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_INCLUDE_OPERATOR && \
+	KET_DETAIL_HAS_STD_SPAN_HEADER && defined(__cpp_lib_span)
 #define KET_HAS_STD_SPAN 1
 #else
 #define KET_HAS_STD_SPAN 0
 #endif
 
-#if KET_CXX_AT_LEAST(202002L) && \
-	((KET_DETAIL_HAS_INCLUDE_OPERATOR && KET_DETAIL_HAS_STD_FORMAT_HEADER) || \
-	 (!KET_DETAIL_HAS_INCLUDE_OPERATOR)) && \
-	defined(__cpp_lib_format)
+#if KET_DETAIL_CXX_AT_LEAST(202002L) && KET_DETAIL_HAS_INCLUDE_OPERATOR && \
+	KET_DETAIL_HAS_STD_FORMAT_HEADER && defined(__cpp_lib_format)
 #define KET_HAS_STD_FORMAT 1
 #else
 #define KET_HAS_STD_FORMAT 0
@@ -293,13 +330,16 @@ namespace ket
 #define KET_COMPILER_CLANG 0
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && \
+	!defined(__INTEL_LLVM_COMPILER) && !defined(__NVCOMPILER) && !defined(__PGI) && \
+	!defined(__ibmxl__) && !defined(__xlC__)
 #define KET_COMPILER_GCC 1
 #else
 #define KET_COMPILER_GCC 0
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(__INTEL_COMPILER) && \
+	!defined(__INTEL_LLVM_COMPILER)
 #define KET_COMPILER_MSVC 1
 #else
 #define KET_COMPILER_MSVC 0
@@ -311,21 +351,28 @@ namespace ket
 #define KET_OS_WINDOWS 0
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__ANDROID__)
 #define KET_OS_LINUX 1
 #else
 #define KET_OS_LINUX 0
 #endif
 
-#if defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__MACH__) && KET_DETAIL_APPLE_OSX_TARGET && \
+	!KET_DETAIL_APPLE_MACCATALYST_TARGET
 #define KET_OS_MACOS 1
 #else
 #define KET_OS_MACOS 0
 #endif
 
+// NOLINTEND(modernize-macro-to-enum)
+
+#undef KET_DETAIL_CXX_STANDARD_VALUE
 #undef KET_DETAIL_CXX_VERSION_VALUE
+#undef KET_DETAIL_CXX_AT_LEAST
 #undef KET_DETAIL_HAS_INCLUDE_OPERATOR
 #undef KET_DETAIL_HAS_STD_OPTIONAL_HEADER
 #undef KET_DETAIL_HAS_STD_STRING_VIEW_HEADER
 #undef KET_DETAIL_HAS_STD_SPAN_HEADER
 #undef KET_DETAIL_HAS_STD_FORMAT_HEADER
+#undef KET_DETAIL_APPLE_OSX_TARGET
+#undef KET_DETAIL_APPLE_MACCATALYST_TARGET
