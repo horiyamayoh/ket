@@ -1998,7 +1998,7 @@ Tests:
 - UniqueHandle reset / release / move / self-move
 - throwing deleter terminates
 
-## Idea: PlatformError
+## Idea: Platform
 
 Category: platform
 
@@ -2012,7 +2012,7 @@ Candidate API:
 
 ```cpp
 ket::platform::FormatErrno(error_number)
-ket::platform::GetEnvironmentVariable(name)
+ket::platform::ReadEnvironmentVariable(name)
 #ifdef _WIN32
 ket::platform::GetLastErrorCode()
 ket::platform::FormatWindowsError(code)
@@ -2026,15 +2026,17 @@ C++バージョン要件:
 - 推奨理由：platform API の差分を隠しすぎず、標準文字列で結果を扱える
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：標準ライブラリだけでは errno/Windows error message の扱いが不十分
+- 標準代替：標準ライブラリだけでは errno/Windows error message の扱いと env missing 方針が不十分
 
 Failure / edge cases:
 
 - unknown errno fallback
 - missing env
+- empty env value
 - empty / NUL env name
 - POSIX/GNU strerror_r 差
-- Windows wide to UTF-8 conversion failure
+- Windows env name/value UTF-8 conversion failure returns std::nullopt
+- Windows error message UTF-8 conversion failure uses fallback
 - non-Windows では Windows API を宣言しない
 
 他のライブラリへの依存:
@@ -2047,10 +2049,15 @@ Tests:
 
 - known errno non-empty
 - unknown errno fallback
+- errno preservation
 - missing env
 - present env with restore
+- empty env value
 - empty / NUL env name
-- Windows guard conditional compile
+- Windows env name/value UTF-8 conversion failure
+- Windows error message UTF-8 conversion fallback
+- non-Windows smoke/build
+- Windows error fallback and last-error preservation
 
 ## Idea: StateTable
 
