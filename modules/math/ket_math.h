@@ -45,9 +45,10 @@ namespace ket
 		 * @param[in] a `t == 0`の端点値。
 		 * @param[in] b `t == 1`の端点値。
 		 * @param[in] t 補間係数。0から1の範囲外では外挿。
-		 * @retval value `a + (b - a) * t`で求めた値。
+		 * @retval value `t == 0`では`a`、`t == 1`では`b`、それ以外は`a + (b - a) * t`で求めた値。
 		 * @pre `T`はfloating-point型。
-		 * @post 引数と外部状態の変更なし。`a`、`b`、`t`の丸め規則は通常の浮動小数点演算に従う。
+		 * @post
+		 * 引数と外部状態の変更なし。端点以外の丸め、overflow、NaN伝播は通常の浮動小数点演算に従う。
 		 * @code
 		 * const auto value = ket::math::Lerp(10.0, 20.0, 0.25);
 		 * // value == 12.5
@@ -91,11 +92,13 @@ namespace ket
 		 * @tparam T 浮動小数点型。非floating-point型はcompile error。
 		 * @param[in] a 比較対象の値。
 		 * @param[in] b 比較対象の値。
-		 * @param[in] epsilon 正の絶対許容差。
-		 * @retval true `epsilon`が正で、NaN入力がなく、`a == b`または絶対差が`epsilon`以下。
-		 * @retval false `epsilon <= 0`、NaN入力、または絶対差が`epsilon`を超える値。
+		 * @param[in] epsilon 有限で正の絶対許容差。
+		 * @retval true `epsilon`が有限の正値で、NaN入力がなく、`a ==
+		 * b`または有限値同士の絶対差が`epsilon`以下。
+		 * @retval false `epsilon <=
+		 * 0`、NaN/Infのepsilon、NaN入力、非等価なInf入力、または絶対差が`epsilon`を超える値。
 		 * @pre `T`はfloating-point型。
-		 * @post 引数と外部状態の変更なし。Inf同士は通常の等価比較結果を先に使う。
+		 * @post 引数と外部状態の変更なし。同符号Inf同士は通常の等価比較結果を先に使う。
 		 * @code
 		 * const auto close = ket::math::NearlyEqual(1.0, 1.001, 0.01);
 		 * // close == true
@@ -139,9 +142,9 @@ namespace ket
 		/**
 		 * @brief byte数をKiB単位のdoubleへ変換。
 		 * @param[in] bytes byte単位の値。
-		 * @retval value `bytes / 1024.0`。
+		 * @retval value `bytes / 1024.0`を`double`で表現した近似値。
 		 * @pre なし。任意の`std::uint64_t`値を受け付ける。
-		 * @post 引数と外部状態の変更なし。
+		 * @post 引数と外部状態の変更なし。大きな整数値は`double`の精度に従って丸められる。
 		 * @code
 		 * const auto kib = ket::math::BytesToKiB(1536);
 		 * // kib == 1.5
@@ -152,9 +155,9 @@ namespace ket
 		/**
 		 * @brief byte数をMiB単位のdoubleへ変換。
 		 * @param[in] bytes byte単位の値。
-		 * @retval value `bytes / 1048576.0`。
+		 * @retval value `bytes / 1048576.0`を`double`で表現した近似値。
 		 * @pre なし。任意の`std::uint64_t`値を受け付ける。
-		 * @post 引数と外部状態の変更なし。
+		 * @post 引数と外部状態の変更なし。大きな整数値は`double`の精度に従って丸められる。
 		 * @code
 		 * const auto mib = ket::math::BytesToMiB(1572864);
 		 * // mib == 1.5
@@ -232,6 +235,62 @@ namespace ket
 				return value != value; // NOLINT(misc-redundant-expression)
 			}
 
+			/**
+			 * @brief Inf判定。
+			 * @tparam T 浮動小数点型。
+			 * @param[in] value 判定対象の値。
+			 * @retval true `value`が正または負のInf。
+			 * @retval false `value`がInf以外。
+			 * @pre `T`はfloating-point型。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			template <typename T>
+			constexpr bool IsInf(T value) noexcept
+			{
+				static_assert(detail::IsFloatingPoint<T>::value,
+							  "ket::math floating-point APIs accept floating-point types only.");
+
+				return value == std::numeric_limits<T>::infinity() ||
+					value == -std::numeric_limits<T>::infinity();
+			}
+
+			/**
+			 * @brief 有限値判定。
+			 * @tparam T 浮動小数点型。
+			 * @param[in] value 判定対象の値。
+			 * @retval true `value`がNaNでもInfでもない有限値。
+			 * @retval false `value`がNaNまたはInf。
+			 * @pre `T`はfloating-point型。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			template <typename T>
+			constexpr bool IsFinite(T value) noexcept
+			{
+				static_assert(detail::IsFloatingPoint<T>::value,
+							  "ket::math floating-point APIs accept floating-point types only.");
+
+				return !detail::IsNan(value) && !detail::IsInf(value);
+			}
+
+			/**
+			 * @brief `t != 0`確認後の線形補間。
+			 * @tparam T 浮動小数点型。
+			 * @param[in] a `t == 0`の端点値。
+			 * @param[in] b `t == 1`の端点値。
+			 * @param[in] t 0ではない補間係数。
+			 * @retval value `t == 1`では`b`、それ以外は`a + (b - a) * t`で求めた値。
+			 * @pre `T`はfloating-point型。`t != 0`。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			template <typename T>
+			constexpr T LerpNonZeroT(T a, T b, T t) noexcept
+			{
+				static_assert(detail::IsFloatingPoint<T>::value,
+							  "ket::math floating-point APIs accept floating-point types only.");
+
+				return t == static_cast<T>(1) ? b : a + ((b - a) * t);
+			}
+
 		} // namespace detail
 
 		// -----------------------------------------------------------------------------
@@ -244,7 +303,7 @@ namespace ket
 			static_assert(detail::IsFloatingPoint<T>::value,
 						  "ket::math::Lerp accepts floating-point types only.");
 
-			return a + ((b - a) * t);
+			return t == static_cast<T>(0) ? a : detail::LerpNonZeroT(a, b, t);
 		}
 
 		template <typename T>
@@ -271,8 +330,10 @@ namespace ket
 			static_assert(detail::IsFloatingPoint<T>::value,
 						  "ket::math::NearlyEqual accepts floating-point types only.");
 
-			return epsilon > static_cast<T>(0) && !detail::IsNan(epsilon) && !detail::IsNan(a) &&
-				!detail::IsNan(b) && (a == b || detail::Abs(a - b) <= epsilon);
+			return epsilon > static_cast<T>(0) && detail::IsFinite(epsilon) && !detail::IsNan(a) &&
+				!detail::IsNan(b) &&
+				(a == b ||
+				 (detail::IsFinite(a) && detail::IsFinite(b) && detail::Abs(a - b) <= epsilon));
 		}
 
 		inline bool TryBytesFromKiB(std::uint64_t kib, std::uint64_t& out) noexcept
