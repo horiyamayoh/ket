@@ -217,13 +217,6 @@ namespace ket
 		// Public API definitions
 		// -----------------------------------------------------------------------------
 
-		/**
-		 * @brief std::threadの所有権取得の定義。
-		 * @param[in] thread 所有対象のstd::thread。joinableでないthreadも受け付ける。
-		 * @retval void 戻り値なし。
-		 * @pre `thread`がjoinableな場合、destructorや代入でself-joinにならない寿命関係。
-		 * @post `thread`の移動元状態を所有。引数のthread objectは移動元として破棄。
-		 */
 		inline JoiningThread::JoiningThread(std::thread thread) noexcept
 			: thread_(std::move(thread))
 		{
@@ -234,14 +227,6 @@ namespace ket
 			detail::JoinIfJoinable(thread_);
 		}
 
-		/**
-		 * @brief move構築の定義。
-		 * @param[in,out] other 移動元のJoiningThread。
-		 * @retval void 戻り値なし。
-		 * @pre
-		 * 移動元は有効なJoiningThread。所有threadがjoinableな場合、移動先のdestructorでself-joinにならない寿命関係。
-		 * @post `other`はjoinableなthreadを所有しない。
-		 */
 		inline JoiningThread::JoiningThread(JoiningThread&& other) noexcept
 			: thread_(std::move(other.thread_))
 		{
@@ -261,13 +246,6 @@ namespace ket
 			return *this;
 		}
 
-		/**
-		 * @brief 所有threadのjoin可能状態確認の定義。
-		 * @retval true 所有threadがjoinable。
-		 * @retval false 所有threadがjoinableでない。
-		 * @pre なし。
-		 * @post `*this`と外部状態の変更なし。
-		 */
 		inline bool JoiningThread::Joinable() const noexcept // NOLINT(modernize-use-nodiscard)
 		{
 			return thread_.joinable();

@@ -42,6 +42,7 @@ class FunctionSignature(NamedTuple):
 	text: str
 	end_index: int
 	is_special_member: bool
+	owner: str | None
 
 
 def read_lines(path: Path) -> list[str]:
@@ -106,12 +107,57 @@ def check_test_comments(path: Path, lines: list[str], errors: list[str]) -> None
 
 
 def normalize_signature(lines: list[str]) -> str:
-	return " ".join(line.strip() for line in lines if line.strip())
+	return " ".join(strip_line_comment(line).strip() for line in lines if strip_line_comment(line).strip())
+
+
+def strip_line_comment(line: str) -> str:
+	comment_start = line.find("//")
+	if comment_start == -1:
+		return line
+
+	return line[:comment_start]
 
 
 def canonical_function_signature(signature: str) -> str:
 	stripped = re.sub(r"\s+", " ", signature.strip())
-	return stripped.rstrip("{;").strip()
+	stripped = stripped.rstrip("{;").strip()
+	stripped = re.sub(r"(\)\s*(?:noexcept(?:\([^)]*\))?\s*)?)\s*:\s*.*$", r"\1", stripped)
+	stripped = re.sub(
+		r"^(?:(?:explicit|inline|constexpr|virtual|static|friend)\s+)+",
+		"",
+		stripped,
+	)
+	stripped = re.sub(
+		r"\b([A-Za-z_][A-Za-z0-9_]*)::(?=(?:~?\1|operator[^\s(]*|[A-Za-z_][A-Za-z0-9_]*)\s*\()",
+		"",
+		stripped,
+	)
+	stripped = re.sub(r"\s*=\s*(?:default|delete|0)\s*$", "", stripped)
+	return stripped.strip()
+
+
+def qualified_member_owner(signature: str) -> str | None:
+	match = re.search(
+		r"\b([A-Za-z_][A-Za-z0-9_]*)::(?:~?[A-Za-z_][A-Za-z0-9_]*|operator[^\s(]*)\s*\(",
+		signature,
+	)
+	if match is None:
+		return None
+
+	return match.group(1)
+
+
+def canonical_function_key(signature: FunctionSignature) -> str:
+	owner = signature.owner
+	canonical_signature = canonical_function_signature(signature.text)
+	if owner is None:
+		return canonical_signature
+
+	return f"{owner}::{canonical_signature}"
+
+
+def canonical_unowned_function_key(signature: FunctionSignature) -> str:
+	return canonical_function_signature(signature.text)
 
 
 def line_looks_like_regular_function_signature(signature: str) -> bool:
@@ -181,12 +227,21 @@ def class_context_before(lines: list[str], index: int) -> str | None:
 
 
 def signature_looks_like_special_member(signature: str, class_name: str | None) -> bool:
-	if class_name is None:
-		return False
-
 	stripped = re.sub(r"\s+", " ", signature.strip())
 	stripped = stripped.rstrip("{;").strip()
-	name = re.escape(class_name)
+	if class_name is not None:
+		name = re.escape(class_name)
+	else:
+		qualified_match = re.search(
+			r"\b([A-Za-z_][A-Za-z0-9_]*)::(?:~?\1)\s*\(",
+			stripped,
+		)
+		if qualified_match is None:
+			return False
+
+		name = re.escape(qualified_match.group(1))
+		stripped = re.sub(rf"\b{name}::", "", stripped, count=1)
+
 	return bool(
 		re.match(
 			rf"^(?:(?:explicit|inline|constexpr|virtual)\s+)*(?:~?{name})\s*\([^;{{}}]*\)\s*(?:noexcept(?:\([^)]*\))?\s*)?(?:override\s*)?(?:final\s*)?(?:\s*:\s*[^;{{}}]*)?(?:=\s*(?:default|delete|0)\s*)?$",
@@ -243,7 +298,7 @@ def function_signature_at(lines: list[str], index: int) -> FunctionSignature | N
 	class_name = class_context_before(lines, index)
 
 	while cursor < len(lines):
-		current = lines[cursor].strip()
+		current = strip_line_comment(lines[cursor]).strip()
 		if not current:
 			cursor += 1
 			continue
@@ -264,7 +319,8 @@ def function_signature_at(lines: list[str], index: int) -> FunctionSignature | N
 		if ends_declaration or opens_definition or ends_before_definition:
 			is_special_member = signature_looks_like_special_member(signature, class_name)
 			if is_special_member or line_looks_like_regular_function_signature(signature):
-				return FunctionSignature(signature, cursor, is_special_member)
+				owner = class_name or qualified_member_owner(signature)
+				return FunctionSignature(signature, cursor, is_special_member, owner)
 			return None
 
 		if saw_paren and paren_depth == 0:
@@ -376,11 +432,14 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 			continue
 
 		signature_text = signature.text
-		signature_key = canonical_function_signature(signature_text)
+		signature_key = canonical_function_key(signature)
+		unowned_signature_key = canonical_unowned_function_key(signature)
 		is_definition = function_signature_is_definition(lines, signature.end_index)
 		comment = previous_doxygen(lines, index)
 		if comment is None:
-			if is_definition and signature_key in documented_signatures:
+			if is_definition and (
+				signature_key in documented_signatures or unowned_signature_key in documented_signatures
+			):
 				index = signature.end_index + 1
 				continue
 
@@ -428,6 +487,7 @@ def check_header_function_comments(path: Path, lines: list[str], errors: list[st
 			)
 
 		documented_signatures.add(signature_key)
+		documented_signatures.add(unowned_signature_key)
 		index = signature.end_index + 1
 
 

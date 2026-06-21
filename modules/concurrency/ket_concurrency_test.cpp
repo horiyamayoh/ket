@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono> // IWYU pragma: keep
+#include <exception>
 #include <future>
 #include <string> // IWYU pragma: keep
 #include <thread>
@@ -36,41 +37,75 @@ TEST(KetConcurrencyTest, JoinsOwnedThreadOnDestruction)
 {
 	std::atomic<bool> thread_finished(false);
 	std::promise<void> thread_started_promise;
-	std::future<void> thread_started = thread_started_promise.get_future();
+	const std::future<void> thread_started = thread_started_promise.get_future();
 	std::promise<void> release_thread_promise;
 	std::shared_future<void> release_thread = release_thread_promise.get_future().share();
 	std::promise<void> thread_done_promise;
 	const std::future<void> thread_done = thread_done_promise.get_future();
+	std::promise<void> destroy_owner_promise;
+	std::shared_future<void> destroy_owner = destroy_owner_promise.get_future().share();
+	std::promise<bool> owner_joinable_promise;
+	std::future<bool> owner_joinable = owner_joinable_promise.get_future();
+	std::promise<void> owner_about_to_destroy_promise;
+	const std::future<void> owner_about_to_destroy = owner_about_to_destroy_promise.get_future();
+	std::promise<void> owner_done_promise;
+	const std::future<void> owner_done = owner_done_promise.get_future();
 
-	std::thread releaser(
-		[&thread_started, &release_thread_promise]()
+	std::thread owner(
+		[&thread_started_promise,
+		 &release_thread,
+		 &thread_done_promise,
+		 &thread_finished,
+		 &destroy_owner,
+		 &owner_joinable_promise,
+		 &owner_about_to_destroy_promise,
+		 &owner_done_promise]()
 		{
-			thread_started.wait();
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			release_thread_promise.set_value();
+			{
+				const ket::concurrency::JoiningThread thread(std::thread(
+					[&thread_started_promise,
+					 &release_thread,
+					 &thread_done_promise,
+					 &thread_finished]()
+					{
+						thread_started_promise.set_value();
+						release_thread.wait();
+						thread_finished.store(true);
+						thread_done_promise.set_value();
+					}));
+
+				const auto thread_is_joinable = thread.Joinable();
+				owner_joinable_promise.set_value(thread_is_joinable);
+
+				destroy_owner.wait();
+				owner_about_to_destroy_promise.set_value();
+			}
+
+			owner_done_promise.set_value();
 		});
 
-	{
-		const ket::concurrency::JoiningThread thread(std::thread(
-			[&thread_started_promise, &release_thread, &thread_done_promise, &thread_finished]()
-			{
-				thread_started_promise.set_value();
-				release_thread.wait();
-				thread_finished.store(true);
-				thread_done_promise.set_value();
-			}));
+	const auto owner_thread_was_joinable = owner_joinable.get();
+	thread_started.wait();
+	destroy_owner_promise.set_value();
+	owner_about_to_destroy.wait();
 
-		const auto thread_is_joinable = thread.Joinable();
+	const auto owner_done_before_release_status =
+		owner_done.wait_for(std::chrono::milliseconds(50));
+	const auto owner_done_before_release =
+		owner_done_before_release_status == std::future_status::ready;
 
-		EXPECT_TRUE(thread_is_joinable);
-	}
+	release_thread_promise.set_value();
+	owner.join();
 
+	const auto owner_done_status = owner_done.wait_for(std::chrono::seconds(0));
+	const auto owner_done_is_ready = owner_done_status == std::future_status::ready;
 	const auto thread_done_status = thread_done.wait_for(std::chrono::seconds(0));
 	const auto thread_done_is_ready = thread_done_status == std::future_status::ready;
 	const auto finished = thread_finished.load();
 
-	releaser.join();
-
+	EXPECT_TRUE(owner_thread_was_joinable);
+	EXPECT_FALSE(owner_done_before_release);
+	EXPECT_TRUE(owner_done_is_ready);
 	EXPECT_TRUE(thread_done_is_ready);
 	EXPECT_TRUE(finished);
 }
@@ -173,6 +208,10 @@ TEST(KetConcurrencyTest, MoveAssignmentJoinsPreviousThreadBeforeTakingNewOwnersh
 	std::promise<void> old_release_promise;
 	std::shared_future<void> old_release = old_release_promise.get_future().share();
 	std::atomic<bool> old_thread_finished(false);
+	std::promise<void> assignment_started_promise;
+	const std::future<void> assignment_started = assignment_started_promise.get_future();
+	std::promise<void> assignment_done_promise;
+	const std::future<void> assignment_done = assignment_done_promise.get_future();
 
 	ket::concurrency::JoiningThread target(std::thread(
 		[&old_started_promise, &old_release, &old_thread_finished]()
@@ -191,13 +230,31 @@ TEST(KetConcurrencyTest, MoveAssignmentJoinsPreviousThreadBeforeTakingNewOwnersh
 
 	const auto source_was_joinable = source.Joinable();
 
-	old_release_promise.set_value();
-	target = std::move(source);
+	std::thread assigner(
+		[&target, &source, &assignment_started_promise, &assignment_done_promise]()
+		{
+			assignment_started_promise.set_value();
+			target = std::move(source);
+			assignment_done_promise.set_value();
+		});
 
+	assignment_started.wait();
+	const auto assignment_done_before_release_status =
+		assignment_done.wait_for(std::chrono::milliseconds(50));
+	const auto assignment_done_before_release =
+		assignment_done_before_release_status == std::future_status::ready;
+
+	old_release_promise.set_value();
+	assigner.join();
+
+	const auto assignment_done_status = assignment_done.wait_for(std::chrono::seconds(0));
+	const auto assignment_is_done = assignment_done_status == std::future_status::ready;
 	const auto old_finished = old_thread_finished.load();
 	const auto target_is_joinable = target.Joinable();
 
 	EXPECT_TRUE(source_was_joinable);
+	EXPECT_FALSE(assignment_done_before_release);
+	EXPECT_TRUE(assignment_is_done);
 	EXPECT_TRUE(old_finished);
 	EXPECT_TRUE(target_is_joinable);
 }
@@ -224,6 +281,35 @@ TEST(KetConcurrencyTest, DetectsReadyFutureAndSharedFuture)
 
 	EXPECT_TRUE(future_is_ready);
 	EXPECT_TRUE(shared_future_is_ready);
+}
+
+/**
+ * @test
+ * @brief 例外格納済みfutureのready判定確認。
+ * @details
+ * 例外を格納したstd::futureとstd::shared_futureを渡し、値や例外を取り出さずtrueを返すことを確認。
+ * @pre C++17以降。対象futureはvalid。
+ * @post futureの例外は取り出されず、共有状態は保持。
+ */
+TEST(KetConcurrencyTest, DetectsReadyFutureAndSharedFutureWithStoredException)
+{
+	std::promise<int> future_promise;
+	const std::future<int> future = future_promise.get_future();
+	future_promise.set_exception(std::make_exception_ptr(42));
+
+	std::promise<int> shared_promise;
+	const std::shared_future<int> shared_future = shared_promise.get_future().share();
+	shared_promise.set_exception(std::make_exception_ptr(7));
+
+	const auto future_is_ready = ket::concurrency::IsReady(future);
+	const auto shared_future_is_ready = ket::concurrency::IsReady(shared_future);
+	const auto future_is_valid = future.valid();
+	const auto shared_future_is_valid = shared_future.valid();
+
+	EXPECT_TRUE(future_is_ready);
+	EXPECT_TRUE(shared_future_is_ready);
+	EXPECT_TRUE(future_is_valid);
+	EXPECT_TRUE(shared_future_is_valid);
 }
 
 /**
