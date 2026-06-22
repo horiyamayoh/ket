@@ -1,0 +1,16 @@
+#include "ket_wire.h"
+
+namespace
+{
+	struct BoolFrame
+	{
+		bool flag = false;
+	};
+
+	[[maybe_unused]] void BuildRejectedSchema()
+	{
+		const auto field = ket::wire::U8<BoolFrame, &BoolFrame::flag>("flag");
+		(void)field;
+	}
+
+} // namespace

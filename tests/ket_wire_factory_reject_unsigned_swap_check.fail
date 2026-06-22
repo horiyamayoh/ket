@@ -1,0 +1,18 @@
+#include <cstdint>
+
+#include "ket_wire.h"
+
+namespace
+{
+	struct UnsignedSwapFrame
+	{
+		std::uint16_t value = 0U;
+	};
+
+	[[maybe_unused]] void BuildRejectedSchema()
+	{
+		const auto field = ket::wire::I16Be<UnsignedSwapFrame, &UnsignedSwapFrame::value>("value");
+		(void)field;
+	}
+
+} // namespace

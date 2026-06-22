@@ -142,13 +142,17 @@ namespace ket
     namespace wire
     {
         enum class Error;
+        enum class FieldKind;
         struct Status;
 
         template <typename T>
-        struct Field;
+        class BitMember;
+
+        template <typename T>
+        class Field;
 
         template <typename T, std::size_t FieldCount>
-        struct Schema;
+        class Schema;
 
         template <typename T>
         struct DecodeResult;
@@ -182,7 +186,23 @@ namespace ket
         std::optional<std::size_t> EncodedSize(const Schema<T, FieldCount>& schema) noexcept;
 
         template <typename T, std::size_t FieldCount>
+        std::optional<std::size_t> MaxEncodedSize(const Schema<T, FieldCount>& schema) noexcept;
+
+        template <typename T, std::size_t FieldCount>
+        bool IsFixedSize(const Schema<T, FieldCount>& schema) noexcept;
+
+        template <typename T, std::size_t FieldCount>
         SizeResult MeasureEncodedSize(const T& value, const Schema<T, FieldCount>& schema);
+
+        template <typename T, auto Member>
+        Field<T> U8(std::string_view name) noexcept;
+        // U16Be/U16Le/U32Be/U32Le/U64Be/U64Le
+        // I8/I16Be/I16Le/I32Be/I32Le/I64Be/I64Le
+        // BcdU8/BcdU16Be/BcdU16Le/BcdU32Be/BcdU32Le
+        // RawBcdBytes/Bytes/ViewBytes
+        // ConstU8/ConstBytes/ReservedBytes/PadBytes
+        // Bit/ReservedBits/BitsU8/BitsU16Be/BitsU16Le
+        // Validate/LengthValidation/ChecksumValidation/RangeValidation/CrossFieldValidation
     } // namespace wire
 
 } // namespace ket
@@ -197,6 +217,8 @@ trailing bytes を許し、成功時に `DecodeResult<T>::consumed` へ消費 by
 `encoded_size` byte を更新する。
 
 field descriptor factory は typed pointer-to-member template とし、member 型の不一致を compile error にする。
+`U*` factory は対応する unsigned fixed-width member、`I*` factory は対応する signed fixed-width member だけを受け付ける。
+`bool`、plain `char`、signed/unsigned の取り違えは compile error。
 
 ```cpp
 const auto schema = ket::wire::MakeSchema<Frame>(
@@ -307,16 +329,24 @@ result 規約:
 `Schema<T, N>` は message 名、`std::array<Field<T>, N>`、field 数、fixed/dynamic size metadata を保持する。
 schema は field 配列を所有し、caller-held field array の lifetime に依存しない。
 
+`Field<T>` は read-only metadata accessor を持つ class であり、利用者が callback pointer や内部状態を直接組み立てない。
 `Field<T>` は次を保持する。
 
 - field 名。
+- group 名。
 - field kind。
 - encoded size policy。
+- expected byte または expected byte列。
+- grouped bit descriptor列。
 - decode function。
 - encode preflight function。
 - encode function。
+- measure function。
 - validation function。
 - member pointer または member accessor。
+
+`BitMember<T>` は grouped bit field の logical member metadata を保持する class であり、名前、shift、width、
+expected value、member有無、妥当性を read-only accessor で公開する。
 
 `Field<T>` と `Schema<T, N>` は dynamic allocation を行わない。schema と field は immutable であり、共有 schema の
 read-only 利用は thread-safe である。`N == 0` の empty schema は encoded size 0 の valid schema とする。
@@ -372,13 +402,19 @@ cursor を進める descriptor は採用しない。
 constant and reserved field:
 
 - `ConstU8`
-- `ConstBytes`
+- `ConstBytes` pointer overload
+- `ConstBytes` `std::array` overload
 - `ReservedBytes`
 - `PadBytes`
 - `ReservedBits`
 
 reserved field は decode 時に期待値と一致しなければ失敗する。encode 時は期待値を書き込むか、対象 member の
 値が期待値と一致することを preflight で検査する。
+`ConstBytes(name, const std::uint8_t*, size)` は non-owning pointer を保持し、schema 利用中に参照可能な
+static storage または caller 管理 storage を要求する。stack 配列や temporary 由来の pointer を渡してはならない。
+小さい constant byte列では `ConstBytes(name, std::array<std::uint8_t, N>)` を使う。この overload は descriptor
+内部へ expected bytes を copy し、schema が caller-held array lifetime に依存しない。現行実装の owned copy は
+32 bytes 以下を対象にする。
 
 computed validation:
 
@@ -437,13 +473,17 @@ allocation なし・例外なしを要求する schema では、対象型と hoo
 
 1. output `ket::byte_view::MutableView` の valid/invalid を `ket::byte_view::IsValid` で検査する。
 2. schema の field 配列、field count、message 名を検査する。
-3. `MeasureEncodedSize` と field preflight で size、range、BCD、bit、reserved、length、checksum を検査する。
+3. fixed-size schema では、semantic validation の前に schema fixed size と output capacity を安価に比較する。
+   明らかな short output では validation hook を実行せず、output buffer も変更しない。
+4. `MeasureEncodedSize` と field preflight で size、range、BCD、bit、reserved、length、checksum を検査する。
    size 加算は `ket::numeric::TryAdd`、BCD 桁上限は `ket::bcd::MaxInt`、BCD byte列検査は
    `ket::bcd::Validate`、bit mask は `ket::bits::TryMask` を使う。
-4. caller buffer へ書く前に完全検証済みであることを示せる backend を用意する。
-5. fixed-width integer は `ket::endian::Store*` で一時byte列へ変換し、
+5. caller buffer へ書く前に、測定済み `encoded_size <= out.Size()` を必ず確認する。future dynamic field では
+   field-level diagnostics より、書き込み前の安全な総量確認を優先する。
+6. caller buffer へ書く前に完全検証済みであることを示せる backend を用意する。
+7. fixed-width integer は `ket::endian::Store*` で一時byte列へ変換し、
    `ket::byte_writer::Writer::WriteBytes` で field byte を順番に encode する。
-6. すべて成功した場合だけ caller buffer の先頭 `encoded_size` byte を更新する。
+8. すべて成功した場合だけ caller buffer の先頭 `encoded_size` byte を更新する。
 
 `Encode` は `EncodeTo` と同じ preflight を行った後、owning `std::vector<std::uint8_t>` を確保し、成功時だけ
 `EncodeResult::bytes` に格納する。owning buffer の確保と初期 fill は `ket::bytes::Builder::AppendFill`
@@ -469,6 +509,8 @@ fixed-buffer encode、size 計算、built-in descriptor は allocation なしで
 - `MutableView(nullptr, size > 0)` は invalid output view とし、`Error::kInvalidOutputView`。
 - view field は source buffer lifetime を caller が保持する。
 - copy field は source buffer pointer を struct に保存しない。
+- pointer overload の `ConstBytes` は expected byte列の lifetime を caller が保持する。
+- `std::array` overload の `ConstBytes` は expected byte列を descriptor内へcopyし、factory引数のlifetimeに依存しない。
 - field name、group name、schema name は schema 利用中に参照可能な storage を要求する。
 - encode output が value object の storage と重なる使い方は API contract 外。
 
@@ -520,6 +562,10 @@ validation hook は fixed-buffer operation と同じ core contract に従う。
 - 例外なし。
 - `bool` で成功/失敗を返す。
 - 失敗時は `Status&` に field、offset、expected、actual を設定できる。
+- callback が `Status` を設定しないで失敗した場合、runtime は `Error::kCallbackFailed` と validation field の
+  現在offsetを設定する。
+- callback が `Status::offset` を設定した場合、その offset は validation field 位置からの相対offsetとして扱い、
+  decode、measure、encode、EncodeTo で schema先頭からのoffsetへ補正する。
 
 length hook は declared length と actual consumed size を比較する。checksum hook は caller が提供した algorithm を
 呼び出すだけに留める。cross-field hook は業務固有 protocol の完全実装に踏み込まず、schema-local invariant を
@@ -550,6 +596,7 @@ executable example は次を示す。
 - `packages/wire/ket_wire.h` に公開 API、Doxygen、C++ version、dependency、namespace、drop-in 条件がある。
 - `.cpp` が必要な場合は実装を持ち、空 source や include-only source ではない。
 - public API は C++17 で build される。
+- factory の signedness 制約は C++17 compile-only positive/negative check で固定する。
 - functional test は GoogleTest で境界条件を網羅する。
 - package tests は exact decode、prefix decode、owning encode、fixed-buffer encode、diagnostics、size 計算を含む。
 - static analysis、convention check、sanitizer test、format check、layout check が通る。
@@ -593,7 +640,12 @@ executable example は次を示す。
 - `Error::kSizeOverflow`。
 - endian golden bytes。
 - fixed byte copy does not keep source pointer。
+- `ConstBytes` pointer overload lifetime contract。
+- `ConstBytes` `std::array` overload owned copy lifetime。
 - view field documents source lifetime and preserves pointer intentionally。
+- integer factory signedness positive/negative compile-only。
+- validation failure offset on decode、measure、encode、EncodeTo。
+- short output skips validation hook。
 
 verification command:
 
@@ -623,7 +675,8 @@ git diff --check
 長時間の goal-driven 実装では、write scope を分けて並列化する。
 
 - public API owner: `packages/wire/ket_wire.h`。
-- implementation owner: `packages/wire/ket_wire.cpp`。
+- implementation owner: 現状は header-only の `packages/wire/ket_wire.h`。非 template 実装が必要になった場合だけ
+  `packages/wire/ket_wire.cpp` を追加する。
 - test owner: `packages/wire/ket_wire_test.cpp`。
 - build/metadata owner: `CMakeLists.txt`、`progress.md`、package docs。
 - verification owner: read-only checks と failure triage。

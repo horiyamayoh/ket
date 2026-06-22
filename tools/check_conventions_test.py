@@ -319,6 +319,39 @@ class CheckConventionsTest(unittest.TestCase):
 			)
 		)
 
+	def test_package_public_api_function_requires_code_example(self) -> None:
+		errors = self.check_text(
+			"packages/sample/ket_sample.h",
+			"\n".join(
+				(
+					"namespace ket",
+					"{",
+					"\t// -----------------------------------------------------------------------------",
+					"\t// Public API declarations",
+					"\t// -----------------------------------------------------------------------------",
+					"",
+					"\t/**",
+					"\t * @brief Value doubling.",
+					"\t * @param[in] value Input value.",
+					"\t * @retval value Doubled value.",
+					"\t * @pre Caller provides an integer value.",
+					"\t * @post No external state changes.",
+					"\t */",
+					"\tconstexpr int Double(int value) noexcept;",
+					"",
+					"} // namespace ket",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(
+			any(
+				"public API function Doxygen comment requires @code and @endcode." in error
+				for error in errors
+			)
+		)
+
 	def test_private_member_in_public_section_does_not_require_code_example(self) -> None:
 		errors = self.check_text(
 			"modules/sample/ket_sample.h",

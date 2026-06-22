@@ -666,4 +666,65 @@ if(KET_BUILD_TESTS)
 			"${CMAKE_CURRENT_SOURCE_DIR}/modules/endian"
 			"${CMAKE_CURRENT_SOURCE_DIR}/modules/numeric"
 	)
+
+	set(
+		KET_WIRE_INCLUDE_DIRS
+		"${CMAKE_CURRENT_SOURCE_DIR}/packages/wire"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/bcd"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/bits"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_reader"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_view"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/byte_writer"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/bytes"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/endian"
+		"${CMAKE_CURRENT_SOURCE_DIR}/modules/numeric"
+	)
+
+	ket_add_compile_check(
+		ket_wire_factory_positive_check
+		CXX_STANDARD 17
+		SOURCES
+			tests/ket_wire_factory_positive_check.cpp
+	)
+	target_include_directories(
+		ket_wire_factory_positive_check
+		PRIVATE
+			${KET_WIRE_INCLUDE_DIRS}
+	)
+	add_dependencies(ket_wire_test ket_wire_factory_positive_check)
+
+	if(NOT Python3_Interpreter_FOUND)
+		find_package(Python3 COMPONENTS Interpreter REQUIRED)
+	endif()
+
+	set(KET_WIRE_EXPECT_FAILURE_INCLUDES)
+	foreach(include_dir IN LISTS KET_WIRE_INCLUDE_DIRS)
+		list(APPEND KET_WIRE_EXPECT_FAILURE_INCLUDES --include "${include_dir}")
+	endforeach()
+
+	set(
+		KET_WIRE_FACTORY_REJECT_SOURCES
+		tests/ket_wire_factory_reject_bool_check.fail
+		tests/ket_wire_factory_reject_char_check.fail
+		tests/ket_wire_factory_reject_signed_swap_check.fail
+		tests/ket_wire_factory_reject_unsigned_swap_check.fail
+	)
+	foreach(reject_source IN LISTS KET_WIRE_FACTORY_REJECT_SOURCES)
+		get_filename_component(reject_target "${reject_source}" NAME_WE)
+		add_custom_target(
+			${reject_target}
+			COMMAND
+				"${Python3_EXECUTABLE}"
+				"${CMAKE_CURRENT_SOURCE_DIR}/tools/expect_compile_failure.py"
+				--compiler "${CMAKE_CXX_COMPILER}"
+				--standard c++17
+				--source "${CMAKE_CURRENT_SOURCE_DIR}/${reject_source}"
+				--output "${CMAKE_CURRENT_BINARY_DIR}/${reject_target}.o"
+				${KET_WIRE_EXPECT_FAILURE_INCLUDES}
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Checking expected compile failure for ${reject_source}"
+			VERBATIM
+		)
+		add_dependencies(ket_wire_test ${reject_target})
+	endforeach()
 endif()

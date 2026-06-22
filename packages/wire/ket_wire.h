@@ -145,6 +145,9 @@ namespace ket
 			 * @retval false failure kindを保持。
 			 * @pre なし。
 			 * @post statusと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] bool Ok() const noexcept;
 		};
@@ -168,6 +171,9 @@ namespace ket
 			 * @retval value descriptor生成時に指定した名前。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::string_view Name() const noexcept;
 
@@ -176,6 +182,9 @@ namespace ket
 			 * @retval value least significant bitを0とするshift。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr unsigned Shift() const noexcept;
 
@@ -184,6 +193,9 @@ namespace ket
 			 * @retval value bit幅。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr unsigned Width() const noexcept;
 
@@ -192,6 +204,9 @@ namespace ket
 			 * @retval value expected raw value。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::uint64_t Expected() const noexcept;
 
@@ -201,6 +216,9 @@ namespace ket
 			 * @retval false reserved bit。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr bool HasMember() const noexcept;
 
@@ -210,6 +228,9 @@ namespace ket
 			 * @retval false schema構築時にschema errorとして扱う。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr bool IsValid() const noexcept;
 
@@ -258,6 +279,9 @@ namespace ket
 			 * @retval value descriptor生成時に指定した名前。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::string_view Name() const noexcept;
 
@@ -266,6 +290,9 @@ namespace ket
 			 * @retval value grouped bitsの場合はgroup名、それ以外は空。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::string_view Group() const noexcept;
 
@@ -274,6 +301,9 @@ namespace ket
 			 * @retval value field kind。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr FieldKind Kind() const noexcept;
 
@@ -282,6 +312,9 @@ namespace ket
 			 * @retval value encoded byte数。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::size_t EncodedSize() const noexcept;
 
@@ -290,6 +323,9 @@ namespace ket
 			 * @retval value 最大encoded byte数。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::size_t MaxEncodedSize() const noexcept;
 
@@ -299,6 +335,9 @@ namespace ket
 			 * @retval false value依存size field。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr bool IsFixedSize() const noexcept;
 
@@ -308,6 +347,9 @@ namespace ket
 			 * @retval false schema構築時にschema errorとして扱う。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr bool IsValid() const noexcept;
 
@@ -316,6 +358,9 @@ namespace ket
 			 * @retval value repeated reserved/padding byte。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::uint64_t Expected() const noexcept;
 
@@ -324,6 +369,9 @@ namespace ket
 			 * @retval value expected byte列先頭。byte列を持たないfieldではnullptr。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr const std::uint8_t* ExpectedBytes() const noexcept;
 
@@ -332,6 +380,9 @@ namespace ket
 			 * @retval value expected byte列長。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::size_t ExpectedBytesSize() const noexcept;
 
@@ -340,6 +391,9 @@ namespace ket
 			 * @retval value 最大16個のbit member descriptor配列。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr const std::array<BitMember<T>, 16U>&
 			BitMembers() const noexcept;
@@ -351,6 +405,9 @@ namespace ket
 			 * @retval nullptr `index >= BitMemberCount()`。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr const BitMember<T>*
 			BitMemberAt(std::size_t index) const noexcept;
@@ -360,6 +417,9 @@ namespace ket
 			 * @retval value bit member descriptor数。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::size_t BitMemberCount() const noexcept;
 
@@ -377,6 +437,8 @@ namespace ket
 			std::uint64_t expected_ = 0U;
 			const std::uint8_t* expected_bytes_ = nullptr;
 			std::size_t expected_bytes_size_ = 0U;
+			bool owns_expected_bytes_ = false;
+			std::array<std::uint8_t, 32U> owned_expected_bytes_{};
 			std::array<BitMember<T>, 16U> bit_members_{};
 			std::size_t bit_member_count_ = 0U;
 			DecodeFunction decode_ = nullptr;
@@ -400,6 +462,9 @@ namespace ket
 			 * @retval value descriptor生成時に指定した名前。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::string_view Name() const noexcept;
 
@@ -408,6 +473,9 @@ namespace ket
 			 * @retval value field descriptor配列。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr const std::array<Field<T>, FieldCount>& Fields() const noexcept;
 
@@ -418,6 +486,9 @@ namespace ket
 			 * @retval nullptr `index >= FieldCountValue()`。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr const Field<T>* FieldAt(std::size_t index) const noexcept;
 
@@ -426,6 +497,9 @@ namespace ket
 			 * @retval value schema内field数。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::size_t FieldCountValue() const noexcept;
 
@@ -435,6 +509,9 @@ namespace ket
 			 * @retval false value依存size schema。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr bool IsFixedSize() const noexcept;
 
@@ -443,6 +520,9 @@ namespace ket
 			 * @retval value fixed encoded byte数。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::size_t FixedSize() const noexcept;
 
@@ -451,6 +531,9 @@ namespace ket
 			 * @retval value 最大encoded byte数。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr std::size_t MaxSize() const noexcept;
 
@@ -459,6 +542,9 @@ namespace ket
 			 * @retval value schema構築時status。
 			 * @pre なし。
 			 * @post descriptorと外部状態の変更なし。
+			 * @code
+			 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+			 * @endcode
 			 */
 			[[nodiscard]] constexpr const Status& SchemaStatus() const noexcept;
 
@@ -532,6 +618,9 @@ namespace ket
 		 * @retval value 構築済みschema。schema errorは`Schema::status`に保持。
 		 * @pre `fields`内の各descriptorはfactoryから生成された値、または同じcontractを満たす値。
 		 * @post `fields`はschema内へcopyされ、caller-held配列のlifetimeに依存しない。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		Schema<T, FieldCount> MakeSchema(std::string_view name,
@@ -547,6 +636,9 @@ namespace ket
 		 * @retval std::nullopt 失敗時。
 		 * @pre `T`はdefault construction可能。`data`の元buffer lifetimeは呼び出し中維持。
 		 * @post 成功時だけresult valueを保持。input bufferの変更なし。失敗時のconsumedは0。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		DecodeResult<T> DecodeExact(ket::byte_view::View data, const Schema<T, FieldCount>& schema);
@@ -561,6 +653,9 @@ namespace ket
 		 * @retval std::nullopt 失敗時。
 		 * @pre `T`はdefault construction可能。`data`の元buffer lifetimeは呼び出し中維持。
 		 * @post 成功時だけconsumedへ実消費byte数を保持。input bufferの変更なし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		DecodeResult<T> DecodePrefix(ket::byte_view::View data,
@@ -577,6 +672,9 @@ namespace ket
 		 * @pre schema内のview fieldは参照元byte列のlifetimeを呼び出し中維持。
 		 * @post 成功時だけbytesを保持。`value`の変更なし。
 		 * @note owning buffer確保に失敗した場合は標準例外が送出され、EncodeResultは返らない。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		EncodeResult Encode(const T& value, const Schema<T, FieldCount>& schema);
@@ -592,6 +690,10 @@ namespace ket
 		 * @retval failure `EncodeToResult::status`に理由を保持。
 		 * @pre `out`の元buffer lifetimeと書き込み可能性は呼び出し中維持。
 		 * @post 成功時だけ先頭encoded_size byteを更新。失敗時はoutput bufferを変更しない。
+		 * @note fixed-size schemaで明らかなoutput不足の場合、validation hookは実行しない。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		EncodeToResult EncodeTo(const T& value,
@@ -607,6 +709,9 @@ namespace ket
 		 * @retval std::nullopt schema error、またはvalue依存size。
 		 * @pre なし。
 		 * @post schemaと外部状態の変更なし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		std::optional<std::size_t> EncodedSize(const Schema<T, FieldCount>& schema) noexcept;
@@ -620,6 +725,9 @@ namespace ket
 		 * @retval std::nullopt schema error、または最大値が固定されないschema。
 		 * @pre なし。
 		 * @post schemaと外部状態の変更なし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		std::optional<std::size_t> MaxEncodedSize(const Schema<T, FieldCount>& schema) noexcept;
@@ -633,6 +741,9 @@ namespace ket
 		 * @retval false schema error、またはvalue依存size。
 		 * @pre なし。
 		 * @post schemaと外部状態の変更なし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		bool IsFixedSize(const Schema<T, FieldCount>& schema) noexcept;
@@ -647,6 +758,9 @@ namespace ket
 		 * @retval std::nullopt schema error、size overflow、またはvalue検証失敗。
 		 * @pre schema内のview fieldは参照元byte列のlifetimeを呼び出し中維持。
 		 * @post `value`、schema、外部状態の変更なし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t FieldCount>
 		SizeResult MeasureEncodedSize(const T& value, const Schema<T, FieldCount>& schema);
@@ -659,6 +773,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> U8(std::string_view name) noexcept;
@@ -671,6 +788,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> U16Be(std::string_view name) noexcept;
@@ -683,6 +803,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> U16Le(std::string_view name) noexcept;
@@ -695,6 +818,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> U32Be(std::string_view name) noexcept;
@@ -707,6 +833,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> U32Le(std::string_view name) noexcept;
@@ -719,6 +848,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> U64Be(std::string_view name) noexcept;
@@ -731,6 +863,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> U64Le(std::string_view name) noexcept;
@@ -743,6 +878,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> I8(std::string_view name) noexcept;
@@ -755,6 +893,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> I16Be(std::string_view name) noexcept;
@@ -767,6 +908,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> I16Le(std::string_view name) noexcept;
@@ -779,6 +923,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> I32Be(std::string_view name) noexcept;
@@ -791,6 +938,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> I32Le(std::string_view name) noexcept;
@@ -803,6 +953,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> I64Be(std::string_view name) noexcept;
@@ -815,6 +968,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> I64Le(std::string_view name) noexcept;
@@ -827,6 +983,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> BcdU8(std::string_view name) noexcept;
@@ -839,6 +998,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> BcdU16Be(std::string_view name) noexcept;
@@ -851,6 +1013,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> BcdU16Le(std::string_view name) noexcept;
@@ -863,6 +1028,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> BcdU32Be(std::string_view name) noexcept;
@@ -875,6 +1043,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> BcdU32Le(std::string_view name) noexcept;
@@ -887,6 +1058,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre member storageはfixed byte array。
 		 * @post decodeはsource pointerを保存せず、raw bytesをcopy。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> RawBcdBytes(std::string_view name) noexcept;
@@ -899,6 +1073,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre member storageはfixed byte array。
 		 * @post decodeはsource pointerを保存せず、bytesをcopy。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> Bytes(std::string_view name) noexcept;
@@ -912,6 +1089,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre decode後のview利用中はdecode元buffer lifetimeをcallerが保持。
 		 * @post decodeはsource pointerを意図的にmember viewへ保持。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member>
 		Field<T> ViewBytes(std::string_view name, std::size_t size) noexcept;
@@ -924,6 +1104,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post encode時は`expected`を書き込み。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T> ConstU8(std::string_view name, std::uint8_t expected) noexcept;
@@ -932,15 +1115,36 @@ namespace ket
 		 * @brief constant fixed bytes field descriptor生成。
 		 * @tparam T schema対象型。
 		 * @param[in] name field名。
-		 * @param[in] expected 期待するbyte列先頭。`size == 0`の場合のみnullptr可。
+		 * @param[in] expected 期待するbyte列先頭。`size == 0`の場合のみnullptr可。非所有参照。
 		 * @param[in] size 期待するbyte数。
 		 * @retval value field descriptor。
-		 * @pre `expected`はschema利用中に参照可能なstorage。
+		 * @pre `expected`はschema利用中に参照可能なstatic storageまたはcaller管理storage。
 		 * @post encode時は`expected[0..size)`を書き込み。
+		 * @note stack配列など短命storageを渡す場合は、所有copyを作る`std::array` overloadを使う。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T>
 		ConstBytes(std::string_view name, const std::uint8_t* expected, std::size_t size) noexcept;
+
+		/**
+		 * @brief constant fixed bytes field descriptorを`std::array`から所有copyで生成。
+		 * @tparam T schema対象型。
+		 * @tparam Size 期待するbyte数。32byte以下。
+		 * @param[in] name field名。
+		 * @param[in] expected 期待するbyte列。descriptor内へcopy。
+		 * @retval value field descriptor。
+		 * @pre `Size <= 32`。大きいconstant byte列は長命storageのpointer overloadを使う。
+		 * @post schemaへcopyされた後も`expected`引数のlifetimeに依存しない。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
+		 */
+		template <typename T, std::size_t Size>
+		Field<T> ConstBytes(std::string_view name,
+							const std::array<std::uint8_t, Size>& expected) noexcept;
 
 		/**
 		 * @brief repeated reserved bytes field descriptor生成。
@@ -951,6 +1155,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post decodeは全byte一致を検査し、encodeは期待値を埋める。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T>
@@ -965,6 +1172,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `name`はschema利用中に参照可能なstorage。
 		 * @post decodeは全byte一致を検査し、encodeはpadding値を埋める。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T>
@@ -980,6 +1190,9 @@ namespace ket
 		 * @retval value bit member descriptor。
 		 * @pre `Shift + Width`はstorage descriptorのbit幅以下。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, auto Member, unsigned Shift, unsigned Width>
 		BitMember<T> Bit(std::string_view name) noexcept;
@@ -994,6 +1207,9 @@ namespace ket
 		 * @retval value bit member descriptor。
 		 * @pre `expected`は`Width` bitに収まる値。
 		 * @post allocationなし。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, unsigned Shift, unsigned Width>
 		BitMember<T> ReservedBits(std::string_view name, std::uint64_t expected) noexcept;
@@ -1007,6 +1223,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `members`は16要素以下。
 		 * @post decode/encodeはstorage unitを1回だけ消費。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t BitCount>
 		Field<T> BitsU8(std::string_view group,
@@ -1021,6 +1240,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `members`は16要素以下。
 		 * @post decode/encodeはstorage unitを1回だけ消費。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t BitCount>
 		Field<T> BitsU16Be(std::string_view group,
@@ -1035,6 +1257,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `members`は16要素以下。
 		 * @post decode/encodeはstorage unitを1回だけ消費。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T, std::size_t BitCount>
 		Field<T> BitsU16Le(std::string_view group,
@@ -1048,6 +1273,10 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `callback != nullptr`。失敗時はcallbackがStatusへ詳細を設定可能。
 		 * @post decode/encode/measure時にbyteを消費せずcallbackを実行。
+		 * @note callbackが設定する`Status::offset`はvalidation field位置からの相対offset。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T> Validate(std::string_view name, ValidationCallback<T> callback) noexcept;
@@ -1060,6 +1289,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `callback != nullptr`。
 		 * @post byteを消費せずcallbackを実行。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T> LengthValidation(std::string_view name, ValidationCallback<T> callback) noexcept;
@@ -1072,6 +1304,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `callback != nullptr`。
 		 * @post byteを消費せずcallbackを実行。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T> ChecksumValidation(std::string_view name, ValidationCallback<T> callback) noexcept;
@@ -1084,6 +1319,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `callback != nullptr`。
 		 * @post byteを消費せずcallbackを実行。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T> RangeValidation(std::string_view name, ValidationCallback<T> callback) noexcept;
@@ -1096,6 +1334,9 @@ namespace ket
 		 * @retval value field descriptor。
 		 * @pre `callback != nullptr`。
 		 * @post byteを消費せずcallbackを実行。
+		 * @code
+		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
+		 * @endcode
 		 */
 		template <typename T>
 		Field<T> CrossFieldValidation(std::string_view name,
@@ -1557,6 +1798,38 @@ namespace ket
 				static void SetExpectedBytesSize(Field<T>& field, std::size_t size) noexcept
 				{
 					field.expected_bytes_size_ = size;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre なし。
+				 * @post getterは変更なし、setterは対象descriptorを更新。
+				 */
+				static constexpr bool OwnsExpectedBytes(const Field<T>& field) noexcept
+				{
+					return field.owns_expected_bytes_;
+				}
+
+				/**
+				 * @brief descriptor private state access.
+				 * @param[in,out] object 対象descriptor。
+				 * @retval value 取得値、またはvoid。
+				 * @pre `size <= 32`。
+				 * @post 対象descriptorのowned expected bytesを更新。
+				 */
+				static void SetOwnedExpectedBytes(Field<T>& field,
+												  const std::uint8_t* expected,
+												  std::size_t size) noexcept
+				{
+					field.owns_expected_bytes_ = true;
+					field.expected_bytes_ = nullptr;
+					field.expected_bytes_size_ = size;
+					for (std::size_t index = 0U; index < size; ++index)
+					{
+						field.owned_expected_bytes_[index] = expected[index];
+					}
 				}
 
 				/**
@@ -2061,6 +2334,61 @@ namespace ket
 			}
 
 			/**
+			 * @brief field-relative offsetをschema先頭からのoffsetへ変換。
+			 * @param[in,out] status 変換対象status。
+			 * @param[in] field_start field開始offset。
+			 * @retval void 戻り値なし。
+			 * @pre なし。
+			 * @post overflowしない場合だけ`status.offset`を更新。
+			 */
+			inline void AddFieldStartToStatus(Status& status, std::size_t field_start) noexcept
+			{
+				std::size_t adjusted_offset = 0U;
+				const auto offset_adjusted =
+					ket::numeric::TryAdd<std::size_t>(field_start, status.offset, adjusted_offset);
+				if (offset_adjusted)
+				{
+					status.offset = adjusted_offset;
+				}
+			}
+
+			/**
+			 * @brief validation callback失敗statusをfield文脈で補完。
+			 * @param[in,out] status callbackが返したstatus。
+			 * @param[in] field_start validation field開始offset。
+			 * @param[in] field field名。
+			 * @param[in] group group名。
+			 * @retval void 戻り値なし。
+			 * @pre callbackがfalseを返した直後。
+			 * @post
+			 * statusが未設定ならkCallbackFailed、設定済みならoffsetをfield-relativeとして補正。
+			 */
+			inline void CompleteValidationFailureStatus(Status& status,
+														std::size_t field_start,
+														std::string_view field,
+														std::string_view group) noexcept
+			{
+				const auto status_ok = status.Ok();
+				if (status_ok)
+				{
+					status = MakeStatus(Error::kCallbackFailed, field_start, field, group);
+					return;
+				}
+
+				AddFieldStartToStatus(status, field_start);
+				const auto field_is_empty = status.field.empty();
+				if (field_is_empty)
+				{
+					status.field = field;
+				}
+				const auto group_is_empty = status.group.empty();
+				if (group_is_empty)
+				{
+					status.group = group;
+				}
+			}
+
+			/**
 			 * @brief input view validity判定。
 			 * @param[in] data input view。
 			 * @retval true valid view。
@@ -2528,20 +2856,26 @@ namespace ket
 			 * @tparam T schema対象型。
 			 * @tparam Member member pointer.
 			 * @tparam Unsigned wire unsigned type.
+			 * @tparam ExpectedMember exact object member type.
 			 * @tparam Order byte order.
 			 * @param[in] name field名。
 			 * @retval value field descriptor。
 			 * @pre member type width matches `Unsigned`.
 			 * @post allocationなし。
 			 */
-			template <typename T, auto Member, typename Unsigned, ByteOrder Order>
+			template <typename T,
+					  auto Member,
+					  typename Unsigned,
+					  typename ExpectedMember,
+					  ByteOrder Order>
 			Field<T> MakeIntegerField(std::string_view name) noexcept
 			{
 				using MemberType = typename MemberPointerTraits<decltype(Member)>::member_type;
 				CheckMemberClass<T, Member>();
-				static_assert(std::is_integral_v<MemberType>, "integer member required");
-				static_assert(sizeof(MemberType) == sizeof(Unsigned),
-							  "integer member size mismatch");
+				static_assert(std::is_same_v<MemberType, ExpectedMember>,
+							  "integer member must be the exact fixed-width signedness type");
+				static_assert(sizeof(ExpectedMember) == sizeof(Unsigned),
+							  "integer member and wire size mismatch");
 
 				Field<T> field{};
 				FieldAccess<T>::SetName(field, name);
@@ -3523,12 +3857,7 @@ namespace ket
 				const auto callback_ok = FieldAccess<T>::Validation(field)(value, status);
 				if (!callback_ok)
 				{
-					const auto status_ok = status.Ok();
-					if (status_ok)
-					{
-						status =
-							MakeStatus(Error::kCallbackFailed, offset, field.Name(), field.Group());
-					}
+					CompleteValidationFailureStatus(status, offset, field.Name(), field.Group());
 					return false;
 				}
 
@@ -3552,12 +3881,7 @@ namespace ket
 				const auto callback_ok = FieldAccess<T>::Validation(field)(value, status);
 				if (!callback_ok)
 				{
-					const auto status_ok = status.Ok();
-					if (status_ok)
-					{
-						status =
-							MakeStatus(Error::kCallbackFailed, 0U, field.Name(), field.Group());
-					}
+					CompleteValidationFailureStatus(status, 0U, field.Name(), field.Group());
 					return false;
 				}
 
@@ -3691,6 +4015,33 @@ namespace ket
 			}
 
 			/**
+			 * @brief measured encoded sizeがoutput容量に収まるか検査。
+			 * @param[in] encoded_size 測定済みencoded size。
+			 * @param[in] schema_name schema名。
+			 * @param[in] out output view。
+			 * @param[out] status failure status。
+			 * @retval true output capacity sufficient.
+			 * @retval false short output。
+			 * @pre `out`はvalid view。
+			 * @post 引数と外部状態の変更なし。
+			 */
+			inline bool CheckMeasuredOutputCapacity(std::size_t encoded_size,
+													std::string_view schema_name,
+													ket::byte_view::MutableView out,
+													Status& status) noexcept
+			{
+				const auto enough_output = encoded_size <= out.Size();
+				if (enough_output)
+				{
+					return true;
+				}
+
+				status = MakeSizeStatus(
+					Error::kShortOutput, out.Size(), {}, schema_name, encoded_size, out.Size());
+				return false;
+			}
+
+			/**
 			 * @brief schema encoded size measurement and preflight.
 			 * @tparam T schema対象型。
 			 * @tparam FieldCount field descriptor数。
@@ -3730,17 +4081,7 @@ namespace ket
 						FieldAccess<T>::Preflight(field)(value, field, status);
 					if (!preflight_ok)
 					{
-						const auto is_validation = field.Kind() == FieldKind::kValidation;
-						if (!is_validation)
-						{
-							std::size_t adjusted_offset = 0U;
-							const auto offset_adjusted = ket::numeric::TryAdd<std::size_t>(
-								field_start, status.offset, adjusted_offset);
-							if (offset_adjusted)
-							{
-								status.offset = adjusted_offset;
-							}
-						}
+						AddFieldStartToStatus(status, field_start);
 						return false;
 					}
 				}
@@ -3865,6 +4206,11 @@ namespace ket
 		template <typename T>
 		constexpr const std::uint8_t* Field<T>::ExpectedBytes() const noexcept
 		{
+			if (owns_expected_bytes_)
+			{
+				return owned_expected_bytes_.data();
+			}
+
 			return expected_bytes_;
 		}
 
@@ -4145,6 +4491,23 @@ namespace ket
 				return result;
 			}
 
+			const auto schema_valid = detail::ValidateSchema(schema, result.status);
+			if (!schema_valid)
+			{
+				return result;
+			}
+
+			const auto fixed_size_schema = schema.IsFixedSize();
+			if (fixed_size_schema)
+			{
+				const auto fixed_capacity_ok =
+					detail::CheckOutputCapacity(schema, out, result.status);
+				if (!fixed_capacity_ok)
+				{
+					return result;
+				}
+			}
+
 			std::size_t encoded_size = 0U;
 			const auto measured =
 				detail::MeasureAndPreflight(value, schema, encoded_size, result.status);
@@ -4153,7 +4516,8 @@ namespace ket
 				return result;
 			}
 
-			const auto enough_output = detail::CheckOutputCapacity(schema, out, result.status);
+			const auto enough_output = detail::CheckMeasuredOutputCapacity(
+				encoded_size, schema.Name(), out, result.status);
 			if (!enough_output)
 			{
 				return result;
@@ -4228,99 +4592,125 @@ namespace ket
 		template <typename T, auto Member>
 		Field<T> U8(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint8_t, detail::ByteOrder::kSingle>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint8_t, std::uint8_t, detail::ByteOrder::kSingle>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> U16Be(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint16_t, detail::ByteOrder::kBig>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint16_t, std::uint16_t, detail::ByteOrder::kBig>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> U16Le(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint16_t, detail::ByteOrder::kLittle>(
-				name);
+			return detail::MakeIntegerField<T,
+											Member,
+											std::uint16_t,
+											std::uint16_t,
+											detail::ByteOrder::kLittle>(name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> U32Be(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint32_t, detail::ByteOrder::kBig>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint32_t, std::uint32_t, detail::ByteOrder::kBig>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> U32Le(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint32_t, detail::ByteOrder::kLittle>(
-				name);
+			return detail::MakeIntegerField<T,
+											Member,
+											std::uint32_t,
+											std::uint32_t,
+											detail::ByteOrder::kLittle>(name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> U64Be(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint64_t, detail::ByteOrder::kBig>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint64_t, std::uint64_t, detail::ByteOrder::kBig>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> U64Le(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint64_t, detail::ByteOrder::kLittle>(
-				name);
+			return detail::MakeIntegerField<T,
+											Member,
+											std::uint64_t,
+											std::uint64_t,
+											detail::ByteOrder::kLittle>(name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> I8(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint8_t, detail::ByteOrder::kSingle>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint8_t, std::int8_t, detail::ByteOrder::kSingle>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> I16Be(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint16_t, detail::ByteOrder::kBig>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint16_t, std::int16_t, detail::ByteOrder::kBig>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> I16Le(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint16_t, detail::ByteOrder::kLittle>(
-				name);
+			return detail::MakeIntegerField<T,
+											Member,
+											std::uint16_t,
+											std::int16_t,
+											detail::ByteOrder::kLittle>(name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> I32Be(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint32_t, detail::ByteOrder::kBig>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint32_t, std::int32_t, detail::ByteOrder::kBig>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> I32Le(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint32_t, detail::ByteOrder::kLittle>(
-				name);
+			return detail::MakeIntegerField<T,
+											Member,
+											std::uint32_t,
+											std::int32_t,
+											detail::ByteOrder::kLittle>(name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> I64Be(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint64_t, detail::ByteOrder::kBig>(
-				name);
+			return detail::
+				MakeIntegerField<T, Member, std::uint64_t, std::int64_t, detail::ByteOrder::kBig>(
+					name);
 		}
 
 		template <typename T, auto Member>
 		Field<T> I64Le(std::string_view name) noexcept
 		{
-			return detail::MakeIntegerField<T, Member, std::uint64_t, detail::ByteOrder::kLittle>(
-				name);
+			return detail::MakeIntegerField<T,
+											Member,
+											std::uint64_t,
+											std::int64_t,
+											detail::ByteOrder::kLittle>(name);
 		}
 
 		template <typename T, auto Member>
@@ -4411,6 +4801,26 @@ namespace ket
 			detail::FieldAccess<T>::SetIsValid(field, expected_is_valid);
 			detail::FieldAccess<T>::SetExpectedBytes(field, expected);
 			detail::FieldAccess<T>::SetExpectedBytesSize(field, size);
+			detail::FieldAccess<T>::SetDecode(field, &detail::DecodeExpectedBytes<T>);
+			detail::FieldAccess<T>::SetPreflight(field, &detail::PreflightNoop<T>);
+			detail::FieldAccess<T>::SetEncode(field, &detail::EncodeExpectedBytes<T>);
+			detail::FieldAccess<T>::SetMeasure(field, &detail::MeasureFixed<T>);
+			return field;
+		}
+
+		template <typename T, std::size_t Size>
+		Field<T> ConstBytes(std::string_view name,
+							const std::array<std::uint8_t, Size>& expected) noexcept
+		{
+			static_assert(Size <= 32U, "owned ConstBytes supports up to 32 bytes");
+
+			Field<T> field{};
+			detail::FieldAccess<T>::SetName(field, name);
+			detail::FieldAccess<T>::SetKind(field, FieldKind::kConstBytes);
+			detail::FieldAccess<T>::SetEncodedSize(field, Size);
+			detail::FieldAccess<T>::SetMaxEncodedSize(field, Size);
+			detail::FieldAccess<T>::SetIsValid(field, true);
+			detail::FieldAccess<T>::SetOwnedExpectedBytes(field, expected.data(), Size);
 			detail::FieldAccess<T>::SetDecode(field, &detail::DecodeExpectedBytes<T>);
 			detail::FieldAccess<T>::SetPreflight(field, &detail::PreflightNoop<T>);
 			detail::FieldAccess<T>::SetEncode(field, &detail::EncodeExpectedBytes<T>);

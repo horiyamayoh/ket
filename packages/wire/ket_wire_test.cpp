@@ -44,6 +44,17 @@ namespace
 		std::int64_t i64 = 0;
 	};
 
+	struct SignedIntegerFrame
+	{
+		std::int8_t i8 = 0;
+		std::int16_t i16_be = 0;
+		std::int16_t i16_le = 0;
+		std::int32_t i32_be = 0;
+		std::int32_t i32_le = 0;
+		std::int64_t i64_be = 0;
+		std::int64_t i64_le = 0;
+	};
+
 	struct WideBcdFrame
 	{
 		int be16 = 0;
@@ -92,6 +103,11 @@ namespace
 		std::uint8_t value = 0U;
 	};
 
+	struct StaticConstFrame
+	{
+		int marker = 0;
+	};
+
 	auto MakeFrameSchema()
 	{
 		return ket::wire::MakeSchema<Frame>("Frame",
@@ -135,6 +151,20 @@ namespace
 				ket::wire::I16Be<WideIntegerFrame, &WideIntegerFrame::i16>("i16"),
 				ket::wire::I32Le<WideIntegerFrame, &WideIntegerFrame::i32>("i32"),
 				ket::wire::I64Be<WideIntegerFrame, &WideIntegerFrame::i64>("i64")});
+	}
+
+	auto MakeSignedIntegerSchema()
+	{
+		return ket::wire::MakeSchema<SignedIntegerFrame>(
+			"SignedIntegerFrame",
+			std::array<ket::wire::Field<SignedIntegerFrame>, 7U>{
+				ket::wire::I8<SignedIntegerFrame, &SignedIntegerFrame::i8>("i8"),
+				ket::wire::I16Be<SignedIntegerFrame, &SignedIntegerFrame::i16_be>("i16_be"),
+				ket::wire::I16Le<SignedIntegerFrame, &SignedIntegerFrame::i16_le>("i16_le"),
+				ket::wire::I32Be<SignedIntegerFrame, &SignedIntegerFrame::i32_be>("i32_be"),
+				ket::wire::I32Le<SignedIntegerFrame, &SignedIntegerFrame::i32_le>("i32_le"),
+				ket::wire::I64Be<SignedIntegerFrame, &SignedIntegerFrame::i64_be>("i64_be"),
+				ket::wire::I64Le<SignedIntegerFrame, &SignedIntegerFrame::i64_le>("i64_le")});
 	}
 
 	auto MakeWideBcdSchema()
@@ -206,6 +236,15 @@ namespace
 	{
 		(void)value;
 		(void)status;
+		return false;
+	}
+
+	bool FailsWithRelativeOffset(const CallbackFrame& value, ket::wire::Status& status) noexcept
+	{
+		(void)value;
+		status.error = ket::wire::Error::kCallbackFailed;
+		status.offset = 2U;
+		status.field = "relative";
 		return false;
 	}
 
@@ -341,6 +380,44 @@ TEST(KetWireTest, HandlesWideIntegerFieldsWithEndianModules)
 
 /**
  * @test
+ * @brief signed integer factory全種のtwo's complement確認。
+ * @details I8、I16Be/Le、I32Be/Le、I64Be/Leがsigned fixed-width memberだけを扱い、
+ * golden bytesへencode/decodeできることを確認。
+ * @pre C++17以降。
+ * @post signed valueとschemaは変更されず、wire bytesはtwo's complement表現を保持。
+ */
+TEST(KetWireTest, HandlesAllSignedIntegerFactories)
+{
+	const auto schema = MakeSignedIntegerSchema();
+	const auto data = std::array<std::uint8_t, 29U>{{
+		0xFFU, 0xFFU, 0xFEU, 0xFDU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFCU, 0x00U,
+		0x00U, 0x00U, 0x80U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
+		0xFBU, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x80U,
+	}};
+
+	const auto decoded =
+		ket::wire::DecodeExact(ket::byte_view::View(data.data(), data.size()), schema);
+	const auto decoded_ok = decoded.status.Ok();
+	ASSERT_NE(decoded.value, std::nullopt);
+	const auto& value = decoded.value.value();
+	EXPECT_TRUE(decoded_ok);
+	EXPECT_EQ(value.i8, static_cast<std::int8_t>(-1));
+	EXPECT_EQ(value.i16_be, static_cast<std::int16_t>(-2));
+	EXPECT_EQ(value.i16_le, static_cast<std::int16_t>(-3));
+	EXPECT_EQ(value.i32_be, -4);
+	EXPECT_EQ(value.i32_le, std::numeric_limits<std::int32_t>::min());
+	EXPECT_EQ(value.i64_be, static_cast<std::int64_t>(-5));
+	EXPECT_EQ(value.i64_le, std::numeric_limits<std::int64_t>::min());
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(encoded.bytes.value(), (std::vector<std::uint8_t>(data.begin(), data.end())));
+}
+
+/**
+ * @test
  * @brief prefix decodeとtrailing bytes diagnostics確認。
  * @details exact decodeはtrailing bytesを拒否し、prefix
  * decodeは同じ入力からschema分だけ消費することを確認。
@@ -455,8 +532,40 @@ TEST(KetWireTest, ExposesReadOnlyDescriptorMetadata)
 
 /**
  * @test
+ * @brief public size APIのvalid/invalid schema確認。
+ * @details IsFixedSizeとMaxEncodedSizeがvalid fixed schemaで値を返し、invalid
+ * schemaでは失敗値を返すことを確認。
+ * @pre C++17以降。
+ * @post schemaと外部状態の変更なし。
+ */
+TEST(KetWireTest, ReportsPublicSizeApiForValidAndInvalidSchemas)
+{
+	const auto valid_schema = MakeFrameSchema();
+	const auto valid_fixed = ket::wire::IsFixedSize(valid_schema);
+	const auto valid_max = ket::wire::MaxEncodedSize(valid_schema);
+	EXPECT_TRUE(valid_fixed);
+	ASSERT_NE(valid_max, std::nullopt);
+	EXPECT_EQ(valid_max.value(), 5U);
+
+	const auto invalid_schema = ket::wire::MakeSchema<BitsFrame>(
+		"OverlapBits",
+		std::array<ket::wire::Field<BitsFrame>, 1U>{ket::wire::BitsU8<BitsFrame>(
+			"overlap",
+			std::array<ket::wire::BitMember<BitsFrame>, 2U>{
+				ket::wire::Bit<BitsFrame, &BitsFrame::mode, 0U, 4U>("mode"),
+				ket::wire::ReservedBits<BitsFrame, 2U, 2U>("reserved", 0U)})});
+	const auto invalid_fixed = ket::wire::IsFixedSize(invalid_schema);
+	const auto invalid_max = ket::wire::MaxEncodedSize(invalid_schema);
+	const auto invalid_max_has_value = invalid_max.has_value();
+	EXPECT_FALSE(invalid_fixed);
+	EXPECT_FALSE(invalid_max_has_value);
+}
+
+/**
+ * @test
  * @brief short input diagnostics確認。
- * @details 先頭field不足と後続field不足を別々に発生させ、field名、offset、available sizeを確認。
+ * @details command、count、modeの各fieldで入力不足を発生させ、field名、offset、required
+ * size、available sizeを確認。
  * @pre C++17以降。
  * @post short input失敗時はvalueなし、consumedは0。
  */
@@ -470,7 +579,9 @@ TEST(KetWireTest, ReportsShortInputAtFieldOffset)
 	EXPECT_EQ(first_short.status.error, ket::wire::Error::kShortInput);
 	EXPECT_EQ(first_short.status.field, "command");
 	EXPECT_EQ(first_short.status.offset, 0U);
+	EXPECT_EQ(first_short.status.required_size, 2U);
 	EXPECT_EQ(first_short.status.available_size, 0U);
+	EXPECT_EQ(first_short.consumed, 0U);
 
 	const auto data = std::array<std::uint8_t, 3U>{{0x12U, 0x34U, 0x56U}};
 	const auto second_short =
@@ -480,8 +591,21 @@ TEST(KetWireTest, ReportsShortInputAtFieldOffset)
 	EXPECT_EQ(second_short.status.error, ket::wire::Error::kShortInput);
 	EXPECT_EQ(second_short.status.field, "count");
 	EXPECT_EQ(second_short.status.offset, 2U);
+	EXPECT_EQ(second_short.status.required_size, 2U);
 	EXPECT_EQ(second_short.status.available_size, 1U);
 	EXPECT_EQ(second_short.consumed, 0U);
+
+	const auto mode_data = std::array<std::uint8_t, 4U>{{0x12U, 0x34U, 0x78U, 0x56U}};
+	const auto mode_short =
+		ket::wire::DecodeExact(ket::byte_view::View(mode_data.data(), mode_data.size()), schema);
+	const auto mode_short_has_value = mode_short.value.has_value();
+	EXPECT_FALSE(mode_short_has_value);
+	EXPECT_EQ(mode_short.status.error, ket::wire::Error::kShortInput);
+	EXPECT_EQ(mode_short.status.field, "mode");
+	EXPECT_EQ(mode_short.status.offset, 4U);
+	EXPECT_EQ(mode_short.status.required_size, 1U);
+	EXPECT_EQ(mode_short.status.available_size, 0U);
+	EXPECT_EQ(mode_short.consumed, 0U);
 }
 
 /**
@@ -547,12 +671,16 @@ TEST(KetWireTest, HandlesBcdIntegerFields)
 	EXPECT_FALSE(invalid_has_value);
 	EXPECT_EQ(invalid.status.error, ket::wire::Error::kInvalidBcd);
 	EXPECT_EQ(invalid.status.actual, 0x0AU);
+	EXPECT_TRUE(invalid.status.has_expected);
+	EXPECT_TRUE(invalid.status.has_actual);
 
 	const BcdFrame too_large{100};
 	const auto encoded = ket::wire::Encode(too_large, schema);
 	const auto encoded_has_bytes = encoded.bytes.has_value();
 	EXPECT_FALSE(encoded_has_bytes);
 	EXPECT_EQ(encoded.status.error, ket::wire::Error::kValueOutOfRange);
+	EXPECT_TRUE(encoded.status.has_expected);
+	EXPECT_TRUE(encoded.status.has_actual);
 }
 
 /**
@@ -777,6 +905,46 @@ TEST(KetWireTest, CopiesFixedBytesAndPreservesViewPointerIntentionally)
 
 /**
  * @test
+ * @brief ViewBytes encode preflight失敗時のoutput不変確認。
+ * @details invalid viewとlength mismatchをEncodeToで発生させ、diagnosticsとoutput
+ * buffer不変性を確認。
+ * @pre C++17以降。
+ * @post view field preflight失敗時はencoded_size 0で、output bufferを変更しない。
+ */
+TEST(KetWireTest, RejectsInvalidViewBytesDuringEncodeWithoutTouchingOutput)
+{
+	const auto schema = ket::wire::MakeSchema<PayloadFrame>(
+		"PayloadFrame",
+		std::array<ket::wire::Field<PayloadFrame>, 2U>{
+			ket::wire::Bytes<PayloadFrame, &PayloadFrame::copy>("copy"),
+			ket::wire::ViewBytes<PayloadFrame, &PayloadFrame::view>("view", 2U)});
+
+	auto output = std::array<std::uint8_t, 4U>{{0xAAU, 0xAAU, 0xAAU, 0xAAU}};
+	const PayloadFrame invalid_view{{{0x01U, 0x02U}}, ket::byte_view::View(nullptr, 2U)};
+	const auto invalid_result = ket::wire::EncodeTo(
+		invalid_view, schema, ket::byte_view::MutableView(output.data(), output.size()));
+	EXPECT_EQ(invalid_result.status.error, ket::wire::Error::kInvalidInputView);
+	EXPECT_EQ(invalid_result.status.field, "view");
+	EXPECT_EQ(invalid_result.status.offset, 2U);
+	EXPECT_EQ(invalid_result.encoded_size, 0U);
+	EXPECT_EQ(output, (std::array<std::uint8_t, 4U>{{0xAAU, 0xAAU, 0xAAU, 0xAAU}}));
+
+	const auto view_data = std::array<std::uint8_t, 1U>{{0xCCU}};
+	const PayloadFrame short_view{{{0x01U, 0x02U}},
+								  ket::byte_view::View(view_data.data(), view_data.size())};
+	const auto mismatch_result = ket::wire::EncodeTo(
+		short_view, schema, ket::byte_view::MutableView(output.data(), output.size()));
+	EXPECT_EQ(mismatch_result.status.error, ket::wire::Error::kLengthMismatch);
+	EXPECT_EQ(mismatch_result.status.field, "view");
+	EXPECT_EQ(mismatch_result.status.offset, 2U);
+	EXPECT_EQ(mismatch_result.status.required_size, 2U);
+	EXPECT_EQ(mismatch_result.status.available_size, 1U);
+	EXPECT_EQ(mismatch_result.encoded_size, 0U);
+	EXPECT_EQ(output, (std::array<std::uint8_t, 4U>{{0xAAU, 0xAAU, 0xAAU, 0xAAU}}));
+}
+
+/**
+ * @test
  * @brief zero-size view bytesの正規化確認。
  * @details ViewBytes size 0はempty inputからdecodeでき、result
  * viewはnullptr+0として保持されることを確認。
@@ -850,6 +1018,64 @@ TEST(KetWireTest, HandlesRawBcdBytesWithoutDroppingLeadingZero)
 
 /**
  * @test
+ * @brief constant/reserved/padding field family確認。
+ * @details ConstU8、owned ConstBytes、ReservedBytes、PadBytesがsuccess encode
+ * bytesを生成し、decode mismatchでexpected/actual diagnosticsを返すことを確認。
+ * @pre C++17以降。
+ * @post owned ConstBytesはfactory引数のlocal array lifetimeに依存しない。
+ */
+TEST(KetWireTest, HandlesConstantReservedAndPaddingFamilies)
+{
+	auto make_schema = []()
+	{
+		const auto tag = std::array<std::uint8_t, 2U>{{0x01U, 0x02U}};
+		return ket::wire::MakeSchema<StaticConstFrame>(
+			"StaticConstFrame",
+			std::array<ket::wire::Field<StaticConstFrame>, 4U>{
+				ket::wire::ConstU8<StaticConstFrame>("magic", 0xA5U),
+				ket::wire::ConstBytes<StaticConstFrame>("tag", tag),
+				ket::wire::ReservedBytes<StaticConstFrame>("reserved", 2U, 0U),
+				ket::wire::PadBytes<StaticConstFrame>("pad", 2U, 0xFFU)});
+	};
+	const auto schema = make_schema();
+	const StaticConstFrame value{};
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(encoded.bytes.value(),
+			  (std::vector<std::uint8_t>{0xA5U, 0x01U, 0x02U, 0x00U, 0x00U, 0xFFU, 0xFFU}));
+
+	const auto const_bad =
+		std::array<std::uint8_t, 7U>{{0xA5U, 0x01U, 0x03U, 0x00U, 0x00U, 0xFFU, 0xFFU}};
+	const auto const_result =
+		ket::wire::DecodeExact(ket::byte_view::View(const_bad.data(), const_bad.size()), schema);
+	const auto const_has_value = const_result.value.has_value();
+	EXPECT_FALSE(const_has_value);
+	EXPECT_EQ(const_result.status.error, ket::wire::Error::kReservedMismatch);
+	EXPECT_EQ(const_result.status.field, "tag");
+	EXPECT_EQ(const_result.status.offset, 2U);
+	EXPECT_EQ(const_result.status.expected, 0x02U);
+	EXPECT_EQ(const_result.status.actual, 0x03U);
+	EXPECT_TRUE(const_result.status.has_expected);
+	EXPECT_TRUE(const_result.status.has_actual);
+
+	const auto pad_bad =
+		std::array<std::uint8_t, 7U>{{0xA5U, 0x01U, 0x02U, 0x00U, 0x00U, 0xFEU, 0xFFU}};
+	const auto pad_result =
+		ket::wire::DecodeExact(ket::byte_view::View(pad_bad.data(), pad_bad.size()), schema);
+	const auto pad_has_value = pad_result.value.has_value();
+	EXPECT_FALSE(pad_has_value);
+	EXPECT_EQ(pad_result.status.error, ket::wire::Error::kReservedMismatch);
+	EXPECT_EQ(pad_result.status.field, "pad");
+	EXPECT_EQ(pad_result.status.offset, 5U);
+	EXPECT_EQ(pad_result.status.expected, 0xFFU);
+	EXPECT_EQ(pad_result.status.actual, 0xFEU);
+}
+
+/**
+ * @test
  * @brief reserved bytes diagnostics確認。
  * @details decodeはreserved byte mismatchをoffset、expected、actual付きで返し、encodeはreserved
  * bytesを書き込むことを確認。
@@ -872,6 +1098,8 @@ TEST(KetWireTest, HandlesReservedBytes)
 	EXPECT_EQ(decoded.status.offset, 1U);
 	EXPECT_EQ(decoded.status.expected, 0U);
 	EXPECT_EQ(decoded.status.actual, 1U);
+	EXPECT_TRUE(decoded.status.has_expected);
+	EXPECT_TRUE(decoded.status.has_actual);
 
 	const auto encoded = ket::wire::Encode(EmptyMessage{}, schema);
 	ASSERT_NE(encoded.bytes, std::nullopt);
@@ -914,6 +1142,8 @@ TEST(KetWireTest, RunsValidationHooksForLengthChecksumAndCallbackFailure)
 	EXPECT_EQ(checksum_result.status.error, ket::wire::Error::kChecksumMismatch);
 	EXPECT_EQ(checksum_result.status.expected, 3U);
 	EXPECT_EQ(checksum_result.status.actual, 4U);
+	EXPECT_TRUE(checksum_result.status.has_expected);
+	EXPECT_TRUE(checksum_result.status.has_actual);
 
 	const auto callback_schema = ket::wire::MakeSchema<CallbackFrame>(
 		"CallbackFrame",
@@ -927,14 +1157,16 @@ TEST(KetWireTest, RunsValidationHooksForLengthChecksumAndCallbackFailure)
 	EXPECT_FALSE(callback_has_value);
 	EXPECT_EQ(callback_result.status.error, ket::wire::Error::kCallbackFailed);
 	EXPECT_EQ(callback_result.status.field, "always_fails");
+	EXPECT_EQ(callback_result.status.offset, 1U);
 }
 
 /**
  * @test
  * @brief validation hookのsize/encode時実行回数確認。
- * @details MeasureEncodedSizeとEncodeでvalidation callbackがそれぞれ1回だけ実行されることを確認。
+ * @details MeasureEncodedSize、Encode、EncodeToでvalidation callbackがそれぞれ1回だけ実行され、
+ * short outputでは実行されないことを確認。
  * @pre C++17以降。
- * @post callback countはoperationごとに1。schemaとvalueは変更されない。
+ * @post callback countはoperationごとに固定。short outputではoutput bufferも変更されない。
  */
 TEST(KetWireTest, RunsValidationHookOnceDuringMeasureAndEncode)
 {
@@ -942,7 +1174,7 @@ TEST(KetWireTest, RunsValidationHookOnceDuringMeasureAndEncode)
 		"CountingCallbackFrame",
 		std::array<ket::wire::Field<CallbackFrame>, 2U>{
 			ket::wire::U8<CallbackFrame, &CallbackFrame::value>("value"),
-			ket::wire::Validate<CallbackFrame>("counts", &CountValidationCall)});
+			ket::wire::RangeValidation<CallbackFrame>("counts", &CountValidationCall)});
 	const CallbackFrame value{0x42U};
 
 	g_validation_call_count = 0;
@@ -958,6 +1190,80 @@ TEST(KetWireTest, RunsValidationHookOnceDuringMeasureAndEncode)
 	ASSERT_NE(encoded.bytes, std::nullopt);
 	EXPECT_TRUE(encoded_ok);
 	EXPECT_EQ(g_validation_call_count, 1);
+
+	auto output = std::array<std::uint8_t, 1U>{{0xAAU}};
+	g_validation_call_count = 0;
+	const auto encoded_to = ket::wire::EncodeTo(
+		value, schema, ket::byte_view::MutableView(output.data(), output.size()));
+	const auto encoded_to_ok = encoded_to.status.Ok();
+	EXPECT_TRUE(encoded_to_ok);
+	EXPECT_EQ(encoded_to.encoded_size, 1U);
+	EXPECT_EQ(g_validation_call_count, 1);
+	EXPECT_EQ(output[0], 0x42U);
+
+	auto short_output = std::array<std::uint8_t, 0U>{};
+	g_validation_call_count = 0;
+	const auto short_result = ket::wire::EncodeTo(
+		value, schema, ket::byte_view::MutableView(short_output.data(), short_output.size()));
+	EXPECT_EQ(short_result.status.error, ket::wire::Error::kShortOutput);
+	EXPECT_EQ(short_result.status.field, "value");
+	EXPECT_EQ(short_result.status.offset, 0U);
+	EXPECT_EQ(short_result.encoded_size, 0U);
+	EXPECT_EQ(g_validation_call_count, 0);
+}
+
+/**
+ * @test
+ * @brief validation failure offset semantics確認。
+ * @details schema {U8, Validate(always_false)} のMeasure/Encode/EncodeTo失敗offsetが1となり、
+ * callback設定offsetはvalidation位置からの相対値として扱われることを確認。
+ * @pre C++17以降。
+ * @post validation failureではvalue、bytes、output bufferを保持しない。
+ */
+TEST(KetWireTest, ReportsValidationFailureAtCurrentFieldOffset)
+{
+	const auto schema = ket::wire::MakeSchema<CallbackFrame>(
+		"CallbackFrame",
+		std::array<ket::wire::Field<CallbackFrame>, 2U>{
+			ket::wire::U8<CallbackFrame, &CallbackFrame::value>("value"),
+			ket::wire::Validate<CallbackFrame>("always_fails", &AlwaysFails)});
+	const CallbackFrame value{0x10U};
+
+	const auto measured = ket::wire::MeasureEncodedSize(value, schema);
+	const auto measured_has_value = measured.value.has_value();
+	EXPECT_FALSE(measured_has_value);
+	EXPECT_EQ(measured.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(measured.status.field, "always_fails");
+	EXPECT_EQ(measured.status.offset, 1U);
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_has_bytes = encoded.bytes.has_value();
+	EXPECT_FALSE(encoded_has_bytes);
+	EXPECT_EQ(encoded.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(encoded.status.field, "always_fails");
+	EXPECT_EQ(encoded.status.offset, 1U);
+
+	auto output = std::array<std::uint8_t, 1U>{{0xAAU}};
+	const auto encoded_to = ket::wire::EncodeTo(
+		value, schema, ket::byte_view::MutableView(output.data(), output.size()));
+	EXPECT_EQ(encoded_to.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(encoded_to.status.field, "always_fails");
+	EXPECT_EQ(encoded_to.status.offset, 1U);
+	EXPECT_EQ(encoded_to.encoded_size, 0U);
+	EXPECT_EQ(output[0], 0xAAU);
+
+	const auto relative_schema = ket::wire::MakeSchema<CallbackFrame>(
+		"RelativeCallbackFrame",
+		std::array<ket::wire::Field<CallbackFrame>, 2U>{
+			ket::wire::U8<CallbackFrame, &CallbackFrame::value>("value"),
+			ket::wire::CrossFieldValidation<CallbackFrame>("relative_check",
+														   &FailsWithRelativeOffset)});
+	const auto relative = ket::wire::MeasureEncodedSize(value, relative_schema);
+	const auto relative_has_value = relative.value.has_value();
+	EXPECT_FALSE(relative_has_value);
+	EXPECT_EQ(relative.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(relative.status.field, "relative");
+	EXPECT_EQ(relative.status.offset, 3U);
 }
 
 /**
@@ -984,6 +1290,13 @@ TEST(KetWireTest, ReportsSizeOverflow)
 	const auto fixed_size = ket::wire::EncodedSize(schema);
 	const auto fixed_size_has_value = fixed_size.has_value();
 	EXPECT_FALSE(fixed_size_has_value);
+
+	const auto max_size = ket::wire::MaxEncodedSize(schema);
+	const auto max_size_has_value = max_size.has_value();
+	EXPECT_FALSE(max_size_has_value);
+
+	const auto fixed = ket::wire::IsFixedSize(schema);
+	EXPECT_FALSE(fixed);
 
 	const auto measured = ket::wire::MeasureEncodedSize(EmptyMessage{}, schema);
 	const auto measured_has_value = measured.value.has_value();

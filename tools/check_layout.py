@@ -69,6 +69,14 @@ def module_directories(root: Path) -> list[Path]:
 	return sorted(path for path in modules.iterdir() if path.is_dir())
 
 
+def package_directories(root: Path) -> list[Path]:
+	packages = root / "packages"
+	if not packages.exists():
+		return []
+
+	return sorted(path for path in packages.iterdir() if path.is_dir())
+
+
 def read_text_if_present(path: Path) -> str:
 	if not path.exists():
 		return ""
@@ -80,13 +88,13 @@ def add_error(errors: list[str], root: Path, path: Path, message: str) -> None:
 	errors.append(f"{relative(root, path)}: {message}")
 
 
-def check_standard_files(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
+def check_standard_files(root: Path, layout: ModuleLayout, errors: list[str], kind: str) -> None:
 	if not MODULE_NAME_PATTERN.match(layout.name):
-		add_error(errors, root, layout.directory, "module directory name must be lower_snake_case.")
+		add_error(errors, root, layout.directory, f"{kind} directory name must be lower_snake_case.")
 
 	for path in (layout.header, layout.test):
 		if not path.exists():
-			add_error(errors, root, path, "required module file is missing.")
+			add_error(errors, root, path, f"required {kind} file is missing.")
 
 
 def include_target_basename(include_target: str) -> str:
@@ -164,13 +172,13 @@ def source_has_anonymous_namespace(path: Path) -> bool:
 	return any(ANONYMOUS_NAMESPACE_PATTERN.match(line) is not None for line in uncommented_code_lines(path))
 
 
-def check_no_placeholder_source(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
+def check_no_placeholder_source(root: Path, layout: ModuleLayout, errors: list[str], kind: str) -> None:
 	if not layout.source.exists():
 		return
 
 	source_has_implementation = source_has_real_implementation(layout.source)
 	if not source_has_implementation:
-		add_error(errors, root, layout.source, "header-only module must omit placeholder source file.")
+		add_error(errors, root, layout.source, f"header-only {kind} must omit placeholder source file.")
 
 
 def check_no_cross_module_includes(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
@@ -193,19 +201,34 @@ def check_no_cross_module_includes(root: Path, layout: ModuleLayout, errors: lis
 				)
 
 
-def check_cmake_registration(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
+def check_cmake_registration(root: Path, layout: ModuleLayout, errors: list[str], kind: str) -> None:
 	cmake_text = read_text_if_present(root / "CMakeLists.txt")
 	for path in (layout.source, layout.test):
 		path_text = relative(root, path)
 		if path.exists() and path_text not in cmake_text:
-			add_error(errors, root, path, "module file is not registered in CMakeLists.txt.")
+			add_error(errors, root, path, f"{kind} file is not registered in CMakeLists.txt.")
 
 
-def check_progress_registration(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
+def check_progress_registration(root: Path, layout: ModuleLayout, errors: list[str], kind: str) -> None:
 	progress_text = read_text_if_present(root / "progress.md")
 	progress_pattern = re.compile(rf"^\|\s*{re.escape(layout.name)}\s*\|", re.MULTILINE)
 	if not progress_pattern.search(progress_text):
-		add_error(errors, root, root / "progress.md", f"module '{layout.name}' is not listed.")
+		add_error(errors, root, root / "progress.md", f"{kind} '{layout.name}' is not listed.")
+
+
+def check_package_docs_registration(root: Path, layout: ModuleLayout, errors: list[str]) -> None:
+	design_doc = root / "docs" / "packages" / f"ket_{layout.name}_design.md"
+	if not design_doc.exists():
+		add_error(errors, root, design_doc, f"package '{layout.name}' design document is missing.")
+		return
+
+	design_text = read_text_if_present(design_doc)
+	header_text = relative(root, layout.header)
+	test_text = relative(root, layout.test)
+	if header_text not in design_text:
+		add_error(errors, root, design_doc, f"package '{layout.name}' header is not documented.")
+	if test_text not in design_text:
+		add_error(errors, root, design_doc, f"package '{layout.name}' test is not documented.")
 
 
 def first_doxygen_block(lines: list[str]) -> str:
@@ -318,11 +341,20 @@ def collect_layout_errors(root: Path = ket_tooling.ROOT) -> list[str]:
 
 	for directory in module_directories(root):
 		layout = module_layout(directory)
-		check_standard_files(root, layout, errors)
-		check_no_placeholder_source(root, layout, errors)
+		check_standard_files(root, layout, errors, "module")
+		check_no_placeholder_source(root, layout, errors, "module")
 		check_no_cross_module_includes(root, layout, errors)
-		check_cmake_registration(root, layout, errors)
-		check_progress_registration(root, layout, errors)
+		check_cmake_registration(root, layout, errors, "module")
+		check_progress_registration(root, layout, errors, "module")
+		check_header_preamble(root, layout, errors)
+
+	for directory in package_directories(root):
+		layout = module_layout(directory)
+		check_standard_files(root, layout, errors, "package")
+		check_no_placeholder_source(root, layout, errors, "package")
+		check_cmake_registration(root, layout, errors, "package")
+		check_progress_registration(root, layout, errors, "package")
+		check_package_docs_registration(root, layout, errors)
 		check_header_preamble(root, layout, errors)
 
 	return errors

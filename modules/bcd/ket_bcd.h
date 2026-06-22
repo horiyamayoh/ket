@@ -284,6 +284,8 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 入力BCDの桁数を保ち、先頭の0も文字'0'として出力。
 		 * @note std::stringの確保があるためnoexceptなし。
+		 * @note 任意長入力を線形走査し、出力文字列を確保する。untrusted
+		 * inputではcaller側で最大byte数を 確認してから呼ぶ。
 		 * @code
 		 * const std::uint8_t data[] = {0x00U, 0x42U};
 		 * const auto value = ket::bcd::Format(data, 2U);
@@ -301,6 +303,8 @@ namespace ket
 		 * @post 引数と外部状態の変更なし。
 		 * @note 偶数桁は2桁ずつpacked BCDへ変換し、奇数桁は先頭に0を補って変換。
 		 * @note std::vectorの確保があるためnoexceptなし。
+		 * @note 任意長入力を線形走査し、出力vectorを確保する。untrusted
+		 * inputではcaller側で最大文字数を 確認してから呼ぶ。
 		 * @code
 		 * const auto value = ket::bcd::Parse("123");
 		 * // value == std::optional<std::vector<std::uint8_t>>({0x01, 0x23})

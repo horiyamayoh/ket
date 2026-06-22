@@ -1,0 +1,16 @@
+#include "ket_wire.h"
+
+namespace
+{
+	struct CharFrame
+	{
+		char code = '\0';
+	};
+
+	[[maybe_unused]] void BuildRejectedSchema()
+	{
+		const auto field = ket::wire::U8<CharFrame, &CharFrame::code>("code");
+		(void)field;
+	}
+
+} // namespace

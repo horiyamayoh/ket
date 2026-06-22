@@ -98,6 +98,8 @@ Failure / edge cases:
 - invalid storage (`data == nullptr && size > 0`)
 - `Validate(nullptr, 0)` は valid empty
 - `Format(nullptr, size)` と `Format(data, 0)` は失敗値
+- `Format` / `Parse` は任意長入力を線形走査し、戻り値生成で allocation する。untrusted input
+  ではcaller側で最大byte数または最大文字数を確認してから呼ぶ。
 - empty decimal string
 - non-digit character
 - accumulated integer overflow

@@ -74,7 +74,7 @@ def add_error(errors: list[str], path: Path, line_number: int, message: str) -> 
 def is_module_public_header(path: Path) -> bool:
 	parts = path.parts
 	for index, part in enumerate(parts[:-2]):
-		if part != "modules":
+		if part not in {"modules", "packages"}:
 			continue
 
 		module_name = parts[index + 1]

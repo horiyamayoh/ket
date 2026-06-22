@@ -1,10 +1,11 @@
 # ket progress
 
-module単位の実装状況を追跡します。
+module と package runtime の実装状況を component 単位で追跡します。
 
 候補APIは `catalog.md` に置きます。この表には、実際にmoduleとして作り始めたものだけを
-追加します。空の予定表にしないことで、1つずつ育てる方針を保ちます。
-C++バージョン要件の詳細は、各moduleヘッダ先頭のDoxygen `@file`コメントを正とします。
+追加します。package runtime は `packages/<name>/` と設計文書ができた時点で追加します。
+空の予定表にしないことで、1つずつ育てる方針を保ちます。
+C++バージョン要件の詳細は、各module/packageヘッダ先頭のDoxygen `@file`コメントを正とします。
 
 Statusは次の値を使います。
 
@@ -13,7 +14,7 @@ Statusは次の値を使います。
 - `verified`: format、build、test、必要なcompile-only checkが通っている
 - `deprecated`: 残しているが新規利用を推奨しない
 
-| Module       | Category            | Status   | C++ Min | Tests                                    | Format  | Notes                                         |
+| Component    | Category            | Status   | C++ Min | Tests                                    | Format  | Notes                                         |
 | ------------ | ------------------- | -------- | ------- | ---------------------------------------- | ------- | --------------------------------------------- |
 | bcd          | numeric / binary    | verified | C++17   | GoogleTest                               | checked | packed BCDと10進整数・文字列を相互変換        |
 | bits         | numeric / binary    | verified | C++11   | GoogleTest + C++11 compile-only          | checked | bit/nibble/mask/rotateの境界処理              |
@@ -60,6 +61,6 @@ Statusは次の値を使います。
 | bytes        | binary              | verified | C++17   | GoogleTest                               | checked | 可変長byte payloadの構築                      |
 | byte_writer  | binary              | verified | C++11   | GoogleTest + C++11 compile-only          | checked | fixed bufferへの逐次書き込み                  |
 | byte_view    | view                | verified | C++11   | GoogleTest + C++11 compile-only          | checked | non-owning byte span                          |
-| wire         | package runtime     | verified | C++17   | GoogleTest                               | checked | module-first binary wire runtime              |
+| wire         | package runtime     | verified | C++17   | GoogleTest + C++17 factory compile-only  | checked | module-first binary wire runtime              |
 | hex          | diagnostic / binary | verified | C++17   | GoogleTest                               | checked | byte列、整数、診断用hexdumpのhex文字列化      |
 | enums        | enum                | verified | C++17   | GoogleTest                               | checked | enum classのtable-based変換とflags操作        |

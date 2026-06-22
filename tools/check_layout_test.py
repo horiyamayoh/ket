@@ -97,6 +97,11 @@ class CheckLayoutTest(unittest.TestCase):
 			)
 		)
 
+	def package_header_preamble(self) -> str:
+		return self.header_preamble().replace("ket_bcd.h", "ket_wire.h").replace(
+			"ket::bcd", "ket::wire"
+		)
+
 	def make_repo(self) -> tempfile.TemporaryDirectory[str]:
 		repository = tempfile.TemporaryDirectory()
 		root = Path(repository.name)
@@ -133,6 +138,62 @@ class CheckLayoutTest(unittest.TestCase):
 		)
 		return repository
 
+	def make_package_repo(self) -> tempfile.TemporaryDirectory[str]:
+		repository = tempfile.TemporaryDirectory()
+		root = Path(repository.name)
+		(root / "packages" / "wire").mkdir(parents=True)
+		(root / "docs" / "packages").mkdir(parents=True)
+		(root / "packages" / "wire" / "ket_wire.h").write_text(
+			self.package_header_preamble()
+			+ "\n".join(
+				(
+					'#include "ket_bcd.h"',
+					"",
+					"namespace ket",
+					"{",
+					"\tnamespace wire",
+					"\t{",
+					"\t\tnamespace detail",
+					"\t\t{",
+					"\t\t\tconstexpr int kValue = 1;",
+					"",
+					"\t\t} // namespace detail",
+					"",
+					"\t} // namespace wire",
+					"",
+					"} // namespace ket",
+					"",
+				)
+			),
+			encoding="utf-8",
+		)
+		(root / "packages" / "wire" / "ket_wire_test.cpp").write_text(
+			'#include "ket_wire.h"\n',
+			encoding="utf-8",
+		)
+		(root / "CMakeLists.txt").write_text(
+			"\n".join(
+				(
+					"ket_add_module_test(",
+					"    ket_wire_test",
+					"    SOURCES",
+					"        packages/wire/ket_wire_test.cpp",
+					")",
+					"",
+				)
+			),
+			encoding="utf-8",
+		)
+		(root / "progress.md").write_text(
+			"| Component | Status |\n| --------- | ------ |\n| wire | verified |\n",
+			encoding="utf-8",
+		)
+		(root / "docs" / "packages" / "ket_wire_design.md").write_text(
+			"packages/wire/ket_wire.h\npackages/wire/ket_wire_test.cpp\n",
+			encoding="utf-8",
+		)
+		return repository
+
 	def test_valid_module_layout_has_no_errors(self) -> None:
 		with self.make_repo() as root_name:
 			root = Path(root_name)
@@ -140,6 +201,35 @@ class CheckLayoutTest(unittest.TestCase):
 			errors = check_layout.collect_layout_errors(root)
 
 			self.assertEqual(errors, [])
+
+	def test_valid_package_layout_has_no_errors(self) -> None:
+		with self.make_package_repo() as root_name:
+			root = Path(root_name)
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertEqual(errors, [])
+
+	def test_package_missing_design_doc_is_reported(self) -> None:
+		with self.make_package_repo() as root_name:
+			root = Path(root_name)
+			(root / "docs" / "packages" / "ket_wire_design.md").unlink()
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn(
+				"docs/packages/ket_wire_design.md: package 'wire' design document is missing.",
+				errors,
+			)
+
+	def test_package_missing_standard_file_is_reported(self) -> None:
+		with self.make_package_repo() as root_name:
+			root = Path(root_name)
+			(root / "packages" / "wire" / "ket_wire_test.cpp").unlink()
+
+			errors = check_layout.collect_layout_errors(root)
+
+			self.assertIn("packages/wire/ket_wire_test.cpp: required package file is missing.", errors)
 
 	def test_source_file_anonymous_namespace_layout_has_no_errors(self) -> None:
 		with self.make_repo() as root_name:
