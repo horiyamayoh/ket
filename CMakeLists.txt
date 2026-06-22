@@ -81,6 +81,8 @@ if(KET_ENABLE_FORMAT_TARGETS)
 endif()
 
 if(KET_BUILD_TESTS)
+	find_package(Threads REQUIRED)
+
 	set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 	set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -145,6 +147,13 @@ if(KET_BUILD_TESTS)
 	add_dependencies(ket_deadline_test ket_deadline_cxx11_check)
 
 	ket_add_module_test(
+		ket_file_test
+		SOURCES
+			modules/file/ket_file.cpp
+			modules/file/ket_file_test.cpp
+	)
+
+	ket_add_module_test(
 		ket_port_test
 		SOURCES
 			modules/port/ket_port.cpp
@@ -159,10 +168,119 @@ if(KET_BUILD_TESTS)
 	)
 
 	ket_add_module_test(
+		ket_build_config_test
+		SOURCES
+			modules/build_config/ket_build_config_test.cpp
+			modules/build_config/ket_build_config_standard_first_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_build_config_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/build_config/ket_build_config_cxx11_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx11_check)
+
+	ket_add_compile_check(
+		ket_build_config_cxx14_check
+		CXX_STANDARD 14
+		SOURCES
+			modules/build_config/ket_build_config_cxx14_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx14_check)
+
+	ket_add_compile_check(
+		ket_build_config_cxx20_check
+		CXX_STANDARD 20
+		SOURCES
+			modules/build_config/ket_build_config_cxx20_check.cpp
+			modules/build_config/ket_build_config_cxx20_standard_first_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx20_check)
+
+	ket_add_compile_check(
+		ket_build_config_cxx23_check
+		CXX_STANDARD 23
+		SOURCES
+			modules/build_config/ket_build_config_cxx23_check.cpp
+	)
+	add_dependencies(ket_build_config_test ket_build_config_cxx23_check)
+
+	ket_add_module_test(
 		ket_string_test
 		SOURCES
 			modules/string/ket_string_test.cpp
 	)
+
+	ket_add_compile_check(
+		ket_ranges_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/ranges/ket_ranges_cxx11_check.cpp
+	)
+
+	ket_add_module_test(
+		ket_ranges_test
+		SOURCES
+			modules/ranges/ket_ranges_test.cpp
+	)
+	add_dependencies(ket_ranges_test ket_ranges_cxx11_check)
+
+	ket_add_module_test(
+		ket_pointer_test
+		SOURCES
+			modules/pointer/ket_pointer_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_pointer_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/pointer/ket_pointer_cxx11_check.cpp
+	)
+	add_dependencies(ket_pointer_test ket_pointer_cxx11_check)
+
+	ket_add_module_test(
+		ket_function_test
+		SOURCES
+			modules/function/ket_function_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_mac_test
+		SOURCES
+			modules/mac/ket_mac.cpp
+			modules/mac/ket_mac_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_cache_test
+		SOURCES
+			modules/cache/ket_cache_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_cache_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/cache/ket_cache_cxx11_check.cpp
+	)
+	add_dependencies(ket_cache_test ket_cache_cxx11_check)
+
+	ket_add_module_test(
+		ket_percent_test
+		SOURCES
+			modules/percent/ket_percent_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_percent_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/percent/ket_percent_cxx11_check.cpp
+	)
+	add_dependencies(ket_percent_test ket_percent_cxx11_check)
 
 	ket_add_module_test(
 		ket_object_test
@@ -339,6 +457,68 @@ if(KET_BUILD_TESTS)
 		SOURCES
 			modules/cli/ket_cli_test.cpp
 	)
+
+		ket_add_module_test(
+			ket_io_stream_test
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_io_stream_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/io_stream/ket_io_stream.cpp
+			modules/io_stream/ket_io_stream_cxx11_check.cpp
+	)
+	add_dependencies(ket_io_stream_test ket_io_stream_cxx11_check)
+
+	ket_add_module_test(
+		ket_tlv_test
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_tlv_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/tlv/ket_tlv.cpp
+			modules/tlv/ket_tlv_cxx11_check.cpp
+	)
+	add_dependencies(ket_tlv_test ket_tlv_cxx11_check)
+
+	ket_add_module_test(
+		ket_uuid_test
+		SOURCES
+			modules/uuid/ket_uuid.cpp
+			modules/uuid/ket_uuid_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_platform_test
+		SOURCES
+			modules/platform/ket_platform.cpp
+			modules/platform/ket_platform_test.cpp
+	)
+
+	ket_add_module_test(
+		ket_concurrency_test
+		SOURCES
+			modules/concurrency/ket_concurrency_test.cpp
+	)
+
+	ket_add_compile_check(
+		ket_concurrency_cxx11_check
+		CXX_STANDARD 11
+		SOURCES
+			modules/concurrency/ket_concurrency_cxx11_check.cpp
+	)
+	target_link_libraries(ket_concurrency_test PRIVATE Threads::Threads)
+	target_link_libraries(ket_concurrency_cxx11_check PRIVATE Threads::Threads)
+	add_dependencies(ket_concurrency_test ket_concurrency_cxx11_check)
 
 	ket_add_module_test(
 		ket_tuple_test
