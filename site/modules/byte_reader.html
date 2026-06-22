@@ -6,326 +6,230 @@
 <title>ket::byte_reader - ket reference</title>
 <style>:root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f7f8;
   --panel: #ffffff;
-  --ink: #202124;
-  --muted: #5f6368;
-  --line: #d9d9d2;
-  --link: #075a9c;
-  --accent: #176b51;
-  --code: #f0f3f5;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
-header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
 .brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
-nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
-a { color: var(--link); }
-nav a { text-decoration: none; }
-main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
-footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
-h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
-h1 { margin: 0 0 12px; font-size: 2rem; }
-h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
-h3 { margin-top: 22px; font-size: 1.08rem; }
-.lead { color: var(--muted); max-width: 78ch; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
-.card h3 { margin: 0 0 6px; }
-.meta { color: var(--muted); font-size: 0.9rem; }
-.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
-table { width: 100%; border-collapse: collapse; background: var(--panel); }
-th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
-th { background: #eef3f0; text-align: left; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
-.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
-.api-entry { margin: 16px 0; }
-.api-entry h3 { margin-bottom: 6px; }
-.matrix { font-size: 0.82rem; }
-.matrix th { position: sticky; top: 48px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
 .mark { text-align: center; color: var(--accent); font-weight: 700; }
-.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
-.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 720px) {
-  header { position: static; align-items: flex-start; flex-direction: column; }
-  main { padding: 18px 12px 36px; }
-  table { font-size: 0.88rem; }
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
 }</style>
 </head>
 <body>
+<a class="skip-link" href="#main">本文へ移動</a>
 <header>
 <div class="brand"><a href="../index.html">ket reference</a></div>
-<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
 </header>
-<main>
+<main id="main">
 <h1>ket::byte_reader</h1>
 <p class="lead">non-owning bufferから成功時だけoffsetを進めてbyte列を読む。</p>
 <h2>Module Facts</h2>
-<table>
-<tr><th>Header</th><td>modules/byte_reader/ket_byte_reader.h</td></tr>
-<tr><th>Status</th><td>verified</td></tr>
-<tr><th>C++ Min</th><td>C++11</td></tr>
-<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
-<tr><th>Progress note</th><td>固定bufferからoffset保持で逐次読み取り</td></tr>
-<tr><th>Drop-in</th><td>`ket_byte_reader.h` と `ket_byte_reader.cpp` を対象プロジェクトへコピー。</td></tr>
-<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
-<tr><th>Namespace</th><td>公開API：ket::byte_reader 内部実装：.cpp の無名 namespace</td></tr>
-</table>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/byte_reader/ket_byte_reader.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++11</td></tr><tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr><tr><th>Progress note</th><td>固定bufferからoffset保持で逐次読み取り</td></tr><tr><th>Drop-in</th><td>`ket_byte_reader.h` と `ket_byte_reader.cpp` を対象プロジェクトへコピー。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::byte_reader 内部実装：.cpp の無名 namespace</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span> <span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span></span></td></tr></tbody></table></div>
 <h2>Use This When</h2>
 <ul><li>固定bufferから順にfieldを読みたい時。</li><li>size不足時にoffsetと出力を不変にしたい時。</li></ul>
 <h2>Do Not Use This When</h2>
 <ul><li>stream I/Oや非同期I/Oを扱う時。</li><li>buffer所有や再確保が必要な時。</li></ul>
-<h2>Views</h2>
-<p class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span><span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span> <span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span></p>
 <h2>Related Modules</h2>
 <p class="pillrow"><span class="pill"><a href="../modules/byte_view.html">byte_view</a></span> <span class="pill"><a href="../modules/byte_writer.html">byte_writer</a></span> <span class="pill"><a href="../modules/endian.html">endian</a></span> <span class="pill"><a href="../modules/hex.html">hex</a></span></p>
 <h2>Notes</h2>
 <ul><li>endian読み取りもreader内に閉じ、他ket moduleへ依存しない。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/byte_reader.html#api-type-Reader-46">byte_reader::Reader</a></td><td>type</td><td>固定bufferを所有せずに読み進めるreader。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-63">byte_reader::Reader</a></td><td>function</td><td>non-owning buffer readerの構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-78">byte_reader::Reader</a></td><td>function</td><td>reader状態のcopy構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-108">byte_reader::Reader</a></td><td>function</td><td>reader状態のmove構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Size-138">byte_reader::Size</a></td><td>function</td><td>構築時に渡したbuffer sizeの取得。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Offset-152">byte_reader::Offset</a></td><td>function</td><td>現在offsetの取得。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Remaining-166">byte_reader::Remaining</a></td><td>function</td><td>読み取り可能な残りbyte数の取得。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Empty-180">byte_reader::Empty</a></td><td>function</td><td>valid readerのoffsetが末尾に到達したかの判定。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Skip-197">byte_reader::Skip</a></td><td>function</td><td>指定byte数の読み飛ばし。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadU8-214">byte_reader::ReadU8</a></td><td>function</td><td>1byte unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBe16-231">byte_reader::ReadBe16</a></td><td>function</td><td>big-endian 16bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBe32-248">byte_reader::ReadBe32</a></td><td>function</td><td>big-endian 32bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadLe16-265">byte_reader::ReadLe16</a></td><td>function</td><td>little-endian 16bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadLe32-282">byte_reader::ReadLe32</a></td><td>function</td><td>little-endian 32bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBytes-302">byte_reader::ReadBytes</a></td><td>function</td><td>指定byte数のnon-owning範囲読み取り。</td></tr></table>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-type-Reader-46">byte_reader::Reader</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>class Reader</code></span></td><td>固定bufferを所有せずに読み進めるreader。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Reader-63">byte_reader::Reader</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>Reader(const std::uint8_t* data, std::size_t size) noexcept</code></span></td><td>non-owning buffer readerの構築。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Reader-78">byte_reader::Reader</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>Reader(const Reader&amp; other) noexcept = default</code></span></td><td>reader状態のcopy構築。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Reader-108">byte_reader::Reader</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>Reader(Reader&amp;&amp; other) noexcept = default</code></span></td><td>reader状態のmove構築。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Size-138">byte_reader::Size</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::size_t Size() const noexcept</code></span></td><td>構築時に渡したbuffer sizeの取得。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Offset-152">byte_reader::Offset</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::size_t Offset() const noexcept</code></span></td><td>現在offsetの取得。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Remaining-166">byte_reader::Remaining</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::size_t Remaining() const noexcept</code></span></td><td>読み取り可能な残りbyte数の取得。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Empty-180">byte_reader::Empty</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool Empty() const noexcept</code></span></td><td>valid readerのoffsetが末尾に到達したかの判定。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-Skip-197">byte_reader::Skip</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool Skip(std::size_t size) noexcept</code></span></td><td>指定byte数の読み飛ばし。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-ReadU8-214">byte_reader::ReadU8</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool ReadU8(std::uint8_t&amp; out) noexcept</code></span></td><td>1byte unsigned値の読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-ReadBe16-231">byte_reader::ReadBe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool ReadBe16(std::uint16_t&amp; out) noexcept</code></span></td><td>big-endian 16bit unsigned値の読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-ReadBe32-248">byte_reader::ReadBe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool ReadBe32(std::uint32_t&amp; out) noexcept</code></span></td><td>big-endian 32bit unsigned値の読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-ReadLe16-265">byte_reader::ReadLe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool ReadLe16(std::uint16_t&amp; out) noexcept</code></span></td><td>little-endian 16bit unsigned値の読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-ReadLe32-282">byte_reader::ReadLe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool ReadLe32(std::uint32_t&amp; out) noexcept</code></span></td><td>little-endian 32bit unsigned値の読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/byte_reader.html#api-function-ReadBytes-302">byte_reader::ReadBytes</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool ReadBytes(std::size_t size, const std::uint8_t*&amp; out_data) noexcept</code></span></td><td>指定byte数のnon-owning範囲読み取り。</td></tr></tbody></table></div>
 <h2>API Details</h2>
 <section class="api-entry" id="api-type-Reader-46">
-<h3>Reader <span class="meta">type</span></h3>
-<pre class="signature"><code>class Reader</code></pre>
-<p>固定bufferを所有せずに読み進めるreader。</p>
-<h4>Notes</h4>
-<ul><li>`data == nullptr &amp;&amp; size == 0`は有効な空reader。</li><li>`data == nullptr &amp;&amp; size &gt; 0`はinvalid readerとして読み取り失敗。</li></ul>
+<h3>Reader <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>class Reader</code></pre></td></tr><tr><th>Brief</th><td>固定bufferを所有せずに読み進めるreader。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>`data == nullptr &amp;&amp; size == 0`は有効な空reader。</li><li>`data == nullptr &amp;&amp; size &gt; 0`はinvalid readerとして読み取り失敗。</li></ul></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Reader-63">
-<h3>Reader <span class="meta">function</span></h3>
-<pre class="signature"><code>Reader(const std::uint8_t* data, std::size_t size) noexcept</code></pre>
-<p>non-owning buffer readerの構築。</p>
-<h4>Parameters</h4>
-<ul><li>in data: 読み取り対象buffer先頭。`size == 0`の場合のみnullptr可。</li><li>in size: `data`のbyte数。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`data != nullptr`の場合、`data`は`size`byte以上読み取り可能な配列を指す。 `data == nullptr &amp;&amp; size &gt; 0`はprecondition違反ではなくinvalid readerとして保持。</td><td>`Offset()`は0。入力pointerとsizeを保持。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+<h3>Reader <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>Reader(const std::uint8_t* data, std::size_t size) noexcept</code></pre></td></tr><tr><th>Brief</th><td>non-owning buffer readerの構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象buffer先頭。`size == 0`の場合のみnullptr可。</li><li>in size: `data`のbyte数。</li></ul></td></tr><tr><th>Pre</th><td>`data != nullptr`の場合、`data`は`size`byte以上読み取り可能な配列を指す。 `data == nullptr &amp;&amp; size &gt; 0`はprecondition違反ではなくinvalid readerとして保持。</td></tr><tr><th>Post</th><td>`Offset()`は0。入力pointerとsizeを保持。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
 ket::byte_reader::Reader reader(data, 2U);
 // reader.Size() == 2
-// reader.Offset() == 0</code></pre>
+// reader.Offset() == 0</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Reader-78">
-<h3>Reader <span class="meta">function</span></h3>
-<pre class="signature"><code>Reader(const Reader&amp; other) noexcept = default</code></pre>
-<p>reader状態のcopy構築。</p>
-<h4>Parameters</h4>
-<ul><li>in other: copy元reader。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>non-owning pointer、size、offsetを`other`と同じ値で保持。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U};
+<h3>Reader <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>Reader(const Reader&amp; other) noexcept = default</code></pre></td></tr><tr><th>Brief</th><td>reader状態のcopy構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: copy元reader。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>non-owning pointer、size、offsetを`other`と同じ値で保持。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U};
 ket::byte_reader::Reader source(data, 1U);
 ket::byte_reader::Reader copied(source);
 // copied.Size() == 1
-// copied.Offset() == 0</code></pre>
+// copied.Offset() == 0</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Reader-108">
-<h3>Reader <span class="meta">function</span></h3>
-<pre class="signature"><code>Reader(Reader&amp;&amp; other) noexcept = default</code></pre>
-<p>reader状態のmove構築。</p>
-<h4>Parameters</h4>
-<ul><li>in,out other: move元reader。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>non-owning pointer、size、offsetをmove前の`other`と同じ値で保持。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U};
+<h3>Reader <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>Reader(Reader&amp;&amp; other) noexcept = default</code></pre></td></tr><tr><th>Brief</th><td>reader状態のmove構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out other: move元reader。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>non-owning pointer、size、offsetをmove前の`other`と同じ値で保持。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U};
 ket::byte_reader::Reader source(data, 1U);
 ket::byte_reader::Reader moved(static_cast&lt;ket::byte_reader::Reader&amp;&amp;&gt;(source));
-// moved.Size() == 1</code></pre>
+// moved.Size() == 1</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Size-138">
-<h3>Size <span class="meta">function</span></h3>
-<pre class="signature"><code>std::size_t Size() const noexcept</code></pre>
-<p>構築時に渡したbuffer sizeの取得。</p>
-<h4>Return / retval</h4>
-<ul><li>value: 構築時に渡したbyte数。invalid readerでも入力sizeを返す。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+<h3>Size <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::size_t Size() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>構築時に渡したbuffer sizeの取得。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 構築時に渡したbyte数。invalid readerでも入力sizeを返す。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>reader状態と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
 ket::byte_reader::Reader reader(data, 2U);
 const auto size = reader.Size();
-// size == 2</code></pre>
+// size == 2</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Offset-152">
-<h3>Offset <span class="meta">function</span></h3>
-<pre class="signature"><code>std::size_t Offset() const noexcept</code></pre>
-<p>現在offsetの取得。</p>
-<h4>Return / retval</h4>
-<ul><li>value: 次に読み取るbyte位置。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U};
+<h3>Offset <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::size_t Offset() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>現在offsetの取得。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 次に読み取るbyte位置。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>reader状態と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U};
 ket::byte_reader::Reader reader(data, 1U);
 const auto offset = reader.Offset();
-// offset == 0</code></pre>
+// offset == 0</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Remaining-166">
-<h3>Remaining <span class="meta">function</span></h3>
-<pre class="signature"><code>std::size_t Remaining() const noexcept</code></pre>
-<p>読み取り可能な残りbyte数の取得。</p>
-<h4>Return / retval</h4>
-<ul><li>value: valid readerでは`Size() - Offset()`。invalid readerでは0。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+<h3>Remaining <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::size_t Remaining() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>読み取り可能な残りbyte数の取得。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: valid readerでは`Size() - Offset()`。invalid readerでは0。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>reader状態と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
 ket::byte_reader::Reader reader(data, 2U);
 const auto remaining = reader.Remaining();
-// remaining == 2</code></pre>
+// remaining == 2</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Empty-180">
-<h3>Empty <span class="meta">function</span></h3>
-<pre class="signature"><code>bool Empty() const noexcept</code></pre>
-<p>valid readerのoffsetが末尾に到達したかの判定。</p>
-<h4>Return / retval</h4>
-<ul><li>true: readerがvalidで残りbyte数が0。</li><li>false: invalid reader、内部不整合、または残りbyte数が1以上。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>ket::byte_reader::Reader reader(nullptr, 0U);
+<h3>Empty <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool Empty() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>valid readerのoffsetが末尾に到達したかの判定。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: readerがvalidで残りbyte数が0。</li><li>false: invalid reader、内部不整合、または残りbyte数が1以上。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>reader状態と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>ket::byte_reader::Reader reader(nullptr, 0U);
 const auto empty = reader.Empty();
-// empty == true</code></pre>
+// empty == true</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Skip-197">
-<h3>Skip <span class="meta">function</span></h3>
-<pre class="signature"><code>bool Skip(std::size_t size) noexcept</code></pre>
-<p>指定byte数の読み飛ばし。</p>
-<h4>Parameters</h4>
-<ul><li>in size: 読み飛ばすbyte数。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: `size`byteの読み飛ばし成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>元buffer lifetimeはreader利用中保持。</td><td>成功時だけ`Offset()`が`size`増加。失敗時はoffset不変。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+<h3>Skip <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool Skip(std::size_t size) noexcept</code></pre></td></tr><tr><th>Brief</th><td>指定byte数の読み飛ばし。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in size: 読み飛ばすbyte数。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: `size`byteの読み飛ばし成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul></td></tr><tr><th>Pre</th><td>元buffer lifetimeはreader利用中保持。</td></tr><tr><th>Post</th><td>成功時だけ`Offset()`が`size`増加。失敗時はoffset不変。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
 ket::byte_reader::Reader reader(data, 2U);
 const auto ok = reader.Skip(1U);
 // ok == true
-// reader.Offset() == 1</code></pre>
+// reader.Offset() == 1</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ReadU8-214">
-<h3>ReadU8 <span class="meta">function</span></h3>
-<pre class="signature"><code>bool ReadU8(std::uint8_t&amp; out) noexcept</code></pre>
-<p>1byte unsigned値の読み取り。</p>
-<h4>Parameters</h4>
-<ul><li>out out: 読み取った値。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: 1byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td><td>成功時だけ`Offset()`が1増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U};
+<h3>ReadU8 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool ReadU8(std::uint8_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>1byte unsigned値の読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>out out: 読み取った値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 1byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul></td></tr><tr><th>Pre</th><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td></tr><tr><th>Post</th><td>成功時だけ`Offset()`が1増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U};
 ket::byte_reader::Reader reader(data, 1U);
 std::uint8_t value = 0U;
 const auto ok = reader.ReadU8(value);
-// ok == true, value == 0x12U, reader.Offset() == 1</code></pre>
+// ok == true, value == 0x12U, reader.Offset() == 1</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ReadBe16-231">
-<h3>ReadBe16 <span class="meta">function</span></h3>
-<pre class="signature"><code>bool ReadBe16(std::uint16_t&amp; out) noexcept</code></pre>
-<p>big-endian 16bit unsigned値の読み取り。</p>
-<h4>Parameters</h4>
-<ul><li>out out: 読み取った値。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: 2byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td><td>成功時だけ`Offset()`が2増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+<h3>ReadBe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool ReadBe16(std::uint16_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 16bit unsigned値の読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>out out: 読み取った値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 2byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul></td></tr><tr><th>Pre</th><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td></tr><tr><th>Post</th><td>成功時だけ`Offset()`が2増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
 ket::byte_reader::Reader reader(data, 2U);
 std::uint16_t value = 0U;
 const auto ok = reader.ReadBe16(value);
-// ok == true, value == 0x1234U, reader.Offset() == 2</code></pre>
+// ok == true, value == 0x1234U, reader.Offset() == 2</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ReadBe32-248">
-<h3>ReadBe32 <span class="meta">function</span></h3>
-<pre class="signature"><code>bool ReadBe32(std::uint32_t&amp; out) noexcept</code></pre>
-<p>big-endian 32bit unsigned値の読み取り。</p>
-<h4>Parameters</h4>
-<ul><li>out out: 読み取った値。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: 4byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td><td>成功時だけ`Offset()`が4増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+<h3>ReadBe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool ReadBe32(std::uint32_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 32bit unsigned値の読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>out out: 読み取った値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 4byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul></td></tr><tr><th>Pre</th><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td></tr><tr><th>Post</th><td>成功時だけ`Offset()`が4増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
 ket::byte_reader::Reader reader(data, 4U);
 std::uint32_t value = 0U;
 const auto ok = reader.ReadBe32(value);
-// ok == true, value == 0x12345678U, reader.Offset() == 4</code></pre>
+// ok == true, value == 0x12345678U, reader.Offset() == 4</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ReadLe16-265">
-<h3>ReadLe16 <span class="meta">function</span></h3>
-<pre class="signature"><code>bool ReadLe16(std::uint16_t&amp; out) noexcept</code></pre>
-<p>little-endian 16bit unsigned値の読み取り。</p>
-<h4>Parameters</h4>
-<ul><li>out out: 読み取った値。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: 2byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td><td>成功時だけ`Offset()`が2増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+<h3>ReadLe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool ReadLe16(std::uint16_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 16bit unsigned値の読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>out out: 読み取った値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 2byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul></td></tr><tr><th>Pre</th><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td></tr><tr><th>Post</th><td>成功時だけ`Offset()`が2増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
 ket::byte_reader::Reader reader(data, 2U);
 std::uint16_t value = 0U;
 const auto ok = reader.ReadLe16(value);
-// ok == true, value == 0x3412U, reader.Offset() == 2</code></pre>
+// ok == true, value == 0x3412U, reader.Offset() == 2</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ReadLe32-282">
-<h3>ReadLe32 <span class="meta">function</span></h3>
-<pre class="signature"><code>bool ReadLe32(std::uint32_t&amp; out) noexcept</code></pre>
-<p>little-endian 32bit unsigned値の読み取り。</p>
-<h4>Parameters</h4>
-<ul><li>out out: 読み取った値。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: 4byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td><td>成功時だけ`Offset()`が4増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+<h3>ReadLe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool ReadLe32(std::uint32_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 32bit unsigned値の読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>out out: 読み取った値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 4byte読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul></td></tr><tr><th>Pre</th><td>`out`は有効な参照。元buffer lifetimeはreader利用中保持。</td></tr><tr><th>Post</th><td>成功時だけ`Offset()`が4増加し、`out`へ値を書き込む。失敗時はoffsetと`out`不変。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
 ket::byte_reader::Reader reader(data, 4U);
 std::uint32_t value = 0U;
 const auto ok = reader.ReadLe32(value);
-// ok == true, value == 0x78563412U, reader.Offset() == 4</code></pre>
+// ok == true, value == 0x78563412U, reader.Offset() == 4</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ReadBytes-302">
-<h3>ReadBytes <span class="meta">function</span></h3>
-<pre class="signature"><code>bool ReadBytes(std::size_t size, const std::uint8_t*&amp; out_data) noexcept</code></pre>
-<p>指定byte数のnon-owning範囲読み取り。</p>
-<h4>Parameters</h4>
-<ul><li>in size: 取り出すbyte数。</li><li>out out_data: 読み取り開始位置を指すnon-owning pointer。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: `size`byteの範囲読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`out_data`は有効な参照。返されたpointerのlifetimeは元bufferに従う。</td><td>成功時だけ`Offset()`が`size`増加し、`out_data`へ元buffer内の位置を書き込む。 失敗時はoffsetと`out_data`不変。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>validな空readerから0byteを読む場合、`out_data`はnullptr。</li></ul>
-<h4>Example</h4>
-<pre><code>const std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
+<h3>ReadBytes <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool ReadBytes(std::size_t size, const std::uint8_t*&amp; out_data) noexcept</code></pre></td></tr><tr><th>Brief</th><td>指定byte数のnon-owning範囲読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in size: 取り出すbyte数。</li><li>out out_data: 読み取り開始位置を指すnon-owning pointer。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: `size`byteの範囲読み取り成功。</li><li>false: invalid reader、または残りbyte不足。</li></ul></td></tr><tr><th>Pre</th><td>`out_data`は有効な参照。返されたpointerのlifetimeは元bufferに従う。</td></tr><tr><th>Post</th><td>成功時だけ`Offset()`が`size`増加し、`out_data`へ元buffer内の位置を書き込む。 失敗時はoffsetと`out_data`不変。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>validな空readerから0byteを読む場合、`out_data`はnullptr。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x10U, 0x20U, 0x30U};
 ket::byte_reader::Reader reader(data, 3U);
 const std::uint8_t* bytes = nullptr;
 const auto ok = reader.ReadBytes(2U, bytes);
-// ok == true, bytes == data, reader.Offset() == 2</code></pre>
+// ok == true, bytes == data, reader.Offset() == 2</code></pre></td></tr></tbody></table></div>
 </section>
 </main>
 <footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>

@@ -6,199 +6,173 @@
 <title>ket::concurrency - ket reference</title>
 <style>:root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f7f8;
   --panel: #ffffff;
-  --ink: #202124;
-  --muted: #5f6368;
-  --line: #d9d9d2;
-  --link: #075a9c;
-  --accent: #176b51;
-  --code: #f0f3f5;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
-header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
 .brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
-nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
-a { color: var(--link); }
-nav a { text-decoration: none; }
-main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
-footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
-h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
-h1 { margin: 0 0 12px; font-size: 2rem; }
-h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
-h3 { margin-top: 22px; font-size: 1.08rem; }
-.lead { color: var(--muted); max-width: 78ch; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
-.card h3 { margin: 0 0 6px; }
-.meta { color: var(--muted); font-size: 0.9rem; }
-.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
-table { width: 100%; border-collapse: collapse; background: var(--panel); }
-th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
-th { background: #eef3f0; text-align: left; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
-.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
-.api-entry { margin: 16px 0; }
-.api-entry h3 { margin-bottom: 6px; }
-.matrix { font-size: 0.82rem; }
-.matrix th { position: sticky; top: 48px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
 .mark { text-align: center; color: var(--accent); font-weight: 700; }
-.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
-.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 720px) {
-  header { position: static; align-items: flex-start; flex-direction: column; }
-  main { padding: 18px 12px 36px; }
-  table { font-size: 0.88rem; }
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
 }</style>
 </head>
 <body>
+<a class="skip-link" href="#main">本文へ移動</a>
 <header>
 <div class="brand"><a href="../index.html">ket reference</a></div>
-<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
 </header>
-<main>
+<main id="main">
 <h1>ket::concurrency</h1>
 <p class="lead">join忘れ防止の所有threadとfuture ready判定を小さいAPIにする。</p>
 <h2>Module Facts</h2>
-<table>
-<tr><th>Header</th><td>modules/concurrency/ket_concurrency.h</td></tr>
-<tr><th>Status</th><td>verified</td></tr>
-<tr><th>C++ Min</th><td>C++11</td></tr>
-<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
-<tr><th>Progress note</th><td>join忘れ防止とfuture ready判定</td></tr>
-<tr><th>Drop-in</th><td>`ket_concurrency.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
-<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
-<tr><th>Namespace</th><td>公開API：ket::concurrency 内部実装：ket::concurrency::detail</td></tr>
-</table>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/concurrency/ket_concurrency.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++11</td></tr><tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr><tr><th>Progress note</th><td>join忘れ防止とfuture ready判定</td></tr><tr><th>Drop-in</th><td>`ket_concurrency.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::concurrency 内部実装：ket::concurrency::detail</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/flow.html">制御・状態・失敗</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></span></span></td></tr></tbody></table></div>
 <h2>Use This When</h2>
 <ul><li>std::threadのjoin忘れを局所的な所有型で避けたい時。</li><li>futureがreadyかをtimeoutなしで短く確認したい時。</li></ul>
 <h2>Do Not Use This When</h2>
 <ul><li>thread pool、executor、schedulerが必要な時。</li><li>C++20以降でstd::jthreadが用途に十分合う時。</li></ul>
-<h2>Views</h2>
-<p class="pillrow"><span class="pill"><a href="../categories/flow.html">制御・状態・失敗</a></span><span class="pill"><a href="../use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></span></p>
 <h2>Related Modules</h2>
 <p class="pillrow"><span class="pill"><a href="../modules/scope.html">scope</a></span> <span class="pill"><a href="../modules/deadline.html">deadline</a></span> <span class="pill"><a href="../modules/cache.html">cache</a></span></p>
 <h2>Notes</h2>
 <ul><li>局所的なjoin管理に絞り、非同期frameworkには広げない。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/concurrency.html#api-type-JoiningThread-48">concurrency::JoiningThread</a></td><td>type</td><td>joinableなstd::threadをdestructorでjoinする所有型。</td></tr><tr><td><a href="../modules/concurrency.html#api-function-JoiningThread-61">concurrency::JoiningThread</a></td><td>function</td><td>threadを所有しない状態の構築。</td></tr><tr><td><a href="../modules/concurrency.html#api-function-JoiningThread-75">concurrency::JoiningThread</a></td><td>function</td><td>std::threadの所有権取得。</td></tr><tr><td><a href="../modules/concurrency.html#api-function-~JoiningThread-90">concurrency::~JoiningThread</a></td><td>function</td><td>所有threadのjoin。</td></tr><tr><td><a href="../modules/concurrency.html#api-function-JoiningThread-103">concurrency::JoiningThread</a></td><td>function</td><td>copy構築禁止。</td></tr><tr><td><a href="../modules/concurrency.html#api-function-JoiningThread-132">concurrency::JoiningThread</a></td><td>function</td><td>move構築。</td></tr><tr><td><a href="../modules/concurrency.html#api-function-Joinable-164">concurrency::Joinable</a></td><td>function</td><td>所有threadのjoin可能状態確認。</td></tr><tr><td><a href="../modules/concurrency.html#api-function-IsReady-188">concurrency::IsReady</a></td><td>function</td><td>future-like objectのready判定。</td></tr></table>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-type-JoiningThread-48">concurrency::JoiningThread</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>class JoiningThread</code></span></td><td>joinableなstd::threadをdestructorでjoinする所有型。</td></tr><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-function-JoiningThread-61">concurrency::JoiningThread</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>JoiningThread() noexcept = default</code></span></td><td>threadを所有しない状態の構築。</td></tr><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-function-JoiningThread-75">concurrency::JoiningThread</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>explicit JoiningThread(std::thread thread) noexcept</code></span></td><td>std::threadの所有権取得。</td></tr><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-function-~JoiningThread-90">concurrency::~JoiningThread</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>~JoiningThread() noexcept</code></span></td><td>所有threadのjoin。</td></tr><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-function-JoiningThread-103">concurrency::JoiningThread</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>JoiningThread(const JoiningThread&amp; other) = delete</code></span></td><td>copy構築禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-function-JoiningThread-132">concurrency::JoiningThread</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>JoiningThread(JoiningThread&amp;&amp; other) noexcept</code></span></td><td>move構築。</td></tr><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-function-Joinable-164">concurrency::Joinable</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool Joinable() const noexcept</code></span></td><td>所有threadのjoin可能状態確認。</td></tr><tr><td><span class="api-name"><a href="../modules/concurrency.html#api-function-IsReady-188">concurrency::IsReady</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename Future&gt; bool IsReady(const Future&amp; future)</code></span></td><td>future-like objectのready判定。</td></tr></tbody></table></div>
 <h2>API Details</h2>
 <section class="api-entry" id="api-type-JoiningThread-48">
-<h3>JoiningThread <span class="meta">type</span></h3>
-<pre class="signature"><code>class JoiningThread</code></pre>
-<p>joinableなstd::threadをdestructorでjoinする所有型。</p>
-<h4>Notes</h4>
-<ul><li>C++20以降で同じ用途を満たせる場合はstd::jthreadを優先。</li></ul>
+<h3>JoiningThread <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>class JoiningThread</code></pre></td></tr><tr><th>Brief</th><td>joinableなstd::threadをdestructorでjoinする所有型。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>C++20以降で同じ用途を満たせる場合はstd::jthreadを優先。</li></ul></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-JoiningThread-61">
-<h3>JoiningThread <span class="meta">function</span></h3>
-<pre class="signature"><code>JoiningThread() noexcept = default</code></pre>
-<p>threadを所有しない状態の構築。</p>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>`Joinable()`はfalse。</td></tr></table>
-<h4>Example</h4>
-<pre><code>ket::concurrency::JoiningThread thread;
+<h3>JoiningThread <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>JoiningThread() noexcept = default</code></pre></td></tr><tr><th>Brief</th><td>threadを所有しない状態の構築。</td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>`Joinable()`はfalse。</td></tr><tr><th>Example</th><td><pre><code>ket::concurrency::JoiningThread thread;
 const auto joinable = thread.Joinable();
-// joinable == false</code></pre>
+// joinable == false</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-JoiningThread-75">
-<h3>JoiningThread <span class="meta">function</span></h3>
-<pre class="signature"><code>explicit JoiningThread(std::thread thread) noexcept</code></pre>
-<p>std::threadの所有権取得。</p>
-<h4>Parameters</h4>
-<ul><li>in thread: 所有対象のstd::thread。joinableでないthreadも受け付ける。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`thread`がjoinableな場合、destructorや代入でself-joinにならない寿命関係。</td><td>`thread`の移動元状態を所有。引数のthread objectは移動元として破棄。</td></tr></table>
-<h4>Example</h4>
-<pre><code>int value = 0;
+<h3>JoiningThread <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>explicit JoiningThread(std::thread thread) noexcept</code></pre></td></tr><tr><th>Brief</th><td>std::threadの所有権取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in thread: 所有対象のstd::thread。joinableでないthreadも受け付ける。</li></ul></td></tr><tr><th>Pre</th><td>`thread`がjoinableな場合、destructorや代入でself-joinにならない寿命関係。</td></tr><tr><th>Post</th><td>`thread`の移動元状態を所有。引数のthread objectは移動元として破棄。</td></tr><tr><th>Example</th><td><pre><code>int value = 0;
 ket::concurrency::JoiningThread thread(std::thread([&amp;value] { value = 1; }));
 const auto joinable = thread.Joinable();
-// joinable == true</code></pre>
+// joinable == true</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-~JoiningThread-90">
-<h3>~JoiningThread <span class="meta">function</span></h3>
-<pre class="signature"><code>~JoiningThread() noexcept</code></pre>
-<p>所有threadのjoin。</p>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>所有threadがjoinableな場合、destructorを実行するthread自身ではない。</td><td>joinableなthreadを所有していた場合は完了まで待機。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>joinできない状態やjoin例外はnoexcept destructorによりstd::terminate。</li></ul>
-<h4>Example</h4>
-<pre><code>int value = 0;
+<h3>~JoiningThread <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>~JoiningThread() noexcept</code></pre></td></tr><tr><th>Brief</th><td>所有threadのjoin。</td></tr><tr><th>Pre</th><td>所有threadがjoinableな場合、destructorを実行するthread自身ではない。</td></tr><tr><th>Post</th><td>joinableなthreadを所有していた場合は完了まで待機。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>joinできない状態やjoin例外はnoexcept destructorによりstd::terminate。</li></ul></td></tr><tr><th>Example</th><td><pre><code>int value = 0;
 {
     ket::concurrency::JoiningThread thread(std::thread([&amp;value] { value = 1; }));
 }
-// value == 1</code></pre>
+// value == 1</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-JoiningThread-103">
-<h3>JoiningThread <span class="meta">function</span></h3>
-<pre class="signature"><code>JoiningThread(const JoiningThread&amp; other) = delete</code></pre>
-<p>copy構築禁止。</p>
-<h4>Parameters</h4>
-<ul><li>in other: copy元。使用不可。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>copy操作は利用不可。</td><td>状態変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const auto copyable =
+<h3>JoiningThread <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>JoiningThread(const JoiningThread&amp; other) = delete</code></pre></td></tr><tr><th>Brief</th><td>copy構築禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: copy元。使用不可。</li></ul></td></tr><tr><th>Pre</th><td>copy操作は利用不可。</td></tr><tr><th>Post</th><td>状態変更なし。</td></tr><tr><th>Example</th><td><pre><code>const auto copyable =
 std::is_copy_constructible&lt;ket::concurrency::JoiningThread&gt;::value;
-// copyable == false</code></pre>
+// copyable == false</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-JoiningThread-132">
-<h3>JoiningThread <span class="meta">function</span></h3>
-<pre class="signature"><code>JoiningThread(JoiningThread&amp;&amp; other) noexcept</code></pre>
-<p>move構築。</p>
-<h4>Parameters</h4>
-<ul><li>in,out other: 移動元のJoiningThread。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>移動元は有効なJoiningThread。所有threadがjoinableな場合、移動先のdestructorでself-joinにならない寿命関係。</td><td>`other`はjoinableなthreadを所有しない。</td></tr></table>
-<h4>Example</h4>
-<pre><code>ket::concurrency::JoiningThread source(std::thread([] {}));
+<h3>JoiningThread <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>JoiningThread(JoiningThread&amp;&amp; other) noexcept</code></pre></td></tr><tr><th>Brief</th><td>move構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out other: 移動元のJoiningThread。</li></ul></td></tr><tr><th>Pre</th><td>移動元は有効なJoiningThread。所有threadがjoinableな場合、移動先のdestructorでself-joinにならない寿命関係。</td></tr><tr><th>Post</th><td>`other`はjoinableなthreadを所有しない。</td></tr><tr><th>Example</th><td><pre><code>ket::concurrency::JoiningThread source(std::thread([] {}));
 ket::concurrency::JoiningThread thread(std::move(source));
 const auto moved = thread.Joinable();
-// moved == true</code></pre>
+// moved == true</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Joinable-164">
-<h3>Joinable <span class="meta">function</span></h3>
-<pre class="signature"><code>bool Joinable() const noexcept</code></pre>
-<p>所有threadのjoin可能状態確認。</p>
-<h4>Return / retval</h4>
-<ul><li>true: 所有threadがjoinable。</li><li>false: 所有threadがjoinableでない。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>`*this`と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>ket::concurrency::JoiningThread thread;
+<h3>Joinable <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool Joinable() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>所有threadのjoin可能状態確認。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 所有threadがjoinable。</li><li>false: 所有threadがjoinableでない。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>`*this`と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>ket::concurrency::JoiningThread thread;
 const auto joinable = thread.Joinable();
-// joinable == false</code></pre>
+// joinable == false</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-IsReady-188">
-<h3>IsReady <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename Future&gt; bool IsReady(const Future&amp; future)</code></pre>
-<p>future-like objectのready判定。</p>
-<h4>Parameters</h4>
-<ul><li>in future: ready判定対象のfuture-like object。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: `wait_for(0)`が`std::future_status::ready`。</li><li>false: `wait_for(0)`がtimeoutまたはdeferred。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`future.valid()`がtrue。invalid futureはprecondition違反。</td><td>futureの共有状態を消費せず、値や例外は取り出さない。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>`std::future_status::deferred` はreadyではないためfalse。</li><li>`wait_for`が例外を送出するfuture-like型では、その例外を呼び出し元へ伝播。</li></ul>
-<h4>Example</h4>
-<pre><code>std::promise&lt;int&gt; promise;
+<h3>IsReady <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename Future&gt; bool IsReady(const Future&amp; future)</code></pre></td></tr><tr><th>Brief</th><td>future-like objectのready判定。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in future: ready判定対象のfuture-like object。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: `wait_for(0)`が`std::future_status::ready`。</li><li>false: `wait_for(0)`がtimeoutまたはdeferred。</li></ul></td></tr><tr><th>Pre</th><td>`future.valid()`がtrue。invalid futureはprecondition違反。</td></tr><tr><th>Post</th><td>futureの共有状態を消費せず、値や例外は取り出さない。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>`std::future_status::deferred` はreadyではないためfalse。</li><li>`wait_for`が例外を送出するfuture-like型では、その例外を呼び出し元へ伝播。</li></ul></td></tr><tr><th>Example</th><td><pre><code>std::promise&lt;int&gt; promise;
 auto future = promise.get_future();
 promise.set_value(42);
 const auto ready = ket::concurrency::IsReady(future);
-// ready == true</code></pre>
+// ready == true</code></pre></td></tr></tbody></table></div>
 </section>
 </main>
 <footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>

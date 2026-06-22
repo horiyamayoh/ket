@@ -6,265 +6,200 @@
 <title>ket::object - ket reference</title>
 <style>:root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f7f8;
   --panel: #ffffff;
-  --ink: #202124;
-  --muted: #5f6368;
-  --line: #d9d9d2;
-  --link: #075a9c;
-  --accent: #176b51;
-  --code: #f0f3f5;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
-header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
 .brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
-nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
-a { color: var(--link); }
-nav a { text-decoration: none; }
-main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
-footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
-h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
-h1 { margin: 0 0 12px; font-size: 2rem; }
-h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
-h3 { margin-top: 22px; font-size: 1.08rem; }
-.lead { color: var(--muted); max-width: 78ch; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
-.card h3 { margin: 0 0 6px; }
-.meta { color: var(--muted); font-size: 0.9rem; }
-.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
-table { width: 100%; border-collapse: collapse; background: var(--panel); }
-th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
-th { background: #eef3f0; text-align: left; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
-.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
-.api-entry { margin: 16px 0; }
-.api-entry h3 { margin-bottom: 6px; }
-.matrix { font-size: 0.82rem; }
-.matrix th { position: sticky; top: 48px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
 .mark { text-align: center; color: var(--accent); font-weight: 700; }
-.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
-.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 720px) {
-  header { position: static; align-items: flex-start; flex-direction: column; }
-  main { padding: 18px 12px 36px; }
-  table { font-size: 0.88rem; }
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
 }</style>
 </head>
 <body>
+<a class="skip-link" href="#main">本文へ移動</a>
 <header>
 <div class="brand"><a href="../index.html">ket reference</a></div>
-<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
 </header>
-<main>
+<main id="main">
 <h1>ket::object</h1>
 <p class="lead">copy/move制御とmove後resetを型定義の近くに集約する。</p>
 <h2>Module Facts</h2>
-<table>
-<tr><th>Header</th><td>modules/object/ket_object.h</td></tr>
-<tr><th>Status</th><td>verified</td></tr>
-<tr><th>C++ Min</th><td>C++11</td></tr>
-<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
-<tr><th>Progress note</th><td>copy/move意図のmixinとmove後reset</td></tr>
-<tr><th>Drop-in</th><td>`ket_object.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
-<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
-<tr><th>Namespace</th><td>公開API：ket::object 内部実装：ket::object::detail</td></tr>
-</table>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/object/ket_object.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++11</td></tr><tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr><tr><th>Progress note</th><td>copy/move意図のmixinとmove後reset</td></tr><tr><th>Drop-in</th><td>`ket_object.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::object 内部実装：ket::object::detail</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/language.html">C++言語・型補助</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></span> <span class="pill"><a href="../use-cases/template-type.html">template、tuple、variantの儀式を短くする</a></span></span></td></tr></tbody></table></div>
 <h2>Use This When</h2>
 <ul><li>copy禁止やmove onlyの意図を型で明示したい時。</li><li>move後に値をresetする小さいラッパが必要な時。</li></ul>
 <h2>Do Not Use This When</h2>
 <ul><li>=deleteを直接書く方が十分明確な時。</li><li>所有権modelやresource frameworkを作りたい時。</li></ul>
-<h2>Views</h2>
-<p class="pillrow"><span class="pill"><a href="../categories/language.html">C++言語・型補助</a></span><span class="pill"><a href="../use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></span> <span class="pill"><a href="../use-cases/template-type.html">template、tuple、variantの儀式を短くする</a></span></p>
 <h2>Related Modules</h2>
 <p class="pillrow"><span class="pill"><a href="../modules/scope.html">scope</a></span> <span class="pill"><a href="../modules/lang.html">lang</a></span> <span class="pill"><a href="../modules/contract.html">contract</a></span></p>
 <h2>Notes</h2>
 <ul><li>比較演算や所有権policyには踏み込まない。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/object.html#api-type-NonCopyable-48">object::NonCopyable</a></td><td>type</td><td>派生型のcopyを禁止する継承用mixin。</td></tr><tr><td><a href="../modules/object.html#api-function-NonCopyable-94">object::NonCopyable</a></td><td>function</td><td>copy構築を禁止。</td></tr><tr><td><a href="../modules/object.html#api-type-NonMovable-115">object::NonMovable</a></td><td>type</td><td>派生型のcopyとmoveを禁止する継承用mixin。</td></tr><tr><td><a href="../modules/object.html#api-function-NonMovable-144">object::NonMovable</a></td><td>function</td><td>copy構築を禁止。</td></tr><tr><td><a href="../modules/object.html#api-function-NonMovable-171">object::NonMovable</a></td><td>function</td><td>move構築を禁止。</td></tr><tr><td><a href="../modules/object.html#api-type-MoveOnly-192">object::MoveOnly</a></td><td>type</td><td>派生型をmove専用にする継承用mixin。</td></tr><tr><td><a href="../modules/object.html#api-function-MoveOnly-221">object::MoveOnly</a></td><td>function</td><td>copy構築を禁止。</td></tr><tr><td><a href="../modules/object.html#api-function-MoveOnly-248">object::MoveOnly</a></td><td>function</td><td>MoveOnly baseのmove構築。</td></tr><tr><td><a href="../modules/object.html#api-type-ResetOnMove-271">object::ResetOnMove</a></td><td>type</td><td>move 後のsourceを値初期化状態へ戻す小値 wrapper。</td></tr><tr><td><a href="../modules/object.html#api-function-ResetOnMove-291">object::ResetOnMove</a></td><td>function</td><td>値初期化した保持値で構築。</td></tr><tr><td><a href="../modules/object.html#api-function-ResetOnMove-303">object::ResetOnMove</a></td><td>function</td><td>初期値を保持して構築。</td></tr><tr><td><a href="../modules/object.html#api-function-ResetOnMove-315">object::ResetOnMove</a></td><td>function</td><td>copy構築を禁止。</td></tr><tr><td><a href="../modules/object.html#api-function-noexcept-343">object::noexcept</a></td><td>function</td><td>move 構築後にsourceを値初期化状態へ戻す。</td></tr><tr><td><a href="../modules/object.html#api-function-Get-379">object::Get</a></td><td>function</td><td>保持値のmutable参照取得。</td></tr><tr><td><a href="../modules/object.html#api-function-Get-392">object::Get</a></td><td>function</td><td>保持値のconst参照取得。</td></tr></table>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/object.html#api-type-NonCopyable-48">object::NonCopyable</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>class NonCopyable</code></span></td><td>派生型のcopyを禁止する継承用mixin。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-NonCopyable-94">object::NonCopyable</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>NonCopyable(const NonCopyable&amp; other) = delete</code></span></td><td>copy構築を禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-type-NonMovable-115">object::NonMovable</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>class NonMovable</code></span></td><td>派生型のcopyとmoveを禁止する継承用mixin。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-NonMovable-144">object::NonMovable</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>NonMovable(const NonMovable&amp; other) = delete</code></span></td><td>copy構築を禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-NonMovable-171">object::NonMovable</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>NonMovable(NonMovable&amp;&amp; other) = delete</code></span></td><td>move構築を禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-type-MoveOnly-192">object::MoveOnly</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>class MoveOnly</code></span></td><td>派生型をmove専用にする継承用mixin。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-MoveOnly-221">object::MoveOnly</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>MoveOnly(const MoveOnly&amp; other) = delete</code></span></td><td>copy構築を禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-MoveOnly-248">object::MoveOnly</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>MoveOnly(MoveOnly&amp;&amp; other) = default</code></span></td><td>MoveOnly baseのmove構築。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-type-ResetOnMove-271">object::ResetOnMove</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; class ResetOnMove</code></span></td><td>move 後のsourceを値初期化状態へ戻す小値 wrapper。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-ResetOnMove-291">object::ResetOnMove</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>ResetOnMove() = default</code></span></td><td>値初期化した保持値で構築。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-ResetOnMove-303">object::ResetOnMove</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>explicit ResetOnMove(T value)</code></span></td><td>初期値を保持して構築。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-ResetOnMove-315">object::ResetOnMove</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>ResetOnMove(const ResetOnMove&amp; other) = delete</code></span></td><td>copy構築を禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-noexcept-343">object::noexcept</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>ResetOnMove(ResetOnMove&amp;&amp; other) noexcept( std::is_nothrow_move_constructible&lt;T&gt;::value &amp;&amp; std::is_nothrow_default_constructible&lt;T&gt;::value &amp;&amp; std::is_nothrow_move_assignable&lt;T&gt;::value)</code></span></td><td>move 構築後にsourceを値初期化状態へ戻す。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-Get-379">object::Get</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>T&amp; Get() noexcept</code></span></td><td>保持値のmutable参照取得。</td></tr><tr><td><span class="api-name"><a href="../modules/object.html#api-function-Get-392">object::Get</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>const T&amp; Get() const noexcept</code></span></td><td>保持値のconst参照取得。</td></tr></tbody></table></div>
 <h2>API Details</h2>
 <section class="api-entry" id="api-type-NonCopyable-48">
-<h3>NonCopyable <span class="meta">type</span></h3>
-<pre class="signature"><code>class NonCopyable</code></pre>
-<p>派生型のcopyを禁止する継承用mixin。</p>
-<h4>Notes</h4>
-<ul><li>moveは禁止しない。派生型のmove可否は派生型自身の特殊メンバに従う。</li><li>空baseとして使うため、data memberと比較演算は持たない。</li></ul>
+<h3>NonCopyable <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>class NonCopyable</code></pre></td></tr><tr><th>Brief</th><td>派生型のcopyを禁止する継承用mixin。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>moveは禁止しない。派生型のmove可否は派生型自身の特殊メンバに従う。</li><li>空baseとして使うため、data memberと比較演算は持たない。</li></ul></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-NonCopyable-94">
-<h3>NonCopyable <span class="meta">function</span></h3>
-<pre class="signature"><code>NonCopyable(const NonCopyable&amp; other) = delete</code></pre>
-<p>copy構築を禁止。</p>
-<h4>Parameters</h4>
-<ul><li>in other: copy元base。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>呼び出し不可。</td><td>呼び出し不可。</td></tr></table>
-<h4>Example</h4>
-<pre><code>struct Value : ket::object::NonCopyable { Value() = default; };
+<h3>NonCopyable <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>NonCopyable(const NonCopyable&amp; other) = delete</code></pre></td></tr><tr><th>Brief</th><td>copy構築を禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: copy元base。</li></ul></td></tr><tr><th>Pre</th><td>呼び出し不可。</td></tr><tr><th>Post</th><td>呼び出し不可。</td></tr><tr><th>Example</th><td><pre><code>struct Value : ket::object::NonCopyable { Value() = default; };
 static_assert(!std::is_copy_constructible&lt;Value&gt;::value,
-              &quot;Value is not copy constructible.&quot;);</code></pre>
+              &quot;Value is not copy constructible.&quot;);</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-type-NonMovable-115">
-<h3>NonMovable <span class="meta">type</span></h3>
-<pre class="signature"><code>class NonMovable</code></pre>
-<p>派生型のcopyとmoveを禁止する継承用mixin。</p>
-<h4>Notes</h4>
-<ul><li>空baseとして使うため、data memberと比較演算は持たない。</li></ul>
+<h3>NonMovable <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>class NonMovable</code></pre></td></tr><tr><th>Brief</th><td>派生型のcopyとmoveを禁止する継承用mixin。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>空baseとして使うため、data memberと比較演算は持たない。</li></ul></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-NonMovable-144">
-<h3>NonMovable <span class="meta">function</span></h3>
-<pre class="signature"><code>NonMovable(const NonMovable&amp; other) = delete</code></pre>
-<p>copy構築を禁止。</p>
-<h4>Parameters</h4>
-<ul><li>in other: copy元base。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>呼び出し不可。</td><td>呼び出し不可。</td></tr></table>
-<h4>Example</h4>
-<pre><code>struct Value : ket::object::NonMovable { Value() = default; };
+<h3>NonMovable <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>NonMovable(const NonMovable&amp; other) = delete</code></pre></td></tr><tr><th>Brief</th><td>copy構築を禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: copy元base。</li></ul></td></tr><tr><th>Pre</th><td>呼び出し不可。</td></tr><tr><th>Post</th><td>呼び出し不可。</td></tr><tr><th>Example</th><td><pre><code>struct Value : ket::object::NonMovable { Value() = default; };
 static_assert(!std::is_copy_constructible&lt;Value&gt;::value,
-              &quot;Value is not copy constructible.&quot;);</code></pre>
+              &quot;Value is not copy constructible.&quot;);</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-NonMovable-171">
-<h3>NonMovable <span class="meta">function</span></h3>
-<pre class="signature"><code>NonMovable(NonMovable&amp;&amp; other) = delete</code></pre>
-<p>move構築を禁止。</p>
-<h4>Parameters</h4>
-<ul><li>in,out other: move元base。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>呼び出し不可。</td><td>呼び出し不可。</td></tr></table>
-<h4>Example</h4>
-<pre><code>struct Value : ket::object::NonMovable { Value() = default; };
+<h3>NonMovable <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>NonMovable(NonMovable&amp;&amp; other) = delete</code></pre></td></tr><tr><th>Brief</th><td>move構築を禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out other: move元base。</li></ul></td></tr><tr><th>Pre</th><td>呼び出し不可。</td></tr><tr><th>Post</th><td>呼び出し不可。</td></tr><tr><th>Example</th><td><pre><code>struct Value : ket::object::NonMovable { Value() = default; };
 static_assert(!std::is_move_constructible&lt;Value&gt;::value,
-              &quot;Value is not move constructible.&quot;);</code></pre>
+              &quot;Value is not move constructible.&quot;);</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-type-MoveOnly-192">
-<h3>MoveOnly <span class="meta">type</span></h3>
-<pre class="signature"><code>class MoveOnly</code></pre>
-<p>派生型をmove専用にする継承用mixin。</p>
-<h4>Notes</h4>
-<ul><li>空baseとして使うため、data memberと比較演算は持たない。</li></ul>
+<h3>MoveOnly <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>class MoveOnly</code></pre></td></tr><tr><th>Brief</th><td>派生型をmove専用にする継承用mixin。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>空baseとして使うため、data memberと比較演算は持たない。</li></ul></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-MoveOnly-221">
-<h3>MoveOnly <span class="meta">function</span></h3>
-<pre class="signature"><code>MoveOnly(const MoveOnly&amp; other) = delete</code></pre>
-<p>copy構築を禁止。</p>
-<h4>Parameters</h4>
-<ul><li>in other: copy元base。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>呼び出し不可。</td><td>呼び出し不可。</td></tr></table>
-<h4>Example</h4>
-<pre><code>struct Value : ket::object::MoveOnly { Value() = default; };
+<h3>MoveOnly <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>MoveOnly(const MoveOnly&amp; other) = delete</code></pre></td></tr><tr><th>Brief</th><td>copy構築を禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: copy元base。</li></ul></td></tr><tr><th>Pre</th><td>呼び出し不可。</td></tr><tr><th>Post</th><td>呼び出し不可。</td></tr><tr><th>Example</th><td><pre><code>struct Value : ket::object::MoveOnly { Value() = default; };
 static_assert(!std::is_copy_constructible&lt;Value&gt;::value,
-              &quot;Value is not copy constructible.&quot;);</code></pre>
+              &quot;Value is not copy constructible.&quot;);</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-MoveOnly-248">
-<h3>MoveOnly <span class="meta">function</span></h3>
-<pre class="signature"><code>MoveOnly(MoveOnly&amp;&amp; other) = default</code></pre>
-<p>MoveOnly baseのmove構築。</p>
-<h4>Parameters</h4>
-<ul><li>in,out other: move元base。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>mixin自体は状態を持たず、`other`にも状態変化なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>struct Value : ket::object::MoveOnly { Value() = default; };
+<h3>MoveOnly <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>MoveOnly(MoveOnly&amp;&amp; other) = default</code></pre></td></tr><tr><th>Brief</th><td>MoveOnly baseのmove構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out other: move元base。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>mixin自体は状態を持たず、`other`にも状態変化なし。</td></tr><tr><th>Example</th><td><pre><code>struct Value : ket::object::MoveOnly { Value() = default; };
 static_assert(std::is_move_constructible&lt;Value&gt;::value,
-              &quot;Value is move constructible.&quot;);</code></pre>
+              &quot;Value is move constructible.&quot;);</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-type-ResetOnMove-271">
-<h3>ResetOnMove <span class="meta">type</span></h3>
-<pre class="signature"><code>template &lt;typename T&gt; class ResetOnMove</code></pre>
-<p>move 後のsourceを値初期化状態へ戻す小値 wrapper。</p>
-<h4>Notes</h4>
-<ul><li>`T`はdefault constructible、move constructible、move assignableである必要あり。</li><li>比較演算は宣言せず、比較方針は利用側の型へ委ねる。</li></ul>
+<h3>ResetOnMove <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; class ResetOnMove</code></pre></td></tr><tr><th>Brief</th><td>move 後のsourceを値初期化状態へ戻す小値 wrapper。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>`T`はdefault constructible、move constructible、move assignableである必要あり。</li><li>比較演算は宣言せず、比較方針は利用側の型へ委ねる。</li></ul></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ResetOnMove-291">
-<h3>ResetOnMove <span class="meta">function</span></h3>
-<pre class="signature"><code>ResetOnMove() = default</code></pre>
-<p>値初期化した保持値で構築。</p>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`T{}`が有効。</td><td>`Get()`は値初期化された`T`への参照を返す。</td></tr></table>
-<h4>Example</h4>
-<pre><code>ket::object::ResetOnMove&lt;int&gt; value;
-// value.Get() == 0</code></pre>
+<h3>ResetOnMove <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>ResetOnMove() = default</code></pre></td></tr><tr><th>Brief</th><td>値初期化した保持値で構築。</td></tr><tr><th>Pre</th><td>`T{}`が有効。</td></tr><tr><th>Post</th><td>`Get()`は値初期化された`T`への参照を返す。</td></tr><tr><th>Example</th><td><pre><code>ket::object::ResetOnMove&lt;int&gt; value;
+// value.Get() == 0</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ResetOnMove-303">
-<h3>ResetOnMove <span class="meta">function</span></h3>
-<pre class="signature"><code>explicit ResetOnMove(T value)</code></pre>
-<p>初期値を保持して構築。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 保持する初期値。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`T`は`value`からmove構築可能。</td><td>`Get()`は渡された値からmove構築した`T`への参照を返す。</td></tr></table>
-<h4>Example</h4>
-<pre><code>ket::object::ResetOnMove&lt;int&gt; value(42);
-// value.Get() == 42</code></pre>
+<h3>ResetOnMove <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>explicit ResetOnMove(T value)</code></pre></td></tr><tr><th>Brief</th><td>初期値を保持して構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 保持する初期値。</li></ul></td></tr><tr><th>Pre</th><td>`T`は`value`からmove構築可能。</td></tr><tr><th>Post</th><td>`Get()`は渡された値からmove構築した`T`への参照を返す。</td></tr><tr><th>Example</th><td><pre><code>ket::object::ResetOnMove&lt;int&gt; value(42);
+// value.Get() == 42</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ResetOnMove-315">
-<h3>ResetOnMove <span class="meta">function</span></h3>
-<pre class="signature"><code>ResetOnMove(const ResetOnMove&amp; other) = delete</code></pre>
-<p>copy構築を禁止。</p>
-<h4>Parameters</h4>
-<ul><li>in other: copy元wrapper。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>呼び出し不可。</td><td>呼び出し不可。</td></tr></table>
-<h4>Example</h4>
-<pre><code>static_assert(!std::is_copy_constructible&lt;ket::object::ResetOnMove&lt;int&gt;&gt;::value,
-              &quot;ResetOnMove is not copy constructible.&quot;);</code></pre>
+<h3>ResetOnMove <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>ResetOnMove(const ResetOnMove&amp; other) = delete</code></pre></td></tr><tr><th>Brief</th><td>copy構築を禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: copy元wrapper。</li></ul></td></tr><tr><th>Pre</th><td>呼び出し不可。</td></tr><tr><th>Post</th><td>呼び出し不可。</td></tr><tr><th>Example</th><td><pre><code>static_assert(!std::is_copy_constructible&lt;ket::object::ResetOnMove&lt;int&gt;&gt;::value,
+              &quot;ResetOnMove is not copy constructible.&quot;);</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-noexcept-343">
-<h3>noexcept <span class="meta">function</span></h3>
-<pre class="signature"><code>ResetOnMove(ResetOnMove&amp;&amp; other) noexcept( std::is_nothrow_move_constructible&lt;T&gt;::value &amp;&amp; std::is_nothrow_default_constructible&lt;T&gt;::value &amp;&amp; std::is_nothrow_move_assignable&lt;T&gt;::value)</code></pre>
-<p>move 構築後にsourceを値初期化状態へ戻す。</p>
-<h4>Parameters</h4>
-<ul><li>in,out other: move元wrapper。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`other`は有効なwrapper。`T{}`によるresetが有効。</td><td>構築先はmove前の`other.Get()`の値を保持し、`other.Get()`は`T{}`で代入された状態。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>例外発生時の構築先とsourceの状態は`T`のmove/reset操作の保証に従う。</li></ul>
-<h4>Example</h4>
-<pre><code>ket::object::ResetOnMove&lt;int&gt; source(42);
+<h3>noexcept <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>ResetOnMove(ResetOnMove&amp;&amp; other) noexcept( std::is_nothrow_move_constructible&lt;T&gt;::value &amp;&amp; std::is_nothrow_default_constructible&lt;T&gt;::value &amp;&amp; std::is_nothrow_move_assignable&lt;T&gt;::value)</code></pre></td></tr><tr><th>Brief</th><td>move 構築後にsourceを値初期化状態へ戻す。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out other: move元wrapper。</li></ul></td></tr><tr><th>Pre</th><td>`other`は有効なwrapper。`T{}`によるresetが有効。</td></tr><tr><th>Post</th><td>構築先はmove前の`other.Get()`の値を保持し、`other.Get()`は`T{}`で代入された状態。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>例外発生時の構築先とsourceの状態は`T`のmove/reset操作の保証に従う。</li></ul></td></tr><tr><th>Example</th><td><pre><code>ket::object::ResetOnMove&lt;int&gt; source(42);
 ket::object::ResetOnMove&lt;int&gt; moved(std::move(source));
-// moved.Get() == 42, source.Get() == 0</code></pre>
+// moved.Get() == 42, source.Get() == 0</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Get-379">
-<h3>Get <span class="meta">function</span></h3>
-<pre class="signature"><code>T&amp; Get() noexcept</code></pre>
-<p>保持値のmutable参照取得。</p>
-<h4>Return / retval</h4>
-<ul><li>value: 保持値へのmutable参照。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`*this`は有効なwrapper。</td><td>wrapperの保持値と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>ket::object::ResetOnMove&lt;int&gt; value;
+<h3>Get <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>T&amp; Get() noexcept</code></pre></td></tr><tr><th>Brief</th><td>保持値のmutable参照取得。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 保持値へのmutable参照。</li></ul></td></tr><tr><th>Pre</th><td>`*this`は有効なwrapper。</td></tr><tr><th>Post</th><td>wrapperの保持値と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>ket::object::ResetOnMove&lt;int&gt; value;
 value.Get() = 42;
-// value.Get() == 42</code></pre>
+// value.Get() == 42</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Get-392">
-<h3>Get <span class="meta">function</span></h3>
-<pre class="signature"><code>const T&amp; Get() const noexcept</code></pre>
-<p>保持値のconst参照取得。</p>
-<h4>Return / retval</h4>
-<ul><li>value: 保持値へのconst参照。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`*this`は有効なwrapper。</td><td>wrapperの保持値と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const ket::object::ResetOnMove&lt;int&gt; value(42);
+<h3>Get <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>const T&amp; Get() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>保持値のconst参照取得。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 保持値へのconst参照。</li></ul></td></tr><tr><th>Pre</th><td>`*this`は有効なwrapper。</td></tr><tr><th>Post</th><td>wrapperの保持値と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const ket::object::ResetOnMove&lt;int&gt; value(42);
 const auto current = value.Get();
-// current == 42</code></pre>
+// current == 42</code></pre></td></tr></tbody></table></div>
 </section>
 </main>
 <footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>

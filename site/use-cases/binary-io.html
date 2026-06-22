@@ -6,76 +6,113 @@
 <title>固定bufferから安全に読む・書く - ket reference</title>
 <style>:root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f7f8;
   --panel: #ffffff;
-  --ink: #202124;
-  --muted: #5f6368;
-  --line: #d9d9d2;
-  --link: #075a9c;
-  --accent: #176b51;
-  --code: #f0f3f5;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
-header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
 .brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
-nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
-a { color: var(--link); }
-nav a { text-decoration: none; }
-main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
-footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
-h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
-h1 { margin: 0 0 12px; font-size: 2rem; }
-h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
-h3 { margin-top: 22px; font-size: 1.08rem; }
-.lead { color: var(--muted); max-width: 78ch; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
-.card h3 { margin: 0 0 6px; }
-.meta { color: var(--muted); font-size: 0.9rem; }
-.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
-table { width: 100%; border-collapse: collapse; background: var(--panel); }
-th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
-th { background: #eef3f0; text-align: left; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
-.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
-.api-entry { margin: 16px 0; }
-.api-entry h3 { margin-bottom: 6px; }
-.matrix { font-size: 0.82rem; }
-.matrix th { position: sticky; top: 48px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
 .mark { text-align: center; color: var(--accent); font-weight: 700; }
-.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
-.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 720px) {
-  header { position: static; align-items: flex-start; flex-direction: column; }
-  main { padding: 18px 12px 36px; }
-  table { font-size: 0.88rem; }
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
 }</style>
 </head>
 <body>
+<a class="skip-link" href="#main">本文へ移動</a>
 <header>
 <div class="brand"><a href="../index.html">ket reference</a></div>
-<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html" aria-current="page">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
 </header>
-<main>
+<main id="main">
 <h1>固定bufferから安全に読む・書く</h1>
 <p class="lead">offset更新、size不足、endianness、non-owning viewを明示して、バイナリ処理の事故を減らす。</p>
 <h2>Decision Flow</h2>
 <ul><li>既存bufferを参照するだけなら byte_view を使う。</li><li>offsetを持って順に読むなら byte_reader を使う。</li><li>fixed bufferへ順に書くなら byte_writer を使う。</li><li>固定位置のendian変換だけなら endian を使う。</li><li>streamから読み書きするなら io_stream を使う。</li><li>単純なTLV recordなら tlv を使う。</li><li>診断出力には hex を添える。</li></ul>
 <h2>Modules</h2>
-<table><tr><th>Module</th><th>Role</th></tr>
-<tr><td><a href="../modules/byte_view.html">byte_view</a></td><td>non-owning byte範囲とslice境界を表す。</td></tr>
-<tr><td><a href="../modules/byte_reader.html">byte_reader</a></td><td>成功時だけoffsetを進める逐次読み取り。</td></tr>
-<tr><td><a href="../modules/byte_writer.html">byte_writer</a></td><td>成功時だけbufferとoffsetを更新する逐次書き込み。</td></tr>
-<tr><td><a href="../modules/endian.html">endian</a></td><td>byte orderを名前に出した固定幅load/store。</td></tr>
-<tr><td><a href="../modules/io_stream.html">io_stream</a></td><td>streamのshort read/writeを明示して扱う。</td></tr>
-<tr><td><a href="../modules/file.html">file</a></td><td>通常ファイルをtextまたはbytesとして丸ごと読み書きする。</td></tr>
-<tr><td><a href="../modules/tlv.html">tlv</a></td><td>1 recordのTLV wire formatをencode/decodeする。</td></tr>
-<tr><td><a href="../modules/hex.html">hex</a></td><td>byte列を調査しやすい文字列へ変換。</td></tr>
-</table>
+<div class="table-scroll"><table class="module-table"><thead><tr><th>Module</th><th>Role</th><th>Summary</th><th>Key APIs</th></tr></thead><tbody><tr><td><span class="module-name"><a href="../modules/byte_view.html">byte_view</a></span></td><td>non-owning byte範囲とslice境界を表す。</td><td>所有しないbyte範囲とslice境界を明示する。</td><td><a class="mono" href="../modules/byte_view.html#api-type-View-45">View</a> <a class="mono" href="../modules/byte_view.html#api-function-size_-75">size_</a> <a class="mono" href="../modules/byte_view.html#api-function-View-92">View</a> <a class="mono" href="../modules/byte_view.html#api-function-View-122">View</a> <span class="meta">+12</span></td></tr><tr><td><span class="module-name"><a href="../modules/byte_reader.html">byte_reader</a></span></td><td>成功時だけoffsetを進める逐次読み取り。</td><td>non-owning bufferから成功時だけoffsetを進めてbyte列を読む。</td><td><a class="mono" href="../modules/byte_reader.html#api-type-Reader-46">Reader</a> <a class="mono" href="../modules/byte_reader.html#api-function-Reader-63">Reader</a> <a class="mono" href="../modules/byte_reader.html#api-function-Reader-78">Reader</a> <a class="mono" href="../modules/byte_reader.html#api-function-Reader-108">Reader</a> <span class="meta">+11</span></td></tr><tr><td><span class="module-name"><a href="../modules/byte_writer.html">byte_writer</a></span></td><td>成功時だけbufferとoffsetを更新する逐次書き込み。</td><td>固定bufferへ成功時だけoffsetとbufferを更新してbyte列を書く。</td><td><a class="mono" href="../modules/byte_writer.html#api-type-Writer-47">Writer</a> <a class="mono" href="../modules/byte_writer.html#api-function-Writer-64">Writer</a> <a class="mono" href="../modules/byte_writer.html#api-function-Writer-79">Writer</a> <a class="mono" href="../modules/byte_writer.html#api-function-Writer-109">Writer</a> <span class="meta">+11</span></td></tr><tr><td><span class="module-name"><a href="../modules/endian.html">endian</a></span></td><td>byte orderを名前に出した固定幅load/store。</td><td>BE/LEと幅をAPI名に出した16/32/64bit読み書き。</td><td><a class="mono" href="../modules/endian.html#api-function-ByteSwap16-55">ByteSwap16</a> <a class="mono" href="../modules/endian.html#api-function-ByteSwap32-68">ByteSwap32</a> <a class="mono" href="../modules/endian.html#api-function-ByteSwap64-81">ByteSwap64</a> <a class="mono" href="../modules/endian.html#api-function-LoadBe16-97">LoadBe16</a> <span class="meta">+23</span></td></tr><tr><td><span class="module-name"><a href="../modules/io_stream.html">io_stream</a></span></td><td>streamのshort read/writeを明示して扱う。</td><td>short read/write判定、行末trim付き行読み、書式状態のscope復元を扱う。</td><td><a class="mono" href="../modules/io_stream.html#api-function-TryReadExactly-64">TryReadExactly</a> <a class="mono" href="../modules/io_stream.html#api-function-TryWriteAll-86">TryWriteAll</a> <a class="mono" href="../modules/io_stream.html#api-function-TryReadLineTrimRightAscii-106">TryReadLineTrimRightAscii</a> <a class="mono" href="../modules/io_stream.html#api-type-FormatStateSaver-113">FormatStateSaver</a> <span class="meta">+4</span></td></tr><tr><td><span class="module-name"><a href="../modules/file.html">file</a></span></td><td>通常ファイルをtextまたはbytesとして丸ごと読み書きする。</td><td>通常ファイルの全体読み込み、全体書き込み、存在確認、サイズ取得を扱う。</td><td><a class="mono" href="../modules/file.html#api-function-TryReadAllText-71">TryReadAllText</a> <a class="mono" href="../modules/file.html#api-function-TryReadAllBytes-97">TryReadAllBytes</a> <a class="mono" href="../modules/file.html#api-function-TryWriteAllText-122">TryWriteAllText</a> <a class="mono" href="../modules/file.html#api-function-TryWriteAllBytes-148">TryWriteAllBytes</a> <span class="meta">+3</span></td></tr><tr><td><span class="module-name"><a href="../modules/tlv.html">tlv</a></span></td><td>1 recordのTLV wire formatをencode/decodeする。</td><td>type:uint16、length:uint32、value bytesの1 recordをencode/decodeする。</td><td><a class="mono" href="../modules/tlv.html#api-type-View-48">View</a> <a class="mono" href="../modules/tlv.html#api-type-DecodeResult-59">DecodeResult</a> <a class="mono" href="../modules/tlv.html#api-function-Encode-84">Encode</a> <a class="mono" href="../modules/tlv.html#api-function-Append-109">Append</a> <span class="meta">+1</span></td></tr><tr><td><span class="module-name"><a href="../modules/hex.html">hex</a></span></td><td>byte列を調査しやすい文字列へ変換。</td><td>byte列、整数、診断用hexdumpをhex文字列へ変換する。</td><td><a class="mono" href="../modules/hex.html#api-type-LetterCase-48">LetterCase</a> <a class="mono" href="../modules/hex.html#api-type-FormatOptions-57">FormatOptions</a> <a class="mono" href="../modules/hex.html#api-function-Format-78">Format</a> <a class="mono" href="../modules/hex.html#api-function-Decode-116">Decode</a> <span class="meta">+2</span></td></tr></tbody></table></div>
 <h2>Recipe</h2>
 <ul><li>入力bufferを byte_view::View で受ける。</li><li>構造を順番に読む箇所だけ byte_reader::Reader を作る。</li><li>不足時はbool失敗を上位へ返し、offset不変を利用する。</li><li>失敗調査用に hex::Dump で該当範囲を出す。</li></ul>
 <h2>See Also</h2>

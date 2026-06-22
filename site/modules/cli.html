@@ -6,257 +6,195 @@
 <title>ket::cli - ket reference</title>
 <style>:root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f7f8;
   --panel: #ffffff;
-  --ink: #202124;
-  --muted: #5f6368;
-  --line: #d9d9d2;
-  --link: #075a9c;
-  --accent: #176b51;
-  --code: #f0f3f5;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
-header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
 .brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
-nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
-a { color: var(--link); }
-nav a { text-decoration: none; }
-main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
-footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
-h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
-h1 { margin: 0 0 12px; font-size: 2rem; }
-h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
-h3 { margin-top: 22px; font-size: 1.08rem; }
-.lead { color: var(--muted); max-width: 78ch; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
-.card h3 { margin: 0 0 6px; }
-.meta { color: var(--muted); font-size: 0.9rem; }
-.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
-table { width: 100%; border-collapse: collapse; background: var(--panel); }
-th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
-th { background: #eef3f0; text-align: left; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
-.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
-.api-entry { margin: 16px 0; }
-.api-entry h3 { margin-bottom: 6px; }
-.matrix { font-size: 0.82rem; }
-.matrix th { position: sticky; top: 48px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
 .mark { text-align: center; color: var(--accent); font-weight: 700; }
-.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
-.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 720px) {
-  header { position: static; align-items: flex-start; flex-direction: column; }
-  main { padding: 18px 12px 36px; }
-  table { font-size: 0.88rem; }
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
 }</style>
 </head>
 <body>
+<a class="skip-link" href="#main">本文へ移動</a>
 <header>
 <div class="brand"><a href="../index.html">ket reference</a></div>
-<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
 </header>
-<main>
+<main id="main">
 <h1>ket::cli</h1>
 <p class="lead">argc/argvからoption有無、値、positional argumentsを取得する。</p>
 <h2>Module Facts</h2>
-<table>
-<tr><th>Header</th><td>modules/cli/ket_cli.h</td></tr>
-<tr><th>Status</th><td>verified</td></tr>
-<tr><th>C++ Min</th><td>C++17</td></tr>
-<tr><th>Tests</th><td>GoogleTest</td></tr>
-<tr><th>Progress note</th><td>argc/argvから小さいCLI optionを取得</td></tr>
-<tr><th>Drop-in</th><td>`ket_cli.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
-<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
-<tr><th>Namespace</th><td>公開API：ket::cli 内部実装：ket::cli::detail</td></tr>
-</table>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/cli/ket_cli.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++17</td></tr><tr><th>Tests</th><td>GoogleTest</td></tr><tr><th>Progress note</th><td>argc/argvから小さいCLI optionを取得</td></tr><tr><th>Drop-in</th><td>`ket_cli.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::cli 内部実装：ket::cli::detail</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/boundary.html">入力境界・外部境界</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span></span></td></tr></tbody></table></div>
 <h2>Use This When</h2>
 <ul><li>小さいツールで --key value や --key=value を扱いたい時。</li><li>CLI frameworkを入れるほどではない時。</li></ul>
 <h2>Do Not Use This When</h2>
 <ul><li>subcommand、help生成、shell風quote処理が必要な時。</li><li>設定fileや環境変数の統合管理をしたい時。</li></ul>
-<h2>Views</h2>
-<p class="pillrow"><span class="pill"><a href="../categories/boundary.html">入力境界・外部境界</a></span><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span></p>
 <h2>Related Modules</h2>
 <p class="pillrow"><span class="pill"><a href="../modules/parse.html">parse</a></span> <span class="pill"><a href="../modules/port.html">port</a></span> <span class="pill"><a href="../modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="../modules/enums.html">enums</a></span></p>
 <h2>Notes</h2>
 <ul><li>値のparseは cli ではなく parse やdomain moduleへ渡す。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/cli.html#api-type-ArgvView-51">cli::ArgvView</a></td><td>type</td><td>argc/argvのnon-owning view。</td></tr><tr><td><a href="../modules/cli.html#api-function-argv_-69">cli::argv_</a></td><td>function</td><td>argc/argv viewの構築。</td></tr><tr><td><a href="../modules/cli.html#api-function-ArgvView-87">cli::ArgvView</a></td><td>function</td><td>argv viewのコピー構築。</td></tr><tr><td><a href="../modules/cli.html#api-function-ArgvView-117">cli::ArgvView</a></td><td>function</td><td>argv viewのmove構築。</td></tr><tr><td><a href="../modules/cli.html#api-function-Size-147">cli::Size</a></td><td>function</td><td>argv要素数の取得。</td></tr><tr><td><a href="../modules/cli.html#api-function-AtOrEmpty-166">cli::AtOrEmpty</a></td><td>function</td><td>指定indexのargument取得。</td></tr><tr><td><a href="../modules/cli.html#api-function-ProgramNameOrEmpty-196">cli::ProgramNameOrEmpty</a></td><td>function</td><td>program nameの取得。</td></tr><tr><td><a href="../modules/cli.html#api-function-HasOption-222">cli::HasOption</a></td><td>function</td><td>optionの有無確認。</td></tr><tr><td><a href="../modules/cli.html#api-function-OptionValue-243">cli::OptionValue</a></td><td>function</td><td>option値の取得。</td></tr><tr><td><a href="../modules/cli.html#api-function-OptionValueOr-264">cli::OptionValueOr</a></td><td>function</td><td>option値またはfallbackの取得。</td></tr><tr><td><a href="../modules/cli.html#api-function-PositionalArguments-283">cli::PositionalArguments</a></td><td>function</td><td>schemaなしのpositional argument取得。</td></tr></table>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/cli.html#api-type-ArgvView-51">cli::ArgvView</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>class ArgvView</code></span></td><td>argc/argvのnon-owning view。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-argv_-69">cli::argv_</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>ArgvView(int argc, const char* const* argv) noexcept : size_(argc &gt; 0 &amp;&amp; argv != nullptr ? static_cast&lt;std::size_t&gt;(argc) : 0U), argv_(argc &gt; 0 &amp;&amp; argv != nullptr ? argv : nullptr)</code></span></td><td>argc/argv viewの構築。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-ArgvView-87">cli::ArgvView</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>ArgvView(const ArgvView&amp; other) noexcept = default</code></span></td><td>argv viewのコピー構築。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-ArgvView-117">cli::ArgvView</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>ArgvView(ArgvView&amp;&amp; other) noexcept = default</code></span></td><td>argv viewのmove構築。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-Size-147">cli::Size</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>[[nodiscard]] std::size_t Size() const noexcept</code></span></td><td>argv要素数の取得。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-AtOrEmpty-166">cli::AtOrEmpty</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>[[nodiscard]] std::string_view AtOrEmpty(std::size_t index) const noexcept</code></span></td><td>指定indexのargument取得。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-ProgramNameOrEmpty-196">cli::ProgramNameOrEmpty</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>[[nodiscard]] std::string_view ProgramNameOrEmpty() const noexcept</code></span></td><td>program nameの取得。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-HasOption-222">cli::HasOption</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>[[nodiscard]] inline bool HasOption(ArgvView args, std::string_view name) noexcept</code></span></td><td>optionの有無確認。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-OptionValue-243">cli::OptionValue</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>[[nodiscard]] inline std::optional&lt;std::string_view&gt; OptionValue(ArgvView args, std::string_view name) noexcept</code></span></td><td>option値の取得。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-OptionValueOr-264">cli::OptionValueOr</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>[[nodiscard]] inline std::string_view OptionValueOr(ArgvView args, std::string_view name, std::string_view fallback) noexcept</code></span></td><td>option値またはfallbackの取得。</td></tr><tr><td><span class="api-name"><a href="../modules/cli.html#api-function-PositionalArguments-283">cli::PositionalArguments</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>[[nodiscard]] inline std::vector&lt;std::string_view&gt; PositionalArguments(ArgvView args)</code></span></td><td>schemaなしのpositional argument取得。</td></tr></tbody></table></div>
 <h2>API Details</h2>
 <section class="api-entry" id="api-type-ArgvView-51">
-<h3>ArgvView <span class="meta">type</span></h3>
-<pre class="signature"><code>class ArgvView</code></pre>
-<p>argc/argvのnon-owning view。</p>
-<h4>Notes</h4>
-<ul><li>各argumentはnull終端C文字列として扱う。`argv[i] == nullptr`は空argument。</li><li>`argv` pointer配列と各非null文字列は、viewと戻り値の利用中に有効なまま保持。</li></ul>
+<h3>ArgvView <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>class ArgvView</code></pre></td></tr><tr><th>Brief</th><td>argc/argvのnon-owning view。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>各argumentはnull終端C文字列として扱う。`argv[i] == nullptr`は空argument。</li><li>`argv` pointer配列と各非null文字列は、viewと戻り値の利用中に有効なまま保持。</li></ul></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-argv_-69">
-<h3>argv_ <span class="meta">function</span></h3>
-<pre class="signature"><code>ArgvView(int argc, const char* const* argv) noexcept : size_(argc &gt; 0 &amp;&amp; argv != nullptr ? static_cast&lt;std::size_t&gt;(argc) : 0U), argv_(argc &gt; 0 &amp;&amp; argv != nullptr ? argv : nullptr)</code></pre>
-<p>argc/argv viewの構築。</p>
-<h4>Parameters</h4>
-<ul><li>in argc: argv要素数。</li><li>in argv: argv配列先頭。`argc &gt; 0 &amp;&amp; argv == nullptr`は空view。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`argv`が非nullの場合、`argc`個のポインタを読み取り可能。各非null文字列はnull終端。</td><td>`argc &lt; 0`または`argv == nullptr`の場合は空view。 文字列領域とpointer配列の所有権は取得なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--help&quot;};
+<h3>argv_ <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>ArgvView(int argc, const char* const* argv) noexcept : size_(argc &gt; 0 &amp;&amp; argv != nullptr ? static_cast&lt;std::size_t&gt;(argc) : 0U), argv_(argc &gt; 0 &amp;&amp; argv != nullptr ? argv : nullptr)</code></pre></td></tr><tr><th>Brief</th><td>argc/argv viewの構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in argc: argv要素数。</li><li>in argv: argv配列先頭。`argc &gt; 0 &amp;&amp; argv == nullptr`は空view。</li></ul></td></tr><tr><th>Pre</th><td>`argv`が非nullの場合、`argc`個のポインタを読み取り可能。各非null文字列はnull終端。</td></tr><tr><th>Post</th><td>`argc &lt; 0`または`argv == nullptr`の場合は空view。 文字列領域とpointer配列の所有権は取得なし。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--help&quot;};
 const auto args = ket::cli::ArgvView(2, argv);
 // args.Size() == 2
-// args.ProgramNameOrEmpty() == &quot;tool&quot;</code></pre>
+// args.ProgramNameOrEmpty() == &quot;tool&quot;</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ArgvView-87">
-<h3>ArgvView <span class="meta">function</span></h3>
-<pre class="signature"><code>ArgvView(const ArgvView&amp; other) noexcept = default</code></pre>
-<p>argv viewのコピー構築。</p>
-<h4>Parameters</h4>
-<ul><li>in other: コピー元view。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。コピー元viewは有効なArgvView。</td><td>コピー元viewと同じpointer配列を参照。コピー元viewと外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;};
+<h3>ArgvView <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>ArgvView(const ArgvView&amp; other) noexcept = default</code></pre></td></tr><tr><th>Brief</th><td>argv viewのコピー構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: コピー元view。</li></ul></td></tr><tr><th>Pre</th><td>なし。コピー元viewは有効なArgvView。</td></tr><tr><th>Post</th><td>コピー元viewと同じpointer配列を参照。コピー元viewと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;};
 const auto source = ket::cli::ArgvView(1, argv);
 const auto copied = ket::cli::ArgvView(source);
-// copied.ProgramNameOrEmpty() == &quot;tool&quot;</code></pre>
+// copied.ProgramNameOrEmpty() == &quot;tool&quot;</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ArgvView-117">
-<h3>ArgvView <span class="meta">function</span></h3>
-<pre class="signature"><code>ArgvView(ArgvView&amp;&amp; other) noexcept = default</code></pre>
-<p>argv viewのmove構築。</p>
-<h4>Parameters</h4>
-<ul><li>in other: move元view。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。move元viewは有効なArgvView。</td><td>move前の`other`と同じpointer配列を参照。文字列領域の所有権は取得なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;};
+<h3>ArgvView <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>ArgvView(ArgvView&amp;&amp; other) noexcept = default</code></pre></td></tr><tr><th>Brief</th><td>argv viewのmove構築。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: move元view。</li></ul></td></tr><tr><th>Pre</th><td>なし。move元viewは有効なArgvView。</td></tr><tr><th>Post</th><td>move前の`other`と同じpointer配列を参照。文字列領域の所有権は取得なし。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;};
 auto source = ket::cli::ArgvView(1, argv);
 const auto moved = ket::cli::ArgvView(static_cast&lt;ket::cli::ArgvView&amp;&amp;&gt;(source));
-// moved.ProgramNameOrEmpty() == &quot;tool&quot;</code></pre>
+// moved.ProgramNameOrEmpty() == &quot;tool&quot;</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Size-147">
-<h3>Size <span class="meta">function</span></h3>
-<pre class="signature"><code>[[nodiscard]] std::size_t Size() const noexcept</code></pre>
-<p>argv要素数の取得。</p>
-<h4>Return / retval</h4>
-<ul><li>value: view内のargv要素数。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>viewと外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;, &quot;input.txt&quot;};
+<h3>Size <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>[[nodiscard]] std::size_t Size() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>argv要素数の取得。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: view内のargv要素数。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>viewと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;, &quot;input.txt&quot;};
 const auto args = ket::cli::ArgvView(2, argv);
 const auto size = args.Size();
-// size == 2</code></pre>
+// size == 2</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-AtOrEmpty-166">
-<h3>AtOrEmpty <span class="meta">function</span></h3>
-<pre class="signature"><code>[[nodiscard]] std::string_view AtOrEmpty(std::size_t index) const noexcept</code></pre>
-<p>指定indexのargument取得。</p>
-<h4>Parameters</h4>
-<ul><li>in index: 取得対象index。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: 指定indexのargument。</li><li>empty: 範囲外、空view、または`argv[index] == nullptr`。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。範囲外とnull要素は空argumentとして扱う。</td><td>viewと外部状態の変更なし。戻り値は`argv[index]`の文字列領域を参照。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;, &quot;input.txt&quot;};
+<h3>AtOrEmpty <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>[[nodiscard]] std::string_view AtOrEmpty(std::size_t index) const noexcept</code></pre></td></tr><tr><th>Brief</th><td>指定indexのargument取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in index: 取得対象index。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 指定indexのargument。</li><li>empty: 範囲外、空view、または`argv[index] == nullptr`。</li></ul></td></tr><tr><th>Pre</th><td>なし。範囲外とnull要素は空argumentとして扱う。</td></tr><tr><th>Post</th><td>viewと外部状態の変更なし。戻り値は`argv[index]`の文字列領域を参照。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;, &quot;input.txt&quot;};
 const auto args = ket::cli::ArgvView(2, argv);
 const auto value = args.AtOrEmpty(1U);
-// value == &quot;input.txt&quot;</code></pre>
+// value == &quot;input.txt&quot;</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ProgramNameOrEmpty-196">
-<h3>ProgramNameOrEmpty <span class="meta">function</span></h3>
-<pre class="signature"><code>[[nodiscard]] std::string_view ProgramNameOrEmpty() const noexcept</code></pre>
-<p>program nameの取得。</p>
-<h4>Return / retval</h4>
-<ul><li>value: `argv[0]`。</li><li>empty: 空view、または`argv[0] == nullptr`。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。</td><td>viewと外部状態の変更なし。戻り値はargv文字列領域を参照。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;};
+<h3>ProgramNameOrEmpty <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>[[nodiscard]] std::string_view ProgramNameOrEmpty() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>program nameの取得。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `argv[0]`。</li><li>empty: 空view、または`argv[0] == nullptr`。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>viewと外部状態の変更なし。戻り値はargv文字列領域を参照。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;};
 const auto args = ket::cli::ArgvView(1, argv);
 const auto program = args.ProgramNameOrEmpty();
-// program == &quot;tool&quot;</code></pre>
+// program == &quot;tool&quot;</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-HasOption-222">
-<h3>HasOption <span class="meta">function</span></h3>
-<pre class="signature"><code>[[nodiscard]] inline bool HasOption(ArgvView args, std::string_view name) noexcept</code></pre>
-<p>optionの有無確認。</p>
-<h4>Parameters</h4>
-<ul><li>in args: 検索対象argv view。</li><li>in name: 検索するoption名。`&quot;--&quot;`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>true: `name`または`name=value`に一致するoptionが存在。</li><li>false: option不在、`name`不正、またはbare `--`より後ろにだけ存在。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。program nameは検索対象外。bare `--`はoption終端。</td><td>引数と外部状態の変更なし。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--help&quot;};
+<h3>HasOption <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>[[nodiscard]] inline bool HasOption(ArgvView args, std::string_view name) noexcept</code></pre></td></tr><tr><th>Brief</th><td>optionの有無確認。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in args: 検索対象argv view。</li><li>in name: 検索するoption名。`&quot;--&quot;`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: `name`または`name=value`に一致するoptionが存在。</li><li>false: option不在、`name`不正、またはbare `--`より後ろにだけ存在。</li></ul></td></tr><tr><th>Pre</th><td>なし。program nameは検索対象外。bare `--`はoption終端。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--help&quot;};
 const auto args = ket::cli::ArgvView(2, argv);
 const auto has_help = ket::cli::HasOption(args, &quot;--help&quot;);
-// has_help == true</code></pre>
+// has_help == true</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-OptionValue-243">
-<h3>OptionValue <span class="meta">function</span></h3>
-<pre class="signature"><code>[[nodiscard]] inline std::optional&lt;std::string_view&gt; OptionValue(ArgvView args, std::string_view name) noexcept</code></pre>
-<p>option値の取得。</p>
-<h4>Parameters</h4>
-<ul><li>in args: 検索対象argv view。</li><li>in name: 検索するoption名。`&quot;--&quot;`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `--key value`または`--key=value`の値。</li><li>std::nullopt: option不在、`name`不正、値なし、次要素が別option、またはbare `--`より後ろにだけ存在。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。program nameは検索対象外。</td><td>引数と外部状態の変更なし。戻り値はargv文字列領域を参照。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>重複optionは先の出現を採用し、先の出現に値がない場合は後続の値を見ない。</li><li>inline値とseparate値は空文字列を有効な値として返す。shell quote展開は扱わない。</li></ul>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--id&quot;, &quot;123&quot;};
+<h3>OptionValue <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>[[nodiscard]] inline std::optional&lt;std::string_view&gt; OptionValue(ArgvView args, std::string_view name) noexcept</code></pre></td></tr><tr><th>Brief</th><td>option値の取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in args: 検索対象argv view。</li><li>in name: 検索するoption名。`&quot;--&quot;`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `--key value`または`--key=value`の値。</li><li>std::nullopt: option不在、`name`不正、値なし、次要素が別option、またはbare `--`より後ろにだけ存在。</li></ul></td></tr><tr><th>Pre</th><td>なし。program nameは検索対象外。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。戻り値はargv文字列領域を参照。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>重複optionは先の出現を採用し、先の出現に値がない場合は後続の値を見ない。</li><li>inline値とseparate値は空文字列を有効な値として返す。shell quote展開は扱わない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--id&quot;, &quot;123&quot;};
 const auto args = ket::cli::ArgvView(3, argv);
 const auto id = ket::cli::OptionValue(args, &quot;--id&quot;);
-// id == std::optional&lt;std::string_view&gt;(&quot;123&quot;)</code></pre>
+// id == std::optional&lt;std::string_view&gt;(&quot;123&quot;)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-OptionValueOr-264">
-<h3>OptionValueOr <span class="meta">function</span></h3>
-<pre class="signature"><code>[[nodiscard]] inline std::string_view OptionValueOr(ArgvView args, std::string_view name, std::string_view fallback) noexcept</code></pre>
-<p>option値またはfallbackの取得。</p>
-<h4>Parameters</h4>
-<ul><li>in args: 検索対象argv view。</li><li>in name: 検索するoption名。`&quot;--&quot;`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。</li><li>in fallback: option値が取得できない場合に返す値。戻り値の利用中は参照先を保持。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `--key value`または`--key=value`の値。</li><li>fallback: option不在、`name`不正、値なし、次要素が別option、またはbare `--`より後ろにだけ存在。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。program nameは検索対象外。</td><td>引数と外部状態の変更なし。戻り値はargv文字列領域またはfallbackを参照。</td></tr></table>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--id&quot;};
+<h3>OptionValueOr <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>[[nodiscard]] inline std::string_view OptionValueOr(ArgvView args, std::string_view name, std::string_view fallback) noexcept</code></pre></td></tr><tr><th>Brief</th><td>option値またはfallbackの取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in args: 検索対象argv view。</li><li>in name: 検索するoption名。`&quot;--&quot;`で始まり、名前部分が非空で、`=`を含まない名前のみ有効。</li><li>in fallback: option値が取得できない場合に返す値。戻り値の利用中は参照先を保持。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `--key value`または`--key=value`の値。</li><li>fallback: option不在、`name`不正、値なし、次要素が別option、またはbare `--`より後ろにだけ存在。</li></ul></td></tr><tr><th>Pre</th><td>なし。program nameは検索対象外。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。戻り値はargv文字列領域またはfallbackを参照。</td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;, &quot;--id&quot;};
 const auto args = ket::cli::ArgvView(2, argv);
 const auto id = ket::cli::OptionValueOr(args, &quot;--id&quot;, &quot;fallback&quot;);
-// id == &quot;fallback&quot;</code></pre>
+// id == &quot;fallback&quot;</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-PositionalArguments-283">
-<h3>PositionalArguments <span class="meta">function</span></h3>
-<pre class="signature"><code>[[nodiscard]] inline std::vector&lt;std::string_view&gt; PositionalArguments(ArgvView args)</code></pre>
-<p>schemaなしのpositional argument取得。</p>
-<h4>Parameters</h4>
-<ul><li>in args: 取得対象argv view。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: program nameとoption形argumentを除くargumentの列。bare `--`以降はすべて保持。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>なし。option schemaは持たず、separate option値はpositional候補として保持。</td><td>引数と外部状態の変更なし。戻り値の各viewはargv文字列領域を参照。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>結果vectorの確保があるためnoexceptなし。`--id 123`の`123`はschemaなしでは値か positionalか判別しないため保持。</li></ul>
-<h4>Example</h4>
-<pre><code>const char* argv[] = {&quot;tool&quot;, &quot;input.txt&quot;, &quot;--verbose&quot;, &quot;output.txt&quot;};
+<h3>PositionalArguments <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>[[nodiscard]] inline std::vector&lt;std::string_view&gt; PositionalArguments(ArgvView args)</code></pre></td></tr><tr><th>Brief</th><td>schemaなしのpositional argument取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in args: 取得対象argv view。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: program nameとoption形argumentを除くargumentの列。bare `--`以降はすべて保持。</li></ul></td></tr><tr><th>Pre</th><td>なし。option schemaは持たず、separate option値はpositional候補として保持。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。戻り値の各viewはargv文字列領域を参照。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>結果vectorの確保があるためnoexceptなし。`--id 123`の`123`はschemaなしでは値か positionalか判別しないため保持。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const char* argv[] = {&quot;tool&quot;, &quot;input.txt&quot;, &quot;--verbose&quot;, &quot;output.txt&quot;};
 const auto args = ket::cli::ArgvView(4, argv);
 const auto positional = ket::cli::PositionalArguments(args);
-// positional == {&quot;input.txt&quot;, &quot;output.txt&quot;}</code></pre>
+// positional == {&quot;input.txt&quot;, &quot;output.txt&quot;}</code></pre></td></tr></tbody></table></div>
 </section>
 </main>
 <footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>

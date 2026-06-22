@@ -6,280 +6,195 @@
 <title>ket::optional - ket reference</title>
 <style>:root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f7f8;
   --panel: #ffffff;
-  --ink: #202124;
-  --muted: #5f6368;
-  --line: #d9d9d2;
-  --link: #075a9c;
-  --accent: #176b51;
-  --code: #f0f3f5;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
-header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
 .brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
-nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
-a { color: var(--link); }
-nav a { text-decoration: none; }
-main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
-footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
-h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
-h1 { margin: 0 0 12px; font-size: 2rem; }
-h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
-h3 { margin-top: 22px; font-size: 1.08rem; }
-.lead { color: var(--muted); max-width: 78ch; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
-.card h3 { margin: 0 0 6px; }
-.meta { color: var(--muted); font-size: 0.9rem; }
-.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
-table { width: 100%; border-collapse: collapse; background: var(--panel); }
-th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
-th { background: #eef3f0; text-align: left; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
-.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
-.api-entry { margin: 16px 0; }
-.api-entry h3 { margin-bottom: 6px; }
-.matrix { font-size: 0.82rem; }
-.matrix th { position: sticky; top: 48px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
 .mark { text-align: center; color: var(--accent); font-weight: 700; }
-.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
-.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 720px) {
-  header { position: static; align-items: flex-start; flex-direction: column; }
-  main { padding: 18px 12px 36px; }
-  table { font-size: 0.88rem; }
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
 }</style>
 </head>
 <body>
+<a class="skip-link" href="#main">本文へ移動</a>
 <header>
 <div class="brand"><a href="../index.html">ket reference</a></div>
-<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
 </header>
-<main>
+<main id="main">
 <h1>ket::optional</h1>
 <p class="lead">optionalの値変換、合成、遅延fallback評価を扱う。</p>
 <h2>Module Facts</h2>
-<table>
-<tr><th>Header</th><td>modules/optional/ket_optional.h</td></tr>
-<tr><th>Status</th><td>verified</td></tr>
-<tr><th>C++ Min</th><td>C++17</td></tr>
-<tr><th>Tests</th><td>GoogleTest</td></tr>
-<tr><th>Progress note</th><td>optionalの値変換、合成、遅延fallback評価</td></tr>
-<tr><th>Drop-in</th><td>`ket_optional.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
-<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
-<tr><th>Namespace</th><td>公開API：ket::optional 内部実装：ket::optional::detail</td></tr>
-</table>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/optional/ket_optional.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++17</td></tr><tr><th>Tests</th><td>GoogleTest</td></tr><tr><th>Progress note</th><td>optionalの値変換、合成、遅延fallback評価</td></tr><tr><th>Drop-in</th><td>`ket_optional.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::optional 内部実装：ket::optional::detail</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="../categories/data.html">データ構造・合成</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span> <span class="pill"><a href="../use-cases/template-type.html">template、tuple、variantの儀式を短くする</a></span></span></td></tr></tbody></table></div>
 <h2>Use This When</h2>
 <ul><li>optional保持値をmap/and_then風に合成したい時。</li><li>fallbackを必要時だけ評価したい時。</li></ul>
 <h2>Do Not Use This When</h2>
 <ul><li>C++23標準optional memberで十分な時。</li><li>error理由を保持したい時。</li></ul>
-<h2>Views</h2>
-<p class="pillrow"><span class="pill"><a href="../categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="../categories/data.html">データ構造・合成</a></span><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span> <span class="pill"><a href="../use-cases/template-type.html">template、tuple、variantの儀式を短くする</a></span></p>
 <h2>Related Modules</h2>
 <p class="pillrow"><span class="pill"><a href="../modules/parse.html">parse</a></span> <span class="pill"><a href="../modules/variant.html">variant</a></span> <span class="pill"><a href="../modules/meta.html">meta</a></span></p>
 <h2>Notes</h2>
 <ul><li>参照保持はstd::reference_wrapperを明示的に使う。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/optional.html#api-function-Map-67">optional::Map</a></td><td>function</td><td>mutable optional保持値の変換。</td></tr><tr><td><a href="../modules/optional.html#api-function-Map-91">optional::Map</a></td><td>function</td><td>const optional保持値の変換。</td></tr><tr><td><a href="../modules/optional.html#api-function-Map-117">optional::Map</a></td><td>function</td><td>optional保持値のmove変換。</td></tr><tr><td><a href="../modules/optional.html#api-function-Map-145">optional::Map</a></td><td>function</td><td>const rvalue optional保持値の変換。</td></tr><tr><td><a href="../modules/optional.html#api-function-AndThen-170">optional::AndThen</a></td><td>function</td><td>mutable optionalを返すmapperによるoptional合成。</td></tr><tr><td><a href="../modules/optional.html#api-function-AndThen-193">optional::AndThen</a></td><td>function</td><td>const optionalを返すmapperによるoptional合成。</td></tr><tr><td><a href="../modules/optional.html#api-function-AndThen-217">optional::AndThen</a></td><td>function</td><td>optionalを返すmapperによるoptionalのmove合成。</td></tr><tr><td><a href="../modules/optional.html#api-function-AndThen-243">optional::AndThen</a></td><td>function</td><td>optionalを返すmapperによるconst rvalue optionalの合成。</td></tr><tr><td><a href="../modules/optional.html#api-function-ValueOrEval-264">optional::ValueOrEval</a></td><td>function</td><td>optional保持値、または遅延評価fallbackの値取得。</td></tr><tr><td><a href="../modules/optional.html#api-function-ValueOrEval-287">optional::ValueOrEval</a></td><td>function</td><td>optional保持値のmove、または遅延評価fallbackの値取得。</td></tr></table>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-Map-67">optional::Map</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto Map(std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></span></td><td>mutable optional保持値の変換。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-Map-91">optional::Map</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto Map(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></span></td><td>const optional保持値の変換。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-Map-117">optional::Map</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto Map(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></span></td><td>optional保持値のmove変換。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-Map-145">optional::Map</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto Map(const std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></span></td><td>const rvalue optional保持値の変換。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-AndThen-170">optional::AndThen</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></span></td><td>mutable optionalを返すmapperによるoptional合成。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-AndThen-193">optional::AndThen</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></span></td><td>const optionalを返すmapperによるoptional合成。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-AndThen-217">optional::AndThen</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></span></td><td>optionalを返すmapperによるoptionalのmove合成。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-AndThen-243">optional::AndThen</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(const std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></span></td><td>optionalを返すmapperによるconst rvalue optionalの合成。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-ValueOrEval-264">optional::ValueOrEval</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr T ValueOrEval(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; fallback_factory)</code></span></td><td>optional保持値、または遅延評価fallbackの値取得。</td></tr><tr><td><span class="api-name"><a href="../modules/optional.html#api-function-ValueOrEval-287">optional::ValueOrEval</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T, typename F&gt; constexpr T ValueOrEval(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; fallback_factory)</code></span></td><td>optional保持値のmove、または遅延評価fallbackの値取得。</td></tr></tbody></table></div>
 <h2>API Details</h2>
 <section class="api-entry" id="api-function-Map-67">
-<h3>Map <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre>
-<p>mutable optional保持値の変換。</p>
-<h4>Parameters</h4>
-<ul><li>in,out value: 変換対象のoptional。値を持つ場合はmapperへmutable参照を渡す。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, *value)`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td><td>空の場合は`f`を呼ばない。値ありの場合、mapperは`T&amp;`を通じて保持値を変更できる。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>参照を保持したい場合は、mapperが`std::reference_wrapper&lt;T&gt;`を明示的に返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>auto source = std::optional&lt;int&gt;(2);
+<h3>Map <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>mutable optional保持値の変換。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out value: 変換対象のoptional。値を持つ場合はmapperへmutable参照を渡す。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, *value)`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。値ありの場合、mapperは`T&amp;`を通じて保持値を変更できる。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>参照を保持したい場合は、mapperが`std::reference_wrapper&lt;T&gt;`を明示的に返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>auto source = std::optional&lt;int&gt;(2);
 const auto value = ket::optional::Map(source, [](int&amp; x) {
     x += 1;
     return x * 3;
 });
-// source == std::optional&lt;int&gt;(3), value == std::optional&lt;int&gt;(9)</code></pre>
+// source == std::optional&lt;int&gt;(3), value == std::optional&lt;int&gt;(9)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Map-91">
-<h3>Map <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre>
-<p>const optional保持値の変換。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 変換対象のoptional。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, *value)`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>参照を保持したい場合は、mapperが`std::reference_wrapper&lt;T&gt;`を明示的に返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>const auto value = ket::optional::Map(std::optional&lt;int&gt;(2), [](int x) {
+<h3>Map <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>const optional保持値の変換。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 変換対象のoptional。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, *value)`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>参照を保持したい場合は、mapperが`std::reference_wrapper&lt;T&gt;`を明示的に返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::optional::Map(std::optional&lt;int&gt;(2), [](int x) {
     return x * 3;
 });
-// value == std::optional&lt;int&gt;(6)</code></pre>
+// value == std::optional&lt;int&gt;(6)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Map-117">
-<h3>Map <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre>
-<p>optional保持値のmove変換。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 変換対象のoptional。値を持つ場合は保持値をmapperへmove可能。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, std::move(*value))`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td><td>空の場合は`f`を呼ばない。値ありの場合は`value`の保持値がmove元になり得る。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>参照を保持したい場合は、mapperが`std::reference_wrapper&lt;T&gt;`を明示的に返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>auto text = ket::optional::Map(std::optional&lt;std::string&gt;(&quot;id&quot;), [](std::string x) {
+<h3>Map <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>optional保持値のmove変換。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 変換対象のoptional。値を持つ場合は保持値をmapperへmove可能。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, std::move(*value))`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。値ありの場合は`value`の保持値がmove元になり得る。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>参照を保持したい場合は、mapperが`std::reference_wrapper&lt;T&gt;`を明示的に返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>auto text = ket::optional::Map(std::optional&lt;std::string&gt;(&quot;id&quot;), [](std::string x) {
     return x.size();
 });
-// text == std::optional&lt;std::size_t&gt;(2)</code></pre>
+// text == std::optional&lt;std::size_t&gt;(2)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-Map-145">
-<h3>Map <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(const std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre>
-<p>const rvalue optional保持値の変換。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 変換対象のoptional。値を持つ場合は保持値をconst rvalueとしてmapperへ渡す。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, std::move(*value))`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>const rvalueを区別するmapperへ、標準optionalのvalue categoryに沿って値を渡す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>const auto source = std::optional&lt;int&gt;(2);
+<h3>Map <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto Map(const std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>const rvalue optional保持値の変換。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 変換対象のoptional。値を持つ場合は保持値をconst rvalueとしてmapperへ渡す。</li><li>in f: 保持値を変換する`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`を`std::decay_t`で保持するoptional。</li><li>std::nullopt: `value`が空の場合。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, std::move(*value))`はvoidではないobjectを値として返す。直接の参照戻り値は不可。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>const rvalueを区別するmapperへ、標準optionalのvalue categoryに沿って値を渡す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::transform`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto source = std::optional&lt;int&gt;(2);
 const auto value = ket::optional::Map(std::move(source), [](const int&amp;&amp; x) {
     return x * 3;
 });
-// value == std::optional&lt;int&gt;(6)</code></pre>
+// value == std::optional&lt;int&gt;(6)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-AndThen-170">
-<h3>AndThen <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre>
-<p>mutable optionalを返すmapperによるoptional合成。</p>
-<h4>Parameters</h4>
-<ul><li>in,out value: 合成対象のoptional。値を持つ場合はmapperへmutable参照を渡す。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, *value)`は`std::optional&lt;U&gt;`を値として返す。</td><td>空の場合は`f`を呼ばない。値ありの場合、mapperは`T&amp;`を通じて保持値を変更できる。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>auto source = std::optional&lt;int&gt;(2);
+<h3>AndThen <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>mutable optionalを返すmapperによるoptional合成。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out value: 合成対象のoptional。値を持つ場合はmapperへmutable参照を渡す。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, *value)`は`std::optional&lt;U&gt;`を値として返す。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。値ありの場合、mapperは`T&amp;`を通じて保持値を変更できる。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>auto source = std::optional&lt;int&gt;(2);
 const auto value = ket::optional::AndThen(source, [](int&amp; x) {
     x += 1;
     return std::optional&lt;int&gt;(x * 3);
 });
-// source == std::optional&lt;int&gt;(3), value == std::optional&lt;int&gt;(9)</code></pre>
+// source == std::optional&lt;int&gt;(3), value == std::optional&lt;int&gt;(9)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-AndThen-193">
-<h3>AndThen <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre>
-<p>const optionalを返すmapperによるoptional合成。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 合成対象のoptional。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, *value)`は`std::optional&lt;U&gt;`を値として返す。</td><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>const auto value = ket::optional::AndThen(std::optional&lt;int&gt;(2), [](int x) {
+<h3>AndThen <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>const optionalを返すmapperによるoptional合成。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 合成対象のoptional。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, *value)`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, *value)`は`std::optional&lt;U&gt;`を値として返す。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::optional::AndThen(std::optional&lt;int&gt;(2), [](int x) {
     return std::optional&lt;int&gt;(x * 3);
 });
-// value == std::optional&lt;int&gt;(6)</code></pre>
+// value == std::optional&lt;int&gt;(6)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-AndThen-217">
-<h3>AndThen <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre>
-<p>optionalを返すmapperによるoptionalのmove合成。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 合成対象のoptional。値を持つ場合は保持値をmapperへmove可能。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, std::move(*value))`は`std::optional&lt;U&gt;`を値として返す。</td><td>空の場合は`f`を呼ばない。値ありの場合は`value`の保持値がmove元になり得る。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>auto value = ket::optional::AndThen(std::optional&lt;std::string&gt;(&quot;id&quot;), [](std::string x) {
+<h3>AndThen <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>optionalを返すmapperによるoptionalのmove合成。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 合成対象のoptional。値を持つ場合は保持値をmapperへmove可能。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, std::move(*value))`は`std::optional&lt;U&gt;`を値として返す。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。値ありの場合は`value`の保持値がmove元になり得る。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>auto value = ket::optional::AndThen(std::optional&lt;std::string&gt;(&quot;id&quot;), [](std::string x) {
     return std::optional&lt;std::size_t&gt;(x.size());
 });
-// value == std::optional&lt;std::size_t&gt;(2)</code></pre>
+// value == std::optional&lt;std::size_t&gt;(2)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-AndThen-243">
-<h3>AndThen <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(const std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre>
-<p>optionalを返すmapperによるconst rvalue optionalの合成。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 合成対象のoptional。値を持つ場合は保持値をconst rvalueとしてmapperへ渡す。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>`std::invoke(f, std::move(*value))`は`std::optional&lt;U&gt;`を値として返す。</td><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul>
-<h4>Example</h4>
-<pre><code>const auto source = std::optional&lt;int&gt;(2);
+<h3>AndThen <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr auto AndThen(const std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; f)</code></pre></td></tr><tr><th>Brief</th><td>optionalを返すmapperによるconst rvalue optionalの合成。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 合成対象のoptional。値を持つ場合は保持値をconst rvalueとしてmapperへ渡す。</li><li>in f: 保持値からoptionalを返す`std::invoke`互換mapper。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合、`std::invoke(f, std::move(*value))`が返したoptional。</li><li>empty: optional `value`が空の場合の空optional。</li></ul></td></tr><tr><th>Pre</th><td>`std::invoke(f, std::move(*value))`は`std::optional&lt;U&gt;`を値として返す。</td></tr><tr><th>Post</th><td>空の場合は`f`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>戻り値はunwrapせず、mapperが返したoptional型をそのまま返す。</li><li>mapperの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li><li>C++23以降では`std::optional::and_then`が標準代替。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto source = std::optional&lt;int&gt;(2);
 const auto value = ket::optional::AndThen(std::move(source), [](const int&amp;&amp; x) {
     return std::optional&lt;int&gt;(x * 3);
 });
-// value == std::optional&lt;int&gt;(6)</code></pre>
+// value == std::optional&lt;int&gt;(6)</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ValueOrEval-264">
-<h3>ValueOrEval <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr T ValueOrEval(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; fallback_factory)</code></pre>
-<p>optional保持値、または遅延評価fallbackの値取得。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 値取得対象のoptional。</li><li>in fallback_factory: 空の場合だけ評価する`std::invoke`互換fallback factory。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合はその保持値のcopy、空の場合は`fallback_factory()`の結果。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>Tはcopy constructible。`std::invoke(fallback_factory)`はTへ変換可能な値を返す。</td><td>値ありの場合は`fallback_factory`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>`std::optional::value_or`と異なり、fallbackは必要時だけ評価。</li><li>fallback factoryの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li></ul>
-<h4>Example</h4>
-<pre><code>const auto value = ket::optional::ValueOrEval(std::optional&lt;int&gt;(), [] { return 42; });
-// value == 42</code></pre>
+<h3>ValueOrEval <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr T ValueOrEval(const std::optional&lt;T&gt;&amp; value, F&amp;&amp; fallback_factory)</code></pre></td></tr><tr><th>Brief</th><td>optional保持値、または遅延評価fallbackの値取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 値取得対象のoptional。</li><li>in fallback_factory: 空の場合だけ評価する`std::invoke`互換fallback factory。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合はその保持値のcopy、空の場合は`fallback_factory()`の結果。</li></ul></td></tr><tr><th>Pre</th><td>Tはcopy constructible。`std::invoke(fallback_factory)`はTへ変換可能な値を返す。</td></tr><tr><th>Post</th><td>値ありの場合は`fallback_factory`を呼ばない。API自身は`value`の保持状態を変更しない。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>`std::optional::value_or`と異なり、fallbackは必要時だけ評価。</li><li>fallback factoryの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::optional::ValueOrEval(std::optional&lt;int&gt;(), [] { return 42; });
+// value == 42</code></pre></td></tr></tbody></table></div>
 </section>
 <section class="api-entry" id="api-function-ValueOrEval-287">
-<h3>ValueOrEval <span class="meta">function</span></h3>
-<pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr T ValueOrEval(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; fallback_factory)</code></pre>
-<p>optional保持値のmove、または遅延評価fallbackの値取得。</p>
-<h4>Parameters</h4>
-<ul><li>in value: 値取得対象のoptional。値を持つ場合は保持値を戻り値へmove可能。</li><li>in fallback_factory: 空の場合だけ評価する`std::invoke`互換fallback factory。</li></ul>
-<h4>Return / retval</h4>
-<ul><li>value: `value`が値を持つ場合はその保持値のmove、空の場合は`fallback_factory()`の結果。</li></ul>
-<h4>Contract</h4>
-<table><tr><th>pre</th><th>post</th></tr>
-<tr><td>Tはmove constructible。`std::invoke(fallback_factory)`はTへ変換可能な値を返す。</td><td>値ありの場合は`value`の保持値がmove元になり得る。値ありの場合は`fallback_factory`を呼ばない。</td></tr></table>
-<h4>Notes</h4>
-<ul><li>`std::optional::value_or`と異なり、fallbackは必要時だけ評価。</li><li>fallback factoryの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li></ul>
-<h4>Example</h4>
-<pre><code>auto value = ket::optional::ValueOrEval(std::optional&lt;std::string&gt;(), [] {
+<h3>ValueOrEval <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T, typename F&gt; constexpr T ValueOrEval(std::optional&lt;T&gt;&amp;&amp; value, F&amp;&amp; fallback_factory)</code></pre></td></tr><tr><th>Brief</th><td>optional保持値のmove、または遅延評価fallbackの値取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 値取得対象のoptional。値を持つ場合は保持値を戻り値へmove可能。</li><li>in fallback_factory: 空の場合だけ評価する`std::invoke`互換fallback factory。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `value`が値を持つ場合はその保持値のmove、空の場合は`fallback_factory()`の結果。</li></ul></td></tr><tr><th>Pre</th><td>Tはmove constructible。`std::invoke(fallback_factory)`はTへ変換可能な値を返す。</td></tr><tr><th>Post</th><td>値ありの場合は`value`の保持値がmove元になり得る。値ありの場合は`fallback_factory`を呼ばない。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>`std::optional::value_or`と異なり、fallbackは必要時だけ評価。</li><li>fallback factoryの副作用と例外は、呼び出し元が渡したcallableの規約に従う。</li></ul></td></tr><tr><th>Example</th><td><pre><code>auto value = ket::optional::ValueOrEval(std::optional&lt;std::string&gt;(), [] {
     return std::string(&quot;fallback&quot;);
 });
-// value == &quot;fallback&quot;</code></pre>
+// value == &quot;fallback&quot;</code></pre></td></tr></tbody></table></div>
 </section>
 </main>
 <footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>

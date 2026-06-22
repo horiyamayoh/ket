@@ -654,10 +654,18 @@ def page_shell(model: SiteModel, current: Path, title: str, body: str, extra_scr
 		("diagrams.html", "Diagrams"),
 		("search.html", "Search"),
 	)
-	nav_html = "".join(
-		f'<a href="{html_escape(rel_link(current, href))}">{html_escape(label)}</a>'
-		for href, label in nav_items
-	)
+	current_text = current.as_posix()
+	nav_parts = []
+	for href, label in nav_items:
+		section = href.split("/", 1)[0]
+		is_current = current_text == href or (
+			"/" in href and current_text.startswith(f"{section}/")
+		)
+		current_attr = ' aria-current="page"' if is_current else ""
+		nav_parts.append(
+			f'<a href="{html_escape(rel_link(current, href))}"{current_attr}>{html_escape(label)}</a>'
+		)
+	nav_html = "".join(nav_parts)
 	css = site_css()
 	return "\n".join(
 		(
@@ -670,11 +678,12 @@ def page_shell(model: SiteModel, current: Path, title: str, body: str, extra_scr
 			f"<style>{css}</style>",
 			"</head>",
 			"<body>",
+			'<a class="skip-link" href="#main">本文へ移動</a>',
 			"<header>",
 			f'<div class="brand"><a href="{html_escape(rel_link(current, "index.html"))}">{html_escape(model.config["title"])}</a></div>',
 			f"<nav>{nav_html}</nav>",
 			"</header>",
-			"<main>",
+			'<main id="main">',
 			body,
 			"</main>",
 			"<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>",
@@ -690,53 +699,98 @@ def site_css() -> str:
 	return """
 :root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f7f8;
   --panel: #ffffff;
-  --ink: #202124;
-  --muted: #5f6368;
-  --line: #d9d9d2;
-  --link: #075a9c;
-  --accent: #176b51;
-  --code: #f0f3f5;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
-header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
 .brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
-nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
-a { color: var(--link); }
-nav a { text-decoration: none; }
-main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
-footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
-h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
-h1 { margin: 0 0 12px; font-size: 2rem; }
-h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
-h3 { margin-top: 22px; font-size: 1.08rem; }
-.lead { color: var(--muted); max-width: 78ch; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
-.card h3 { margin: 0 0 6px; }
-.meta { color: var(--muted); font-size: 0.9rem; }
-.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
-table { width: 100%; border-collapse: collapse; background: var(--panel); }
-th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
-th { background: #eef3f0; text-align: left; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
-pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
-.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
-.api-entry { margin: 16px 0; }
-.api-entry h3 { margin-bottom: 6px; }
-.matrix { font-size: 0.82rem; }
-.matrix th { position: sticky; top: 48px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
 .mark { text-align: center; color: var(--accent); font-weight: 700; }
-.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
-.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 @media (max-width: 720px) {
-  header { position: static; align-items: flex-start; flex-direction: column; }
-  main { padding: 18px 12px 36px; }
-  table { font-size: 0.88rem; }
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
 }
 """.strip()
 
@@ -771,6 +825,108 @@ def render_list(items: list[str] | tuple[str, ...]) -> str:
 	return "<ul>" + "".join(f"<li>{html_escape(item)}</li>" for item in items) + "</ul>"
 
 
+def render_compact_list(items: list[str] | tuple[str, ...]) -> str:
+	if not items:
+		return '<span class="meta">なし</span>'
+	return '<ul class="compact-list">' + "".join(f"<li>{html_escape(item)}</li>" for item in items) + "</ul>"
+
+
+def render_table(headers: tuple[str, ...], rows: list[tuple[str, ...]], class_name: str = "") -> str:
+	class_attr = f' class="{html_escape(class_name)}"' if class_name else ""
+	header_html = "".join(f"<th>{html_escape(header)}</th>" for header in headers)
+	row_html = []
+	for row in rows:
+		cells = "".join(f"<td>{cell}</td>" for cell in row)
+		row_html.append(f"<tr>{cells}</tr>")
+	return (
+		'<div class="table-scroll">'
+		f"<table{class_attr}>"
+		f"<thead><tr>{header_html}</tr></thead>"
+		f"<tbody>{''.join(row_html)}</tbody>"
+		"</table>"
+		"</div>"
+	)
+
+
+def render_record_table(rows: list[tuple[str, str]], class_name: str = "") -> str:
+	table_class = "record-table"
+	if class_name:
+		table_class = f"{table_class} {class_name}"
+	row_html = []
+	for label, value in rows:
+		row_html.append(f"<tr><th>{html_escape(label)}</th><td>{value}</td></tr>")
+	return (
+		'<div class="table-scroll">'
+		f'<table class="{html_escape(table_class)}"><tbody>{"".join(row_html)}</tbody></table>'
+		"</div>"
+	)
+
+
+def pill(content: str) -> str:
+	return f'<span class="pill">{content}</span>'
+
+
+def module_category_pills(model: SiteModel, current: Path, module: ModuleDoc) -> str:
+	categories = category_by_id(model)
+	return " ".join(
+		pill(link_to_category(current, category_id, categories[category_id]["title"]))
+		for category_id in module.sidecar["categories"]
+	)
+
+
+def module_use_case_pills(model: SiteModel, current: Path, module: ModuleDoc) -> str:
+	use_cases = use_case_by_id(model)
+	return " ".join(
+		pill(link_to_use_case(current, use_case_id, use_cases[use_case_id]["title"]))
+		for use_case_id in module.sidecar["use_cases"]
+	)
+
+
+def module_key_api_links(current: Path, module: ModuleDoc, limit: int = 4) -> str:
+	links = []
+	for api in module.apis[:limit]:
+		target = f"modules/{module.name}.html#api-{api.kind}-{api.name}-{api.line}"
+		links.append(
+			f'<a class="mono" href="{html_escape(rel_link(current, target))}">{html_escape(api.name)}</a>'
+		)
+	if len(module.apis) > limit:
+		links.append(f'<span class="meta">+{len(module.apis) - limit}</span>')
+	return " ".join(links)
+
+
+def render_module_table(
+	model: SiteModel,
+	current: Path,
+	modules: tuple[ModuleDoc, ...],
+	include_categories: bool,
+	include_key_apis: bool,
+) -> str:
+	headers = ["Module"]
+	if include_categories:
+		headers.append("Category")
+	headers.extend(("C++", "APIs", "Summary"))
+	if include_key_apis:
+		headers.append("Key APIs")
+
+	rows: list[tuple[str, ...]] = []
+	for module in modules:
+		cells = [f'<span class="module-name">{link_to_module(current, module.name)}</span>']
+		if include_categories:
+			cells.append(f'<span class="pillrow">{module_category_pills(model, current, module)}</span>')
+		cells.extend(
+			(
+				f'<span class="count-cell">{html_escape(module.progress.cxx_min)}</span>',
+				f'<span class="count-cell">{len(module.apis)}</span>',
+				html_escape(module.sidecar["summary"]),
+			)
+		)
+		if include_key_apis:
+			cells.append(module_key_api_links(current, module))
+		rows.append(tuple(cells))
+
+	return render_table(tuple(headers), rows, "module-table")
+
+
 def render_module_card(model: SiteModel, current: Path, module: ModuleDoc) -> str:
 	categories = category_by_id(model)
 	category_links = " ".join(
@@ -790,45 +946,46 @@ def render_module_card(model: SiteModel, current: Path, module: ModuleDoc) -> st
 
 
 def render_api_summary(current: Path, module: ModuleDoc) -> str:
-	rows = []
+	rows: list[tuple[str, ...]] = []
 	for api in module.apis:
 		target = f"modules/{module.name}.html#api-{api.kind}-{api.name}-{api.line}"
 		rows.append(
-			"<tr>"
-			f'<td><a href="{html_escape(rel_link(current, target))}">{html_escape(module.name)}::{html_escape(api.name)}</a></td>'
-			f"<td>{html_escape(api.kind)}</td>"
-			f"<td>{html_escape(api.brief)}</td>"
-			"</tr>"
+			(
+				f'<span class="api-name"><a href="{html_escape(rel_link(current, target))}">{html_escape(module.name)}::{html_escape(api.name)}</a></span>',
+				f'<span class="kind-mark">{html_escape(api.kind)}</span>',
+				f'<span class="signature-cell"><code>{html_escape(api.signature)}</code></span>',
+				html_escape(api.brief),
+			)
 		)
-	return "<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr>" + "".join(rows) + "</table>"
+	return render_table(("API", "Kind", "Signature", "Brief"), rows, "api-table")
 
 
 def render_api_detail(api: ApiDoc) -> str:
 	anchor = f"api-{api.kind}-{api.name}-{api.line}"
 	parts = [
 		f'<section class="api-entry" id="{html_escape(anchor)}">',
-		f"<h3>{html_escape(api.name)} <span class=\"meta\">{html_escape(api.kind)}</span></h3>",
-		f'<pre class="signature"><code>{html_escape(api.signature)}</code></pre>',
-		f"<p>{html_escape(api.brief)}</p>",
+		f'<h3>{html_escape(api.name)} <span class="kind-mark">{html_escape(api.kind)}</span></h3>',
+	]
+	rows = [
+		("Signature", f'<pre class="signature"><code>{html_escape(api.signature)}</code></pre>'),
+		("Brief", html_escape(api.brief)),
 	]
 	if api.details:
-		parts.append(f"<p>{html_escape(api.details)}</p>")
+		rows.append(("Details", html_escape(api.details)))
 	if api.params:
-		parts.append("<h4>Parameters</h4>")
-		parts.append(render_list(api.params))
+		rows.append(("Parameters", render_compact_list(api.params)))
 	if api.retvals:
-		parts.append("<h4>Return / retval</h4>")
-		parts.append(render_list(api.retvals))
-	if api.pre or api.post:
-		parts.append("<h4>Contract</h4>")
-		parts.append("<table><tr><th>pre</th><th>post</th></tr>")
-		parts.append(f"<tr><td>{html_escape(api.pre)}</td><td>{html_escape(api.post)}</td></tr></table>")
+		rows.append(("Return / retval", render_compact_list(api.retvals)))
+	if api.pre:
+		rows.append(("Pre", html_escape(api.pre)))
+	if api.post:
+		rows.append(("Post", html_escape(api.post)))
 	if api.notes:
-		parts.append("<h4>Notes</h4>")
-		parts.append(render_list(api.notes))
-	for code in api.code_blocks:
-		parts.append("<h4>Example</h4>")
-		parts.append(f"<pre><code>{html_escape(code)}</code></pre>")
+		rows.append(("Notes", render_compact_list(api.notes)))
+	for index, code in enumerate(api.code_blocks, start=1):
+		label = "Example" if len(api.code_blocks) == 1 else f"Example {index}"
+		rows.append((label, f"<pre><code>{html_escape(code)}</code></pre>"))
+	parts.append(render_record_table(rows, "api-detail-table"))
 	parts.append("</section>")
 	return "\n".join(parts)
 
@@ -836,9 +993,25 @@ def render_api_detail(api: ApiDoc) -> str:
 def render_index(model: SiteModel) -> str:
 	current = Path("index.html")
 	use_cases = use_case_by_id(model)
+	module_count = len(model.modules)
+	api_count = sum(len(module.apis) for module in model.modules)
 	body = [
 		f"<h1>{html_escape(model.config['title'])}</h1>",
-		f"<p class=\"lead\">{html_escape(model.config['description'])}</p>",
+		'<section class="summary-band" aria-label="reference summary">',
+		f'<p class="summary-copy"><strong>{html_escape(model.config["subtitle"])}</strong>。{html_escape(model.config["description"])}</p>',
+		'<p class="summary-actions">'
+		f'<a href="{html_escape(rel_link(current, "use-cases/index.html"))}">Use cases</a>'
+		f'<a href="{html_escape(rel_link(current, "modules/index.html"))}">Modules</a>'
+		f'<a href="{html_escape(rel_link(current, "api/index.html"))}">API</a>'
+		f'<a href="{html_escape(rel_link(current, "search.html"))}">Search</a>'
+		"</p>",
+		'<dl class="stats">',
+		f"<div><dt>Modules</dt><dd>{module_count}</dd></div>",
+		f"<div><dt>APIs</dt><dd>{api_count}</dd></div>",
+		f"<div><dt>Use cases</dt><dd>{len(model.use_cases)}</dd></div>",
+		f"<div><dt>Categories</dt><dd>{len(model.categories)}</dd></div>",
+		"</dl>",
+		"</section>",
 		"<h2>Use Case Entrances</h2>",
 		'<div class="grid">',
 	]
@@ -854,14 +1027,11 @@ def render_index(model: SiteModel) -> str:
 		(
 			"</div>",
 			"<h2>Module Map</h2>",
-			'<div class="grid">',
 		)
 	)
-	for module in model.modules:
-		body.append(render_module_card(model, current, module))
+	body.append(render_module_table(model, current, model.modules, True, False))
 	body.extend(
 		(
-			"</div>",
 			"<h2>Quick Index</h2>",
 			"<p>分類、ユースケース、API名、module名から探せる。</p>",
 			'<p><a href="search.html">Search page</a> / <a href="diagrams.html">Diagrams</a></p>',
@@ -872,49 +1042,42 @@ def render_index(model: SiteModel) -> str:
 
 def render_modules_index(model: SiteModel) -> str:
 	current = Path("modules/index.html")
-	body = ["<h1>Modules</h1>", '<div class="grid">']
-	for module in model.modules:
-		body.append(render_module_card(model, current, module))
-	body.append("</div>")
+	body = [
+		"<h1>Modules</h1>",
+		'<p class="lead">実装済みmoduleをcategory、C++要件、API数、主要APIから俯瞰。</p>',
+		render_module_table(model, current, model.modules, True, True),
+	]
 	return page_shell(model, current, "Modules", "\n".join(body))
 
 
 def render_module_page(model: SiteModel, module: ModuleDoc) -> str:
 	current = Path(f"modules/{module.name}.html")
-	categories = category_by_id(model)
-	use_cases = use_case_by_id(model)
-	category_links = " ".join(
-		f'<span class="pill">{link_to_category(current, category_id, categories[category_id]["title"])}</span>'
-		for category_id in module.sidecar["categories"]
-	)
-	use_case_links = " ".join(
-		f'<span class="pill">{link_to_use_case(current, use_case_id, use_cases[use_case_id]["title"])}</span>'
-		for use_case_id in module.sidecar["use_cases"]
-	)
 	related_links = " ".join(
-		f'<span class="pill">{link_to_module(current, related)}</span>'
+		pill(link_to_module(current, related))
 		for related in module.sidecar["related_modules"]
 	)
 	body = [
 		f"<h1>ket::{html_escape(module.name)}</h1>",
 		f"<p class=\"lead\">{html_escape(module.sidecar['summary'])}</p>",
 		"<h2>Module Facts</h2>",
-		"<table>",
-		f"<tr><th>Header</th><td>{html_escape(module.header.relative_to(model.root).as_posix())}</td></tr>",
-		f"<tr><th>Status</th><td>{html_escape(module.progress.status)}</td></tr>",
-		f"<tr><th>C++ Min</th><td>{html_escape(module.progress.cxx_min)}</td></tr>",
-		f"<tr><th>Tests</th><td>{html_escape(module.progress.tests)}</td></tr>",
-		f"<tr><th>Progress note</th><td>{html_escape(module.progress.notes)}</td></tr>",
-		f"<tr><th>Drop-in</th><td>{html_escape(module.file_doc.pars.get('プロジェクトへの適用方法', ''))}</td></tr>",
-		f"<tr><th>Dependencies</th><td>{html_escape(module.file_doc.pars.get('他のライブラリへの依存', ''))}</td></tr>",
-		f"<tr><th>Namespace</th><td>{html_escape(module.file_doc.pars.get('namespace', ''))}</td></tr>",
-		"</table>",
+		render_record_table(
+			[
+				("Header", html_escape(module.header.relative_to(model.root).as_posix())),
+				("Status", html_escape(module.progress.status)),
+				("C++ Min", html_escape(module.progress.cxx_min)),
+				("Tests", html_escape(module.progress.tests)),
+				("Progress note", html_escape(module.progress.notes)),
+				("Drop-in", html_escape(module.file_doc.pars.get("プロジェクトへの適用方法", ""))),
+				("Dependencies", html_escape(module.file_doc.pars.get("他のライブラリへの依存", ""))),
+				("Namespace", html_escape(module.file_doc.pars.get("namespace", ""))),
+				("Categories", f'<span class="pillrow">{module_category_pills(model, current, module)}</span>'),
+				("Use cases", f'<span class="pillrow">{module_use_case_pills(model, current, module)}</span>'),
+			]
+		),
 		"<h2>Use This When</h2>",
 		render_list(tuple(module.sidecar["when_to_use"])),
 		"<h2>Do Not Use This When</h2>",
 		render_list(tuple(module.sidecar["when_not_to_use"])),
-		"<h2>Views</h2>",
-		f'<p class="pillrow">{category_links}{use_case_links}</p>',
 		"<h2>Related Modules</h2>",
 		f'<p class="pillrow">{related_links}</p>' if related_links else '<p class="meta">なし</p>',
 		"<h2>Notes</h2>",
@@ -931,23 +1094,45 @@ def render_module_page(model: SiteModel, module: ModuleDoc) -> str:
 def render_api_index(model: SiteModel) -> str:
 	current = Path("api/index.html")
 	body = ["<h1>API Index</h1>", "<p class=\"lead\">公開headerから抽出したAPI一覧。</p>"]
+	rows: list[tuple[str, ...]] = []
 	for module in model.modules:
-		body.append(f"<h2>{link_to_module(current, module.name, 'ket::' + module.name)}</h2>")
-		body.append(render_api_summary(current, module))
+		for api in module.apis:
+			target = f"modules/{module.name}.html#api-{api.kind}-{api.name}-{api.line}"
+			rows.append(
+				(
+					f'<span class="module-name">{link_to_module(current, module.name, "ket::" + module.name)}</span>',
+					f'<span class="api-name"><a href="{html_escape(rel_link(current, target))}">{html_escape(api.name)}</a></span>',
+					f'<span class="kind-mark">{html_escape(api.kind)}</span>',
+					f'<span class="signature-cell"><code>{html_escape(api.signature)}</code></span>',
+					html_escape(api.brief),
+				)
+			)
+	body.append(render_table(("Module", "API", "Kind", "Signature", "Brief"), rows, "api-index-table"))
 	return page_shell(model, current, "API Index", "\n".join(body))
 
 
 def render_use_cases_index(model: SiteModel) -> str:
 	current = Path("use-cases/index.html")
-	body = ["<h1>Use Cases</h1>", '<div class="grid">']
+	rows: list[tuple[str, ...]] = []
+	modules = module_by_name(model)
 	for use_case in model.use_cases:
-		body.append(
-			'<section class="card">'
-			f"<h3>{link_to_use_case(current, use_case['id'], use_case['title'])}</h3>"
-			f"<p>{html_escape(use_case['summary'])}</p>"
-			"</section>"
+		module_links = " ".join(
+			pill(link_to_module(current, item["module"]))
+			for item in use_case["modules"]
+			if item["module"] in modules
 		)
-	body.append("</div>")
+		rows.append(
+			(
+				link_to_use_case(current, use_case["id"], use_case["title"]),
+				html_escape(use_case["summary"]),
+				f'<span class="pillrow">{module_links}</span>',
+			)
+		)
+	body = [
+		"<h1>Use Cases</h1>",
+		'<p class="lead">用途からmodule候補へ進むための入口一覧。</p>',
+		render_table(("Use case", "Summary", "Modules"), rows, "module-table"),
+	]
 	return page_shell(model, current, "Use Cases", "\n".join(body))
 
 
@@ -960,24 +1145,27 @@ def render_use_case_page(model: SiteModel, use_case: dict[str, Any]) -> str:
 		"<h2>Decision Flow</h2>",
 		render_list(tuple(use_case["flow"])),
 		"<h2>Modules</h2>",
-		"<table><tr><th>Module</th><th>Role</th></tr>",
 	]
+	rows: list[tuple[str, ...]] = []
 	for item in use_case["modules"]:
-		body.append(
-			"<tr>"
-			f"<td>{link_to_module(current, item['module'])}</td>"
-			f"<td>{html_escape(item['role'])}</td>"
-			"</tr>"
+		module = module_by_name(model)[item["module"]]
+		rows.append(
+			(
+				f'<span class="module-name">{link_to_module(current, item["module"])}</span>',
+				html_escape(item["role"]),
+				html_escape(module.sidecar["summary"]),
+				module_key_api_links(current, module),
+			)
 		)
+	body.append(render_table(("Module", "Role", "Summary", "Key APIs"), rows, "module-table"))
 	body.extend(
 		(
-			"</table>",
 			"<h2>Recipe</h2>",
 			render_list(tuple(use_case["recipe"])),
 			"<h2>See Also</h2>",
 			'<p class="pillrow">'
 			+ " ".join(
-				f'<span class="pill">{link_to_use_case(current, use_case_id, use_cases[use_case_id]["title"])}</span>'
+				pill(link_to_use_case(current, use_case_id, use_cases[use_case_id]["title"]))
 				for use_case_id in use_case.get("see_also", [])
 			)
 			+ "</p>",
@@ -988,114 +1176,130 @@ def render_use_case_page(model: SiteModel, use_case: dict[str, Any]) -> str:
 
 def render_categories_index(model: SiteModel) -> str:
 	current = Path("categories/index.html")
-	body = ["<h1>Categories</h1>", '<div class="grid">']
+	rows: list[tuple[str, ...]] = []
 	for category in model.categories:
-		body.append(
-			'<section class="card">'
-			f"<h3>{link_to_category(current, category['id'], category['title'])}</h3>"
-			f"<p>{html_escape(category['summary'])}</p>"
-			f"<p class=\"meta\">{len(category['modules'])} modules</p>"
-			"</section>"
+		module_links = " ".join(
+			pill(link_to_module(current, module_name)) for module_name in category["modules"]
 		)
-	body.append("</div>")
+		rows.append(
+			(
+				link_to_category(current, category["id"], category["title"]),
+				html_escape(category["summary"]),
+				str(len(category["modules"])),
+				f'<span class="pillrow">{module_links}</span>',
+			)
+		)
+	body = [
+		"<h1>Categories</h1>",
+		'<p class="lead">論理分類ごとのmodule集合。</p>',
+		render_table(("Category", "Summary", "Modules", "Module list"), rows, "module-table"),
+	]
 	return page_shell(model, current, "Categories", "\n".join(body))
 
 
 def render_category_page(model: SiteModel, category: dict[str, Any]) -> str:
 	current = Path(f"categories/{category['id']}.html")
 	modules = module_by_name(model)
+	category_modules = tuple(modules[module_name] for module_name in category["modules"])
 	body = [
 		f"<h1>{html_escape(category['title'])}</h1>",
 		f"<p class=\"lead\">{html_escape(category['summary'])}</p>",
-		'<div class="grid">',
+		render_module_table(model, current, category_modules, False, True),
 	]
-	for module_name in category["modules"]:
-		body.append(render_module_card(model, current, modules[module_name]))
-	body.append("</div>")
 	return page_shell(model, current, category["title"], "\n".join(body))
 
 
 def render_diagrams(model: SiteModel) -> str:
 	current = Path("diagrams.html")
-	modules = [module.name for module in model.modules]
+	modules = module_by_name(model)
 	body = [
 		"<h1>Diagrams</h1>",
 		"<p class=\"lead\">依存図ではなく、用途からmoduleへ進むための図表。</p>",
-		"<h2>Input Decision Tree</h2>",
-		decision_tree_svg(),
-		"<h2>Module x Use Case Matrix</h2>",
-		'<table class="matrix"><tr><th>Use case</th>',
+		"<h2>Input Decision Guide</h2>",
 	]
-	for module_name in modules:
-		body.append(f"<th>{html_escape(module_name)}</th>")
-	body.append("</tr>")
+	body.append(
+		render_table(
+			("入口", "見るmodule", "判断の軸"),
+			[
+				(
+					"文字列入力",
+					" ".join(
+						pill(link_to_module(current, module_name))
+						for module_name in ("parse", "cli", "ascii", "utf8")
+					),
+					"外部入力、ASCII制約、UTF-8境界、CLI引数。",
+				),
+				(
+					"byte列",
+					" ".join(
+						pill(link_to_module(current, module_name))
+						for module_name in ("byte_view", "byte_reader", "byte_writer", "endian")
+					),
+					"buffer所有権、offset、endian、逐次読み書き。",
+				),
+				(
+					"値domain",
+					" ".join(
+						pill(link_to_module(current, module_name))
+						for module_name in ("port", "ipv4", "version", "color")
+					),
+					"入力値をdomain型や検証済み値へ落とす境界。",
+				),
+				(
+					"処理flow",
+					" ".join(
+						pill(link_to_module(current, module_name))
+						for module_name in ("scope", "optional", "state", "contract")
+					),
+					"寿命管理、fallback、状態遷移、契約明示。",
+				),
+			],
+			"module-table",
+		)
+	)
+	body.append("<h2>Use Case Routes</h2>")
+	rows: list[tuple[str, ...]] = []
 	for use_case in model.use_cases:
-		use_case_modules = {item["module"] for item in use_case["modules"]}
-		body.append(f"<tr><th>{link_to_use_case(current, use_case['id'], use_case['title'])}</th>")
-		for module_name in modules:
-			mark = "●" if module_name in use_case_modules else ""
-			body.append(f'<td class="mark">{mark}</td>')
-		body.append("</tr>")
-	body.extend(("</table>", "<h2>Category Landscape</h2>", '<div class="grid">'))
+		module_links = " ".join(
+			pill(link_to_module(current, item["module"])) for item in use_case["modules"]
+		)
+		category_ids = sorted(
+			{
+				category_id
+				for item in use_case["modules"]
+				for category_id in modules[item["module"]].sidecar["categories"]
+			}
+		)
+		category_links = " ".join(
+			pill(link_to_category(current, category_id, category_by_id(model)[category_id]["title"]))
+			for category_id in category_ids
+		)
+		rows.append(
+			(
+				link_to_use_case(current, use_case["id"], use_case["title"]),
+				html_escape(use_case["summary"]),
+				f'<span class="pillrow">{module_links}</span>',
+				f'<span class="pillrow">{category_links}</span>',
+			)
+		)
+	body.append(render_table(("Use case", "Summary", "Modules", "Categories"), rows, "module-table"))
+	body.append("<h2>Category Landscape</h2>")
+	rows = []
 	for category in model.categories:
 		module_links = " ".join(
-			f'<span class="pill">{link_to_module(current, module_name)}</span>'
+			pill(link_to_module(current, module_name))
 			for module_name in category["modules"]
 		)
-		body.append(
-			'<section class="card">'
-			f"<h3>{link_to_category(current, category['id'], category['title'])}</h3>"
-			f"<p>{html_escape(category['summary'])}</p>"
-			f'<p class="pillrow">{module_links}</p>'
-			"</section>"
+		rows.append(
+			(
+				link_to_category(current, category["id"], category["title"]),
+				html_escape(category["summary"]),
+				str(len(category["modules"])),
+				f'<span class="pillrow">{module_links}</span>',
+			)
 		)
-	body.append("</div>")
+	body.append(render_table(("Category", "Summary", "Modules", "Module list"), rows, "module-table"))
 	return page_shell(model, current, "Diagrams", "\n".join(body))
-
-
-def decision_tree_svg() -> str:
-	nodes = (
-		("外部入力", 40, 40),
-		("文字列", 260, 20),
-		("byte列", 260, 100),
-		("値domain", 480, 20),
-		("処理flow", 480, 100),
-		("parse / cli / ascii / utf8", 720, 20),
-		("byte_view / reader / writer / endian", 720, 100),
-		("port / ipv4 / version / color", 960, 20),
-		("scope / optional / state / contract", 960, 100),
-	)
-	edges = (
-		(0, 1),
-		(0, 2),
-		(1, 3),
-		(2, 4),
-		(1, 5),
-		(2, 6),
-		(3, 7),
-		(4, 8),
-	)
-	svg = [
-		'<svg class="diagram" viewBox="0 0 1180 180" role="img" aria-label="入力種別からmoduleへ進む判断図">',
-		"<defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"8\" refX=\"6\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L0,6 L6,3 z\" fill=\"#176b51\" /></marker></defs>",
-	]
-	for start, end in edges:
-		x1 = nodes[start][1] + 130
-		y1 = nodes[start][2] + 18
-		x2 = nodes[end][1] - 8
-		y2 = nodes[end][2] + 18
-		svg.append(
-			f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#176b51" stroke-width="2" marker-end="url(#arrow)" />'
-		)
-	for label, x, y in nodes:
-		svg.append(
-			f'<rect x="{x}" y="{y}" width="180" height="36" rx="6" fill="#ffffff" stroke="#d9d9d2" />'
-		)
-		svg.append(
-			f'<text x="{x + 90}" y="{y + 23}" text-anchor="middle" font-size="13" fill="#202124">{html_escape(label)}</text>'
-		)
-	svg.append("</svg>")
-	return "\n".join(svg)
 
 
 def search_index(model: SiteModel) -> list[dict[str, str]]:
@@ -1144,19 +1348,24 @@ def render_search(model: SiteModel) -> str:
 	index = search_index(model)
 	body = [
 		"<h1>Search</h1>",
+		'<div class="search-form">',
+		'<label class="sr-only" for="search-input">検索語</label>',
 		'<input class="searchbox" id="search-input" type="search" placeholder="module, API, use case を検索" autofocus>',
+		"</div>",
 		'<div id="search-results"></div>',
 		"<noscript>",
 		"<h2>Static Index</h2>",
 	]
+	rows: list[tuple[str, ...]] = []
 	for item in index:
-		body.append(
-			'<div class="result">'
-			f'<a href="{html_escape(item["url"])}">{html_escape(item["title"])}</a>'
-			f'<div class="meta">{html_escape(item["type"])}</div>'
-			f"<p>{html_escape(item['text'])}</p>"
-			"</div>"
+		rows.append(
+			(
+				f'<a href="{html_escape(item["url"])}">{html_escape(item["title"])}</a>',
+				f'<span class="kind-mark">{html_escape(item["type"])}</span>',
+				html_escape(item["text"]),
+			)
 		)
+	body.append(render_table(("Item", "Type", "Text"), rows, "search-table"))
 	body.append("</noscript>")
 	script = """
 <script>
@@ -1169,13 +1378,26 @@ function render() {
     if (!query) return true;
     return (item.title + " " + item.text + " " + item.type).toLowerCase().includes(query);
   }).slice(0, 80);
-  results.innerHTML = selected.map((item) => `
-    <div class="result">
-      <a href="${item.url}">${escapeHtml(item.title)}</a>
-      <div class="meta">${escapeHtml(item.type)}</div>
-      <p>${escapeHtml(item.text)}</p>
-    </div>
+  if (!selected.length) {
+    results.innerHTML = '<p class="meta">該当なし</p>';
+    return;
+  }
+  const rows = selected.map((item) => `
+    <tr>
+      <td><a href="${escapeAttr(item.url)}">${escapeHtml(item.title)}</a></td>
+      <td><span class="kind-mark">${escapeHtml(item.type)}</span></td>
+      <td>${escapeHtml(item.text)}</td>
+    </tr>
   `).join("");
+  results.innerHTML = `
+    <p class="meta result-count">${selected.length} / ${SEARCH_INDEX.length}</p>
+    <div class="table-scroll">
+      <table class="search-table">
+        <thead><tr><th>Item</th><th>Type</th><th>Text</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
 }
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (ch) => ({
@@ -1185,6 +1407,9 @@ function escapeHtml(value) {
     '"': "&quot;",
     "'": "&#39;"
   }[ch]));
+}
+function escapeAttr(value) {
+  return escapeHtml(value);
 }
 input.addEventListener("input", render);
 render();
