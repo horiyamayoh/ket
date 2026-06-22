@@ -6,7 +6,9 @@
     "port番号は port を使う。",
     "IPv4 dotted decimalは ipv4 を使う。",
     "version tripletは version を使う。",
+    "MAC addressとUUIDは mac、uuid を使う。",
     "RGB hexは color を使う。",
+    "percent値は percent を使う。",
     "日付妥当性は date を使う。",
     "汎用overflowやcast境界は numeric を使う。"
   ],
@@ -24,8 +26,20 @@
       "role": "numeric tripletの比較と表記。"
     },
     {
+      "module": "mac",
+      "role": "区切り付きMAC address文字列と6 byte値の相互変換。"
+    },
+    {
+      "module": "uuid",
+      "role": "canonical UUID文字列と16 byte値の相互変換。"
+    },
+    {
       "module": "color",
       "role": "RGB小値型と6桁hex文字列。"
+    },
+    {
+      "module": "percent",
+      "role": "0〜100%をbasis pointsで保持する小値型。"
     },
     {
       "module": "date",

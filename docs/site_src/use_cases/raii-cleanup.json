@@ -5,6 +5,9 @@
   "flow": [
     "scopeを抜ける時の後始末は scope を使う。",
     "copy/move方針を型定義へ出すなら object を使う。",
+    "threadのjoin忘れを避けるなら concurrency を使う。",
+    "non-null pointer前提を局所化するなら pointer を使う。",
+    "遅延生成した値の破棄境界を持つなら cache を使う。",
     "時間切れ判定は deadline を使う。",
     "常時評価したいpreconditionは contract を使う。",
     "bufferやobject bytesの扱いは memory の境界を確認する。"
@@ -17,6 +20,18 @@
     {
       "module": "object",
       "role": "copy/move意図のmixinとmove後reset。"
+    },
+    {
+      "module": "concurrency",
+      "role": "joinable threadをdestructorでjoinする。"
+    },
+    {
+      "module": "pointer",
+      "role": "null不許可pointer前提を型で表す。"
+    },
+    {
+      "module": "cache",
+      "role": "lazy valueの生成と明示破棄を局所化する。"
     },
     {
       "module": "deadline",

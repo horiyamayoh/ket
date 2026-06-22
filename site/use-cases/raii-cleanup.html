@@ -64,11 +64,14 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h1>後始末、期限、契約を局所化する</h1>
 <p class="lead">scope exit、move後reset、deadline、preconditionを小さく明示する。</p>
 <h2>Decision Flow</h2>
-<ul><li>scopeを抜ける時の後始末は scope を使う。</li><li>copy/move方針を型定義へ出すなら object を使う。</li><li>時間切れ判定は deadline を使う。</li><li>常時評価したいpreconditionは contract を使う。</li><li>bufferやobject bytesの扱いは memory の境界を確認する。</li></ul>
+<ul><li>scopeを抜ける時の後始末は scope を使う。</li><li>copy/move方針を型定義へ出すなら object を使う。</li><li>threadのjoin忘れを避けるなら concurrency を使う。</li><li>non-null pointer前提を局所化するなら pointer を使う。</li><li>遅延生成した値の破棄境界を持つなら cache を使う。</li><li>時間切れ判定は deadline を使う。</li><li>常時評価したいpreconditionは contract を使う。</li><li>bufferやobject bytesの扱いは memory の境界を確認する。</li></ul>
 <h2>Modules</h2>
 <table><tr><th>Module</th><th>Role</th></tr>
 <tr><td><a href="../modules/scope.html">scope</a></td><td>scope exit cleanupと構築時の値復元。</td></tr>
 <tr><td><a href="../modules/object.html">object</a></td><td>copy/move意図のmixinとmove後reset。</td></tr>
+<tr><td><a href="../modules/concurrency.html">concurrency</a></td><td>joinable threadをdestructorでjoinする。</td></tr>
+<tr><td><a href="../modules/pointer.html">pointer</a></td><td>null不許可pointer前提を型で表す。</td></tr>
+<tr><td><a href="../modules/cache.html">cache</a></td><td>lazy valueの生成と明示破棄を局所化する。</td></tr>
 <tr><td><a href="../modules/deadline.html">deadline</a></td><td>steady_clockベースの期限と経過時間。</td></tr>
 <tr><td><a href="../modules/contract.html">contract</a></td><td>pre/postcondition/invariantの常時評価。</td></tr>
 <tr><td><a href="../modules/memory.html">memory</a></td><td>alignment、secure zero、object bytes。</td></tr>

@@ -6,6 +6,7 @@
     "byte列の人間向け表示は hex を使う。",
     "GoogleTestでbyte列比較をするなら testing を使う。",
     "契約違反を常時terminateで検出するなら contract を使う。",
+    "platform error messageの確認には platform を使う。",
     "状態遷移tableの期待を固定するなら state を使う。"
   ],
   "modules": [
@@ -20,6 +21,10 @@
     {
       "module": "contract",
       "role": "pre/postcondition/invariantを常時評価。"
+    },
+    {
+      "module": "platform",
+      "role": "errnoやWindows error codeを診断文字列へ変換。"
     },
     {
       "module": "state",

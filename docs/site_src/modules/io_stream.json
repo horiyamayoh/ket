@@ -1,0 +1,17 @@
+{
+  "module": "io_stream",
+  "title": "iostream読み書き補助",
+  "summary": "short read/write判定、行末trim付き行読み、書式状態のscope復元を扱う。",
+  "categories": ["boundary", "binary"],
+  "use_cases": ["binary-io", "text-processing"],
+  "when_to_use": [
+    "streamから指定バイト数を読み切る、または書き切る意図を明示したい時。",
+    "iostreamの書式状態をscope終了時に戻したい時。"
+  ],
+  "when_not_to_use": [
+    "file全体を一括で読み書きしたい時。",
+    "非同期I/Oや独自buffering layerが必要な時。"
+  ],
+  "related_modules": ["file", "byte_reader", "byte_writer", "ascii"],
+  "notes": ["失敗時もstream位置やbufferが途中まで変化する場合がある。"]
+}

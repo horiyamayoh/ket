@@ -65,6 +65,18 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p class="lead">optional合成、状態遷移、契約、scope cleanup、deadlineを扱うmodule群。</p>
 <div class="grid">
 <section class="card">
+<h3><a href="../modules/cache.html">cache</a></h3>
+<p>手動storage上で値を遅延生成し、再利用と明示破棄を局所化する。</p>
+<p class="meta">cache / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a> <a href="../categories/data.html">データ構造・合成</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/concurrency.html">concurrency</a></h3>
+<p>join忘れ防止の所有threadとfuture ready判定を小さいAPIにする。</p>
+<p class="meta">concurrency / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/contract.html">contract</a></h3>
 <p>precondition、postcondition、invariantをNDEBUGに連動せず評価する。</p>
 <p class="meta">contract / C++11 / 11 API</p>
@@ -73,7 +85,7 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <section class="card">
 <h3><a href="../modules/deadline.html">deadline</a></h3>
 <p>steady_clockベースのStopwatchとDeadlineを扱う。</p>
-<p class="meta">time / C++11 / 6 API</p>
+<p class="meta">time / C++11 / 11 API</p>
 <div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
 </section>
 <section class="card">

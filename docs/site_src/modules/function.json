@@ -1,0 +1,17 @@
+{
+  "module": "function",
+  "title": "callable束ね補助",
+  "summary": "複数callableをoverload setとして束ね、Noop callableも提供する。",
+  "categories": ["language", "data"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "visitorやcallbackのoverload setを短く作りたい時。",
+    "任意引数を破棄する明示的なNoop callableが必要な時。"
+  ],
+  "when_not_to_use": [
+    "type-erasureされたstd::function風の所有wrapperが必要な時。",
+    "大きなdispatch frameworkを作りたい時。"
+  ],
+  "related_modules": ["variant", "tuple", "lang"],
+  "notes": ["callableのcopy/move制約と例外は元の型に従う。"]
+}

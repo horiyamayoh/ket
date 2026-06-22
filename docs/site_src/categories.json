@@ -13,9 +13,11 @@
         "bytes",
         "endian",
         "hex",
+        "io_stream",
         "memory",
         "numeric",
-        "testing"
+        "testing",
+        "tlv"
       ]
     },
     {
@@ -28,37 +30,81 @@
       "id": "value",
       "title": "値型・validation",
       "summary": "範囲、形式、domain制約を小さい値型や変換APIに固定するmodule群。",
-      "modules": ["color", "date", "ipv4", "math", "numeric", "port", "version"]
+      "modules": [
+        "color",
+        "date",
+        "ipv4",
+        "mac",
+        "math",
+        "numeric",
+        "percent",
+        "port",
+        "uuid",
+        "version"
+      ]
     },
     {
       "id": "language",
       "title": "C++言語・型補助",
       "summary": "C++の構文、型、copy/move、template周りの小さい儀式を名前にするmodule群。",
-      "modules": ["lang", "meta", "object", "tuple", "variant"]
+      "modules": [
+        "build_config",
+        "function",
+        "lang",
+        "meta",
+        "object",
+        "pointer",
+        "ranges",
+        "tuple",
+        "variant"
+      ]
     },
     {
       "id": "flow",
       "title": "制御・状態・失敗",
       "summary": "optional合成、状態遷移、契約、scope cleanup、deadlineを扱うmodule群。",
-      "modules": ["contract", "deadline", "optional", "scope", "state"]
+      "modules": ["cache", "concurrency", "contract", "deadline", "optional", "scope", "state"]
     },
     {
       "id": "boundary",
       "title": "入力境界・外部境界",
       "summary": "CLI、network値、日付時刻、外部入力の検証を小さく閉じるmodule群。",
-      "modules": ["cli", "date", "ipv4", "parse", "port", "utf8", "version"]
+      "modules": [
+        "cli",
+        "date",
+        "file",
+        "io_stream",
+        "ipv4",
+        "mac",
+        "parse",
+        "platform",
+        "port",
+        "utf8",
+        "uuid",
+        "version"
+      ]
     },
     {
       "id": "data",
       "title": "データ構造・合成",
       "summary": "container、enum、tuple、variant、optionalの小さい組み合わせ補助。",
-      "modules": ["container", "enums", "optional", "state", "tuple", "variant"]
+      "modules": [
+        "cache",
+        "container",
+        "enums",
+        "function",
+        "optional",
+        "ranges",
+        "state",
+        "tuple",
+        "variant"
+      ]
     },
     {
       "id": "diagnostic",
       "title": "診断・testing",
       "summary": "人間が差分や異常を読みやすくする診断・テスト補助。",
-      "modules": ["contract", "hex", "testing"]
+      "modules": ["contract", "hex", "platform", "testing"]
     }
   ]
 }

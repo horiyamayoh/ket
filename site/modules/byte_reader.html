@@ -85,7 +85,7 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h2>Notes</h2>
 <ul><li>endian読み取りもreader内に閉じ、他ket moduleへ依存しない。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/byte_reader.html#api-type-Reader-46">byte_reader::Reader</a></td><td>type</td><td>固定bufferを所有せずに読み進めるreader。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-63">byte_reader::Reader</a></td><td>function</td><td>non-owning buffer readerの構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-78">byte_reader::Reader</a></td><td>function</td><td>reader状態のcopy構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-108">byte_reader::Reader</a></td><td>function</td><td>reader状態のmove構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Skip-197">byte_reader::Skip</a></td><td>function</td><td>指定byte数の読み飛ばし。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadU8-214">byte_reader::ReadU8</a></td><td>function</td><td>1byte unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBe16-231">byte_reader::ReadBe16</a></td><td>function</td><td>big-endian 16bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBe32-248">byte_reader::ReadBe32</a></td><td>function</td><td>big-endian 32bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadLe16-265">byte_reader::ReadLe16</a></td><td>function</td><td>little-endian 16bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadLe32-282">byte_reader::ReadLe32</a></td><td>function</td><td>little-endian 32bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBytes-302">byte_reader::ReadBytes</a></td><td>function</td><td>指定byte数のnon-owning範囲読み取り。</td></tr></table>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/byte_reader.html#api-type-Reader-46">byte_reader::Reader</a></td><td>type</td><td>固定bufferを所有せずに読み進めるreader。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-63">byte_reader::Reader</a></td><td>function</td><td>non-owning buffer readerの構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-78">byte_reader::Reader</a></td><td>function</td><td>reader状態のcopy構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Reader-108">byte_reader::Reader</a></td><td>function</td><td>reader状態のmove構築。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Size-138">byte_reader::Size</a></td><td>function</td><td>構築時に渡したbuffer sizeの取得。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Offset-152">byte_reader::Offset</a></td><td>function</td><td>現在offsetの取得。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Remaining-166">byte_reader::Remaining</a></td><td>function</td><td>読み取り可能な残りbyte数の取得。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Empty-180">byte_reader::Empty</a></td><td>function</td><td>valid readerのoffsetが末尾に到達したかの判定。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-Skip-197">byte_reader::Skip</a></td><td>function</td><td>指定byte数の読み飛ばし。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadU8-214">byte_reader::ReadU8</a></td><td>function</td><td>1byte unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBe16-231">byte_reader::ReadBe16</a></td><td>function</td><td>big-endian 16bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBe32-248">byte_reader::ReadBe32</a></td><td>function</td><td>big-endian 32bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadLe16-265">byte_reader::ReadLe16</a></td><td>function</td><td>little-endian 16bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadLe32-282">byte_reader::ReadLe32</a></td><td>function</td><td>little-endian 32bit unsigned値の読み取り。</td></tr><tr><td><a href="../modules/byte_reader.html#api-function-ReadBytes-302">byte_reader::ReadBytes</a></td><td>function</td><td>指定byte数のnon-owning範囲読み取り。</td></tr></table>
 <h2>API Details</h2>
 <section class="api-entry" id="api-type-Reader-46">
 <h3>Reader <span class="meta">type</span></h3>
@@ -139,6 +139,65 @@ ket::byte_reader::Reader copied(source);
 ket::byte_reader::Reader source(data, 1U);
 ket::byte_reader::Reader moved(static_cast&lt;ket::byte_reader::Reader&amp;&amp;&gt;(source));
 // moved.Size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-Size-138">
+<h3>Size <span class="meta">function</span></h3>
+<pre class="signature"><code>std::size_t Size() const noexcept</code></pre>
+<p>構築時に渡したbuffer sizeの取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: 構築時に渡したbyte数。invalid readerでも入力sizeを返す。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+ket::byte_reader::Reader reader(data, 2U);
+const auto size = reader.Size();
+// size == 2</code></pre>
+</section>
+<section class="api-entry" id="api-function-Offset-152">
+<h3>Offset <span class="meta">function</span></h3>
+<pre class="signature"><code>std::size_t Offset() const noexcept</code></pre>
+<p>現在offsetの取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: 次に読み取るbyte位置。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x12U};
+ket::byte_reader::Reader reader(data, 1U);
+const auto offset = reader.Offset();
+// offset == 0</code></pre>
+</section>
+<section class="api-entry" id="api-function-Remaining-166">
+<h3>Remaining <span class="meta">function</span></h3>
+<pre class="signature"><code>std::size_t Remaining() const noexcept</code></pre>
+<p>読み取り可能な残りbyte数の取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: valid readerでは`Size() - Offset()`。invalid readerでは0。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+ket::byte_reader::Reader reader(data, 2U);
+const auto remaining = reader.Remaining();
+// remaining == 2</code></pre>
+</section>
+<section class="api-entry" id="api-function-Empty-180">
+<h3>Empty <span class="meta">function</span></h3>
+<pre class="signature"><code>bool Empty() const noexcept</code></pre>
+<p>valid readerのoffsetが末尾に到達したかの判定。</p>
+<h4>Return / retval</h4>
+<ul><li>true: readerがvalidで残りbyte数が0。</li><li>false: invalid reader、内部不整合、または残りbyte数が1以上。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>reader状態と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>ket::byte_reader::Reader reader(nullptr, 0U);
+const auto empty = reader.Empty();
+// empty == true</code></pre>
 </section>
 <section class="api-entry" id="api-function-Skip-197">
 <h3>Skip <span class="meta">function</span></h3>

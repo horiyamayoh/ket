@@ -64,12 +64,16 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h1>template、tuple、variantの儀式を短くする</h1>
 <p class="lead">標準の強い型機能を隠さず、繰り返し現れる小さい型操作だけを名前にする。</p>
 <h2>Decision Flow</h2>
-<ul><li>C++11/14で欠けるtype traitsは meta を使う。</li><li>tuple要素の順序付き反復や変換は tuple を使う。</li><li>variant visitorは variant を使う。</li><li>optional値の変換と合成は optional を使う。</li><li>未使用・配列長・const参照化は lang を使う。</li></ul>
+<ul><li>C++11/14で欠けるtype traitsは meta を使う。</li><li>tuple要素の順序付き反復や変換は tuple を使う。</li><li>variant visitorは variant を使う。</li><li>複数callableを束ねるなら function を使う。</li><li>range要素をindex付きで走査するなら ranges を使う。</li><li>null不許可pointer型が必要なら pointer を使う。</li><li>標準やcompiler featureの分岐は build_config を使う。</li><li>optional値の変換と合成は optional を使う。</li><li>未使用・配列長・const参照化は lang を使う。</li></ul>
 <h2>Modules</h2>
 <table><tr><th>Module</th><th>Role</th></tr>
 <tr><td><a href="../modules/meta.html">meta</a></td><td>C++11/14欠落type traitsの小補助。</td></tr>
 <tr><td><a href="../modules/tuple.html">tuple</a></td><td>tuple要素のindex順反復と変換。</td></tr>
 <tr><td><a href="../modules/variant.html">variant</a></td><td>std::variant visitor補助。</td></tr>
+<tr><td><a href="../modules/function.html">function</a></td><td>callableをoverload setとして束ねる。</td></tr>
+<tr><td><a href="../modules/ranges.html">ranges</a></td><td>range要素のindex付き走査と一致index取得。</td></tr>
+<tr><td><a href="../modules/pointer.html">pointer</a></td><td>null不許可pointerとpointer補助。</td></tr>
+<tr><td><a href="../modules/build_config.html">build_config</a></td><td>C++標準、compiler、標準featureをmacroで判定。</td></tr>
 <tr><td><a href="../modules/optional.html">optional</a></td><td>optionalの値変換、合成、遅延fallback評価。</td></tr>
 <tr><td><a href="../modules/lang.html">lang</a></td><td>未使用無視、raw配列長、const参照化。</td></tr>
 </table>

@@ -1,0 +1,17 @@
+{
+  "module": "ranges",
+  "title": "index付きrange走査",
+  "summary": "range要素のindex付き走査と最初の一致index取得を扱う。",
+  "categories": ["data", "language"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "C++17以前でindex付きrange走査を短く書きたい時。",
+    "条件を満たす最初の要素indexを出力引数で受けたい時。"
+  ],
+  "when_not_to_use": [
+    "iterator pair overloadやranges frameworkが必要な時。",
+    "C++20 std::ranges algorithmだけで十分明確な時。"
+  ],
+  "related_modules": ["container", "tuple", "function"],
+  "notes": ["begin/endで走査できるobjectに限定し、ADLによるfree functionも対象。"]
+}

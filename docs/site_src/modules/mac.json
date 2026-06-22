@@ -1,0 +1,17 @@
+{
+  "module": "mac",
+  "title": "MAC address値型",
+  "summary": "区切り付きMAC address文字列と固定6 byte値を相互変換する。",
+  "categories": ["value", "boundary"],
+  "use_cases": ["cli-config", "value-validation"],
+  "when_to_use": [
+    "MAC address literalを範囲確認して値として扱いたい時。",
+    "colon区切りまたはhyphen区切りのparse規則を固定したい時。"
+  ],
+  "when_not_to_use": [
+    "vendor OUI lookupやnetwork interface列挙が必要な時。",
+    "IPv4/IPv6 endpoint全体を扱いたい時。"
+  ],
+  "related_modules": ["ipv4", "uuid", "parse", "hex"],
+  "notes": ["正準formatはcolon区切りで、letter caseを呼び出し側で選ぶ。"]
+}

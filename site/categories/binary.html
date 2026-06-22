@@ -79,19 +79,19 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <section class="card">
 <h3><a href="../modules/byte_reader.html">byte_reader</a></h3>
 <p>non-owning bufferから成功時だけoffsetを進めてbyte列を読む。</p>
-<p class="meta">binary / C++11 / 11 API</p>
+<p class="meta">binary / C++11 / 15 API</p>
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/byte_view.html">byte_view</a></h3>
 <p>所有しないbyte範囲とslice境界を明示する。</p>
-<p class="meta">view / C++11 / 12 API</p>
+<p class="meta">view / C++11 / 16 API</p>
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/byte_writer.html">byte_writer</a></h3>
 <p>固定bufferへ成功時だけoffsetとbufferを更新してbyte列を書く。</p>
-<p class="meta">binary / C++11 / 11 API</p>
+<p class="meta">binary / C++11 / 15 API</p>
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">
@@ -113,6 +113,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a> <a href="../categories/diagnostic.html">診断・testing</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/io_stream.html">io_stream</a></h3>
+<p>short read/write判定、行末trim付き行読み、書式状態のscope復元を扱う。</p>
+<p class="meta">stream / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/boundary.html">入力境界・外部境界</a> <a href="../categories/binary.html">バイナリ・byte列</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/memory.html">memory</a></h3>
 <p>alignment判定、secure zero、object representationの小さい補助。</p>
 <p class="meta">memory / C++11 / 11 API</p>
@@ -129,6 +135,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p>byte列比較用GoogleTest assertion helperを提供する。</p>
 <p class="meta">testing / binary / C++17 / 2 API</p>
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a> <a href="../categories/diagnostic.html">診断・testing</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/tlv.html">tlv</a></h3>
+<p>type:uint16、length:uint32、value bytesの1 recordをencode/decodeする。</p>
+<p class="meta">binary / C++11 / 5 API</p>
+<div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 </div>
 </main>

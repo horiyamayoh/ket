@@ -65,6 +65,18 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p class="lead">C++の構文、型、copy/move、template周りの小さい儀式を名前にするmodule群。</p>
 <div class="grid">
 <section class="card">
+<h3><a href="../modules/build_config.html">build_config</a></h3>
+<p>compiler、OS、標準ライブラリfeatureの差分をKET_* macroへ集約する。</p>
+<p class="meta">config / C++11 / 12 API</p>
+<div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/function.html">function</a></h3>
+<p>複数callableをoverload setとして束ね、Noop callableも提供する。</p>
+<p class="meta">callable / C++17 / 3 API</p>
+<div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a> <a href="../categories/data.html">データ構造・合成</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/lang.html">lang</a></h3>
 <p>未使用無視、raw配列長、const参照化を扱う。</p>
 <p class="meta">language / C++11 / 3 API</p>
@@ -81,6 +93,18 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p>copy/move制御とmove後resetを型定義の近くに集約する。</p>
 <p class="meta">object / C++11 / 15 API</p>
 <div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/pointer.html">pointer</a></h3>
+<p>所有しないraw pointerのnull不許可、weak pointer lock、address取得を扱う。</p>
+<p class="meta">pointer / C++11 / 5 API</p>
+<div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a> <a href="../categories/flow.html">制御・状態・失敗</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/ranges.html">ranges</a></h3>
+<p>range要素のindex付き走査と最初の一致index取得を扱う。</p>
+<p class="meta">algorithm / C++11 / 2 API</p>
+<div class="pillrow"><a href="../categories/data.html">データ構造・合成</a> <a href="../categories/language.html">C++言語・型補助</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/tuple.html">tuple</a></h3>

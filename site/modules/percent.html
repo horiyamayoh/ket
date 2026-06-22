@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::percent - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::percent</h1>
+<p class="lead">percent、ratio、basis pointsを0〜100%の値型へ正規化する。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/percent/ket_percent.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++11</td></tr>
+<tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr>
+<tr><th>Progress note</th><td>0〜100%をbasis pointsで保持する小値型</td></tr>
+<tr><th>Drop-in</th><td>`ket_percent.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::percent 内部実装：ket::percent::detail</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>0〜100%の範囲と丸めを呼び出し側ごとにぶらしたくない時。</li><li>basis points単位でpercent値を保持したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>100%を超える割合や負の割合を扱う時。</li><li>unit frameworkや任意精度decimalが必要な時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/value.html">値型・validation</a></span><span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/numeric.html">numeric</a></span> <span class="pill"><a href="../modules/math.html">math</a></span> <span class="pill"><a href="../modules/parse.html">parse</a></span></p>
+<h2>Notes</h2>
+<ul><li>NaN、Inf、範囲外入力は失敗値として扱う。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/percent.html#api-type-Percent-47">percent::Percent</a></td><td>type</td><td>0〜100%を1 basis point単位で保持する値型。</td></tr><tr><td><a href="../modules/percent.html#api-function-TryFromBasisPoints-75">percent::TryFromBasisPoints</a></td><td>function</td><td>basis points単位からPercent値を構築。</td></tr><tr><td><a href="../modules/percent.html#api-function-TryFromPercent-93">percent::TryFromPercent</a></td><td>function</td><td>percent単位の小数からPercent値を構築。</td></tr><tr><td><a href="../modules/percent.html#api-function-TryFromRatio-111">percent::TryFromRatio</a></td><td>function</td><td>ratio単位の小数からPercent値を構築。</td></tr><tr><td><a href="../modules/percent.html#api-function-FromPercentClamped-126">percent::FromPercentClamped</a></td><td>function</td><td>percent単位の小数を範囲内へ丸め込んでPercent値を構築。</td></tr><tr><td><a href="../modules/percent.html#api-function-BasisPoints-140">percent::BasisPoints</a></td><td>function</td><td>保持中のbasis points取得。</td></tr><tr><td><a href="../modules/percent.html#api-function-ToPercent-154">percent::ToPercent</a></td><td>function</td><td>保持値のpercent単位変換。</td></tr><tr><td><a href="../modules/percent.html#api-function-ToRatio-168">percent::ToRatio</a></td><td>function</td><td>保持値のratio単位変換。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-Percent-47">
+<h3>Percent <span class="meta">type</span></h3>
+<pre class="signature"><code>class Percent</code></pre>
+<p>0〜100%を1 basis point単位で保持する値型。</p>
+<h4>Notes</h4>
+<ul><li>保持範囲は0から10000 basis points。1 basis pointは0.01%。</li></ul>
+</section>
+<section class="api-entry" id="api-function-TryFromBasisPoints-75">
+<h3>TryFromBasisPoints <span class="meta">function</span></h3>
+<pre class="signature"><code>static bool TryFromBasisPoints(std::uint32_t basis_points, Percent&amp; out) noexcept</code></pre>
+<p>basis points単位からPercent値を構築。</p>
+<h4>Parameters</h4>
+<ul><li>in basis_points: 入力basis points。0から10000のみ成功。</li><li>out out: 成功時に構築結果を書き込む出力先。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `basis_points &lt;= 10000`。</li><li>false: `basis_points &gt; 10000`。`out`は変更なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効なPercentオブジェクト。</td><td>成功時のみ`out`を`basis_points`相当へ更新。失敗時は`out`を保持。</td></tr></table>
+<h4>Example</h4>
+<pre><code>ket::percent::Percent value;
+const auto ok = ket::percent::Percent::TryFromBasisPoints(1234U, value);
+// ok == true, value.ToPercent() == 12.34</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryFromPercent-93">
+<h3>TryFromPercent <span class="meta">function</span></h3>
+<pre class="signature"><code>static bool TryFromPercent(double percent, Percent&amp; out) noexcept</code></pre>
+<p>percent単位の小数からPercent値を構築。</p>
+<h4>Parameters</h4>
+<ul><li>in percent: 入力percent値。0.0から100.0のみ成功。</li><li>out out: 成功時に構築結果を書き込む出力先。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 有限かつ0.0から100.0の入力。</li><li>false: 範囲外、NaN、Inf。`out`は変更なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効なPercentオブジェクト。</td><td>成功時のみ`out`をnearest basis pointへ丸めた値に更新。失敗時は`out`を保持。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>丸めは入力`double`値をbasis pointsへscaleした後の`floor(value + 0.5)`相当。 十進表記の厳密なtie丸めが必要な場合は`TryFromBasisPoints`を使用。</li></ul>
+<h4>Example</h4>
+<pre><code>ket::percent::Percent value;
+const auto ok = ket::percent::Percent::TryFromPercent(12.345, value);
+// ok == true, value.BasisPoints() == 1235</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryFromRatio-111">
+<h3>TryFromRatio <span class="meta">function</span></h3>
+<pre class="signature"><code>static bool TryFromRatio(double ratio, Percent&amp; out) noexcept</code></pre>
+<p>ratio単位の小数からPercent値を構築。</p>
+<h4>Parameters</h4>
+<ul><li>in ratio: 入力ratio値。0.0から1.0のみ成功。</li><li>out out: 成功時に構築結果を書き込む出力先。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: 有限かつ0.0から1.0の入力。</li><li>false: 範囲外、NaN、Inf。`out`は変更なし。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効なPercentオブジェクト。</td><td>成功時のみ`out`をnearest basis pointへ丸めた値に更新。失敗時は`out`を保持。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>丸めは入力`double`値をbasis pointsへscaleした後の`floor(value + 0.5)`相当。 十進表記の厳密なtie丸めが必要な場合は`TryFromBasisPoints`を使用。</li></ul>
+<h4>Example</h4>
+<pre><code>ket::percent::Percent value;
+const auto ok = ket::percent::Percent::TryFromRatio(0.12345, value);
+// ok == true, value.BasisPoints() == 1235</code></pre>
+</section>
+<section class="api-entry" id="api-function-FromPercentClamped-126">
+<h3>FromPercentClamped <span class="meta">function</span></h3>
+<pre class="signature"><code>static Percent FromPercentClamped(double percent) noexcept</code></pre>
+<p>percent単位の小数を範囲内へ丸め込んでPercent値を構築。</p>
+<h4>Parameters</h4>
+<ul><li>in percent: 入力percent値。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: 0.0から100.0へclamp後、nearest basis pointへ丸めたPercent値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。NaNは0%、-Infは0%、+Infは100%として扱う。</td><td>引数とketオブジェクトの変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>有限の範囲外入力は0.0から100.0へclamp。丸めは入力`double`値をbasis pointsへscaleした後の`floor(value + 0.5)`相当。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto value = ket::percent::Percent::FromPercentClamped(120.0);
+// value.BasisPoints() == 10000</code></pre>
+</section>
+<section class="api-entry" id="api-function-BasisPoints-140">
+<h3>BasisPoints <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr std::uint16_t BasisPoints() const noexcept</code></pre>
+<p>保持中のbasis points取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: 0から10000のbasis points値。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>ket::percent::Percent value;
+const auto ok = ket::percent::Percent::TryFromBasisPoints(1234U, value);
+const auto basis_points = value.BasisPoints();
+// ok == true, basis_points == 1234</code></pre>
+</section>
+<section class="api-entry" id="api-function-ToPercent-154">
+<h3>ToPercent <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr double ToPercent() const noexcept</code></pre>
+<p>保持値のpercent単位変換。</p>
+<h4>Return / retval</h4>
+<ul><li>value: `BasisPoints() / 100.0`。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>ket::percent::Percent value;
+const auto ok = ket::percent::Percent::TryFromBasisPoints(1234U, value);
+const auto percent = value.ToPercent();
+// ok == true, percent == 12.34</code></pre>
+</section>
+<section class="api-entry" id="api-function-ToRatio-168">
+<h3>ToRatio <span class="meta">function</span></h3>
+<pre class="signature"><code>constexpr double ToRatio() const noexcept</code></pre>
+<p>保持値のratio単位変換。</p>
+<h4>Return / retval</h4>
+<ul><li>value: `BasisPoints() / 10000.0`。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>ket::percent::Percent value;
+const auto ok = ket::percent::Percent::TryFromBasisPoints(1234U, value);
+const auto ratio = value.ToRatio();
+// ok == true, ratio == 0.1234</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

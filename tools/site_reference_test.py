@@ -57,6 +57,63 @@ class SiteReferenceTest(unittest.TestCase):
 			self.assertIn(("macro", "KET_DEMO"), api_names)
 			self.assertNotIn(("function", "Hidden"), api_names)
 
+	def test_extract_public_api_reads_public_def_comments_as_macros(self) -> None:
+		with tempfile.TemporaryDirectory() as root_name:
+			root = Path(root_name)
+			header = root / "modules" / "demo" / "ket_demo.h"
+			header.parent.mkdir(parents=True)
+			header.write_text(
+				"\n".join(
+					(
+						"#pragma once",
+						"// -----------------------------------------------------------------------------",
+						"// Public API declarations",
+						"// -----------------------------------------------------------------------------",
+						"",
+						"/**",
+						" * @def KET_DEMO_VALUE",
+						" * @brief demo value macro。",
+						" * @retval 1 enabled。",
+						" * @retval 0 disabled。",
+						" * @pre C++11以降。",
+						" * @post runtime状態の変更なし。",
+						" */",
+						"",
+						"/**",
+						" * @def KET_DEMO_AT_LEAST(value)",
+						" * @brief demo function-like macro。",
+						" * @param[in] value 入力。",
+						" * @retval 1 enabled。",
+						" * @retval 0 disabled。",
+						" * @pre valueはpreprocessor整数式。",
+						" * @post runtime状態の変更なし。",
+						" */",
+						"",
+						"// -----------------------------------------------------------------------------",
+						"// Internal implementation details",
+						"// -----------------------------------------------------------------------------",
+						"#define KET_DETAIL_VALUE 1",
+						"",
+						"// -----------------------------------------------------------------------------",
+						"// Public API definitions",
+						"// -----------------------------------------------------------------------------",
+						"#define KET_DEMO_VALUE KET_DETAIL_VALUE",
+						"#define KET_DEMO_AT_LEAST(value) ((value) <= KET_DEMO_VALUE)",
+						"",
+					)
+				),
+				encoding="utf-8",
+			)
+
+			_, apis = site_reference.extract_public_api(header)
+			api_names = {(api.kind, api.name, api.signature) for api in apis}
+
+			self.assertIn(("macro", "KET_DEMO_VALUE", "#define KET_DEMO_VALUE"), api_names)
+			self.assertIn(
+				("macro", "KET_DEMO_AT_LEAST", "#define KET_DEMO_AT_LEAST(value)"),
+				api_names,
+			)
+
 	def test_validate_model_reports_unknown_references(self) -> None:
 		with tempfile.TemporaryDirectory() as root_name:
 			root = Path(root_name)

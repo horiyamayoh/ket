@@ -1,0 +1,17 @@
+{
+  "module": "percent",
+  "title": "0〜100%小値型",
+  "summary": "percent、ratio、basis pointsを0〜100%の値型へ正規化する。",
+  "categories": ["value"],
+  "use_cases": ["value-validation"],
+  "when_to_use": [
+    "0〜100%の範囲と丸めを呼び出し側ごとにぶらしたくない時。",
+    "basis points単位でpercent値を保持したい時。"
+  ],
+  "when_not_to_use": [
+    "100%を超える割合や負の割合を扱う時。",
+    "unit frameworkや任意精度decimalが必要な時。"
+  ],
+  "related_modules": ["numeric", "math", "parse"],
+  "notes": ["NaN、Inf、範囲外入力は失敗値として扱う。"]
+}

@@ -64,13 +64,16 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h1>値の範囲と表記を小さいAPIに固定する</h1>
 <p class="lead">裸のintや文字列で扱うとぶれやすいdomain値を、moduleごとの値型やparseで固定する。</p>
 <h2>Decision Flow</h2>
-<ul><li>port番号は port を使う。</li><li>IPv4 dotted decimalは ipv4 を使う。</li><li>version tripletは version を使う。</li><li>RGB hexは color を使う。</li><li>日付妥当性は date を使う。</li><li>汎用overflowやcast境界は numeric を使う。</li></ul>
+<ul><li>port番号は port を使う。</li><li>IPv4 dotted decimalは ipv4 を使う。</li><li>version tripletは version を使う。</li><li>MAC addressとUUIDは mac、uuid を使う。</li><li>RGB hexは color を使う。</li><li>percent値は percent を使う。</li><li>日付妥当性は date を使う。</li><li>汎用overflowやcast境界は numeric を使う。</li></ul>
 <h2>Modules</h2>
 <table><tr><th>Module</th><th>Role</th></tr>
 <tr><td><a href="../modules/port.html">port</a></td><td>0から65535のport値とparse/format。</td></tr>
 <tr><td><a href="../modules/ipv4.html">ipv4</a></td><td>IPv4文字列表現とBE 32bit値。</td></tr>
 <tr><td><a href="../modules/version.html">version</a></td><td>numeric tripletの比較と表記。</td></tr>
+<tr><td><a href="../modules/mac.html">mac</a></td><td>区切り付きMAC address文字列と6 byte値の相互変換。</td></tr>
+<tr><td><a href="../modules/uuid.html">uuid</a></td><td>canonical UUID文字列と16 byte値の相互変換。</td></tr>
 <tr><td><a href="../modules/color.html">color</a></td><td>RGB小値型と6桁hex文字列。</td></tr>
+<tr><td><a href="../modules/percent.html">percent</a></td><td>0〜100%をbasis pointsで保持する小値型。</td></tr>
 <tr><td><a href="../modules/date.html">date</a></td><td>Gregorian日付と時刻の妥当性。</td></tr>
 <tr><td><a href="../modules/numeric.html">numeric</a></td><td>overflow、align、cast境界。</td></tr>
 </table>

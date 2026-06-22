@@ -1,0 +1,17 @@
+{
+  "module": "concurrency",
+  "title": "thread joinとfuture確認",
+  "summary": "join忘れ防止の所有threadとfuture ready判定を小さいAPIにする。",
+  "categories": ["flow"],
+  "use_cases": ["raii-cleanup"],
+  "when_to_use": [
+    "std::threadのjoin忘れを局所的な所有型で避けたい時。",
+    "futureがreadyかをtimeoutなしで短く確認したい時。"
+  ],
+  "when_not_to_use": [
+    "thread pool、executor、schedulerが必要な時。",
+    "C++20以降でstd::jthreadが用途に十分合う時。"
+  ],
+  "related_modules": ["scope", "deadline", "cache"],
+  "notes": ["局所的なjoin管理に絞り、非同期frameworkには広げない。"]
+}

@@ -1,0 +1,17 @@
+{
+  "module": "file",
+  "title": "ファイル全読み・全書き",
+  "summary": "通常ファイルの全体読み込み、全体書き込み、存在確認、サイズ取得を扱う。",
+  "categories": ["boundary"],
+  "use_cases": ["binary-io", "cli-config", "text-processing"],
+  "when_to_use": [
+    "小さい通常ファイルをtextまたはbytesとして丸ごと扱いたい時。",
+    "path存在、directory判定、file size取得を標準型で短く書きたい時。"
+  ],
+  "when_not_to_use": [
+    "streaming、atomic write、再帰処理が必要な時。",
+    "path正規化、encoding変換、watcherを扱いたい時。"
+  ],
+  "related_modules": ["io_stream", "bytes", "platform"],
+  "notes": ["read/writeは通常ファイルを対象とし、queryは通常ファイル以外も扱う。"]
+}

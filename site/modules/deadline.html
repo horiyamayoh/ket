@@ -85,7 +85,7 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h2>Notes</h2>
 <ul><li>時間源はsteady_clockに固定する。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/deadline.html#api-type-Stopwatch-49">deadline::Stopwatch</a></td><td>type</td><td>steady_clockで経過時間を測る小さいstopwatch。</td></tr><tr><td><a href="../modules/deadline.html#api-function-StartNew-62">deadline::StartNew</a></td><td>function</td><td>現在時刻を開始点にしたstopwatch生成。</td></tr><tr><td><a href="../modules/deadline.html#api-function-Restart-75">deadline::Restart</a></td><td>function</td><td>開始点を現在時刻へ戻す。</td></tr><tr><td><a href="../modules/deadline.html#api-type-Deadline-125">deadline::Deadline</a></td><td>type</td><td>steady_clockで表す期限時刻。</td></tr><tr><td><a href="../modules/deadline.html#api-function-After-144">deadline::After</a></td><td>function</td><td>現在時刻からtimeout後のdeadline生成。</td></tr><tr><td><a href="../modules/deadline.html#api-function-At-157">deadline::At</a></td><td>function</td><td>指定したsteady_clock時刻のdeadline生成。</td></tr></table>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/deadline.html#api-type-Stopwatch-49">deadline::Stopwatch</a></td><td>type</td><td>steady_clockで経過時間を測る小さいstopwatch。</td></tr><tr><td><a href="../modules/deadline.html#api-function-StartNew-62">deadline::StartNew</a></td><td>function</td><td>現在時刻を開始点にしたstopwatch生成。</td></tr><tr><td><a href="../modules/deadline.html#api-function-Restart-75">deadline::Restart</a></td><td>function</td><td>開始点を現在時刻へ戻す。</td></tr><tr><td><a href="../modules/deadline.html#api-function-Elapsed-87">deadline::Elapsed</a></td><td>function</td><td>開始点から現在までの経過時間取得。</td></tr><tr><td><a href="../modules/deadline.html#api-function-ElapsedMilliseconds-100">deadline::ElapsedMilliseconds</a></td><td>function</td><td>開始点から現在までの経過時間をmilliseconds単位で取得。</td></tr><tr><td><a href="../modules/deadline.html#api-type-Deadline-125">deadline::Deadline</a></td><td>type</td><td>steady_clockで表す期限時刻。</td></tr><tr><td><a href="../modules/deadline.html#api-function-After-144">deadline::After</a></td><td>function</td><td>現在時刻からtimeout後のdeadline生成。</td></tr><tr><td><a href="../modules/deadline.html#api-function-At-157">deadline::At</a></td><td>function</td><td>指定したsteady_clock時刻のdeadline生成。</td></tr><tr><td><a href="../modules/deadline.html#api-function-Expired-170">deadline::Expired</a></td><td>function</td><td>期限切れ判定。</td></tr><tr><td><a href="../modules/deadline.html#api-function-Remaining-184">deadline::Remaining</a></td><td>function</td><td>期限までの残り時間取得。</td></tr><tr><td><a href="../modules/deadline.html#api-function-TimePoint-197">deadline::TimePoint</a></td><td>function</td><td>保持している期限時刻取得。</td></tr></table>
 <h2>API Details</h2>
 <section class="api-entry" id="api-type-Stopwatch-49">
 <h3>Stopwatch <span class="meta">type</span></h3>
@@ -122,6 +122,32 @@ const auto elapsed = stopwatch.Elapsed();</code></pre>
 <pre><code>auto stopwatch = ket::deadline::Stopwatch::StartNew();
 stopwatch.Restart();
 const auto elapsed = stopwatch.Elapsed();</code></pre>
+</section>
+<section class="api-entry" id="api-function-Elapsed-87">
+<h3>Elapsed <span class="meta">function</span></h3>
+<pre class="signature"><code>std::chrono::steady_clock::duration Elapsed() const noexcept</code></pre>
+<p>開始点から現在までの経過時間取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: `std::chrono::steady_clock::duration`で表す経過時間。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>生成済みの有効な`Stopwatch` object。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto stopwatch = ket::deadline::Stopwatch::StartNew();
+const auto elapsed = stopwatch.Elapsed();</code></pre>
+</section>
+<section class="api-entry" id="api-function-ElapsedMilliseconds-100">
+<h3>ElapsedMilliseconds <span class="meta">function</span></h3>
+<pre class="signature"><code>std::chrono::milliseconds ElapsedMilliseconds() const noexcept</code></pre>
+<p>開始点から現在までの経過時間をmilliseconds単位で取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: `std::chrono::milliseconds`へ切り捨て変換した経過時間。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>生成済みの有効な`Stopwatch` object。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto stopwatch = ket::deadline::Stopwatch::StartNew();
+const auto elapsed = stopwatch.ElapsedMilliseconds();</code></pre>
 </section>
 <section class="api-entry" id="api-type-Deadline-125">
 <h3>Deadline <span class="meta">type</span></h3>
@@ -162,6 +188,46 @@ const auto expired = deadline.Expired();
 <h4>Example</h4>
 <pre><code>const auto time_point = std::chrono::steady_clock::now() + std::chrono::seconds(5);
 const auto deadline = ket::deadline::Deadline::At(time_point);</code></pre>
+</section>
+<section class="api-entry" id="api-function-Expired-170">
+<h3>Expired <span class="meta">function</span></h3>
+<pre class="signature"><code>bool Expired() const noexcept</code></pre>
+<p>期限切れ判定。</p>
+<h4>Return / retval</h4>
+<ul><li>true: 現在時刻がdeadline以上。</li><li>false: 現在時刻がdeadline未満。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(1));
+const auto expired = deadline.Expired();</code></pre>
+</section>
+<section class="api-entry" id="api-function-Remaining-184">
+<h3>Remaining <span class="meta">function</span></h3>
+<pre class="signature"><code>std::chrono::steady_clock::duration Remaining() const noexcept</code></pre>
+<p>期限までの残り時間取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: 現在時刻からdeadlineまでのduration。</li><li>zero: 期限切れ、または期限ちょうど。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。戻り値は負にならず、期限切れではzero。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(5));
+const auto remaining = deadline.Remaining();
+// remainingはwait_forなどに渡す残りtimeout</code></pre>
+</section>
+<section class="api-entry" id="api-function-TimePoint-197">
+<h3>TimePoint <span class="meta">function</span></h3>
+<pre class="signature"><code>std::chrono::steady_clock::time_point TimePoint() const noexcept</code></pre>
+<p>保持している期限時刻取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: `std::chrono::steady_clock::time_point`の期限時刻。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto deadline = ket::deadline::Deadline::After(std::chrono::seconds(5));
+const auto time_point = deadline.TimePoint();</code></pre>
 </section>
 </main>
 <footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>

@@ -1,0 +1,17 @@
+{
+  "module": "uuid",
+  "title": "UUID parse/format",
+  "summary": "canonical hyphen形式のUUID文字列と16 byte表現を相互変換する。",
+  "categories": ["value", "boundary"],
+  "use_cases": ["cli-config", "value-validation"],
+  "when_to_use": [
+    "UUID literalをcanonical hyphen形式として検証したい時。",
+    "16 byte表現からlower-case固定の文字列を生成したい時。"
+  ],
+  "when_not_to_use": [
+    "UUID生成、URN形式、version/variant validationが必要な時。",
+    "任意のidentifier形式を汎用的に扱いたい時。"
+  ],
+  "related_modules": ["mac", "parse", "hex", "version"],
+  "notes": ["canonical hyphen形式だけを扱い、generationには踏み込まない。"]
+}

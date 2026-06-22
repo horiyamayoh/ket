@@ -281,6 +281,27 @@ def first_doxygen_block(lines: list[str]) -> str | None:
 	return None
 
 
+def doxygen_block_at(lines: list[str], index: int) -> tuple[str, int] | None:
+	if lines[index].strip() != "/**":
+		return None
+
+	block: list[str] = []
+	for cursor in range(index, len(lines)):
+		block.append(lines[cursor])
+		if lines[cursor].strip() == "*/":
+			return "\n".join(block), cursor
+
+	return None
+
+
+def def_signature_from_doxygen(comment: str) -> str | None:
+	for line in clean_doxygen_lines(comment):
+		match = re.match(r"@def\s+(KET_[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?)\s*$", line.strip())
+		if match is not None:
+			return f"#define {match.group(1)}"
+	return None
+
+
 def extract_name_from_signature(signature: str) -> str:
 	without_suffix = signature.rstrip(";{").strip()
 	macro_match = re.match(r"#define\s+([A-Za-z_][A-Za-z0-9_]*)", without_suffix)
@@ -413,6 +434,19 @@ def extract_public_api(header: Path) -> tuple[ParsedDoxygen, tuple[ApiDoc, ...]]
 	while index < len(lines):
 		if not index_in_ranges(index, ranges):
 			index += 1
+			continue
+
+		doxygen = doxygen_block_at(lines, index)
+		if doxygen is not None:
+			comment, end_index = doxygen
+			signature = def_signature_from_doxygen(comment)
+			if signature is not None:
+				name = extract_name_from_signature(signature)
+				key = ("macro", name, signature)
+				if key not in seen:
+					apis.append(api_doc_from_signature(name, "macro", signature, comment, index + 1))
+					seen.add(key)
+			index = end_index + 1
 			continue
 
 		alias = alias_declaration_at(lines, index)

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::file - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --panel: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #d9d9d2;
+  --link: #075a9c;
+  --accent: #176b51;
+  --code: #f0f3f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+header { position: sticky; top: 0; z-index: 2; display: flex; gap: 18px; align-items: center; border-bottom: 1px solid var(--line); background: #fdfdfb; padding: 10px 18px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.92rem; }
+a { color: var(--link); }
+nav a { text-decoration: none; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 18px 42px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 14px 18px; font-size: 0.85rem; }
+h1, h2, h3 { line-height: 1.25; letter-spacing: 0; }
+h1 { margin: 0 0 12px; font-size: 2rem; }
+h2 { margin-top: 30px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 1.35rem; }
+h3 { margin-top: 22px; font-size: 1.08rem; }
+.lead { color: var(--muted); max-width: 78ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 12px; }
+.card h3 { margin: 0 0 6px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfbf8; color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+th { background: #eef3f0; text-align: left; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+pre { overflow: auto; background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.signature { background: #f8fafb; border-left: 4px solid var(--accent); }
+.api-entry { margin: 16px 0; }
+.api-entry h3 { margin-bottom: 6px; }
+.matrix { font-size: 0.82rem; }
+.matrix th { position: sticky; top: 48px; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.searchbox { width: 100%; max-width: 720px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+.result { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.diagram { width: 100%; min-height: 220px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; }
+@media (max-width: 720px) {
+  header { position: static; align-items: flex-start; flex-direction: column; }
+  main { padding: 18px 12px 36px; }
+  table { font-size: 0.88rem; }
+}</style>
+</head>
+<body>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main>
+<h1>ket::file</h1>
+<p class="lead">通常ファイルの全体読み込み、全体書き込み、存在確認、サイズ取得を扱う。</p>
+<h2>Module Facts</h2>
+<table>
+<tr><th>Header</th><td>modules/file/ket_file.h</td></tr>
+<tr><th>Status</th><td>verified</td></tr>
+<tr><th>C++ Min</th><td>C++17</td></tr>
+<tr><th>Tests</th><td>GoogleTest</td></tr>
+<tr><th>Progress note</th><td>ファイル全読み/全書きと基本query</td></tr>
+<tr><th>Drop-in</th><td>`ket_file.h` と `ket_file.cpp` を対象プロジェクトへコピー。</td></tr>
+<tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr>
+<tr><th>Namespace</th><td>公開API：ket::file 内部実装：.cpp の無名 namespace</td></tr>
+</table>
+<h2>Use This When</h2>
+<ul><li>小さい通常ファイルをtextまたはbytesとして丸ごと扱いたい時。</li><li>path存在、directory判定、file size取得を標準型で短く書きたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>streaming、atomic write、再帰処理が必要な時。</li><li>path正規化、encoding変換、watcherを扱いたい時。</li></ul>
+<h2>Views</h2>
+<p class="pillrow"><span class="pill"><a href="../categories/boundary.html">入力境界・外部境界</a></span><span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span> <span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span> <span class="pill"><a href="../use-cases/text-processing.html">文字列の小処理を読みやすくする</a></span></p>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/io_stream.html">io_stream</a></span> <span class="pill"><a href="../modules/bytes.html">bytes</a></span> <span class="pill"><a href="../modules/platform.html">platform</a></span></p>
+<h2>Notes</h2>
+<ul><li>read/writeは通常ファイルを対象とし、queryは通常ファイル以外も扱う。</li></ul>
+<h2>API Summary</h2>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/file.html#api-function-TryReadAllText-71">file::TryReadAllText</a></td><td>function</td><td>ファイル全体のtext読み込み。</td></tr><tr><td><a href="../modules/file.html#api-function-TryReadAllBytes-97">file::TryReadAllBytes</a></td><td>function</td><td>ファイル全体のbytes読み込み。</td></tr><tr><td><a href="../modules/file.html#api-function-TryWriteAllText-122">file::TryWriteAllText</a></td><td>function</td><td>text内容のファイル全体書き込み。</td></tr><tr><td><a href="../modules/file.html#api-function-TryWriteAllBytes-148">file::TryWriteAllBytes</a></td><td>function</td><td>bytes内容のファイル全体書き込み。</td></tr><tr><td><a href="../modules/file.html#api-function-Exists-165">file::Exists</a></td><td>function</td><td>path存在確認。</td></tr><tr><td><a href="../modules/file.html#api-function-IsDirectory-179">file::IsDirectory</a></td><td>function</td><td>directory判定。</td></tr><tr><td><a href="../modules/file.html#api-function-Size-194">file::Size</a></td><td>function</td><td>通常ファイルサイズ取得。</td></tr></table>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-TryReadAllText-71">
+<h3>TryReadAllText <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TryReadAllText(const std::filesystem::path&amp; path, std::string&amp; out, std::error_code* error = nullptr)</code></pre>
+<p>ファイル全体のtext読み込み。</p>
+<h4>Parameters</h4>
+<ul><li>in path: 読み込み対象path。</li><li>out out: 読み込んだbytesを格納する文字列。</li><li>out error: 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: ファイル全体を読み込み、`out`を更新。</li><li>false: path不在、通常ファイル以外、permission、短いread、読み込み中の内容増加、またはサイズ過大。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効なstd::string。`error`は`nullptr`または有効なstd::error_code。</td><td>成功時だけ`out`を置換。失敗時は`out`不変。成功時は`error`をclearし、失敗時は可能な範囲で原因を設定。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>text encoding変換なし。ファイルbytesをそのままstd::stringへ保持。</li><li>読み込み中の同時更新に対するsnapshot保証なし。open後の終端を基準にし、余剰byteを検出した場合は失敗。</li><li>stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。</li><li>std::stringのallocation例外は呼び出し側へ伝播。</li></ul>
+<h4>Example</h4>
+<pre><code>std::string text;
+std::error_code error;
+const auto ok = ket::file::TryReadAllText(&quot;config.txt&quot;, text, &amp;error);</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryReadAllBytes-97">
+<h3>TryReadAllBytes <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TryReadAllBytes(const std::filesystem::path&amp; path, std::vector&lt;std::uint8_t&gt;&amp; out, std::error_code* error = nullptr)</code></pre>
+<p>ファイル全体のbytes読み込み。</p>
+<h4>Parameters</h4>
+<ul><li>in path: 読み込み対象path。</li><li>out out: 読み込んだbytesを格納するvector。</li><li>out error: 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: ファイル全体を読み込み、`out`を更新。</li><li>false: path不在、通常ファイル以外、permission、短いread、読み込み中の内容増加、またはサイズ過大。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`out`は有効なstd::vector。`error`は`nullptr`または有効なstd::error_code。</td><td>成功時だけ`out`を置換。失敗時は`out`不変。成功時は`error`をclearし、失敗時は可能な範囲で原因を設定。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>binary/textを区別せず、ファイルbytesをそのままstd::uint8_t列へ保持。</li><li>読み込み中の同時更新に対するsnapshot保証なし。open後の終端を基準にし、余剰byteを検出した場合は失敗。</li><li>stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。</li><li>std::vectorのallocation例外は呼び出し側へ伝播。</li></ul>
+<h4>Example</h4>
+<pre><code>std::vector&lt;std::uint8_t&gt; bytes;
+const auto ok = ket::file::TryReadAllBytes(&quot;payload.bin&quot;, bytes);</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryWriteAllText-122">
+<h3>TryWriteAllText <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TryWriteAllText(const std::filesystem::path&amp; path, std::string_view text, std::error_code* error = nullptr)</code></pre>
+<p>text内容のファイル全体書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in path: 書き込み対象path。</li><li>in text: 書き込むbytesを指す文字列view。</li><li>out error: 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `text`全体を書き込み、stream closeまで成功。</li><li>false: pathを開けない、permission、既存pathが通常ファイル以外、短いwrite、またはclose失敗。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>`text`は`text.size()`バイト以上読み取り可能な範囲を指す。`error`は`nullptr`または有効なstd::error_code。</td><td>成功時は対象pathの内容を`text`で置換。未存在pathは新規作成。失敗時の部分書き込み有無はplatformと stream状態に従う。fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>text encoding変換なし。`text`のbytesをそのまま書き込む。</li><li>stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。</li></ul>
+<h4>Example</h4>
+<pre><code>std::error_code error;
+const auto ok = ket::file::TryWriteAllText(&quot;config.txt&quot;, &quot;mode=run&quot;, &amp;error);</code></pre>
+</section>
+<section class="api-entry" id="api-function-TryWriteAllBytes-148">
+<h3>TryWriteAllBytes <span class="meta">function</span></h3>
+<pre class="signature"><code>bool TryWriteAllBytes(const std::filesystem::path&amp; path, const std::uint8_t* data, std::size_t size, std::error_code* error = nullptr)</code></pre>
+<p>bytes内容のファイル全体書き込み。</p>
+<h4>Parameters</h4>
+<ul><li>in path: 書き込み対象path。</li><li>in data: 書き込むbytesの先頭。`size == 0`の場合だけ`nullptr`可。</li><li>in size: 書き込むbyte数。</li><li>out error: 失敗詳細のoptional出力。`nullptr`の場合は詳細を破棄。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: `data[0, size)`全体を書き込み、stream closeまで成功。</li><li>false: pathを開けない、permission、既存pathが通常ファイル以外、短いwrite、close失敗、またはnonnull条件違反。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>sizeが0より大きい場合、`data`は`size`バイト以上読み取り可能な配列を指す。`error`は`nullptr`または有効なstd::error_code。</td><td>成功時は対象pathの内容を入力bytesで置換。未存在pathは新規作成。失敗時の部分書き込み有無はplatformと stream状態に従う。fileを開いた後の失敗では、既存内容がtruncate済みまたは途中まで置換済みの場合がある。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>raw pointerはbytes列のC API境界として扱うため採用。</li><li>stream由来の失敗は、標準ライブラリから詳細を取得できない場合にstd::errc::io_errorで報告。</li></ul>
+<h4>Example</h4>
+<pre><code>const std::uint8_t payload[] = {0x01U, 0x02U};
+const auto ok = ket::file::TryWriteAllBytes(&quot;payload.bin&quot;, payload, 2U);</code></pre>
+</section>
+<section class="api-entry" id="api-function-Exists-165">
+<h3>Exists <span class="meta">function</span></h3>
+<pre class="signature"><code>bool Exists(const std::filesystem::path&amp; path) noexcept</code></pre>
+<p>path存在確認。</p>
+<h4>Parameters</h4>
+<ul><li>in path: 確認対象path。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: pathが存在。</li><li>false: path不在、またはfilesystem query失敗。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto exists = ket::file::Exists(&quot;config.txt&quot;);
+// exists == true if config.txt exists</code></pre>
+</section>
+<section class="api-entry" id="api-function-IsDirectory-179">
+<h3>IsDirectory <span class="meta">function</span></h3>
+<pre class="signature"><code>bool IsDirectory(const std::filesystem::path&amp; path) noexcept</code></pre>
+<p>directory判定。</p>
+<h4>Parameters</h4>
+<ul><li>in path: 確認対象path。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>true: pathが存在し、directory。</li><li>false: path不在、directory以外、またはfilesystem query失敗。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>const auto directory = ket::file::IsDirectory(&quot;logs&quot;);
+// directory == true if logs is an existing directory</code></pre>
+</section>
+<section class="api-entry" id="api-function-Size-194">
+<h3>Size <span class="meta">function</span></h3>
+<pre class="signature"><code>std::optional&lt;std::uintmax_t&gt; Size(const std::filesystem::path&amp; path) noexcept</code></pre>
+<p>通常ファイルサイズ取得。</p>
+<h4>Parameters</h4>
+<ul><li>in path: 取得対象path。</li></ul>
+<h4>Return / retval</h4>
+<ul><li>value: ファイルサイズbyte数。</li><li>std::nullopt: path不在、通常ファイル以外、またはfilesystem query失敗。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>引数と外部状態の変更なし。</td></tr></table>
+<h4>Notes</h4>
+<ul><li>失敗詳細は公開しない。原因が必要な場合はstd::filesystem::file_sizeの直接利用対象。</li></ul>
+<h4>Example</h4>
+<pre><code>const auto size = ket::file::Size(&quot;payload.bin&quot;);
+// size == std::optional&lt;std::uintmax_t&gt;(file byte count)</code></pre>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

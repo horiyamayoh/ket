@@ -5,6 +5,7 @@
   "flow": [
     "固定bufferへ詰めるなら byte_writer を使う。",
     "可変長payloadを所有して作るなら bytes を使う。",
+    "type-length-valueの1 recordなら tlv を使う。",
     "数値幅とoverflowは numeric で先に固定する。",
     "BCD表現が必要なfieldだけ bcd を使う。",
     "完成payloadの確認には hex を使う。"
@@ -17,6 +18,10 @@
     {
       "module": "byte_writer",
       "role": "固定bufferへの逐次書き込み。"
+    },
+    {
+      "module": "tlv",
+      "role": "type:uint16、length:uint32、value bytesのrecord構築。"
     },
     {
       "module": "bcd",

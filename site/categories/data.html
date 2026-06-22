@@ -65,6 +65,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p class="lead">container、enum、tuple、variant、optionalの小さい組み合わせ補助。</p>
 <div class="grid">
 <section class="card">
+<h3><a href="../modules/cache.html">cache</a></h3>
+<p>手動storage上で値を遅延生成し、再利用と明示破棄を局所化する。</p>
+<p class="meta">cache / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a> <a href="../categories/data.html">データ構造・合成</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/container.html">container</a></h3>
 <p>map/vectorの小さいlookup、生成、削除補助を集める。</p>
 <p class="meta">container / C++11 / 8 API</p>
@@ -77,10 +83,22 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/data.html">データ構造・合成</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/function.html">function</a></h3>
+<p>複数callableをoverload setとして束ね、Noop callableも提供する。</p>
+<p class="meta">callable / C++17 / 3 API</p>
+<div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a> <a href="../categories/data.html">データ構造・合成</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/optional.html">optional</a></h3>
 <p>optionalの値変換、合成、遅延fallback評価を扱う。</p>
 <p class="meta">optional / C++17 / 10 API</p>
 <div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a> <a href="../categories/data.html">データ構造・合成</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/ranges.html">ranges</a></h3>
+<p>range要素のindex付き走査と最初の一致index取得を扱う。</p>
+<p class="meta">algorithm / C++11 / 2 API</p>
+<div class="pillrow"><a href="../categories/data.html">データ構造・合成</a> <a href="../categories/language.html">C++言語・型補助</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/state.html">state</a></h3>

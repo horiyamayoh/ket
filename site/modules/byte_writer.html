@@ -85,7 +85,7 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h2>Notes</h2>
 <ul><li>可変長payloadの所有構築は bytes module に分ける。</li></ul>
 <h2>API Summary</h2>
-<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/byte_writer.html#api-type-Writer-47">byte_writer::Writer</a></td><td>type</td><td>fixed bufferへ逐次書き込むnon-owning writer。 `data == nullptr &amp;&amp; size == 0`は有効な空writer。`data == nullptr &amp;&amp; size &gt; 0`は invalid writerとして扱い、書き込みとskipは失敗。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-64">byte_writer::Writer</a></td><td>function</td><td>書き込み先bufferを参照するwriter生成。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-79">byte_writer::Writer</a></td><td>function</td><td>writer状態のcopy constructor。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-109">byte_writer::Writer</a></td><td>function</td><td>writer状態のmove constructor。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Skip-199">byte_writer::Skip</a></td><td>function</td><td>指定byte数だけoffsetを進める。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteU8-215">byte_writer::WriteU8</a></td><td>function</td><td>1byte値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBe16-232">byte_writer::WriteBe16</a></td><td>function</td><td>big-endian 16bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBe32-249">byte_writer::WriteBe32</a></td><td>function</td><td>big-endian 32bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteLe16-266">byte_writer::WriteLe16</a></td><td>function</td><td>little-endian 16bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteLe32-283">byte_writer::WriteLe32</a></td><td>function</td><td>little-endian 32bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBytes-303">byte_writer::WriteBytes</a></td><td>function</td><td>byte列の書き込み。</td></tr></table>
+<table><tr><th>API</th><th>Kind</th><th>Brief</th></tr><tr><td><a href="../modules/byte_writer.html#api-type-Writer-47">byte_writer::Writer</a></td><td>type</td><td>fixed bufferへ逐次書き込むnon-owning writer。 `data == nullptr &amp;&amp; size == 0`は有効な空writer。`data == nullptr &amp;&amp; size &gt; 0`は invalid writerとして扱い、書き込みとskipは失敗。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-64">byte_writer::Writer</a></td><td>function</td><td>書き込み先bufferを参照するwriter生成。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-79">byte_writer::Writer</a></td><td>function</td><td>writer状態のcopy constructor。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Writer-109">byte_writer::Writer</a></td><td>function</td><td>writer状態のmove constructor。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Size-139">byte_writer::Size</a></td><td>function</td><td>参照先bufferの総byte数取得。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Offset-153">byte_writer::Offset</a></td><td>function</td><td>次に書き込むoffset取得。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Remaining-168">byte_writer::Remaining</a></td><td>function</td><td>残り書き込み可能byte数取得。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Full-182">byte_writer::Full</a></td><td>function</td><td>valid writerのoffsetが末尾に到達したかの判定。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-Skip-199">byte_writer::Skip</a></td><td>function</td><td>指定byte数だけoffsetを進める。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteU8-215">byte_writer::WriteU8</a></td><td>function</td><td>1byte値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBe16-232">byte_writer::WriteBe16</a></td><td>function</td><td>big-endian 16bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBe32-249">byte_writer::WriteBe32</a></td><td>function</td><td>big-endian 32bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteLe16-266">byte_writer::WriteLe16</a></td><td>function</td><td>little-endian 16bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteLe32-283">byte_writer::WriteLe32</a></td><td>function</td><td>little-endian 32bit値の書き込み。</td></tr><tr><td><a href="../modules/byte_writer.html#api-function-WriteBytes-303">byte_writer::WriteBytes</a></td><td>function</td><td>byte列の書き込み。</td></tr></table>
 <h2>API Details</h2>
 <section class="api-entry" id="api-type-Writer-47">
 <h3>Writer <span class="meta">type</span></h3>
@@ -137,6 +137,65 @@ ket::byte_writer::Writer copied(source);
 ket::byte_writer::Writer source(buffer, 1U);
 ket::byte_writer::Writer moved(static_cast&lt;ket::byte_writer::Writer&amp;&amp;&gt;(source));
 // moved.Size() == 1</code></pre>
+</section>
+<section class="api-entry" id="api-function-Size-139">
+<h3>Size <span class="meta">function</span></h3>
+<pre class="signature"><code>std::size_t Size() const noexcept</code></pre>
+<p>参照先bufferの総byte数取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: constructorで渡されたbuffer size。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。invalid writerでも参照先として渡されたsizeを返す。</td><td>writer状態とbuffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 2U);
+const auto size = writer.Size();
+// size == 2</code></pre>
+</section>
+<section class="api-entry" id="api-function-Offset-153">
+<h3>Offset <span class="meta">function</span></h3>
+<pre class="signature"><code>std::size_t Offset() const noexcept</code></pre>
+<p>次に書き込むoffset取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: 現在offset。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>writer状態とbuffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U};
+ket::byte_writer::Writer writer(buffer, 1U);
+const auto offset = writer.Offset();
+// offset == 0</code></pre>
+</section>
+<section class="api-entry" id="api-function-Remaining-168">
+<h3>Remaining <span class="meta">function</span></h3>
+<pre class="signature"><code>std::size_t Remaining() const noexcept</code></pre>
+<p>残り書き込み可能byte数取得。</p>
+<h4>Return / retval</h4>
+<ul><li>value: valid writerでは`Size() - Offset()`。invalid writerまたはoffsetがsizeを 超える内部不整合時は0。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>writer状態とbuffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>std::uint8_t buffer[] = {0x00U, 0x00U};
+ket::byte_writer::Writer writer(buffer, 2U);
+const auto remaining = writer.Remaining();
+// remaining == 2</code></pre>
+</section>
+<section class="api-entry" id="api-function-Full-182">
+<h3>Full <span class="meta">function</span></h3>
+<pre class="signature"><code>bool Full() const noexcept</code></pre>
+<p>valid writerのoffsetが末尾に到達したかの判定。</p>
+<h4>Return / retval</h4>
+<ul><li>true: writerがvalidで残りbyte数が0。</li><li>false: invalid writer、内部不整合、または残りbyte数が1以上。</li></ul>
+<h4>Contract</h4>
+<table><tr><th>pre</th><th>post</th></tr>
+<tr><td>なし。</td><td>writer状態とbuffer内容の変更なし。</td></tr></table>
+<h4>Example</h4>
+<pre><code>ket::byte_writer::Writer writer(nullptr, 0U);
+const auto full = writer.Full();
+// full == true</code></pre>
 </section>
 <section class="api-entry" id="api-function-Skip-199">
 <h3>Skip <span class="meta">function</span></h3>

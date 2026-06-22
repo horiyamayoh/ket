@@ -64,12 +64,13 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h1>失敗時に読みやすい診断を出す</h1>
 <p class="lead">byte差分、hex表現、契約違反、状態遷移の確認をテストと診断に寄せる。</p>
 <h2>Decision Flow</h2>
-<ul><li>byte列の人間向け表示は hex を使う。</li><li>GoogleTestでbyte列比較をするなら testing を使う。</li><li>契約違反を常時terminateで検出するなら contract を使う。</li><li>状態遷移tableの期待を固定するなら state を使う。</li></ul>
+<ul><li>byte列の人間向け表示は hex を使う。</li><li>GoogleTestでbyte列比較をするなら testing を使う。</li><li>契約違反を常時terminateで検出するなら contract を使う。</li><li>platform error messageの確認には platform を使う。</li><li>状態遷移tableの期待を固定するなら state を使う。</li></ul>
 <h2>Modules</h2>
 <table><tr><th>Module</th><th>Role</th></tr>
 <tr><td><a href="../modules/hex.html">hex</a></td><td>byte列、整数、hexdumpの文字列化。</td></tr>
 <tr><td><a href="../modules/testing.html">testing</a></td><td>byte列比較用GoogleTest assertion helper。</td></tr>
 <tr><td><a href="../modules/contract.html">contract</a></td><td>pre/postcondition/invariantを常時評価。</td></tr>
+<tr><td><a href="../modules/platform.html">platform</a></td><td>errnoやWindows error codeを診断文字列へ変換。</td></tr>
 <tr><td><a href="../modules/state.html">state</a></td><td>小さい状態遷移表lookup。</td></tr>
 </table>
 <h2>Recipe</h2>

@@ -64,12 +64,14 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h1>文字列の小処理を読みやすくする</h1>
 <p class="lead">単純連結、ASCII限定処理、UTF-8検査、文字列から値への変換を混同しない。</p>
 <h2>Decision Flow</h2>
-<ul><li>文字列片を連結するだけなら string を使う。</li><li>ASCII前提のtrim、split、case変換なら ascii を使う。</li><li>UTF-8 byte列の妥当性を見るなら utf8 を使う。</li><li>値への変換は parse やdomain moduleへ渡す。</li></ul>
+<ul><li>文字列片を連結するだけなら string を使う。</li><li>ASCII前提のtrim、split、case変換なら ascii を使う。</li><li>UTF-8 byte列の妥当性を見るなら utf8 を使う。</li><li>ファイルやstream境界では file または io_stream を使う。</li><li>値への変換は parse やdomain moduleへ渡す。</li></ul>
 <h2>Modules</h2>
 <table><tr><th>Module</th><th>Role</th></tr>
 <tr><td><a href="../modules/string.html">string</a></td><td>複数文字列片の連結と追記。</td></tr>
 <tr><td><a href="../modules/ascii.html">ascii</a></td><td>ASCII前提のtrim、split、case、replace。</td></tr>
 <tr><td><a href="../modules/utf8.html">utf8</a></td><td>UTF-8妥当性とcode point数。</td></tr>
+<tr><td><a href="../modules/file.html">file</a></td><td>通常ファイルのtext全体読み書き。</td></tr>
+<tr><td><a href="../modules/io_stream.html">io_stream</a></td><td>行末ASCII trim付きstream行読みと書式状態復元。</td></tr>
 <tr><td><a href="../modules/parse.html">parse</a></td><td>文字列から数値・boolへの変換。</td></tr>
 </table>
 <h2>Recipe</h2>

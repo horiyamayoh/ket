@@ -6,6 +6,7 @@
     "文字列片を連結するだけなら string を使う。",
     "ASCII前提のtrim、split、case変換なら ascii を使う。",
     "UTF-8 byte列の妥当性を見るなら utf8 を使う。",
+    "ファイルやstream境界では file または io_stream を使う。",
     "値への変換は parse やdomain moduleへ渡す。"
   ],
   "modules": [
@@ -20,6 +21,14 @@
     {
       "module": "utf8",
       "role": "UTF-8妥当性とcode point数。"
+    },
+    {
+      "module": "file",
+      "role": "通常ファイルのtext全体読み書き。"
+    },
+    {
+      "module": "io_stream",
+      "role": "行末ASCII trim付きstream行読みと書式状態復元。"
     },
     {
       "module": "parse",

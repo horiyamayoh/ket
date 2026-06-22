@@ -77,9 +77,27 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/file.html">file</a></h3>
+<p>通常ファイルの全体読み込み、全体書き込み、存在確認、サイズ取得を扱う。</p>
+<p class="meta">filesystem / C++17 / 7 API</p>
+<div class="pillrow"><a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/io_stream.html">io_stream</a></h3>
+<p>short read/write判定、行末trim付き行読み、書式状態のscope復元を扱う。</p>
+<p class="meta">stream / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/boundary.html">入力境界・外部境界</a> <a href="../categories/binary.html">バイナリ・byte列</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/ipv4.html">ipv4</a></h3>
 <p>IPv4 dotted decimalとbig-endian 32bit表現を相互変換する。</p>
 <p class="meta">network / C++17 / 5 API</p>
+<div class="pillrow"><a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/mac.html">mac</a></h3>
+<p>区切り付きMAC address文字列と固定6 byte値を相互変換する。</p>
+<p class="meta">network / C++17 / 4 API</p>
 <div class="pillrow"><a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
 </section>
 <section class="card">
@@ -87,6 +105,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p>from_chars境界条件とbool parseを固定する。</p>
 <p class="meta">parsing / C++17 / 10 API</p>
 <div class="pillrow"><a href="../categories/text.html">文字列・text・parse</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/platform.html">platform</a></h3>
+<p>errno、Windows error、environment variableを標準文字列で扱う。</p>
+<p class="meta">platform / C++17 / 5 API</p>
+<div class="pillrow"><a href="../categories/boundary.html">入力境界・外部境界</a> <a href="../categories/diagnostic.html">診断・testing</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/port.html">port</a></h3>
@@ -99,6 +123,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p>UTF-8 byte列の妥当性検査とcode point数取得を扱う。</p>
 <p class="meta">text / C++17 / 5 API</p>
 <div class="pillrow"><a href="../categories/text.html">文字列・text・parse</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/uuid.html">uuid</a></h3>
+<p>canonical hyphen形式のUUID文字列と16 byte表現を相互変換する。</p>
+<p class="meta">parsing / C++17 / 3 API</p>
+<div class="pillrow"><a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/version.html">version</a></h3>

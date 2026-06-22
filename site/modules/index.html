@@ -76,6 +76,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/cache.html">cache</a></h3>
+<p>手動storage上で値を遅延生成し、再利用と明示破棄を局所化する。</p>
+<p class="meta">cache / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a> <a href="../categories/data.html">データ構造・合成</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/container.html">container</a></h3>
 <p>map/vectorの小さいlookup、生成、削除補助を集める。</p>
 <p class="meta">container / C++11 / 8 API</p>
@@ -102,8 +108,14 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <section class="card">
 <h3><a href="../modules/deadline.html">deadline</a></h3>
 <p>steady_clockベースのStopwatchとDeadlineを扱う。</p>
-<p class="meta">time / C++11 / 6 API</p>
+<p class="meta">time / C++11 / 11 API</p>
 <div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/build_config.html">build_config</a></h3>
+<p>compiler、OS、標準ライブラリfeatureの差分をKET_* macroへ集約する。</p>
+<p class="meta">config / C++11 / 12 API</p>
+<div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/scope.html">scope</a></h3>
@@ -122,6 +134,24 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p>複数文字列片の単純連結と既存文字列への追記を扱う。</p>
 <p class="meta">string / C++17 / 2 API</p>
 <div class="pillrow"><a href="../categories/text.html">文字列・text・parse</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/function.html">function</a></h3>
+<p>複数callableをoverload setとして束ね、Noop callableも提供する。</p>
+<p class="meta">callable / C++17 / 3 API</p>
+<div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a> <a href="../categories/data.html">データ構造・合成</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/io_stream.html">io_stream</a></h3>
+<p>short read/write判定、行末trim付き行読み、書式状態のscope復元を扱う。</p>
+<p class="meta">stream / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/boundary.html">入力境界・外部境界</a> <a href="../categories/binary.html">バイナリ・byte列</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/ranges.html">ranges</a></h3>
+<p>range要素のindex付き走査と最初の一致index取得を扱う。</p>
+<p class="meta">algorithm / C++11 / 2 API</p>
+<div class="pillrow"><a href="../categories/data.html">データ構造・合成</a> <a href="../categories/language.html">C++言語・型補助</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/object.html">object</a></h3>
@@ -154,6 +184,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/value.html">値型・validation</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/percent.html">percent</a></h3>
+<p>percent、ratio、basis pointsを0〜100%の値型へ正規化する。</p>
+<p class="meta">value / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/value.html">値型・validation</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/contract.html">contract</a></h3>
 <p>precondition、postcondition、invariantをNDEBUGに連動せず評価する。</p>
 <p class="meta">contract / C++11 / 11 API</p>
@@ -166,10 +202,22 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a> <a href="../categories/flow.html">制御・状態・失敗</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/pointer.html">pointer</a></h3>
+<p>所有しないraw pointerのnull不許可、weak pointer lock、address取得を扱う。</p>
+<p class="meta">pointer / C++11 / 5 API</p>
+<div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a> <a href="../categories/flow.html">制御・状態・失敗</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/version.html">version</a></h3>
 <p>numeric version tripletのparse、format、compareを扱う。</p>
 <p class="meta">parsing / C++17 / 4 API</p>
 <div class="pillrow"><a href="../categories/text.html">文字列・text・parse</a> <a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/uuid.html">uuid</a></h3>
+<p>canonical hyphen形式のUUID文字列と16 byte表現を相互変換する。</p>
+<p class="meta">parsing / C++17 / 3 API</p>
+<div class="pillrow"><a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/testing.html">testing</a></h3>
@@ -190,6 +238,18 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/mac.html">mac</a></h3>
+<p>区切り付きMAC address文字列と固定6 byte値を相互変換する。</p>
+<p class="meta">network / C++17 / 4 API</p>
+<div class="pillrow"><a href="../categories/value.html">値型・validation</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/platform.html">platform</a></h3>
+<p>errno、Windows error、environment variableを標準文字列で扱う。</p>
+<p class="meta">platform / C++17 / 5 API</p>
+<div class="pillrow"><a href="../categories/boundary.html">入力境界・外部境界</a> <a href="../categories/diagnostic.html">診断・testing</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/variant.html">variant</a></h3>
 <p>std::variantに対するvisitor呼び出しを短くする。</p>
 <p class="meta">variant / C++17 / 1 API</p>
@@ -200,6 +260,18 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <p>UTF-8 byte列の妥当性検査とcode point数取得を扱う。</p>
 <p class="meta">text / C++17 / 5 API</p>
 <div class="pillrow"><a href="../categories/text.html">文字列・text・parse</a> <a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/file.html">file</a></h3>
+<p>通常ファイルの全体読み込み、全体書き込み、存在確認、サイズ取得を扱う。</p>
+<p class="meta">filesystem / C++17 / 7 API</p>
+<div class="pillrow"><a href="../categories/boundary.html">入力境界・外部境界</a></div>
+</section>
+<section class="card">
+<h3><a href="../modules/tlv.html">tlv</a></h3>
+<p>type:uint16、length:uint32、value bytesの1 recordをencode/decodeする。</p>
+<p class="meta">binary / C++11 / 5 API</p>
+<div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/tuple.html">tuple</a></h3>
@@ -220,6 +292,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <div class="pillrow"><a href="../categories/language.html">C++言語・型補助</a></div>
 </section>
 <section class="card">
+<h3><a href="../modules/concurrency.html">concurrency</a></h3>
+<p>join忘れ防止の所有threadとfuture ready判定を小さいAPIにする。</p>
+<p class="meta">concurrency / C++11 / 8 API</p>
+<div class="pillrow"><a href="../categories/flow.html">制御・状態・失敗</a></div>
+</section>
+<section class="card">
 <h3><a href="../modules/numeric.html">numeric</a></h3>
 <p>整数overflow、alignment、safe castの境界確認を扱う。</p>
 <p class="meta">numeric / C++11 / 12 API</p>
@@ -228,7 +306,7 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <section class="card">
 <h3><a href="../modules/byte_reader.html">byte_reader</a></h3>
 <p>non-owning bufferから成功時だけoffsetを進めてbyte列を読む。</p>
-<p class="meta">binary / C++11 / 11 API</p>
+<p class="meta">binary / C++11 / 15 API</p>
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">
@@ -246,13 +324,13 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <section class="card">
 <h3><a href="../modules/byte_writer.html">byte_writer</a></h3>
 <p>固定bufferへ成功時だけoffsetとbufferを更新してbyte列を書く。</p>
-<p class="meta">binary / C++11 / 11 API</p>
+<p class="meta">binary / C++11 / 15 API</p>
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">
 <h3><a href="../modules/byte_view.html">byte_view</a></h3>
 <p>所有しないbyte範囲とslice境界を明示する。</p>
-<p class="meta">view / C++11 / 12 API</p>
+<p class="meta">view / C++11 / 16 API</p>
 <div class="pillrow"><a href="../categories/binary.html">バイナリ・byte列</a></div>
 </section>
 <section class="card">

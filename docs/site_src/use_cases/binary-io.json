@@ -7,6 +7,8 @@
     "offsetを持って順に読むなら byte_reader を使う。",
     "fixed bufferへ順に書くなら byte_writer を使う。",
     "固定位置のendian変換だけなら endian を使う。",
+    "streamから読み書きするなら io_stream を使う。",
+    "単純なTLV recordなら tlv を使う。",
     "診断出力には hex を添える。"
   ],
   "modules": [
@@ -25,6 +27,18 @@
     {
       "module": "endian",
       "role": "byte orderを名前に出した固定幅load/store。"
+    },
+    {
+      "module": "io_stream",
+      "role": "streamのshort read/writeを明示して扱う。"
+    },
+    {
+      "module": "file",
+      "role": "通常ファイルをtextまたはbytesとして丸ごと読み書きする。"
+    },
+    {
+      "module": "tlv",
+      "role": "1 recordのTLV wire formatをencode/decodeする。"
     },
     {
       "module": "hex",

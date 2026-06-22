@@ -64,11 +64,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <h1>小さい電文payloadを組み立てる</h1>
 <p class="lead">業務固有protocolをframework化せず、byte列構築、BCD、endian、overflow確認を組み合わせる。</p>
 <h2>Decision Flow</h2>
-<ul><li>固定bufferへ詰めるなら byte_writer を使う。</li><li>可変長payloadを所有して作るなら bytes を使う。</li><li>数値幅とoverflowは numeric で先に固定する。</li><li>BCD表現が必要なfieldだけ bcd を使う。</li><li>完成payloadの確認には hex を使う。</li></ul>
+<ul><li>固定bufferへ詰めるなら byte_writer を使う。</li><li>可変長payloadを所有して作るなら bytes を使う。</li><li>type-length-valueの1 recordなら tlv を使う。</li><li>数値幅とoverflowは numeric で先に固定する。</li><li>BCD表現が必要なfieldだけ bcd を使う。</li><li>完成payloadの確認には hex を使う。</li></ul>
 <h2>Modules</h2>
 <table><tr><th>Module</th><th>Role</th></tr>
 <tr><td><a href="../modules/bytes.html">bytes</a></td><td>owning payload builder。</td></tr>
 <tr><td><a href="../modules/byte_writer.html">byte_writer</a></td><td>固定bufferへの逐次書き込み。</td></tr>
+<tr><td><a href="../modules/tlv.html">tlv</a></td><td>type:uint16、length:uint32、value bytesのrecord構築。</td></tr>
 <tr><td><a href="../modules/bcd.html">bcd</a></td><td>packed BCD fieldの変換。</td></tr>
 <tr><td><a href="../modules/numeric.html">numeric</a></td><td>桁、幅、overflow境界の確認。</td></tr>
 <tr><td><a href="../modules/hex.html">hex</a></td><td>golden bytesとの比較や診断表示。</td></tr>

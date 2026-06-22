@@ -97,30 +97,43 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <table class="matrix"><tr><th>Use case</th>
 <th>bcd</th>
 <th>bits</th>
+<th>cache</th>
 <th>container</th>
 <th>ascii</th>
 <th>cli</th>
 <th>date</th>
 <th>deadline</th>
+<th>build_config</th>
 <th>scope</th>
 <th>parse</th>
 <th>string</th>
+<th>function</th>
+<th>io_stream</th>
+<th>ranges</th>
 <th>object</th>
 <th>math</th>
 <th>lang</th>
 <th>state</th>
 <th>color</th>
+<th>percent</th>
 <th>contract</th>
 <th>memory</th>
+<th>pointer</th>
 <th>version</th>
+<th>uuid</th>
 <th>testing</th>
 <th>ipv4</th>
 <th>port</th>
+<th>mac</th>
+<th>platform</th>
 <th>variant</th>
 <th>utf8</th>
+<th>file</th>
+<th>tlv</th>
 <th>tuple</th>
 <th>optional</th>
 <th>meta</th>
+<th>concurrency</th>
 <th>numeric</th>
 <th>byte_reader</th>
 <th>endian</th>
@@ -144,6 +157,7 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
+<td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -153,6 +167,18 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -171,23 +197,36 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
-<td class="mark">●</td>
-<td class="mark"></td>
-<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -216,12 +255,25 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
-<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -265,6 +317,19 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -277,20 +342,27 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <tr><th><a href="use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></th>
 <td class="mark"></td>
 <td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark">●</td>
-<td class="mark">●</td>
-<td class="mark"></td>
-<td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
 <td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -301,6 +373,12 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -319,6 +397,17 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -331,12 +420,14 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
-<td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
 <td class="mark">●</td>
 <td class="mark">●</td>
 <td class="mark">●</td>
+<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -350,26 +441,39 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
-<td class="mark">●</td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark">●</td>
-<td class="mark">●</td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -388,22 +492,35 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
+<td class="mark"></td>
+<td class="mark">●</td>
+<td class="mark">●</td>
 <td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark">●</td>
-<td class="mark"></td>
-<td class="mark"></td>
-<td class="mark">●</td>
-<td class="mark"></td>
-<td class="mark">●</td>
-<td class="mark">●</td>
 <td class="mark"></td>
 <td class="mark"></td>
 <td class="mark"></td>
@@ -421,14 +538,14 @@ pre { overflow: auto; background: var(--code); border: 1px solid var(--line); bo
 </table>
 <h2>Category Landscape</h2>
 <div class="grid">
-<section class="card"><h3><a href="categories/binary.html">バイナリ・byte列</a></h3><p>byte列、endianness、payload構築、診断用hex表現を扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/bcd.html">bcd</a></span> <span class="pill"><a href="modules/bits.html">bits</a></span> <span class="pill"><a href="modules/byte_reader.html">byte_reader</a></span> <span class="pill"><a href="modules/byte_view.html">byte_view</a></span> <span class="pill"><a href="modules/byte_writer.html">byte_writer</a></span> <span class="pill"><a href="modules/bytes.html">bytes</a></span> <span class="pill"><a href="modules/endian.html">endian</a></span> <span class="pill"><a href="modules/hex.html">hex</a></span> <span class="pill"><a href="modules/memory.html">memory</a></span> <span class="pill"><a href="modules/numeric.html">numeric</a></span> <span class="pill"><a href="modules/testing.html">testing</a></span></p></section>
+<section class="card"><h3><a href="categories/binary.html">バイナリ・byte列</a></h3><p>byte列、endianness、payload構築、診断用hex表現を扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/bcd.html">bcd</a></span> <span class="pill"><a href="modules/bits.html">bits</a></span> <span class="pill"><a href="modules/byte_reader.html">byte_reader</a></span> <span class="pill"><a href="modules/byte_view.html">byte_view</a></span> <span class="pill"><a href="modules/byte_writer.html">byte_writer</a></span> <span class="pill"><a href="modules/bytes.html">bytes</a></span> <span class="pill"><a href="modules/endian.html">endian</a></span> <span class="pill"><a href="modules/hex.html">hex</a></span> <span class="pill"><a href="modules/io_stream.html">io_stream</a></span> <span class="pill"><a href="modules/memory.html">memory</a></span> <span class="pill"><a href="modules/numeric.html">numeric</a></span> <span class="pill"><a href="modules/testing.html">testing</a></span> <span class="pill"><a href="modules/tlv.html">tlv</a></span></p></section>
 <section class="card"><h3><a href="categories/text.html">文字列・text・parse</a></h3><p>ASCII前提処理、UTF-8検査、文字列片連結、文字列から値への変換を扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/ascii.html">ascii</a></span> <span class="pill"><a href="modules/parse.html">parse</a></span> <span class="pill"><a href="modules/string.html">string</a></span> <span class="pill"><a href="modules/utf8.html">utf8</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
-<section class="card"><h3><a href="categories/value.html">値型・validation</a></h3><p>範囲、形式、domain制約を小さい値型や変換APIに固定するmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/color.html">color</a></span> <span class="pill"><a href="modules/date.html">date</a></span> <span class="pill"><a href="modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="modules/math.html">math</a></span> <span class="pill"><a href="modules/numeric.html">numeric</a></span> <span class="pill"><a href="modules/port.html">port</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
-<section class="card"><h3><a href="categories/language.html">C++言語・型補助</a></h3><p>C++の構文、型、copy/move、template周りの小さい儀式を名前にするmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/lang.html">lang</a></span> <span class="pill"><a href="modules/meta.html">meta</a></span> <span class="pill"><a href="modules/object.html">object</a></span> <span class="pill"><a href="modules/tuple.html">tuple</a></span> <span class="pill"><a href="modules/variant.html">variant</a></span></p></section>
-<section class="card"><h3><a href="categories/flow.html">制御・状態・失敗</a></h3><p>optional合成、状態遷移、契約、scope cleanup、deadlineを扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/contract.html">contract</a></span> <span class="pill"><a href="modules/deadline.html">deadline</a></span> <span class="pill"><a href="modules/optional.html">optional</a></span> <span class="pill"><a href="modules/scope.html">scope</a></span> <span class="pill"><a href="modules/state.html">state</a></span></p></section>
-<section class="card"><h3><a href="categories/boundary.html">入力境界・外部境界</a></h3><p>CLI、network値、日付時刻、外部入力の検証を小さく閉じるmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/cli.html">cli</a></span> <span class="pill"><a href="modules/date.html">date</a></span> <span class="pill"><a href="modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="modules/parse.html">parse</a></span> <span class="pill"><a href="modules/port.html">port</a></span> <span class="pill"><a href="modules/utf8.html">utf8</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
-<section class="card"><h3><a href="categories/data.html">データ構造・合成</a></h3><p>container、enum、tuple、variant、optionalの小さい組み合わせ補助。</p><p class="pillrow"><span class="pill"><a href="modules/container.html">container</a></span> <span class="pill"><a href="modules/enums.html">enums</a></span> <span class="pill"><a href="modules/optional.html">optional</a></span> <span class="pill"><a href="modules/state.html">state</a></span> <span class="pill"><a href="modules/tuple.html">tuple</a></span> <span class="pill"><a href="modules/variant.html">variant</a></span></p></section>
-<section class="card"><h3><a href="categories/diagnostic.html">診断・testing</a></h3><p>人間が差分や異常を読みやすくする診断・テスト補助。</p><p class="pillrow"><span class="pill"><a href="modules/contract.html">contract</a></span> <span class="pill"><a href="modules/hex.html">hex</a></span> <span class="pill"><a href="modules/testing.html">testing</a></span></p></section>
+<section class="card"><h3><a href="categories/value.html">値型・validation</a></h3><p>範囲、形式、domain制約を小さい値型や変換APIに固定するmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/color.html">color</a></span> <span class="pill"><a href="modules/date.html">date</a></span> <span class="pill"><a href="modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="modules/mac.html">mac</a></span> <span class="pill"><a href="modules/math.html">math</a></span> <span class="pill"><a href="modules/numeric.html">numeric</a></span> <span class="pill"><a href="modules/percent.html">percent</a></span> <span class="pill"><a href="modules/port.html">port</a></span> <span class="pill"><a href="modules/uuid.html">uuid</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
+<section class="card"><h3><a href="categories/language.html">C++言語・型補助</a></h3><p>C++の構文、型、copy/move、template周りの小さい儀式を名前にするmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/build_config.html">build_config</a></span> <span class="pill"><a href="modules/function.html">function</a></span> <span class="pill"><a href="modules/lang.html">lang</a></span> <span class="pill"><a href="modules/meta.html">meta</a></span> <span class="pill"><a href="modules/object.html">object</a></span> <span class="pill"><a href="modules/pointer.html">pointer</a></span> <span class="pill"><a href="modules/ranges.html">ranges</a></span> <span class="pill"><a href="modules/tuple.html">tuple</a></span> <span class="pill"><a href="modules/variant.html">variant</a></span></p></section>
+<section class="card"><h3><a href="categories/flow.html">制御・状態・失敗</a></h3><p>optional合成、状態遷移、契約、scope cleanup、deadlineを扱うmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/cache.html">cache</a></span> <span class="pill"><a href="modules/concurrency.html">concurrency</a></span> <span class="pill"><a href="modules/contract.html">contract</a></span> <span class="pill"><a href="modules/deadline.html">deadline</a></span> <span class="pill"><a href="modules/optional.html">optional</a></span> <span class="pill"><a href="modules/scope.html">scope</a></span> <span class="pill"><a href="modules/state.html">state</a></span></p></section>
+<section class="card"><h3><a href="categories/boundary.html">入力境界・外部境界</a></h3><p>CLI、network値、日付時刻、外部入力の検証を小さく閉じるmodule群。</p><p class="pillrow"><span class="pill"><a href="modules/cli.html">cli</a></span> <span class="pill"><a href="modules/date.html">date</a></span> <span class="pill"><a href="modules/file.html">file</a></span> <span class="pill"><a href="modules/io_stream.html">io_stream</a></span> <span class="pill"><a href="modules/ipv4.html">ipv4</a></span> <span class="pill"><a href="modules/mac.html">mac</a></span> <span class="pill"><a href="modules/parse.html">parse</a></span> <span class="pill"><a href="modules/platform.html">platform</a></span> <span class="pill"><a href="modules/port.html">port</a></span> <span class="pill"><a href="modules/utf8.html">utf8</a></span> <span class="pill"><a href="modules/uuid.html">uuid</a></span> <span class="pill"><a href="modules/version.html">version</a></span></p></section>
+<section class="card"><h3><a href="categories/data.html">データ構造・合成</a></h3><p>container、enum、tuple、variant、optionalの小さい組み合わせ補助。</p><p class="pillrow"><span class="pill"><a href="modules/cache.html">cache</a></span> <span class="pill"><a href="modules/container.html">container</a></span> <span class="pill"><a href="modules/enums.html">enums</a></span> <span class="pill"><a href="modules/function.html">function</a></span> <span class="pill"><a href="modules/optional.html">optional</a></span> <span class="pill"><a href="modules/ranges.html">ranges</a></span> <span class="pill"><a href="modules/state.html">state</a></span> <span class="pill"><a href="modules/tuple.html">tuple</a></span> <span class="pill"><a href="modules/variant.html">variant</a></span></p></section>
+<section class="card"><h3><a href="categories/diagnostic.html">診断・testing</a></h3><p>人間が差分や異常を読みやすくする診断・テスト補助。</p><p class="pillrow"><span class="pill"><a href="modules/contract.html">contract</a></span> <span class="pill"><a href="modules/hex.html">hex</a></span> <span class="pill"><a href="modules/platform.html">platform</a></span> <span class="pill"><a href="modules/testing.html">testing</a></span></p></section>
 </div>
 </main>
 <footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
