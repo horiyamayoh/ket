@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 
 import site_reference
+import site_reference_check
+import site_reference_html
 
 
 class SiteReferenceTest(unittest.TestCase):
@@ -149,6 +151,62 @@ class SiteReferenceTest(unittest.TestCase):
 			errors = site_reference.validate_html_links(site)
 
 			self.assertIn("index.html has broken link: missing.html", errors)
+
+	def test_render_table_wraps_table_for_local_overflow(self) -> None:
+		html = site_reference_html.render_table(("Header",), [("cell",)], "demo-table")
+
+		self.assertIn('<div class="table-scroll">', html)
+		self.assertIn('<table class="demo-table">', html)
+
+	def test_validate_html_structure_detects_unwrapped_table(self) -> None:
+		with tempfile.TemporaryDirectory() as root_name:
+			site = Path(root_name)
+			(site / "index.html").write_text(
+				"\n".join(
+					(
+						"<!doctype html>",
+						'<a class="skip-link" href="#main">skip</a>',
+						'<nav><a href="index.html" aria-current="page">Home</a></nav>',
+						'<main id="main"><table><tr><td>cell</td></tr></table></main>',
+					)
+				),
+				encoding="utf-8",
+			)
+
+			errors = site_reference_check.validate_html_structure(site)
+
+			self.assertTrue(any("table outside .table-scroll" in error for error in errors))
+
+	def test_validate_html_structure_detects_missing_navigation_and_search_label(self) -> None:
+		with tempfile.TemporaryDirectory() as root_name:
+			site = Path(root_name)
+			(site / "search.html").write_text(
+				"\n".join(
+					(
+						"<!doctype html>",
+						'<a class="skip-link" href="#main">skip</a>',
+						"<nav><a href=\"search.html\">Search</a></nav>",
+						'<main id="main"><input id="search-input" type="search"></main>',
+					)
+				),
+				encoding="utf-8",
+			)
+
+			errors = site_reference_check.validate_html_structure(site)
+
+			self.assertTrue(any("active nav aria-current" in error for error in errors))
+			self.assertTrue(any("search input without label" in error for error in errors))
+
+	def test_generated_site_satisfies_static_html_structure_contract(self) -> None:
+		with tempfile.TemporaryDirectory() as root_name:
+			root = Path(root_name)
+			self.write_minimal_site_root(root, unknown_use_case_module=False)
+			generated = root / "generated-site"
+
+			site_reference.generate_site(generated, root)
+			errors = site_reference_check.validate_html_structure(generated)
+
+			self.assertEqual(errors, [])
 
 	def write_minimal_site_root(self, root: Path, unknown_use_case_module: bool) -> None:
 		(root / "modules" / "demo").mkdir(parents=True)

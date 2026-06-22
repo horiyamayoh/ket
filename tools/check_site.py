@@ -8,6 +8,7 @@ from pathlib import Path
 
 import ket_tooling
 import site_reference
+import site_reference_check
 
 
 def main() -> int:
@@ -25,6 +26,7 @@ def main() -> int:
 			committed = ket_tooling.ROOT / site_reference.SITE_OUTPUT_DIR
 			errors = site_reference.compare_directories(generated, committed)
 			errors.extend(site_reference.validate_html_links(committed))
+			errors.extend(site_reference_check.validate_html_structure(committed))
 			if errors:
 				for error in errors:
 					print(error, file=sys.stderr)
