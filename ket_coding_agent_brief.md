@@ -679,24 +679,16 @@ ket の「広大な視野」を保つための地図である。
 候補:
 
 ```cpp
-ket::IgnoreUnused(...)
-ket::Unreachable()
-ket::Exchange(obj, new_value)
-ket::ArraySize(array)
-ket::AsConst(x)
-ket::Identity(x)
-```
-
-関連する型:
-
-```cpp
-ket::NonCopyable
-ket::NonMovable
+ket::lang::IgnoreUnused(...)
+ket::lang::ArraySize(array)
+ket::lang::AsConst(x)
 ```
 
 注意:
 
 - `ToUnderlying` は `language` でも `enum` でもよいが、enum module に寄せてもよい
+- 未到達動作、exchange、identity は初回の language module には含めない
+- copy/move意図の型補助は `object` module へ分離済み
 - マクロは最小限にする
 
 ---
@@ -739,24 +731,20 @@ ket::concepts::Range
 
 目的: オブジェクトのコピー・ムーブ・初期化・リセットの儀式を減らす。
 
-候補:
+採用API:
 
 ```cpp
-ket::NonCopyable
-ket::NonMovable
-ket::MovableOnly
-ket::CopyableOnly
-ket::ResetOnMove<T>
-ket::DefaultInit<T>
-ket::NoInit<T>
-ket::SwapAndReset(a, b)
-ket::ResetToDefault(x)
+ket::object::NonCopyable
+ket::object::NonMovable
+ket::object::MoveOnly
+ket::object::ResetOnMove<T>
 ```
 
 注意:
 
-- C++11〜17では比較演算子やムーブ制御の儀式が多い
-- C++20以降の defaulted comparison と競合しないようにする
+- `NonCopyable` はcopyだけを禁止し、moveは禁止しない
+- `DefaultInit`、`NoInit`、`SwapAndReset`、公開`ResetToDefault`は今回採用しない
+- 比較演算を宣言せず、利用側の比較方針と競合させない
 
 ---
 
@@ -767,9 +755,9 @@ ket::ResetToDefault(x)
 候補:
 
 ```cpp
-ket::Overload{...}
-ket::MakeOverload(...)
-ket::Noop()
+ket::function::Overload
+ket::function::MakeOverload(...)
+ket::function::Noop{}
 ket::Invoke(f, args...)
 ket::BindFront(f, args...)
 ket::FunctionRef<R(Args...)>
@@ -779,7 +767,12 @@ ket::MoveOnlyFunction<R(Args...)>
 特に欲しいもの:
 
 ```cpp
-std::visit(ket::Overload{
+std::visit(ket::function::MakeOverload(
+    [](const A&) { ... },
+    [](const B&) { ... }
+), value);
+
+std::visit(ket::function::Overload{
     [](const A&) { ... },
     [](const B&) { ... },
 }, value);
@@ -799,12 +792,11 @@ std::visit(ket::Overload{
 候補:
 
 ```cpp
-ket::Expects(condition)
-ket::Ensures(condition)
-ket::AssertInvariant(condition)
-ket::RequireNonNull(ptr)
-ket::RequireInRange(value, min, max)
-ket::CheckBounds(index, size)
+KET_EXPECTS(condition)
+KET_ENSURES(condition)
+KET_ASSERT_INVARIANT(condition)
+KET_REQUIRE_NON_NULL(ptr)
+ket::contract::IsInBounds(index, size)
 ```
 
 注意:
@@ -848,27 +840,24 @@ ket::numeric::TryCast<T>(value, out)
 
 目的: 数値より少し高レベルな計算補助。
 
-候補:
+採用API:
 
 ```cpp
-ket::Lerp(a, b, t)
-ket::InverseLerp(a, b, x)
-ket::MapRange(x, in_min, in_max, out_min, out_max)
-ket::Mean(range)
-ket::Median(range)
-ket::Variance(range)
-ket::DegreesToRadians(deg)
-ket::RadiansToDegrees(rad)
-ket::Distance2D(a, b)
-ket::RectContains(rect, point)
-ket::BytesToKiB(bytes)
-ket::KiBToBytes(kib)
+ket::math::Lerp(a, b, t)
+ket::math::ToRadians(degrees)
+ket::math::ToDegrees(radians)
+ket::math::NearlyEqual(a, b, epsilon)
+ket::math::TryBytesFromKiB(kib, out)
+ket::math::TryBytesFromMiB(mib, out)
+ket::math::BytesToKiB(bytes)
+ket::math::BytesToMiB(bytes)
 ```
 
 注意:
 
 - 単位変換は便利だが、巨大なunits frameworkにはしない
 - 浮動小数点誤差の扱いをドキュメント化する
+- `InverseLerp`、`MapRange`、統計、幾何は今回採用しない
 
 ---
 
@@ -956,6 +945,8 @@ ket::memory::ObjectByteSize(obj)
 
 - C++20の `std::construct_at` と重なる
 - object representation と object lifetime は危険領域なので、API名とコメントで用途を限定する
+- pointer alignment の戻り値は address-level の結果で、object bounds や dereference 可能性は保証しない
+- `ObjectBytes` は padding/endian/layout を含むため、serialization や安定比較には使わない
 
 ---
 
@@ -1473,23 +1464,18 @@ ket::ToSeconds(duration)
 
 目的: 並行処理の小さい事故を減らす。
 
-候補:
+採用API:
 
 ```cpp
-ket::ThreadJoiner
-ket::JoiningThread
-ket::LockGuardIf(mutex, condition)
-ket::AtomicFlagGuard
-ket::Synchronized<T>
-ket::CallOnce(flag, f)
-ket::FutureReady(future)
-ket::WaitUntilDeadline(...)
+ket::concurrency::JoiningThread
+ket::concurrency::IsReady(future)
 ```
 
 注意:
 
 - thread poolやasync frameworkを作らない
-- join忘れ、lock忘れ、timeout計算など局所的な事故防止に絞る
+- lock framework、atomic wrapper、deadline待機は今回採用しない
+- join忘れとfuture ready判定に絞る
 
 ---
 
@@ -1572,12 +1558,12 @@ ket::Positional(args)
 候補:
 
 ```cpp
-ket::ErrnoMessage(errno_value)
-ket::WindowsErrorMessage(error_code)
-ket::GetLastErrorCode()
-ket::CurrentThreadIdString()
-ket::SleepFor(duration)
-ket::EnvironmentVariable(name)
+ket::platform::FormatErrno(errno_value)
+ket::platform::ReadEnvironmentVariable(name)
+#ifdef _WIN32
+ket::platform::GetLastErrorCode()
+ket::platform::FormatWindowsError(error_code)
+#endif
 ```
 
 注意:
@@ -1634,6 +1620,7 @@ KET_HAS_STD_FORMAT
 - マクロはグローバル汚染なので最小限にする
 - 各moduleが完全独立を目指すなら、build_configに依存しない選択肢もある
 - ただしC++11〜23を本気で跨ぐなら必要になりやすい
+- OS macro は platform family ではなく狭いtarget判定にし、AndroidをLinux、iOS系をmacOSに含めない
 
 ---
 
@@ -1660,7 +1647,9 @@ ket::ipv4::Parse(text)
 ket::ipv4::Format(ip)
 ket::mac::Parse(text)
 ket::mac::Format(mac)
+mac_a == mac_b
 ket::version::Parse(text)
+ket::version::Format(value)
 ket::version::Compare(a, b)
 ```
 
@@ -1678,12 +1667,9 @@ ket::version::Compare(a, b)
 候補:
 
 ```cpp
-ket::Transition<State, Event>
-ket::TransitionTable<State, Event>
-ket::IsValidTransition(current, event, table)
-ket::NextState(current, event, table)
-ket::StateName(state, table)
-ket::EventName(event, table)
+ket::state::Transition<State, Event>
+ket::state::IsAllowed(current, event, table)
+ket::state::Next(current, event, table)
 ```
 
 注意:
@@ -2027,7 +2013,7 @@ Tests:
 2. moduleは原則として単独でコピー可能にする
 3. 他のket moduleへの依存を増やさない
 4. 小さい重複は許容する
-5. 公開APIは module ごとの入れ子 `namespace ket::<module>` に置く
+5. 公開APIは module ごとの入れ子 `namespace ket::<module>` に置く。macro-only module だけは `KET_` prefix の global macro に限定する
 6. 公開ヘッダは、公開API宣言、内部helper、ヘッダ内公開API定義の順に書く
 7. 公開ヘッダで必要な標準ヘッダをすべてincludeする
 8. 失敗条件・境界条件をテストで固定する

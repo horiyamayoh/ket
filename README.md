@@ -81,5 +81,5 @@ header-only moduleでは `.cpp` を置きません。moduleを追加するとき
 - 小さい重複は許容し、drop-in性を優先します。
 - moduleを1つずつ育てる方針はスコープ管理であり、品質を下げる理由ではありません。
 - 追加する関数は1つずつ、設計、実装、ドキュメント、テスト、検証のすべてで高い忠実度を求めます。
-- 公開APIは module ごとの入れ子 `namespace ket::<module>` に置き、名前を見れば中身が想像できるものだけを採用します。
+- 公開APIは module ごとの入れ子 `namespace ket::<module>` に置き、名前を見れば中身が想像できるものだけを採用します。macro-only module だけは C++ namespace に置けないため、`KET_` prefix の global macro に限定します。
 - formatter、静的解析、test、CIを通ったものだけを進捗上の完了扱いにします。

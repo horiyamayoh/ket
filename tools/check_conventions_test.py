@@ -66,6 +66,74 @@ class CheckConventionsTest(unittest.TestCase):
 
 		self.assertEqual(errors, [])
 
+	def test_class_qualified_header_definition_after_documented_declaration_is_accepted(
+		self,
+	) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"namespace ket",
+					"{",
+					"\t// -----------------------------------------------------------------------------",
+					"\t// Public API declarations",
+					"\t// -----------------------------------------------------------------------------",
+					"",
+					"\t/**",
+					"\t * @brief Joining owner.",
+					"\t */",
+					"\tclass Owner",
+					"\t{",
+					"\t  public:",
+					"\t\t/**",
+					"\t\t * @brief Constructs an owner.",
+					"\t\t * @param[in] value Initial value.",
+					"\t\t * @pre Caller provides a valid value.",
+					"\t\t * @post Owner stores value.",
+					"\t\t * @code",
+					"\t\t * ket::Owner owner(1);",
+					"\t\t * @endcode",
+					"\t\t */",
+					"\t\texplicit Owner(int value) noexcept;",
+					"",
+					"\t\t/**",
+					"\t\t * @brief Returns stored value.",
+					"\t\t * @retval value Stored value.",
+					"\t\t * @pre Owner is alive.",
+					"\t\t * @post Owner state is unchanged.",
+					"\t\t * @code",
+					"\t\t * ket::Owner owner(1);",
+					"\t\t * const auto value = owner.Get();",
+					"\t\t * @endcode",
+					"\t\t */",
+					"\t\tint Get() const noexcept; // NOLINT(modernize-use-nodiscard)",
+					"",
+					"\t  private:",
+					"\t\tint value_;",
+					"\t};",
+					"",
+					"\t// -----------------------------------------------------------------------------",
+					"\t// Public API definitions",
+					"\t// -----------------------------------------------------------------------------",
+					"",
+					"\tinline Owner::Owner(int value) noexcept",
+					"\t\t: value_(value)",
+					"\t{",
+					"\t}",
+					"",
+					"\tinline int Owner::Get() const noexcept // NOLINT(modernize-use-nodiscard)",
+					"\t{",
+					"\t\treturn value_;",
+					"\t}",
+					"",
+					"} // namespace ket",
+					"",
+				)
+			),
+		)
+
+		self.assertEqual(errors, [])
+
 	def test_header_definition_comment_duplicate_is_reported(self) -> None:
 		errors = self.check_text(
 			"modules/sample/ket_sample.h",
@@ -91,6 +159,60 @@ class CheckConventionsTest(unittest.TestCase):
 					"{",
 					"	return value * 2;",
 					"}",
+					"",
+				)
+			),
+		)
+
+		self.assertTrue(
+			any(
+				"function definition must not duplicate Doxygen comment from its declaration." in error
+				for error in errors
+			)
+		)
+
+	def test_class_qualified_header_definition_comment_duplicate_is_reported(self) -> None:
+		errors = self.check_text(
+			"modules/sample/ket_sample.h",
+			"\n".join(
+				(
+					"namespace ket",
+					"{",
+					"\t/**",
+					"\t * @brief Sample owner.",
+					"\t */",
+					"\tclass Owner",
+					"\t{",
+					"\t  public:",
+					"\t\t/**",
+					"\t\t * @brief Returns stored value.",
+					"\t\t * @retval value Stored value.",
+					"\t\t * @pre Owner is alive.",
+					"\t\t * @post Owner state is unchanged.",
+					"\t\t * @code",
+					"\t\t * ket::Owner owner;",
+					"\t\t * const auto value = owner.Get();",
+					"\t\t * @endcode",
+					"\t\t */",
+					"\t\tint Get() const noexcept;",
+					"\t};",
+					"",
+					"\t/**",
+					"\t * @brief Returns stored value.",
+					"\t * @retval value Stored value.",
+					"\t * @pre Owner is alive.",
+					"\t * @post Owner state is unchanged.",
+					"\t * @code",
+					"\t * ket::Owner owner;",
+					"\t * const auto value = owner.Get();",
+					"\t * @endcode",
+					"\t */",
+					"\tinline int Owner::Get() const noexcept",
+					"\t{",
+					"\t\treturn 0;",
+					"\t}",
+					"",
+					"} // namespace ket",
 					"",
 				)
 			),

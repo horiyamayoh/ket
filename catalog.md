@@ -210,8 +210,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - value > 65535
+- wide unsigned value above `std::uint32_t` range
 - empty string
 - leading / trailing whitespace
+- control character or embedded NUL
 - `+` / `-`
 - non-digit character
 - integer overflow
@@ -227,10 +229,12 @@ Tests:
 - TryFromUInt(0) succeeds
 - TryFromUInt(65535) succeeds
 - TryFromUInt(65536) fails
+- TryFromUInt(std::uintmax_t max) fails
 - Parse("0") succeeds
 - Parse("65535") succeeds
 - Parse("65536") fails
 - Parse(" 80") fails
+- Parse("80\\0") fails
 - Parse("+80") fails
 - Parse("080") fails
 - Format(Port{80}) == "80"
@@ -428,8 +432,9 @@ Candidate API:
 ```cpp
 ket::hex::Encode(data, size, options)
 ket::hex::Decode(text)
-ket::hex::Dump(data, size, options)
-ket::hex::Encode(value, width)
+ket::hex::Dump(data, size)
+ket::hex::DumpMemory(data, size)
+ket::hex::Format(value, width)
 ```
 
 C++バージョン要件:
@@ -505,6 +510,8 @@ Failure / edge cases:
 - non-digit
 - overflow / underflow
 - hex prefix
+- leading `+` は10進parseで失敗
+- hex parse は符号文字を許可しない
 - bool は case-sensitive
 
 他のライブラリへの依存:
@@ -555,7 +562,7 @@ Failure / edge cases:
 - unknown enum
 - unknown text
 - duplicate table entry は先勝ち
-- flags の underlying 演算
+- flags の unsigned underlying 演算
 - case-sensitive parse
 
 他のライブラリへの依存:
@@ -589,7 +596,8 @@ ket::container::ContainsKey(map, key)
 ket::container::AtOrNull(map, key)
 ket::container::AtOr(map, key, fallback)
 ket::container::AtOrCreate(map, key, factory)
-ket::container::EraseIf(container, predicate)
+ket::container::EraseIf(sequence, predicate)
+ket::container::SortUnique(values)
 ```
 
 C++バージョン要件:
@@ -605,6 +613,7 @@ Failure / edge cases:
 
 - key not found
 - factory は必要時だけ呼ぶ
+- AtOr はcopy可能なmapped_type向け
 - const / non-const map
 - erase 件数
 - predicate 例外伝播
@@ -622,6 +631,7 @@ Tests:
 - AtOr fallback
 - AtOrCreate factory count
 - EraseIf removed count
+- SortUnique duplicates
 
 ## Idea: StringAscii
 
@@ -637,11 +647,18 @@ Candidate API:
 
 ```cpp
 ket::ascii::Trim(text)
+ket::ascii::TrimLeft(text)
+ket::ascii::TrimRight(text)
 ket::ascii::SplitViews(text, delimiter)
+ket::ascii::Split(text, delimiter)
+ket::ascii::Join(parts, delimiter)
 ket::ascii::ToLower(text)
+ket::ascii::ToUpper(text)
+ket::ascii::EqualsIgnoreCase(a, b)
 ket::ascii::ReplaceAll(text, from, to)
 ket::ascii::StartsWith(text, prefix)
 ket::ascii::EndsWith(text, suffix)
+ket::ascii::Contains(text, needle)
 ket::ascii::StripPrefix(text, prefix)
 ket::ascii::StripSuffix(text, suffix)
 ```
@@ -664,9 +681,11 @@ Failure / edge cases:
 
 - ASCII whitespace のみ
 - UTF-8 byte は保持
+- ReplaceAll の空 from は std::invalid_argument
 - leading / trailing delimiter
 - empty fields
 - view lifetime
+- viewを返すAPIは一時std::stringを拒否
 - allocation 例外
 
 他のライブラリへの依存:
@@ -678,8 +697,10 @@ Tests:
 
 - Trim empty / whitespace / normal
 - SplitViews keeps empty fields
+- SplitViews rejects temporary string
 - ToLower leaves non-ASCII bytes unchanged
 - ReplaceAll no match / repeated match
+- ReplaceAll rejects empty from
 - StartsWith / EndsWith boundaries
 
 ## Idea: Scope
@@ -698,6 +719,7 @@ Candidate API:
 ket::scope::Exit
 ket::scope::MakeExit(cleanup)
 ket::scope::Restore<T>
+ket::scope::MakeRestore(target)
 ```
 
 C++バージョン要件:
@@ -707,15 +729,19 @@ C++バージョン要件:
 - 推奨理由：cleanup と復元漏れを標準ライブラリだけで小さく防げる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：なし
+- 標準代替：C++23 `std::scope_exit` は `Exit` の代替候補。`Restore` とC++11〜20向けの
+  drop-in性は本moduleで補う
 
 Failure / edge cases:
 
 - destructor 中の callable 例外は terminate
+- Exit callback は nothrow move constructible
 - dismiss 後は実行しない
 - move 元は inactive
 - 二重実行なし
+- callback 参照先 lifetime
 - restore 先 lifetime
+- Restore move transfers responsibility
 
 他のライブラリへの依存:
 
@@ -729,6 +755,7 @@ Tests:
 - move transfers cleanup
 - callable throwing in destructor terminates
 - Restore restores original value
+- Restore dismiss / move / Active
 
 ## Idea: ByteReader
 
@@ -1036,7 +1063,7 @@ C++バージョン要件:
 
 - 最小要件：C++17
 - 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::string_view` で argv lifetime に依存する値を明示しながら扱える
+- 推奨理由：`std::string_view` で argv lifetime に依存する値を明示し、`std::optional` で option値の不在を小さく扱える
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -1046,9 +1073,13 @@ Failure / edge cases:
 - argc < 0
 - argv == nullptr
 - argv[i] == nullptr
-- option name が "--" で始まらない
+- option name が "--" で始まらない、名前部分が空、または "=" を含む
+- bare "--" はoption終端
 - missing value
+- empty value は有効値
 - duplicate option は先勝ち
+- single dashで始まる次要素は値
+- PositionalArguments はschemaなしのnon-option抽出。separate option値は保持
 
 他のライブラリへの依存:
 
@@ -1063,6 +1094,9 @@ Tests:
 - missing value
 - duplicate option
 - positional args
+- option terminator
+- empty value
+- option name boundary
 
 ## Idea: ByteView
 
@@ -1129,7 +1163,7 @@ Category: text
 Pain:
 
 - UTF-8 validation を業務処理から隔離したい
-- 最初の不正 byte offset を返す方針を固定したい
+- 最初の不正 byte offset とtruncated sequenceのoffset方針を固定したい
 - grapheme や normalization までは扱わない小さい検査がほしい
 
 Candidate API:
@@ -1145,7 +1179,7 @@ C++バージョン要件:
 
 - 最小要件：C++17
 - 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::string_view` と `std::optional` で UTF-8 検査結果と失敗位置を小さく扱える
+- 推奨理由：`std::string_view` で byte列を非所有参照し、`std::optional` で code point数取得の失敗を小さく扱える
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：標準ライブラリに UTF-8 byte列検証の直接APIなし
@@ -1158,6 +1192,7 @@ Failure / edge cases:
 - bad continuation byte
 - code point 範囲外
 - empty は valid
+- error offset は存在する不正 byte の位置。妥当な prefix のまま EOF に達した truncated sequence は sequence 先頭
 
 他のライブラリへの依存:
 
@@ -1173,6 +1208,8 @@ Tests:
 - truncated
 - surrogate
 - bad continuation
+- ASCII boundary
+- short malformed sequence
 
 ## Idea: File
 
@@ -1191,6 +1228,8 @@ ket::file::TryReadAllText(path, out, error)
 ket::file::TryReadAllBytes(path, out, error)
 ket::file::TryWriteAllText(path, text, error)
 ket::file::TryWriteAllBytes(path, data, size, error)
+ket::file::Exists(path)
+ket::file::IsDirectory(path)
 ket::file::Size(path)
 ```
 
@@ -1208,8 +1247,14 @@ Failure / edge cases:
 - not found
 - permission
 - directory path
+- non-regular existing path
+- invalid path
 - huge file
-- short write
+- read target changed while reading
+- short read/write from stream state
+- null data with nonzero size
+- overwrite truncates existing file
+- write is not atomic and can leave a partial/truncated file after open/write/close failure
 - error_code\* は optional detail
 
 他のライブラリへの依存:
@@ -1224,6 +1269,13 @@ Tests:
 - binary
 - missing file
 - directory path
+- non-regular existing path if the environment can create one
+- invalid path
+- permission denied if enforced by environment
+- embedded NUL text
+- empty text / bytes
+- overwrite/truncate
+- null data with nonzero size
 - error_code set / ignored
 
 ## Idea: IoStream
@@ -1232,24 +1284,24 @@ Category: stream
 
 Pain:
 
-- stream の exact read/write と state 復元を毎回書くと失敗条件が曖昧になりやすい
+- stream の exact read/write と書式状態復元を毎回書くと失敗条件が曖昧になりやすい
 - short read を成功扱いしたくない
-- ASCII line trim 程度の小さい stream 補助がほしい
+- ASCII line right trim 程度の小さい stream 補助がほしい
 
 Candidate API:
 
 ```cpp
 ket::io_stream::TryReadExactly(stream, data, size)
 ket::io_stream::TryWriteAll(stream, data, size)
-ket::io_stream::StateSaver
-ket::io_stream::TryReadLineTrimmedAscii(stream, out)
+ket::io_stream::FormatStateSaver
+ket::io_stream::TryReadLineTrimRightAscii(stream, out)
 ```
 
 C++バージョン要件:
 
 - 最小要件：C++11
 - 本ライブラリの適用を推奨する C++ バージョン：C++11以降
-- 推奨理由：stream の確実な読み書きと状態復元を小さいAPIで固定できる
+- 推奨理由：stream の確実な読み書きと書式状態復元を小さいAPIで固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -1258,10 +1310,10 @@ Failure / edge cases:
 
 - short read
 - write failure
-- null buffer + 非0 size
+- null buffer + 非0 size はstreamへアクセスせずfalse
 - stream exception
-- state restore
-- ASCII trim only
+- flags、precision、fillのrestore
+- ASCII right trim only
 
 他のライブラリへの依存:
 
@@ -1273,8 +1325,9 @@ Tests:
 - exact read success
 - short read fails
 - write all success
-- stream state restored
-- trim line ASCII whitespace
+- format state restored
+- excluded stream state not restored
+- trim line right ASCII whitespace
 - exception propagation
 
 ## Idea: FormatValue
@@ -1347,19 +1400,21 @@ ket::ranges::FindIndexIf(range, predicate, out)
 C++バージョン要件:
 
 - 最小要件：C++11
-- 本ライブラリの適用を推奨する C++ バージョン：C++11〜17
-- 推奨理由：C++17以前で index 付き range 走査を小さく書ける
-- 本ライブラリの適用を推奨しない C++ バージョン：C++20以降
-- 非推奨理由：C++20以降は `std::ranges` を優先できる
-- 標準代替：C++20 ranges
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：index 付き range 走査を小さく書ける
+- 本ライブラリの適用を推奨しない C++ バージョン：なし
+- 非推奨理由：なし
+- 標準代替：C++20 ranges algorithmで一部用途を置き換え可能。ただしindex付き走査の直接代替ではない
 
 Failure / edge cases:
 
 - empty range
 - not found
-- predicate exception
+- callable / predicate exception
 - out 不変
 - const / non-const element reference
+- ADL begin/end
+- callable / predicate をAPI内でcopyしない
 
 他のライブラリへの依存:
 
@@ -1374,6 +1429,7 @@ Tests:
 - first match
 - not found out unchanged
 - predicate exception propagation
+- C++11 compile-only
 
 ## Idea: Memory
 
@@ -1390,6 +1446,7 @@ Candidate API:
 ```cpp
 ket::memory::IsAligned(ptr, alignment)
 ket::memory::TryAlignUp(ptr, alignment, out)
+ket::memory::TryAlignDown(ptr, alignment, out)
 ket::memory::Zero(ptr, size)
 ket::memory::SecureZero(ptr, size)
 ket::memory::ObjectBytes(object)
@@ -1453,14 +1510,17 @@ C++バージョン要件:
 - 推奨理由：null許容性と所有権の有無を型名や関数名で明示できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：なし
+- 標準代替：API別。`NotNull` は直接代替なし。`LockWeak` は `std::weak_ptr::lock`、
+  `AddressOf` は `std::addressof` を意図名で薄く包む。
 
 Failure / edge cases:
 
-- NotNull(nullptr) throws
+- NotNull(nullptr) throws `std::invalid_argument`
 - non-owning lifetime
+- void pointee unsupported
 - weak expired
 - overloaded operator&
+- AddressOf rvalue rejected
 
 他のライブラリへの依存:
 
@@ -1471,8 +1531,10 @@ Tests:
 
 - nullptr rejected
 - dereference / operator->
+- conversion constraints
 - weak alive / expired
 - AddressOf ignores overloaded operator&
+- AddressOf rejects rvalues
 
 ## Idea: TestingBytes
 
@@ -1487,13 +1549,20 @@ Pain:
 Candidate API:
 
 ```cpp
-ket::testing::BytesEq(expected, actual)
-ket::testing::HexEq(hex, actual)
+::testing::AssertionResult ket::testing::BytesEqual(
+	const std::uint8_t* expected,
+	std::size_t expected_size,
+	const std::uint8_t* actual,
+	std::size_t actual_size);
+
+::testing::AssertionResult ket::testing::HexEqual(
+	std::string_view expected_hex,
+	const std::uint8_t* actual,
+	std::size_t actual_size);
 ```
 
-Canonical API in `docs/module_api_catalog.md`: `ket::testing::BytesEq` and
-`ket::testing::HexEq` are superseded by `ket::testing::BytesEqual` and
-`ket::testing::HexEqual`.
+`ket::testing::BytesEq` and `ket::testing::HexEq` were early names and are
+superseded by `ket::testing::BytesEqual` and `ket::testing::HexEqual`.
 
 C++バージョン要件:
 
@@ -1508,6 +1577,7 @@ Failure / edge cases:
 
 - length mismatch
 - first differing offset
+- HexEqual ignores ASCII whitespace
 - invalid hex
 - GoogleTest dependency
 - test-helper only
@@ -1523,8 +1593,10 @@ Tests:
 - equal bytes
 - mismatch offset
 - length mismatch
-- HexEq valid
-- HexEq invalid hex failure message
+- empty vs non-empty
+- HexEqual valid
+- HexEqual ASCII whitespace
+- HexEqual invalid hex failure message
 
 ## Idea: SemanticVersion
 
@@ -1560,9 +1632,10 @@ C++バージョン要件:
 Failure / edge cases:
 
 - numeric triplet only
+- empty / missing / extra component
+- non-digit / sign / whitespace
 - leading zero
 - overflow
-- missing / extra component
 - prerelease / build metadata は対象外
 
 他のライブラリへの依存:
@@ -1577,6 +1650,7 @@ Tests:
 - compare major/minor/patch
 - leading zero fails
 - overflow fails
+- prerelease / build metadata fails
 - format golden output
 
 ## Idea: Ipv4
@@ -1587,7 +1661,8 @@ Pain:
 
 - IPv4 dotted decimal の parse/format を毎回書きたくない
 - octet 境界、個数不足/過多、leading zero の扱いを固定したい
-- IPv6/CIDR/DNS までは不要
+- BE 32bit表現との相互変換をhost byte order変換から分けたい
+- IPv6/CIDR/DNS/port/socket address までは不要
 
 Candidate API:
 
@@ -1595,6 +1670,8 @@ Candidate API:
 ket::ipv4::Address
 ket::ipv4::Parse(text)
 ket::ipv4::Format(address)
+ket::ipv4::ToBe32(address)
+ket::ipv4::FromBe32(value)
 ```
 
 C++バージョン要件:
@@ -1613,6 +1690,7 @@ Failure / edge cases:
 - too few / too many components
 - leading zero
 - whitespace
+- control character or embedded NUL
 - sign
 
 他のライブラリへの依存:
@@ -1624,9 +1702,12 @@ Tests:
 
 - 0.0.0.0
 - 255.255.255.255
+- 1.2.3.4 <-> 0x01020304
+- 192.168.0.1 <-> 0xC0A80001
 - octet overflow
 - missing / extra component
 - leading zero fails
+- embedded NUL fails
 - format golden output
 
 ## Idea: MacAddress
@@ -1645,6 +1726,7 @@ Candidate API:
 ket::mac::Address
 ket::mac::Parse(text)
 ket::mac::Format(address)
+address_a == address_b
 ```
 
 C++バージョン要件:
@@ -1672,9 +1754,11 @@ Failure / edge cases:
 Tests:
 
 - colon format
-- hyphen format
+- hyphen input
 - upper/lower input
+- address comparison
 - mixed separator fails
+- invalid separator fails
 - invalid hex fails
 - format golden output
 
@@ -1707,6 +1791,8 @@ C++バージョン要件:
 
 Failure / edge cases:
 
+- empty overload set
+- non-class callable
 - callable copy/move constraints
 - handler exception propagation
 - overload resolution
@@ -1722,7 +1808,8 @@ Tests:
 - std::visit with variants
 - overload resolution
 - return value
-- Noop accepts arbitrary args
+- Noop accepts arbitrary args and constexpr empty call
+- MakeOverload stores decayed callable types
 - copy / move constraints
 
 ## Idea: VariantMatch
@@ -1754,8 +1841,10 @@ Failure / edge cases:
 
 - unhandled alternative is compile error
 - handler exception propagation
+- valueless_by_exception propagation
 - const / non-const
 - lvalue / rvalue
+- handler copy / move
 - void / non-void return
 
 他のライブラリへの依存:
@@ -1769,7 +1858,10 @@ Tests:
 - reference preservation
 - const variant
 - rvalue variant
+- lvalue handler copy
+- move-only rvalue handler
 - exception propagation
+- valueless_by_exception propagation
 - missing handler compile error
 
 ## Idea: OptionalExt
@@ -1839,11 +1931,8 @@ KET_EXPECTS(condition)
 KET_ENSURES(condition)
 KET_ASSERT_INVARIANT(condition)
 KET_REQUIRE_NON_NULL(ptr)
-ket::contract::CheckBounds(index, size)
+ket::contract::IsInBounds(index, size)
 ```
-
-Canonical API in `docs/module_api_catalog.md`: `ket::contract::CheckBounds` is superseded by
-`ket::contract::IsInBounds`.
 
 C++バージョン要件:
 
@@ -1852,7 +1941,7 @@ C++バージョン要件:
 - 推奨理由：契約違反時のプロジェクト方針を小さいAPIへ閉じ込められる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：C++ contracts は標準化状況と利用可能性が安定していない
+- 標準代替：安定して利用できる直接代替なし。C++ contracts は標準化状況と利用可能性が安定していない
 
 Failure / edge cases:
 
@@ -1873,8 +1962,13 @@ Tests:
 - valid path
 - KET_EXPECTS death
 - KET_ENSURES death
+- KET_ASSERT_INVARIANT death
 - KET_REQUIRE_NON_NULL success / failure
 - expression one-time evaluation
+- explicit bool condition
+- pointer type preservation
+- bounds max value
+- IsInBounds constexpr
 - NDEBUG compile path
 
 ## Idea: CInterop
@@ -1931,7 +2025,7 @@ Tests:
 - UniqueHandle reset / release / move / self-move
 - throwing deleter terminates
 
-## Idea: PlatformError
+## Idea: Platform
 
 Category: platform
 
@@ -1945,7 +2039,7 @@ Candidate API:
 
 ```cpp
 ket::platform::FormatErrno(error_number)
-ket::platform::GetEnvironmentVariable(name)
+ket::platform::ReadEnvironmentVariable(name)
 #ifdef _WIN32
 ket::platform::GetLastErrorCode()
 ket::platform::FormatWindowsError(code)
@@ -1959,15 +2053,17 @@ C++バージョン要件:
 - 推奨理由：platform API の差分を隠しすぎず、標準文字列で結果を扱える
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
-- 標準代替：標準ライブラリだけでは errno/Windows error message の扱いが不十分
+- 標準代替：標準ライブラリだけでは errno/Windows error message の扱いと env missing 方針が不十分
 
 Failure / edge cases:
 
 - unknown errno fallback
 - missing env
+- empty env value
 - empty / NUL env name
 - POSIX/GNU strerror_r 差
-- Windows wide to UTF-8 conversion failure
+- Windows env name/value UTF-8 conversion failure returns std::nullopt
+- Windows error message UTF-8 conversion failure uses fallback
 - non-Windows では Windows API を宣言しない
 
 他のライブラリへの依存:
@@ -1980,10 +2076,15 @@ Tests:
 
 - known errno non-empty
 - unknown errno fallback
+- errno preservation
 - missing env
 - present env with restore
+- empty env value
 - empty / NUL env name
-- Windows guard conditional compile
+- Windows env name/value UTF-8 conversion failure
+- Windows error message UTF-8 conversion fallback
+- non-Windows smoke/build
+- Windows error fallback and last-error preservation
 
 ## Idea: StateTable
 
@@ -2017,7 +2118,8 @@ Failure / edge cases:
 - undefined transition
 - duplicate transition first wins
 - table order
-- unknown enum value
+- unlisted enum value
+- empty std::array table
 - no actions / guards
 
 他のライブラリへの依存:
@@ -2031,9 +2133,11 @@ Tests:
 - unknown transition
 - duplicate first wins
 - enum class use
+- scalar state/event
 - table empty
+- constexpr lookup
 
-## Idea: CacheOnce
+## Idea: Cache
 
 Category: cache
 
@@ -2056,7 +2160,7 @@ C++バージョン要件:
 
 - 最小要件：C++11
 - 本ライブラリの適用を推奨する C++ バージョン：C++11以降
-- 推奨理由：lazy value の thread-safety と例外後状態を局所的に固定できる
+- 推奨理由：lazy value の非 thread-safe 方針と例外後状態を局所的に固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -2068,7 +2172,7 @@ Failure / edge cases:
 - move-only value
 - copy/move of Lazy disabled
 - destructor exception terminates
-- reentrancy precondition
+- reentrancy terminates when detected
 
 他のライブラリへの依存:
 
@@ -2082,9 +2186,10 @@ Tests:
 - exception leaves empty
 - move-only value
 - address stability
+- reentrancy termination
 - copy/move disabled compile-only
 
-## Idea: SerializationTlv
+## Idea: Tlv
 
 Category: binary / serialization
 
@@ -2106,9 +2211,9 @@ ket::tlv::DecodeResult
 
 C++バージョン要件:
 
-- 最小要件：C++17
-- 本ライブラリの適用を推奨する C++ バージョン：C++17以降
-- 推奨理由：`std::vector<std::uint8_t>` と bool+out で wire format 境界を固定できる
+- 最小要件：C++11
+- 本ライブラリの適用を推奨する C++ バージョン：C++11以降
+- 推奨理由：raw pointer、`std::vector<std::uint8_t>`、bool+out参照で wire format 境界を固定できる
 - 本ライブラリの適用を推奨しない C++ バージョン：なし
 - 非推奨理由：なし
 - 標準代替：なし
@@ -2117,8 +2222,10 @@ Failure / edge cases:
 
 - header shorter than 6 bytes
 - declared length exceeds remaining size
-- null + 0 value
+- null decode input
+- null + 0 encode value
 - null + non-zero precondition
+- value_size > uint32 max
 - size_t overflow
 - decode failure leaves out unchanged
 - view lifetime
@@ -2131,12 +2238,19 @@ Failure / edge cases:
 Tests:
 
 - empty value
+- type 0 / 65535
+- length 256
+- length 65536
 - roundtrip
 - multiple records decode first
+- append empty value
+- self-overlap append
 - short header / value
 - big-endian golden bytes
 - max uint32 length header
 - out unchanged on failure
+- size_t over uint32 max
+- C++11 compile-only
 
 ## Idea: Tuple
 
@@ -2213,7 +2327,11 @@ KET_HAS_STD_STRING_VIEW
 KET_HAS_STD_SPAN
 KET_HAS_STD_FORMAT
 KET_COMPILER_CLANG
+KET_COMPILER_GCC
+KET_COMPILER_MSVC
+KET_OS_WINDOWS
 KET_OS_LINUX
+KET_OS_MACOS
 ```
 
 C++バージョン要件:
@@ -2229,6 +2347,8 @@ Failure / edge cases:
 
 - MSVC `_MSVC_LANG`
 - clang-cl
+- AndroidはLinuxに含めない
+- iOS/tvOS/watchOS/Mac CatalystはmacOSに含めない
 - unknown OS
 - `__has_include` absence
 - feature-test macro differences
@@ -2242,11 +2362,12 @@ Failure / edge cases:
 
 Tests:
 
-- C++11 compile-only
+- C++11/14/20/23 compile-only
 - all macros defined
 - values are 0/1
 - KET_CXX_AT_LEAST boundaries
 - compiler/OS mutual exclusion
+- span/format feature-test and usability
 - include order
 
 ## Idea: MathSmall
@@ -2267,7 +2388,9 @@ ket::math::ToRadians(degrees)
 ket::math::ToDegrees(radians)
 ket::math::NearlyEqual(a, b, epsilon)
 ket::math::TryBytesFromKiB(kib, out)
+ket::math::TryBytesFromMiB(mib, out)
 ket::math::BytesToKiB(bytes)
+ket::math::BytesToMiB(bytes)
 ```
 
 Canonical name note:
@@ -2287,7 +2410,7 @@ C++バージョン要件:
 Failure / edge cases:
 
 - floating-point 型限定
-- epsilon <= 0
+- epsilon <= 0 / NaN / Inf
 - NaN
 - Inf
 - byte conversion overflow
@@ -2302,11 +2425,13 @@ Tests:
 
 - endpoints
 - midpoint
+- extrapolation
 - angle roundtrip
 - epsilon
-- NaN
+- NaN / Inf
 - byte conversion overflow
 - large byte values
+- C++11 compile-only
 
 ## Idea: Language
 
@@ -2333,12 +2458,14 @@ C++バージョン要件:
 - 推奨理由：C++11/14の欠落や冗長な言語儀式を小さいAPIで名前付けできる
 - 本ライブラリの適用を推奨しない C++ バージョン：API別
 - 非推奨理由：APIごとに標準代替の登場版が異なるため、module単位では非推奨にしない
-- 標準代替：C++17 `std::size` / `std::as_const` / `[[maybe_unused]]`
+- 標準代替：C++17 `std::size` / `std::as_const`。`IgnoreUnused` は C++17 `[[maybe_unused]]` と一部重複
 
 Failure / edge cases:
 
 - array reference only
+- non-array rejection
 - AsConst lifetime
+- AsConst rvalue rejection
 - unused expression side effects
 - C++11 compile
 
@@ -2350,8 +2477,11 @@ Failure / edge cases:
 Tests:
 
 - unused compiles
+- move-only unused
 - array length
+- non-array rejection
 - const conversion
+- rvalue rejection
 - C++11 compile-only
 
 ## Idea: Object
@@ -2385,10 +2515,12 @@ C++バージョン要件:
 Failure / edge cases:
 
 - copy disabled compile
+- NonCopyable remains movable
 - move behavior
 - reset source state
 - empty base optimization
-- defaulted comparison interaction
+- self move assignment
+- user-defined comparison coexistence
 - noexcept depends on T
 
 他のライブラリへの依存:
@@ -2399,10 +2531,13 @@ Failure / edge cases:
 Tests:
 
 - copy forbidden compile-only
+- NonCopyable move allowed
 - move works
 - reset on move
+- self move assignment
 - empty base size
-- defaulted comparison coexistence
+- user-defined comparison coexistence
+- C++11 compile-only
 
 ## Idea: Meta
 
@@ -2475,7 +2610,7 @@ C++バージョン要件:
 - 推奨理由：thread join と future ready 判定の小さい儀式を局所化できる
 - 本ライブラリの適用を推奨しない C++ バージョン：API別
 - 非推奨理由：`JoiningThread` は C++20 `std::jthread` と一部重なるため API ごとに判断する
-- 標準代替：C++20 `std::jthread`
+- API別標準代替：`JoiningThread` は C++20 `std::jthread`。`IsReady` は直接代替なし。
 
 Failure / edge cases:
 
@@ -2485,6 +2620,7 @@ Failure / edge cases:
 - join exception terminates
 - invalid future precondition
 - deferred is not ready
+- internal thread is not directly exposed
 
 他のライブラリへの依存:
 
@@ -2496,8 +2632,11 @@ Tests:
 - default
 - joinable
 - move / self-move
+- non-joinable thread
 - old thread joined on move assignment
-- ready / not ready / deferred
+- ready / not ready / deferred / stored exception
+- invalid future precondition
+- const future / shared_future
 - C++11 compile-only
 
 ## Idea: Uuid
@@ -2545,11 +2684,14 @@ Tests:
 
 - zero uuid
 - normal uuid
+- all-ff uuid
 - upper input
 - bad length
 - bad hyphen
 - bad hex
+- brace / URN rejected
 - format lower-case
+- roundtrip
 
 ## Idea: ColorRgb
 
@@ -2565,7 +2707,11 @@ Candidate API:
 
 ```cpp
 ket::color::Rgb
+ket::color::Rgb == ket::color::Rgb
+ket::color::Rgb != ket::color::Rgb
+ket::color::TryParse(text, size, out)
 ket::color::TryParse(text, out)
+ket::color::Format(color)
 ket::color::Format(color, options)
 ```
 
@@ -2582,10 +2728,13 @@ Failure / edge cases:
 
 - invalid length
 - invalid hex
+- null pointer rejected
 - optional leading #
 - 3-digit shorthand rejected
 - alpha rejected
+- signs rejected
 - format lowercase
+- C++11 compile-only
 
 他のライブラリへの依存:
 
@@ -2618,13 +2767,13 @@ ket::percent::Percent
 ket::percent::Percent::TryFromBasisPoints(value, out)
 ket::percent::Percent::TryFromPercent(value, out)
 ket::percent::Percent::TryFromRatio(ratio, out)
-ket::percent::Clamp(value)
+ket::percent::Percent::FromPercentClamped(value)
 ```
 
 Canonical name note:
 
-- percent 単位入力を clamp して `Percent` へ変換する API は `docs/module_api_catalog.md` で
-  `ket::percent::Percent::FromPercentClamped(value)` を採用。
+- percent 単位入力を clamp して `Percent` へ変換する API は
+  `ket::percent::Percent::FromPercentClamped(value)` を採用。namespace単位の `Clamp` は追加しない。
 
 C++バージョン要件:
 
@@ -2637,13 +2786,13 @@ C++バージョン要件:
 
 Failure / edge cases:
 
-- basis points < 0 / > 10000
-- ratio denominator 0
-- negative ratio
-- ratio > 1
-- NaN
-- rounding
-- clamp boundaries
+- basis points > 10000
+- percent < 0 / > 100
+- ratio < 0 / > 1
+- `TryFromPercent` / `TryFromRatio` の NaN / Inf は失敗
+- `TryXxx` 失敗時は out不変
+- binary floating-point値のnearest basis point丸め
+- `FromPercentClamped` は NaN / -Inf を 0%、+Inf と上限超過を 100% へclamp
 
 他のライブラリへの依存:
 
@@ -2654,12 +2803,16 @@ Tests:
 
 - 0%
 - 100%
+- basis points最大値超過
 - negative fails
 - > 100 fails
 - ratio normal
-- ratio denominator 0 fails
-- rounding
-- clamp
+- ratio > 1 fails
+- `TryFromPercent` / `TryFromRatio` の NaN / Inf fails
+- out不変
+- rounding threshold
+- clamp 0% / 100%
+- C++11 compile-only
 
 ## Idea: BinaryPayloadRecipe
 
