@@ -1,0 +1,17 @@
+{
+  "module": "object",
+  "title": "copy/move意図の型補助",
+  "summary": "copy/move制御とmove後resetを型定義の近くに集約する。",
+  "categories": ["language"],
+  "use_cases": ["raii-cleanup", "template-type"],
+  "when_to_use": [
+    "copy禁止やmove onlyの意図を型で明示したい時。",
+    "move後に値をresetする小さいラッパが必要な時。"
+  ],
+  "when_not_to_use": [
+    "=deleteを直接書く方が十分明確な時。",
+    "所有権modelやresource frameworkを作りたい時。"
+  ],
+  "related_modules": ["scope", "lang", "contract"],
+  "notes": ["比較演算や所有権policyには踏み込まない。"]
+}

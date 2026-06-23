@@ -1,0 +1,60 @@
+{
+  "id": "template-type",
+  "title": "template、tuple、variantの儀式を短くする",
+  "summary": "標準の強い型機能を隠さず、繰り返し現れる小さい型操作だけを名前にする。",
+  "flow": [
+    "C++11/14で欠けるtype traitsは meta を使う。",
+    "tuple要素の順序付き反復や変換は tuple を使う。",
+    "variant visitorは variant を使う。",
+    "複数callableを束ねるなら function を使う。",
+    "range要素をindex付きで走査するなら ranges を使う。",
+    "null不許可pointer型が必要なら pointer を使う。",
+    "標準やcompiler featureの分岐は build_config を使う。",
+    "optional値の変換と合成は optional を使う。",
+    "未使用・配列長・const参照化は lang を使う。"
+  ],
+  "modules": [
+    {
+      "module": "meta",
+      "role": "C++11/14欠落type traitsの小補助。"
+    },
+    {
+      "module": "tuple",
+      "role": "tuple要素のindex順反復と変換。"
+    },
+    {
+      "module": "variant",
+      "role": "std::variant visitor補助。"
+    },
+    {
+      "module": "function",
+      "role": "callableをoverload setとして束ねる。"
+    },
+    {
+      "module": "ranges",
+      "role": "range要素のindex付き走査と一致index取得。"
+    },
+    {
+      "module": "pointer",
+      "role": "null不許可pointerとpointer補助。"
+    },
+    {
+      "module": "build_config",
+      "role": "C++標準、compiler、標準featureをmacroで判定。"
+    },
+    {
+      "module": "optional",
+      "role": "optionalの値変換、合成、遅延fallback評価。"
+    },
+    {
+      "module": "lang",
+      "role": "未使用無視、raw配列長、const参照化。"
+    }
+  ],
+  "recipe": [
+    "標準型の意味を変えない。",
+    "呼び出し側の意図が短く読める箇所だけket APIへ寄せる。",
+    "標準代替がある版ではheader Doxygenの非推奨情報を確認する。"
+  ],
+  "see_also": ["diagnostics-testing"]
+}

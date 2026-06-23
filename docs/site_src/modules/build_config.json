@@ -1,0 +1,17 @@
+{
+  "module": "build_config",
+  "title": "build feature判定macro",
+  "summary": "compiler、OS、標準ライブラリfeatureの差分をKET_* macroへ集約する。",
+  "categories": ["language"],
+  "use_cases": ["template-type"],
+  "when_to_use": [
+    "C++標準、compiler、OS、feature-test macroの差分を小さく閉じたい時。",
+    "drop-in先でpreprocessor分岐の意図を読みやすくしたい時。"
+  ],
+  "when_not_to_use": [
+    "build systemやpackage manager全体の設定を扱いたい時。",
+    "runtimeのplatform検出や詳細なCPU feature検出が必要な時。"
+  ],
+  "related_modules": ["platform", "lang", "meta"],
+  "notes": ["runtime cost、allocation、link symbolは発生しない。"]
+}

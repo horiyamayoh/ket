@@ -1,0 +1,14 @@
+{
+  "module": "scope",
+  "title": "scope exitと値復元",
+  "summary": "scope exit cleanupと構築時の値復元をRAIIで扱う。",
+  "categories": ["flow"],
+  "use_cases": ["raii-cleanup"],
+  "when_to_use": [
+    "関数内の一時的な後始末を局所化したい時。",
+    "一時的に変更した値をscope終了時に戻したい時。"
+  ],
+  "when_not_to_use": ["専用resource型を作る方が自然な時。", "非同期cleanupや所有権移譲を扱う時。"],
+  "related_modules": ["object", "contract", "deadline"],
+  "notes": ["小さいscope内の補助に絞り、resource frameworkにはしない。"]
+}

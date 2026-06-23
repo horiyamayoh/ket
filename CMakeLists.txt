@@ -63,6 +63,20 @@ if(KET_ENABLE_FORMAT_TARGETS)
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 			COMMENT "Checking ket source conventions"
 		)
+
+		add_custom_target(
+			generate-site
+			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_site.py"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Generating ket static reference site"
+		)
+
+		add_custom_target(
+			check-site
+			COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_site.py"
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			COMMENT "Checking ket static reference site"
+		)
 	endif()
 endif()
 

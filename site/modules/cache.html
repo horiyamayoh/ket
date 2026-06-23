@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::cache - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
+}
+* { box-sizing: border-box; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (max-width: 720px) {
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
+}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main id="main">
+<h1>ket::cache</h1>
+<p class="lead">手動storage上で値を遅延生成し、再利用と明示破棄を局所化する。</p>
+<h2>Module Facts</h2>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/cache/ket_cache.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++11</td></tr><tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr><tr><th>Progress note</th><td>once/lazy valueの遅延生成と再利用</td></tr><tr><th>Drop-in</th><td>`ket_cache.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::cache 内部実装：ket::cache::detail</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="../categories/data.html">データ構造・合成</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></span></span></td></tr></tbody></table></div>
+<h2>Use This When</h2>
+<ul><li>必要になった時だけ値を生成し、同じscope内で再利用したい時。</li><li>heap allocationなしで保持値のaddress stabilityを保ちたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>thread-safe cacheやglobal registryが必要な時。</li><li>key付きmemoization frameworkを作りたい時。</li></ul>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/scope.html">scope</a></span> <span class="pill"><a href="../modules/object.html">object</a></span> <span class="pill"><a href="../modules/concurrency.html">concurrency</a></span></p>
+<h2>Notes</h2>
+<ul><li>再入、同時アクセス、thread-safe cacheは対象外。</li></ul>
+<h2>API Summary</h2>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/cache.html#api-type-Lazy-49">cache::Lazy</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; class Lazy</code></span></td><td>手動storage上に値を一度だけ遅延生成する非thread-safeなlazy value。</td></tr><tr><td><span class="api-name"><a href="../modules/cache.html#api-function-Lazy-71">cache::Lazy</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>Lazy() noexcept</code></span></td><td>空状態のlazy value構築。</td></tr><tr><td><span class="api-name"><a href="../modules/cache.html#api-function-~Lazy-85">cache::~Lazy</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>~Lazy() noexcept</code></span></td><td>保持値がある場合の破棄。</td></tr><tr><td><span class="api-name"><a href="../modules/cache.html#api-function-Lazy-97">cache::Lazy</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>Lazy(const Lazy&amp;) = delete</code></span></td><td>copy construction禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/cache.html#api-function-Lazy-123">cache::Lazy</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>Lazy(Lazy&amp;&amp;) = delete</code></span></td><td>move construction禁止。</td></tr><tr><td><span class="api-name"><a href="../modules/cache.html#api-function-HasValue-153">cache::HasValue</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool HasValue() const noexcept</code></span></td><td>保持値の有無判定。</td></tr><tr><td><span class="api-name"><a href="../modules/cache.html#api-function-Reset-168">cache::Reset</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>void Reset() noexcept</code></span></td><td>保持値の明示的な破棄。</td></tr><tr><td><span class="api-name"><a href="../modules/cache.html#api-function-GetOrCreate-187">cache::GetOrCreate</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename Factory&gt; T&amp; GetOrCreate(Factory&amp;&amp; factory)</code></span></td><td>保持値の取得または遅延生成。</td></tr></tbody></table></div>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-Lazy-49">
+<h3>Lazy <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; class Lazy</code></pre></td></tr><tr><th>Brief</th><td>手動storage上に値を一度だけ遅延生成する非thread-safeなlazy value。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>`Lazy`自体はcopy/move禁止。保持値のaddress stabilityを`Reset`まで維持。</li><li>再入、同時アクセス、thread-safe cacheは対象外。</li></ul></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-Lazy-71">
+<h3>Lazy <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>Lazy() noexcept</code></pre></td></tr><tr><th>Brief</th><td>空状態のlazy value構築。</td></tr><tr><th>Pre</th><td>`T`は`alignas(T)`付きbyte storageで格納可能なobject type。</td></tr><tr><th>Post</th><td>保持値なし。heap allocationなし。</td></tr><tr><th>Example</th><td><pre><code>ket::cache::Lazy&lt;int&gt; value;
+// value.HasValue() == false</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-~Lazy-85">
+<h3>~Lazy <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>~Lazy() noexcept</code></pre></td></tr><tr><th>Brief</th><td>保持値がある場合の破棄。</td></tr><tr><th>Pre</th><td>`T`のdestructorは例外を投げず、同じ`Lazy`へ再入しない。</td></tr><tr><th>Post</th><td>保持値があった場合はそのlifetime終了。destructor例外は`std::terminate`。</td></tr><tr><th>Example</th><td><pre><code>{
+    ket::cache::Lazy&lt;int&gt; value;
+    value.GetOrCreate([] { return 42; });
+}
+// held int lifetime has ended</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-Lazy-97">
+<h3>Lazy <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>Lazy(const Lazy&amp;) = delete</code></pre></td></tr><tr><th>Brief</th><td>copy construction禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: copy元候補。delete済みのため参照不可。</li></ul></td></tr><tr><th>Pre</th><td>呼び出し不可。</td></tr><tr><th>Post</th><td>`Lazy` objectは生成されない。</td></tr><tr><th>Example</th><td><pre><code>ket::cache::Lazy&lt;int&gt; value;
+// ket::cache::Lazy&lt;int&gt; copy(value); // compile error</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-Lazy-123">
+<h3>Lazy <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>Lazy(Lazy&amp;&amp;) = delete</code></pre></td></tr><tr><th>Brief</th><td>move construction禁止。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in other: move元候補。delete済みのため参照不可。</li></ul></td></tr><tr><th>Pre</th><td>呼び出し不可。</td></tr><tr><th>Post</th><td>`Lazy` objectは生成されない。</td></tr><tr><th>Example</th><td><pre><code>ket::cache::Lazy&lt;int&gt; value;
+// ket::cache::Lazy&lt;int&gt; moved(std::move(value)); // compile error</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-HasValue-153">
+<h3>HasValue <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool HasValue() const noexcept</code></pre></td></tr><tr><th>Brief</th><td>保持値の有無判定。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 保持値あり。</li><li>false: 保持値なし。</li></ul></td></tr><tr><th>Pre</th><td>なし。</td></tr><tr><th>Post</th><td>`Lazy`と保持値の状態変更なし。</td></tr><tr><th>Example</th><td><pre><code>ket::cache::Lazy&lt;int&gt; value;
+const auto empty = value.HasValue();
+value.GetOrCreate([] { return 42; });
+const auto created = value.HasValue();
+// empty == false &amp;&amp; created == true</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-Reset-168">
+<h3>Reset <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>void Reset() noexcept</code></pre></td></tr><tr><th>Brief</th><td>保持値の明示的な破棄。</td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>void: 戻り値なし。</li></ul></td></tr><tr><th>Pre</th><td>`T`のdestructorは例外を投げず、同じ`Lazy`へ再入しない。</td></tr><tr><th>Post</th><td>保持値があった場合はemptyへ戻る。保持値なしの場合は状態変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>破棄中の例外または再入検出時は`std::terminate`。</li></ul></td></tr><tr><th>Example</th><td><pre><code>ket::cache::Lazy&lt;int&gt; value;
+value.GetOrCreate([] { return 42; });
+value.Reset();
+// value.HasValue() == false</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-GetOrCreate-187">
+<h3>GetOrCreate <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename Factory&gt; T&amp; GetOrCreate(Factory&amp;&amp; factory)</code></pre></td></tr><tr><th>Brief</th><td>保持値の取得または遅延生成。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in factory: 必要時だけ呼び出すfactory object。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 保持値への参照。</li></ul></td></tr><tr><th>Pre</th><td>同じ`Lazy`への`GetOrCreate`または`Reset`をfactory実行中に再入呼び出ししない。</td></tr><tr><th>Post</th><td>成功時は保持値あり。factoryまたは`T`構築の例外時はemptyのまま。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>値がある場合、factoryは呼び出しなし。factory objectは`Lazy`内に保持しない。</li><li>factory実行中の再入検出時は`std::terminate`。</li><li>追加heap allocationなし。</li></ul></td></tr><tr><th>Example</th><td><pre><code>ket::cache::Lazy&lt;int&gt; value;
+int&amp; first = value.GetOrCreate([] { return 42; });
+int&amp; second = value.GetOrCreate([] { return 7; });
+// &amp;first == &amp;second &amp;&amp; second == 42</code></pre></td></tr></tbody></table></div>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::utf8 - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
+}
+* { box-sizing: border-box; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (max-width: 720px) {
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
+}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main id="main">
+<h1>ket::utf8</h1>
+<p class="lead">UTF-8 byte列の妥当性検査とcode point数取得を扱う。</p>
+<h2>Module Facts</h2>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/utf8/ket_utf8.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++17</td></tr><tr><th>Tests</th><td>GoogleTest</td></tr><tr><th>Progress note</th><td>UTF-8 byte列の妥当性検査とcode point数取得</td></tr><tr><th>Drop-in</th><td>`ket_utf8.h` と `ket_utf8.cpp` を対象プロジェクトへコピー。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::utf8 内部実装：.cpp の無名 namespace</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/text.html">文字列・text・parse</a></span> <span class="pill"><a href="../categories/boundary.html">入力境界・外部境界</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/text-processing.html">文字列の小処理を読みやすくする</a></span> <span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></span></td></tr></tbody></table></div>
+<h2>Use This When</h2>
+<ul><li>入力byte列がUTF-8として妥当か確認したい時。</li><li>code point数を数えたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>Unicode正規化、grapheme cluster、case foldingが必要な時。</li><li>文字列の所有や変換を行いたい時。</li></ul>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/ascii.html">ascii</a></span> <span class="pill"><a href="../modules/string.html">string</a></span> <span class="pill"><a href="../modules/parse.html">parse</a></span></p>
+<h2>Notes</h2>
+<ul><li>grapheme数ではなくcode point数を扱う。</li></ul>
+<h2>API Summary</h2>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/utf8.html#api-type-ValidationResult-51">utf8::ValidationResult</a></span></td><td><span class="kind-mark">type</span></td><td><span class="signature-cell"><code>struct ValidationResult</code></span></td><td>UTF-8検査結果。</td></tr><tr><td><span class="api-name"><a href="../modules/utf8.html#api-function-IsAscii-70">utf8::IsAscii</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool IsAscii(std::string_view text) noexcept</code></span></td><td>ASCII限定byte列の判定。</td></tr><tr><td><span class="api-name"><a href="../modules/utf8.html#api-function-Validate-88">utf8::Validate</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>ValidationResult Validate(std::string_view text) noexcept</code></span></td><td>UTF-8 byte列の妥当性検査。</td></tr><tr><td><span class="api-name"><a href="../modules/utf8.html#api-function-IsValid-103">utf8::IsValid</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool IsValid(std::string_view text) noexcept</code></span></td><td>UTF-8 byte列の妥当性判定。</td></tr><tr><td><span class="api-name"><a href="../modules/utf8.html#api-function-CountCodePoints-118">utf8::CountCodePoints</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::optional&lt;std::size_t&gt; CountCodePoints(std::string_view text) noexcept</code></span></td><td>UTF-8 byte列のcode point数取得。</td></tr></tbody></table></div>
+<h2>API Details</h2>
+<section class="api-entry" id="api-type-ValidationResult-51">
+<h3>ValidationResult <span class="kind-mark">type</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>struct ValidationResult</code></pre></td></tr><tr><th>Brief</th><td>UTF-8検査結果。</td></tr><tr><th>Details</th><td>`valid`がtrueの場合、入力byte列は妥当なUTF-8で、`error_offset`は0。 `valid`がfalseの場合、`error_offset`は存在するbyteがUTF-8構文または範囲制約に 最初に反した位置。妥当なprefixのまま入力末尾へ達したtruncated sequenceでは、そのsequenceの先頭位置。</td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-IsAscii-70">
+<h3>IsAscii <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool IsAscii(std::string_view text) noexcept</code></pre></td></tr><tr><th>Brief</th><td>ASCII限定byte列の判定。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in text: 判定対象のbyte列。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: `text`の全byteが`0x00..0x7F`。</li><li>false: `text`が`0x80`以上のbyteを含む。</li></ul></td></tr><tr><th>Pre</th><td>なし。任意のbyte列を判定対象として扱う。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>空文字列はASCII限定byte列として扱う。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto ascii = ket::utf8::IsAscii(&quot;abc&quot;);
+// ascii == true</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-Validate-88">
+<h3>Validate <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>ValidationResult Validate(std::string_view text) noexcept</code></pre></td></tr><tr><th>Brief</th><td>UTF-8 byte列の妥当性検査。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in text: 検査対象のbyte列。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>result: UTF-8検査結果。妥当な場合は`valid == true`。</li></ul></td></tr><tr><th>Pre</th><td>なし。任意のbyte列を検査対象として扱う。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>存在するbyteがUTF-8構文または範囲制約に反した場合、そのbyte位置を`error_offset`として返す。</li><li>妥当なprefixのまま入力末尾へ達したtruncated sequenceは、そのsequenceの先頭byteを返す。</li><li>overlong、surrogate、範囲外code point、単独continuation byteはinvalid。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto result = ket::utf8::Validate(&quot;\xF0\x9F\x98\x80&quot;);
+// result.valid == true, result.error_offset == 0</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-IsValid-103">
+<h3>IsValid <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool IsValid(std::string_view text) noexcept</code></pre></td></tr><tr><th>Brief</th><td>UTF-8 byte列の妥当性判定。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in text: 判定対象のbyte列。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: `text`が妥当なUTF-8。</li><li>false: `text`が不正なUTF-8。</li></ul></td></tr><tr><th>Pre</th><td>なし。任意のbyte列を判定対象として扱う。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>`Validate(text).valid`と同義。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto valid = ket::utf8::IsValid(&quot;\xE3\x81\x82&quot;);
+// valid == true</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-CountCodePoints-118">
+<h3>CountCodePoints <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::optional&lt;std::size_t&gt; CountCodePoints(std::string_view text) noexcept</code></pre></td></tr><tr><th>Brief</th><td>UTF-8 byte列のcode point数取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in text: 数える対象のbyte列。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: UTF-8 code point数。</li><li>std::nullopt: `text`が不正なUTF-8。</li></ul></td></tr><tr><th>Pre</th><td>なし。任意のbyte列を入力として扱い、不正UTF-8は失敗値として返す。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>grapheme cluster数ではなくUnicode code point数。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto count = ket::utf8::CountCodePoints(&quot;a\xE3\x81\x82&quot;);
+// count == std::optional&lt;std::size_t&gt;(2)</code></pre></td></tr></tbody></table></div>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "module": "endian",
+  "title": "byte order明示load/store",
+  "summary": "BE/LEと幅をAPI名に出した16/32/64bit読み書き。",
+  "categories": ["binary"],
+  "use_cases": ["binary-io", "protocol-payload"],
+  "when_to_use": [
+    "unaligned bufferから固定幅整数を読み書きしたい時。",
+    "byte orderを呼び出し側の名前で明示したい時。"
+  ],
+  "when_not_to_use": [
+    "stream cursorやoffset管理も必要な時。",
+    "host endian変換の大規模互換layerが必要な時。"
+  ],
+  "related_modules": ["byte_reader", "byte_writer", "bytes", "bits"],
+  "notes": ["固定位置の変換に絞り、cursor管理はreader/writerへ分ける。"]
+}

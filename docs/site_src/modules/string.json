@@ -1,0 +1,14 @@
+{
+  "module": "string",
+  "title": "文字列片の連結と追記",
+  "summary": "複数文字列片の単純連結と既存文字列への追記を扱う。",
+  "categories": ["text"],
+  "use_cases": ["text-processing"],
+  "when_to_use": [
+    "formatではなく単純に部品を連結したい時。",
+    "operator+連鎖より意図を短く読みたい時。"
+  ],
+  "when_not_to_use": ["書式付き文字列生成が必要な時。", "localeや数値formatを扱いたい時。"],
+  "related_modules": ["ascii", "utf8"],
+  "notes": ["format APIではない。"]
+}

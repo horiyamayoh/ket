@@ -1,0 +1,17 @@
+{
+  "module": "color",
+  "title": "RGB小値型",
+  "summary": "RGB値と6桁hex文字列を相互変換する。",
+  "categories": ["value"],
+  "use_cases": ["value-validation"],
+  "when_to_use": [
+    "RGB 24bit値を小さい値型として扱いたい時。",
+    "先頭#の有無やhex文字を固定したい時。"
+  ],
+  "when_not_to_use": [
+    "alpha、色空間変換、CSS color全般を扱いたい時。",
+    "画像処理や描画frameworkが必要な時。"
+  ],
+  "related_modules": ["hex", "parse", "numeric"],
+  "notes": ["C++11対応のため失敗はTry系APIで扱う。"]
+}

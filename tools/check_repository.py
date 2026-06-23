@@ -22,6 +22,7 @@ def check_steps() -> list[CheckStep]:
 		CheckStep("Python tooling", [python, "tools/check_python.py"]),
 		CheckStep("Format", [python, "tools/check_format.py"]),
 		CheckStep("Layout", [python, "tools/check_layout.py"]),
+		CheckStep("Static reference site", [python, "tools/check_site.py"]),
 		CheckStep("Configure dev", ["cmake", "--preset", "dev"]),
 		CheckStep("Build dev", ["cmake", "--build", "--preset", "dev"]),
 		CheckStep("Static analysis", ["cmake", "--build", "--preset", "dev", "--target", "check-static"]),

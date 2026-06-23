@@ -1,0 +1,14 @@
+{
+  "module": "port",
+  "title": "TCP/UDP port値",
+  "summary": "port番号の値型、範囲確認、parse/formatを扱う。",
+  "categories": ["value", "boundary"],
+  "use_cases": ["cli-config", "value-validation"],
+  "when_to_use": ["0から65535のport値を裸intから分けたい時。", "CLIや設定値からportを読む時。"],
+  "when_not_to_use": [
+    "service name解決やsocket addressを扱う時。",
+    "IPv6 endpoint全体を表したい時。"
+  ],
+  "related_modules": ["ipv4", "cli", "parse"],
+  "notes": ["leading zeroや符号の扱いはDoxygen契約を正とする。"]
+}

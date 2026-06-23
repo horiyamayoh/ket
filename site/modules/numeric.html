@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::numeric - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
+}
+* { box-sizing: border-box; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (max-width: 720px) {
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
+}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main id="main">
+<h1>ket::numeric</h1>
+<p class="lead">整数overflow、alignment、safe castの境界確認を扱う。</p>
+<h2>Module Facts</h2>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/numeric/ket_numeric.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++11</td></tr><tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr><tr><th>Progress note</th><td>overflow、align、cast の境界確認</td></tr><tr><th>Drop-in</th><td>`ket_numeric.h` を対象プロジェクトへコピー。ヘッダオンリーmodule。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::numeric 内部実装：ket::numeric::detail</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="../categories/value.html">値型・validation</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span> <span class="pill"><a href="../use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></span></span></td></tr></tbody></table></div>
+<h2>Use This When</h2>
+<ul><li>signed/unsignedや幅変換の境界を毎回書きたくない時。</li><li>overflowやalignment 0を失敗として扱いたい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>任意精度整数やdecimal演算が必要な時。</li><li>標準の単純なcastで意図が十分明確な時。</li></ul>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/math.html">math</a></span> <span class="pill"><a href="../modules/bits.html">bits</a></span> <span class="pill"><a href="../modules/memory.html">memory</a></span></p>
+<h2>Notes</h2>
+<ul><li>wraparoundを公開仕様にしない。</li></ul>
+<h2>API Summary</h2>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-InRange-60">numeric::InRange</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename To, typename From&gt; constexpr bool InRange(From value) noexcept</code></span></td><td>値が指定変換先整数型の範囲内かの判定。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-Clamp-77">numeric::Clamp</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; constexpr T Clamp(T value, T min_value, T max_value) noexcept</code></span></td><td>値を指定範囲へ丸める。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-AbsDiff-95">numeric::AbsDiff</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; constexpr typename std::make_unsigned&lt;T&gt;::type AbsDiff(T a, T b) noexcept</code></span></td><td>2値の差の絶対値をunsigned整数で取得。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-TryDivideRoundUp-115">numeric::TryDivideRoundUp</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; bool TryDivideRoundUp(T value, T divisor, T&amp; out) noexcept</code></span></td><td>unsigned整数の切り上げ除算。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-TryAlignUp-134">numeric::TryAlignUp</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; bool TryAlignUp(T value, T alignment, T&amp; out) noexcept</code></span></td><td>unsigned整数を指定alignmentの倍数へ切り上げる。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-TryAlignDown-153">numeric::TryAlignDown</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; bool TryAlignDown(T value, T alignment, T&amp; out) noexcept</code></span></td><td>unsigned整数を指定alignmentの倍数へ切り下げる。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-TryAdd-172">numeric::TryAdd</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; bool TryAdd(T a, T b, T&amp; out) noexcept</code></span></td><td>overflowを検出する整数加算。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-TrySub-191">numeric::TrySub</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; bool TrySub(T a, T b, T&amp; out) noexcept</code></span></td><td>overflowを検出する整数減算。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-TryMul-210">numeric::TryMul</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; bool TryMul(T a, T b, T&amp; out) noexcept</code></span></td><td>overflowを検出する整数乗算。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-SaturatingAdd-226">numeric::SaturatingAdd</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; constexpr T SaturatingAdd(T a, T b) noexcept</code></span></td><td>整数加算を上下限で飽和させる。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-SaturatingSub-242">numeric::SaturatingSub</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename T&gt; constexpr T SaturatingSub(T a, T b) noexcept</code></span></td><td>整数減算を上下限で飽和させる。</td></tr><tr><td><span class="api-name"><a href="../modules/numeric.html#api-function-TryCast-261">numeric::TryCast</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>template &lt;typename To, typename From&gt; bool TryCast(From value, To&amp; out) noexcept</code></span></td><td>範囲外を検出する整数cast。</td></tr></tbody></table></div>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-InRange-60">
+<h3>InRange <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename To, typename From&gt; constexpr bool InRange(From value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>値が指定変換先整数型の範囲内かの判定。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 判定対象値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: `value`が`To`の表現範囲内。</li><li>false: `value`が`To`の表現範囲外。</li></ul></td></tr><tr><th>Pre</th><td>`To`と`From`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>signed/unsignedの組み合わせでも比較前に十分広い整数表現へ変換。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto ok = ket::numeric::InRange&lt;int&gt;(42U);
+const auto ng = ket::numeric::InRange&lt;unsigned&gt;(-1);
+// ok == true, ng == false</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-Clamp-77">
+<h3>Clamp <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; constexpr T Clamp(T value, T min_value, T max_value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>値を指定範囲へ丸める。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 丸め対象値。</li><li>in min_value: 下限値。</li><li>in max_value: 上限値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `min_value`以上`max_value`以下へ丸めた値。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くintegral型。`min_value &lt;= max_value`。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::numeric::Clamp(10, 0, 7);
+// value == 7</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-AbsDiff-95">
+<h3>AbsDiff <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; constexpr typename std::make_unsigned&lt;T&gt;::type AbsDiff(T a, T b) noexcept</code></pre></td></tr><tr><th>Brief</th><td>2値の差の絶対値をunsigned整数で取得。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in a: 1つ目の値。</li><li>in b: 2つ目の値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `a`と`b`の数学的な差の絶対値。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>signed最小値を単純に符号反転せず、unsigned変換後の差で表現。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const auto diff = ket::numeric::AbsDiff(-3, 2);
+// diff == 5U</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryDivideRoundUp-115">
+<h3>TryDivideRoundUp <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; bool TryDivideRoundUp(T value, T divisor, T&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>unsigned整数の切り上げ除算。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 割られる値。</li><li>in divisor: 除数。</li><li>out out: 成功時の切り上げ除算結果。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 成功。</li><li>false: `divisor == 0`。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くunsigned integral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>成功時のみ`out`を変更。失敗時は`out`を変更しない。</td></tr><tr><th>Example</th><td><pre><code>unsigned out = 0;
+const auto ok = ket::numeric::TryDivideRoundUp(10U, 4U, out);
+// ok == true, out == 3U</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryAlignUp-134">
+<h3>TryAlignUp <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; bool TryAlignUp(T value, T alignment, T&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>unsigned整数を指定alignmentの倍数へ切り上げる。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 丸め対象値。</li><li>in alignment: alignment値。</li><li>out out: 成功時の切り上げ後の値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 成功。</li><li>false: `alignment == 0`、または切り上げ結果のoverflow。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くunsigned integral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>成功時のみ`out`を変更。失敗時は`out`を変更しない。</td></tr><tr><th>Example</th><td><pre><code>unsigned out = 0;
+const auto ok = ket::numeric::TryAlignUp(13U, 8U, out);
+// ok == true, out == 16U</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryAlignDown-153">
+<h3>TryAlignDown <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; bool TryAlignDown(T value, T alignment, T&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>unsigned整数を指定alignmentの倍数へ切り下げる。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 丸め対象値。</li><li>in alignment: alignment値。</li><li>out out: 成功時の切り下げ後の値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 成功。</li><li>false: `alignment == 0`。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くunsigned integral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>成功時のみ`out`を変更。失敗時は`out`を変更しない。</td></tr><tr><th>Example</th><td><pre><code>unsigned out = 0;
+const auto ok = ket::numeric::TryAlignDown(13U, 8U, out);
+// ok == true, out == 8U</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryAdd-172">
+<h3>TryAdd <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; bool TryAdd(T a, T b, T&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>overflowを検出する整数加算。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in a: 左辺値。</li><li>in b: 右辺値。</li><li>out out: 成功時の加算結果。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 成功。</li><li>false: 加算結果のoverflow。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>成功時のみ`out`を変更。失敗時は`out`を変更しない。</td></tr><tr><th>Example</th><td><pre><code>int out = 0;
+const auto ok = ket::numeric::TryAdd(40, 2, out);
+// ok == true, out == 42</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TrySub-191">
+<h3>TrySub <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; bool TrySub(T a, T b, T&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>overflowを検出する整数減算。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in a: 左辺値。</li><li>in b: 右辺値。</li><li>out out: 成功時の減算結果。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 成功。</li><li>false: 減算結果のoverflow。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>成功時のみ`out`を変更。失敗時は`out`を変更しない。</td></tr><tr><th>Example</th><td><pre><code>int out = 0;
+const auto ok = ket::numeric::TrySub(40, 2, out);
+// ok == true, out == 38</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryMul-210">
+<h3>TryMul <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; bool TryMul(T a, T b, T&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>overflowを検出する整数乗算。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in a: 左辺値。</li><li>in b: 右辺値。</li><li>out out: 成功時の乗算結果。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 成功。</li><li>false: 乗算結果のoverflow。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>成功時のみ`out`を変更。失敗時は`out`を変更しない。</td></tr><tr><th>Example</th><td><pre><code>int out = 0;
+const auto ok = ket::numeric::TryMul(6, 7, out);
+// ok == true, out == 42</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-SaturatingAdd-226">
+<h3>SaturatingAdd <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; constexpr T SaturatingAdd(T a, T b) noexcept</code></pre></td></tr><tr><th>Brief</th><td>整数加算を上下限で飽和させる。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in a: 左辺値。</li><li>in b: 右辺値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 加算結果、または`T`の上下限へ飽和した値。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::numeric::SaturatingAdd(std::numeric_limits&lt;int&gt;::max(), 1);
+// value == std::numeric_limits&lt;int&gt;::max()</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-SaturatingSub-242">
+<h3>SaturatingSub <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename T&gt; constexpr T SaturatingSub(T a, T b) noexcept</code></pre></td></tr><tr><th>Brief</th><td>整数減算を上下限で飽和させる。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in a: 左辺値。</li><li>in b: 右辺値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 減算結果、または`T`の上下限へ飽和した値。</li></ul></td></tr><tr><th>Pre</th><td>`T`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::numeric::SaturatingSub(std::numeric_limits&lt;int&gt;::min(), 1);
+// value == std::numeric_limits&lt;int&gt;::min()</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryCast-261">
+<h3>TryCast <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>template &lt;typename To, typename From&gt; bool TryCast(From value, To&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>範囲外を検出する整数cast。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 変換対象値。</li><li>out out: 成功時のcast結果。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 成功。</li><li>false: `value`が`To`の表現範囲外。</li></ul></td></tr><tr><th>Pre</th><td>`To`と`From`はboolとtext character型を除くintegral型。対象外型はcompile error。</td></tr><tr><th>Post</th><td>成功時のみ`out`を変更。失敗時は`out`を変更しない。</td></tr><tr><th>Example</th><td><pre><code>unsigned out = 0;
+const auto ok = ket::numeric::TryCast(42, out);
+// ok == true, out == 42U</code></pre></td></tr></tbody></table></div>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

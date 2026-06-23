@@ -1,0 +1,17 @@
+{
+  "module": "bcd",
+  "title": "packed BCD変換",
+  "summary": "packed BCDと10進整数・10進文字列の相互変換を扱う。",
+  "categories": ["binary", "value"],
+  "use_cases": ["protocol-payload", "value-validation"],
+  "when_to_use": [
+    "電文や古い外部仕様でpacked BCD fieldが必要な時。",
+    "nibble妥当性や先頭ゼロ保持を呼び出し側に散らしたくない時。"
+  ],
+  "when_not_to_use": [
+    "通常の10進文字列formatだけで十分な時。",
+    "任意精度decimal演算や金額計算をしたい時。"
+  ],
+  "related_modules": ["bits", "bytes", "byte_writer", "hex"],
+  "notes": ["整数変換では先頭ゼロを保持しない。桁保持が必要なら文字列変換を使う。"]
+}

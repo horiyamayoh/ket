@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket reference - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
+}
+* { box-sizing: border-box; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (max-width: 720px) {
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
+}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header>
+<div class="brand"><a href="index.html">ket reference</a></div>
+<nav><a href="index.html" aria-current="page">概要</a><a href="modules/index.html">Modules</a><a href="api/index.html">API</a><a href="use-cases/index.html">Use cases</a><a href="categories/index.html">Categories</a><a href="diagrams.html">Diagrams</a><a href="search.html">Search</a></nav>
+</header>
+<main id="main">
+<h1>ket reference</h1>
+<section class="summary-band" aria-label="reference summary">
+<p class="summary-copy"><strong>小さいC++定型処理を用途から探す静的リファレンス</strong>。ketのmodule、API、ユースケース、論理分類をブラウザで俯瞰するための生成サイト。</p>
+<p class="summary-actions"><a href="use-cases/index.html">Use cases</a><a href="modules/index.html">Modules</a><a href="api/index.html">API</a><a href="search.html">Search</a></p>
+<dl class="stats">
+<div><dt>Modules</dt><dd>47</dd></div>
+<div><dt>APIs</dt><dd>381</dd></div>
+<div><dt>Use cases</dt><dd>8</dd></div>
+<div><dt>Categories</dt><dd>8</dd></div>
+</dl>
+</section>
+<h2>Use Case Entrances</h2>
+<div class="grid">
+<section class="card"><h3><a href="use-cases/binary-io.html">固定bufferから安全に読む・書く</a></h3><p>offset更新、size不足、endianness、non-owning viewを明示して、バイナリ処理の事故を減らす。</p></section>
+<section class="card"><h3><a href="use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></h3><p>業務固有protocolをframework化せず、byte列構築、BCD、endian、overflow確認を組み合わせる。</p></section>
+<section class="card"><h3><a href="use-cases/cli-config.html">CLI引数や設定文字列を読む</a></h3><p>argc/argv、数値parse、port、IPv4、version、enum変換を段階的に分けて扱う。</p></section>
+<section class="card"><h3><a href="use-cases/text-processing.html">文字列の小処理を読みやすくする</a></h3><p>単純連結、ASCII限定処理、UTF-8検査、文字列から値への変換を混同しない。</p></section>
+<section class="card"><h3><a href="use-cases/value-validation.html">値の範囲と表記を小さいAPIに固定する</a></h3><p>裸のintや文字列で扱うとぶれやすいdomain値を、moduleごとの値型やparseで固定する。</p></section>
+<section class="card"><h3><a href="use-cases/raii-cleanup.html">後始末、期限、契約を局所化する</a></h3><p>scope exit、move後reset、deadline、preconditionを小さく明示する。</p></section>
+<section class="card"><h3><a href="use-cases/template-type.html">template、tuple、variantの儀式を短くする</a></h3><p>標準の強い型機能を隠さず、繰り返し現れる小さい型操作だけを名前にする。</p></section>
+<section class="card"><h3><a href="use-cases/diagnostics-testing.html">失敗時に読みやすい診断を出す</a></h3><p>byte差分、hex表現、契約違反、状態遷移の確認をテストと診断に寄せる。</p></section>
+</div>
+<h2>Module Map</h2>
+<div class="table-scroll"><table class="module-table"><thead><tr><th>Module</th><th>Category</th><th>C++</th><th>APIs</th><th>Summary</th></tr></thead><tbody><tr><td><span class="module-name"><a href="modules/bcd.html">bcd</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="categories/value.html">値型・validation</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">6</span></td><td>packed BCDと10進整数・10進文字列の相互変換を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/bits.html">bits</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">14</span></td><td>bit、nibble、mask、rotateの境界処理を名前付きで扱う。</td></tr><tr><td><span class="module-name"><a href="modules/cache.html">cache</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="categories/data.html">データ構造・合成</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">8</span></td><td>手動storage上で値を遅延生成し、再利用と明示破棄を局所化する。</td></tr><tr><td><span class="module-name"><a href="modules/container.html">container</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/data.html">データ構造・合成</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">8</span></td><td>map/vectorの小さいlookup、生成、削除補助を集める。</td></tr><tr><td><span class="module-name"><a href="modules/ascii.html">ascii</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/text.html">文字列・text・parse</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">15</span></td><td>ASCII前提のtrim、split、case変換、置換を小さいAPIへ分離する。</td></tr><tr><td><span class="module-name"><a href="modules/cli.html">cli</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">11</span></td><td>argc/argvからoption有無、値、positional argumentsを取得する。</td></tr><tr><td><span class="module-name"><a href="modules/date.html">date</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">7</span></td><td>日付、時刻、月日数、leap yearの境界条件を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/deadline.html">deadline</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">11</span></td><td>steady_clockベースのStopwatchとDeadlineを扱う。</td></tr><tr><td><span class="module-name"><a href="modules/build_config.html">build_config</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">12</span></td><td>compiler、OS、標準ライブラリfeatureの差分をKET_* macroへ集約する。</td></tr><tr><td><span class="module-name"><a href="modules/scope.html">scope</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">3</span></td><td>scope exit cleanupと構築時の値復元をRAIIで扱う。</td></tr><tr><td><span class="module-name"><a href="modules/parse.html">parse</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/text.html">文字列・text・parse</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">10</span></td><td>from_chars境界条件とbool parseを固定する。</td></tr><tr><td><span class="module-name"><a href="modules/string.html">string</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/text.html">文字列・text・parse</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">2</span></td><td>複数文字列片の単純連結と既存文字列への追記を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/function.html">function</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span> <span class="pill"><a href="categories/data.html">データ構造・合成</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">3</span></td><td>複数callableをoverload setとして束ね、Noop callableも提供する。</td></tr><tr><td><span class="module-name"><a href="modules/io_stream.html">io_stream</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span> <span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">8</span></td><td>short read/write判定、行末trim付き行読み、書式状態のscope復元を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/ranges.html">ranges</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/data.html">データ構造・合成</a></span> <span class="pill"><a href="categories/language.html">C++言語・型補助</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">2</span></td><td>range要素のindex付き走査と最初の一致index取得を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/object.html">object</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">15</span></td><td>copy/move制御とmove後resetを型定義の近くに集約する。</td></tr><tr><td><span class="module-name"><a href="modules/math.html">math</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">8</span></td><td>補間、角度、byte単位変換などの小さい補助を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/lang.html">lang</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">3</span></td><td>未使用無視、raw配列長、const参照化を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/state.html">state</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="categories/data.html">データ構造・合成</a></span> <span class="pill"><a href="categories/diagnostic.html">診断・testing</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">5</span></td><td>状態遷移tableのlookup、許可判定、次状態取得を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/color.html">color</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">7</span></td><td>RGB値と6桁hex文字列を相互変換する。</td></tr><tr><td><span class="module-name"><a href="modules/percent.html">percent</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">8</span></td><td>percent、ratio、basis pointsを0〜100%の値型へ正規化する。</td></tr><tr><td><span class="module-name"><a href="modules/contract.html">contract</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="categories/diagnostic.html">診断・testing</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">11</span></td><td>precondition、postcondition、invariantをNDEBUGに連動せず評価する。</td></tr><tr><td><span class="module-name"><a href="modules/memory.html">memory</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">11</span></td><td>alignment判定、secure zero、object representationの小さい補助。</td></tr><tr><td><span class="module-name"><a href="modules/pointer.html">pointer</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span> <span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">5</span></td><td>所有しないraw pointerのnull不許可、weak pointer lock、address取得を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/version.html">version</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/text.html">文字列・text・parse</a></span> <span class="pill"><a href="categories/value.html">値型・validation</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">4</span></td><td>numeric version tripletのparse、format、compareを扱う。</td></tr><tr><td><span class="module-name"><a href="modules/uuid.html">uuid</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">3</span></td><td>canonical hyphen形式のUUID文字列と16 byte表現を相互変換する。</td></tr><tr><td><span class="module-name"><a href="modules/testing.html">testing</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="categories/diagnostic.html">診断・testing</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">2</span></td><td>byte列比較用GoogleTest assertion helperを提供する。</td></tr><tr><td><span class="module-name"><a href="modules/ipv4.html">ipv4</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">5</span></td><td>IPv4 dotted decimalとbig-endian 32bit表現を相互変換する。</td></tr><tr><td><span class="module-name"><a href="modules/port.html">port</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">4</span></td><td>port番号の値型、範囲確認、parse/formatを扱う。</td></tr><tr><td><span class="module-name"><a href="modules/mac.html">mac</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/value.html">値型・validation</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">4</span></td><td>区切り付きMAC address文字列と固定6 byte値を相互変換する。</td></tr><tr><td><span class="module-name"><a href="modules/platform.html">platform</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span> <span class="pill"><a href="categories/diagnostic.html">診断・testing</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">5</span></td><td>errno、Windows error、environment variableを標準文字列で扱う。</td></tr><tr><td><span class="module-name"><a href="modules/variant.html">variant</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span> <span class="pill"><a href="categories/data.html">データ構造・合成</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">1</span></td><td>std::variantに対するvisitor呼び出しを短くする。</td></tr><tr><td><span class="module-name"><a href="modules/utf8.html">utf8</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/text.html">文字列・text・parse</a></span> <span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">5</span></td><td>UTF-8 byte列の妥当性検査とcode point数取得を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/file.html">file</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/boundary.html">入力境界・外部境界</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">7</span></td><td>通常ファイルの全体読み込み、全体書き込み、存在確認、サイズ取得を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/tlv.html">tlv</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">5</span></td><td>type:uint16、length:uint32、value bytesの1 recordをencode/decodeする。</td></tr><tr><td><span class="module-name"><a href="modules/tuple.html">tuple</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span> <span class="pill"><a href="categories/data.html">データ構造・合成</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">2</span></td><td>tuple要素のindex順反復と変換を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/optional.html">optional</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span> <span class="pill"><a href="categories/data.html">データ構造・合成</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">10</span></td><td>optionalの値変換、合成、遅延fallback評価を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/meta.html">meta</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/language.html">C++言語・型補助</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">3</span></td><td>C++11/14で欠けるtype traitsを小さく補う。</td></tr><tr><td><span class="module-name"><a href="modules/concurrency.html">concurrency</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/flow.html">制御・状態・失敗</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">8</span></td><td>join忘れ防止の所有threadとfuture ready判定を小さいAPIにする。</td></tr><tr><td><span class="module-name"><a href="modules/numeric.html">numeric</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="categories/value.html">値型・validation</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">12</span></td><td>整数overflow、alignment、safe castの境界確認を扱う。</td></tr><tr><td><span class="module-name"><a href="modules/byte_reader.html">byte_reader</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">15</span></td><td>non-owning bufferから成功時だけoffsetを進めてbyte列を読む。</td></tr><tr><td><span class="module-name"><a href="modules/endian.html">endian</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">27</span></td><td>BE/LEと幅をAPI名に出した16/32/64bit読み書き。</td></tr><tr><td><span class="module-name"><a href="modules/bytes.html">bytes</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">18</span></td><td>owning byte payloadを短いAPIで構築する。</td></tr><tr><td><span class="module-name"><a href="modules/byte_writer.html">byte_writer</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">15</span></td><td>固定bufferへ成功時だけoffsetとbufferを更新してbyte列を書く。</td></tr><tr><td><span class="module-name"><a href="modules/byte_view.html">byte_view</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span></span></td><td><span class="count-cell">C++11</span></td><td><span class="count-cell">16</span></td><td>所有しないbyte範囲とslice境界を明示する。</td></tr><tr><td><span class="module-name"><a href="modules/hex.html">hex</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/binary.html">バイナリ・byte列</a></span> <span class="pill"><a href="categories/diagnostic.html">診断・testing</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">6</span></td><td>byte列、整数、診断用hexdumpをhex文字列へ変換する。</td></tr><tr><td><span class="module-name"><a href="modules/enums.html">enums</a></span></td><td><span class="pillrow"><span class="pill"><a href="categories/data.html">データ構造・合成</a></span></span></td><td><span class="count-cell">C++17</span></td><td><span class="count-cell">11</span></td><td>enum classのtable-based変換とflags操作を扱う。</td></tr></tbody></table></div>
+<h2>Quick Index</h2>
+<p>分類、ユースケース、API名、module名から探せる。</p>
+<p><a href="search.html">Search page</a> / <a href="diagrams.html">Diagrams</a></p>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

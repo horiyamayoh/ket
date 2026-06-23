@@ -1,0 +1,17 @@
+{
+  "module": "date",
+  "title": "Gregorian日付妥当性",
+  "summary": "日付、時刻、月日数、leap yearの境界条件を扱う。",
+  "categories": ["value", "boundary"],
+  "use_cases": ["value-validation"],
+  "when_to_use": [
+    "C++11/14/17で小さい日付妥当性だけが必要な時。",
+    "1900/2000年や2月末の境界を手書きしたくない時。"
+  ],
+  "when_not_to_use": [
+    "C++20 chrono calendarで明確に書ける時。",
+    "time zoneやlocale calendarを扱う時。"
+  ],
+  "related_modules": ["deadline", "parse", "numeric"],
+  "notes": ["Gregorian暦の妥当性に絞り、time zoneには踏み込まない。"]
+}

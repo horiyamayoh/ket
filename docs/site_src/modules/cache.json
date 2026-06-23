@@ -1,0 +1,17 @@
+{
+  "module": "cache",
+  "title": "非thread-safe lazy value",
+  "summary": "手動storage上で値を遅延生成し、再利用と明示破棄を局所化する。",
+  "categories": ["flow", "data"],
+  "use_cases": ["raii-cleanup"],
+  "when_to_use": [
+    "必要になった時だけ値を生成し、同じscope内で再利用したい時。",
+    "heap allocationなしで保持値のaddress stabilityを保ちたい時。"
+  ],
+  "when_not_to_use": [
+    "thread-safe cacheやglobal registryが必要な時。",
+    "key付きmemoization frameworkを作りたい時。"
+  ],
+  "related_modules": ["scope", "object", "concurrency"],
+  "notes": ["再入、同時アクセス、thread-safe cacheは対象外。"]
+}

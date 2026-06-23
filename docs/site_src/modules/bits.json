@@ -1,0 +1,17 @@
+{
+  "module": "bits",
+  "title": "bitとnibbleの小補助",
+  "summary": "bit、nibble、mask、rotateの境界処理を名前付きで扱う。",
+  "categories": ["binary"],
+  "use_cases": ["protocol-payload", "value-validation"],
+  "when_to_use": [
+    "shift幅やmask境界を毎回手書きしたくない時。",
+    "nibble抽出やpackの意図を読みやすくしたい時。"
+  ],
+  "when_not_to_use": [
+    "C++20の標準bit APIで同じ意図が十分明確な時。",
+    "CPU命令やSIMD最適化を直接制御したい時。"
+  ],
+  "related_modules": ["bcd", "endian", "numeric"],
+  "notes": ["unsigned integralを主対象にし、未定義動作につながるshiftを避ける。"]
+}

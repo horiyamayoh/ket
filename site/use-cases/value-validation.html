@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>値の範囲と表記を小さいAPIに固定する - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
+}
+* { box-sizing: border-box; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (max-width: 720px) {
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
+}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html" aria-current="page">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main id="main">
+<h1>値の範囲と表記を小さいAPIに固定する</h1>
+<p class="lead">裸のintや文字列で扱うとぶれやすいdomain値を、moduleごとの値型やparseで固定する。</p>
+<h2>Decision Flow</h2>
+<ul><li>port番号は port を使う。</li><li>IPv4 dotted decimalは ipv4 を使う。</li><li>version tripletは version を使う。</li><li>MAC addressとUUIDは mac、uuid を使う。</li><li>RGB hexは color を使う。</li><li>percent値は percent を使う。</li><li>日付妥当性は date を使う。</li><li>汎用overflowやcast境界は numeric を使う。</li></ul>
+<h2>Modules</h2>
+<div class="table-scroll"><table class="module-table"><thead><tr><th>Module</th><th>Role</th><th>Summary</th><th>Key APIs</th></tr></thead><tbody><tr><td><span class="module-name"><a href="../modules/port.html">port</a></span></td><td>0から65535のport値とparse/format。</td><td>port番号の値型、範囲確認、parse/formatを扱う。</td><td><a class="mono" href="../modules/port.html#api-type-Port-48">Port</a> <a class="mono" href="../modules/port.html#api-function-TryFromUInt-67">TryFromUInt</a> <a class="mono" href="../modules/port.html#api-function-Parse-82">Parse</a> <a class="mono" href="../modules/port.html#api-function-Format-96">Format</a></td></tr><tr><td><span class="module-name"><a href="../modules/ipv4.html">ipv4</a></span></td><td>IPv4文字列表現とBE 32bit値。</td><td>IPv4 dotted decimalとbig-endian 32bit表現を相互変換する。</td><td><a class="mono" href="../modules/ipv4.html#api-type-Address-48">Address</a> <a class="mono" href="../modules/ipv4.html#api-function-Parse-66">Parse</a> <a class="mono" href="../modules/ipv4.html#api-function-Format-81">Format</a> <a class="mono" href="../modules/ipv4.html#api-function-ToBe32-96">ToBe32</a> <span class="meta">+1</span></td></tr><tr><td><span class="module-name"><a href="../modules/version.html">version</a></span></td><td>numeric tripletの比較と表記。</td><td>numeric version tripletのparse、format、compareを扱う。</td><td><a class="mono" href="../modules/version.html#api-type-Triplet-47">Triplet</a> <a class="mono" href="../modules/version.html#api-function-Parse-74">Parse</a> <a class="mono" href="../modules/version.html#api-function-Format-88">Format</a> <a class="mono" href="../modules/version.html#api-function-Compare-105">Compare</a></td></tr><tr><td><span class="module-name"><a href="../modules/mac.html">mac</a></span></td><td>区切り付きMAC address文字列と6 byte値の相互変換。</td><td>区切り付きMAC address文字列と固定6 byte値を相互変換する。</td><td><a class="mono" href="../modules/mac.html#api-type-LetterCase-47">LetterCase</a> <a class="mono" href="../modules/mac.html#api-type-Address-56">Address</a> <a class="mono" href="../modules/mac.html#api-function-Parse-108">Parse</a> <a class="mono" href="../modules/mac.html#api-function-Format-125">Format</a></td></tr><tr><td><span class="module-name"><a href="../modules/uuid.html">uuid</a></span></td><td>canonical UUID文字列と16 byte値の相互変換。</td><td>canonical hyphen形式のUUID文字列と16 byte表現を相互変換する。</td><td><a class="mono" href="../modules/uuid.html#api-type-Uuid-48">Uuid</a> <a class="mono" href="../modules/uuid.html#api-function-Parse-67">Parse</a> <a class="mono" href="../modules/uuid.html#api-function-Format-84">Format</a></td></tr><tr><td><span class="module-name"><a href="../modules/color.html">color</a></span></td><td>RGB小値型と6桁hex文字列。</td><td>RGB値と6桁hex文字列を相互変換する。</td><td><a class="mono" href="../modules/color.html#api-type-Rgb-45">Rgb</a> <a class="mono" href="../modules/color.html#api-function-b-70">b</a> <a class="mono" href="../modules/color.html#api-type-FormatOptions-89">FormatOptions</a> <a class="mono" href="../modules/color.html#api-function-TryParse-167">TryParse</a> <span class="meta">+3</span></td></tr><tr><td><span class="module-name"><a href="../modules/percent.html">percent</a></span></td><td>0〜100%をbasis pointsで保持する小値型。</td><td>percent、ratio、basis pointsを0〜100%の値型へ正規化する。</td><td><a class="mono" href="../modules/percent.html#api-type-Percent-47">Percent</a> <a class="mono" href="../modules/percent.html#api-function-TryFromBasisPoints-75">TryFromBasisPoints</a> <a class="mono" href="../modules/percent.html#api-function-TryFromPercent-93">TryFromPercent</a> <a class="mono" href="../modules/percent.html#api-function-TryFromRatio-111">TryFromRatio</a> <span class="meta">+4</span></td></tr><tr><td><span class="module-name"><a href="../modules/date.html">date</a></span></td><td>Gregorian日付と時刻の妥当性。</td><td>日付、時刻、月日数、leap yearの境界条件を扱う。</td><td><a class="mono" href="../modules/date.html#api-function-IsLeapYear-52">IsLeapYear</a> <a class="mono" href="../modules/date.html#api-function-IsValidMonth-66">IsValidMonth</a> <a class="mono" href="../modules/date.html#api-function-TryGetDaysInMonth-84">TryGetDaysInMonth</a> <a class="mono" href="../modules/date.html#api-function-IsValidDate-101">IsValidDate</a> <span class="meta">+3</span></td></tr><tr><td><span class="module-name"><a href="../modules/numeric.html">numeric</a></span></td><td>overflow、align、cast境界。</td><td>整数overflow、alignment、safe castの境界確認を扱う。</td><td><a class="mono" href="../modules/numeric.html#api-function-InRange-60">InRange</a> <a class="mono" href="../modules/numeric.html#api-function-Clamp-77">Clamp</a> <a class="mono" href="../modules/numeric.html#api-function-AbsDiff-95">AbsDiff</a> <a class="mono" href="../modules/numeric.html#api-function-TryDivideRoundUp-115">TryDivideRoundUp</a> <span class="meta">+8</span></td></tr></tbody></table></div>
+<h2>Recipe</h2>
+<ul><li>入力直後にdomain moduleへ変換する。</li><li>変換後は裸値ではなく意味のある型や名前のAPIで扱う。</li><li>formatも同じmoduleへ戻して表記を固定する。</li></ul>
+<h2>See Also</h2>
+<p class="pillrow"><span class="pill"><a href="../use-cases/cli-config.html">CLI引数や設定文字列を読む</a></span> <span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span></p>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

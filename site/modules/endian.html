@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ket::endian - ket reference</title>
+<style>:root {
+  color-scheme: light;
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --panel-soft: #fafbfb;
+  --ink: #202326;
+  --muted: #5c646b;
+  --line: #d7dce0;
+  --line-soft: #e7eaed;
+  --link: #075e9f;
+  --accent: #17745b;
+  --accent-soft: #edf6f2;
+  --code: #f1f3f5;
+}
+* { box-sizing: border-box; }
+html { font-size: 13.5px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.32; }
+.skip-link { position: absolute; left: 8px; top: -40px; z-index: 4; padding: 4px 8px; background: var(--ink); color: #ffffff; border-radius: 4px; }
+.skip-link:focus { top: 8px; }
+header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); padding: 6px 12px; }
+.brand a { color: var(--ink); font-weight: 700; text-decoration: none; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; font-size: 0.92rem; }
+a { color: var(--link); text-underline-offset: 2px; }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav a { border-radius: 4px; padding: 2px 6px; text-decoration: none; }
+nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+main { max-width: 1240px; margin: 0 auto; padding: 12px 12px 28px; }
+footer { border-top: 1px solid var(--line); color: var(--muted); padding: 8px 12px; font-size: 0.86rem; }
+h1, h2, h3, h4 { line-height: 1.2; letter-spacing: 0; }
+h1 { margin: 0 0 8px; font-size: 1.75rem; }
+h2 { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 1.25rem; }
+h3 { margin: 12px 0 4px; font-size: 1.05rem; }
+h4 { margin: 8px 0 3px; font-size: 1rem; }
+p { margin: 4px 0 8px; }
+ul, ol { margin: 4px 0 8px; padding-left: 18px; }
+li { margin: 2px 0; }
+.lead { color: var(--muted); max-width: 90ch; }
+.summary-band { display: grid; gap: 6px; margin: 6px 0 12px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
+.summary-copy { max-width: 96ch; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.summary-actions a { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); padding: 3px 8px; text-decoration: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px; margin: 0; }
+.stats div { border: 1px solid var(--line-soft); border-radius: 4px; background: var(--panel-soft); padding: 4px 6px; }
+.stats dt { color: var(--muted); font-size: 0.84rem; }
+.stats dd { margin: 1px 0 0; font-size: 1.16rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px; overflow-wrap: anywhere; }
+.card h3 { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.pillrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; background: var(--panel-soft); color: var(--muted); font-size: 0.82rem; text-decoration: none; }
+.pill a { color: inherit; text-decoration: none; }
+.table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 0.96rem; line-height: 1.22; }
+.table-scroll table { border: 0; }
+th, td { border: 0; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 3px 5px; vertical-align: top; overflow-wrap: anywhere; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #edf2f3; text-align: left; font-weight: 650; }
+tbody tr:nth-child(even) td { background: var(--panel-soft); }
+tbody tr:hover td { background: #f2f6f8; }
+.module-name, .api-name, .kind-cell, .count-cell { white-space: nowrap; overflow-wrap: normal; }
+.signature-cell code { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.record-table th { width: 9.5rem; }
+.api-table, .module-table, .search-table { min-width: 700px; }
+.api-index-table { min-width: 2200px; }
+.api-detail-table { min-width: 760px; }
+.api-table .signature-cell code, .api-index-table .signature-cell code { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.compact-list { margin: 0; padding-left: 16px; }
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+code { font-size: 0.94em; }
+pre { max-width: 100%; overflow: auto; margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 0.94rem; line-height: 1.24; }
+.signature { background: #f8fafb; border-left: 2px solid var(--accent); }
+.api-entry { margin: 8px 0; border-top: 1px solid var(--line); padding-top: 6px; }
+.api-entry h3 { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin: 0 0 4px; }
+.kind-mark { display: inline-block; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-soft); color: var(--muted); padding: 0 4px; font-size: 0.78rem; font-weight: 500; }
+.mark { text-align: center; color: var(--accent); font-weight: 700; }
+.search-form { display: grid; gap: 4px; max-width: 720px; margin-bottom: 8px; }
+.searchbox { width: 100%; padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 1rem; }
+.result-count { margin: 4px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (max-width: 720px) {
+  html { font-size: 13px; }
+  header { position: static; grid-template-columns: 1fr; gap: 5px; }
+  nav { display: flex; flex-wrap: nowrap; width: 100%; overflow-x: auto; padding-bottom: 1px; }
+  nav a { flex: 0 0 auto; }
+  main { padding: 10px 8px 24px; }
+  h1 { font-size: 1.55rem; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .module-table, .search-table { min-width: 560px; }
+  .api-table { min-width: 760px; }
+  .api-index-table { min-width: 2200px; }
+  .record-table { min-width: 500px; }
+  .api-detail-table { min-width: 760px; }
+}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header>
+<div class="brand"><a href="../index.html">ket reference</a></div>
+<nav><a href="../index.html">概要</a><a href="../modules/index.html" aria-current="page">Modules</a><a href="../api/index.html">API</a><a href="../use-cases/index.html">Use cases</a><a href="../categories/index.html">Categories</a><a href="../diagrams.html">Diagrams</a><a href="../search.html">Search</a></nav>
+</header>
+<main id="main">
+<h1>ket::endian</h1>
+<p class="lead">BE/LEと幅をAPI名に出した16/32/64bit読み書き。</p>
+<h2>Module Facts</h2>
+<div class="table-scroll"><table class="record-table"><tbody><tr><th>Header</th><td>modules/endian/ket_endian.h</td></tr><tr><th>Status</th><td>verified</td></tr><tr><th>C++ Min</th><td>C++11</td></tr><tr><th>Tests</th><td>GoogleTest + C++11 compile-only</td></tr><tr><th>Progress note</th><td>byte orderを明示した16/32/64bit読み書き</td></tr><tr><th>Drop-in</th><td>`ket_endian.h` と `ket_endian.cpp` を対象プロジェクトへコピー。</td></tr><tr><th>Dependencies</th><td>標準ライブラリのみ。 他のket moduleへの依存なし。</td></tr><tr><th>Namespace</th><td>公開API：ket::endian 内部実装：ket::endian::detail</td></tr><tr><th>Categories</th><td><span class="pillrow"><span class="pill"><a href="../categories/binary.html">バイナリ・byte列</a></span></span></td></tr><tr><th>Use cases</th><td><span class="pillrow"><span class="pill"><a href="../use-cases/binary-io.html">固定bufferから安全に読む・書く</a></span> <span class="pill"><a href="../use-cases/protocol-payload.html">小さい電文payloadを組み立てる</a></span></span></td></tr></tbody></table></div>
+<h2>Use This When</h2>
+<ul><li>unaligned bufferから固定幅整数を読み書きしたい時。</li><li>byte orderを呼び出し側の名前で明示したい時。</li></ul>
+<h2>Do Not Use This When</h2>
+<ul><li>stream cursorやoffset管理も必要な時。</li><li>host endian変換の大規模互換layerが必要な時。</li></ul>
+<h2>Related Modules</h2>
+<p class="pillrow"><span class="pill"><a href="../modules/byte_reader.html">byte_reader</a></span> <span class="pill"><a href="../modules/byte_writer.html">byte_writer</a></span> <span class="pill"><a href="../modules/bytes.html">bytes</a></span> <span class="pill"><a href="../modules/bits.html">bits</a></span></p>
+<h2>Notes</h2>
+<ul><li>固定位置の変換に絞り、cursor管理はreader/writerへ分ける。</li></ul>
+<h2>API Summary</h2>
+<div class="table-scroll"><table class="api-table"><thead><tr><th>API</th><th>Kind</th><th>Signature</th><th>Brief</th></tr></thead><tbody><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-ByteSwap16-55">endian::ByteSwap16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>constexpr std::uint16_t ByteSwap16(std::uint16_t value) noexcept</code></span></td><td>16bit整数のbyte順反転。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-ByteSwap32-68">endian::ByteSwap32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>constexpr std::uint32_t ByteSwap32(std::uint32_t value) noexcept</code></span></td><td>32bit整数のbyte順反転。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-ByteSwap64-81">endian::ByteSwap64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>constexpr std::uint64_t ByteSwap64(std::uint64_t value) noexcept</code></span></td><td>64bit整数のbyte順反転。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-LoadBe16-97">endian::LoadBe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::uint16_t LoadBe16(const std::uint8_t* data) noexcept</code></span></td><td>big-endian 2byte列の16bit整数読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-LoadBe32-113">endian::LoadBe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::uint32_t LoadBe32(const std::uint8_t* data) noexcept</code></span></td><td>big-endian 4byte列の32bit整数読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-LoadBe64-129">endian::LoadBe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::uint64_t LoadBe64(const std::uint8_t* data) noexcept</code></span></td><td>big-endian 8byte列の64bit整数読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-LoadLe16-145">endian::LoadLe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::uint16_t LoadLe16(const std::uint8_t* data) noexcept</code></span></td><td>little-endian 2byte列の16bit整数読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-LoadLe32-161">endian::LoadLe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::uint32_t LoadLe32(const std::uint8_t* data) noexcept</code></span></td><td>little-endian 4byte列の32bit整数読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-LoadLe64-177">endian::LoadLe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>std::uint64_t LoadLe64(const std::uint8_t* data) noexcept</code></span></td><td>little-endian 8byte列の64bit整数読み取り。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-StoreBe16-194">endian::StoreBe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>void StoreBe16(std::uint8_t* data, std::uint16_t value) noexcept</code></span></td><td>16bit整数のbig-endian 2byte列書き込み。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-StoreBe32-211">endian::StoreBe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>void StoreBe32(std::uint8_t* data, std::uint32_t value) noexcept</code></span></td><td>32bit整数のbig-endian 4byte列書き込み。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-StoreBe64-228">endian::StoreBe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>void StoreBe64(std::uint8_t* data, std::uint64_t value) noexcept</code></span></td><td>64bit整数のbig-endian 8byte列書き込み。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-StoreLe16-245">endian::StoreLe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>void StoreLe16(std::uint8_t* data, std::uint16_t value) noexcept</code></span></td><td>16bit整数のlittle-endian 2byte列書き込み。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-StoreLe32-262">endian::StoreLe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>void StoreLe32(std::uint8_t* data, std::uint32_t value) noexcept</code></span></td><td>32bit整数のlittle-endian 4byte列書き込み。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-StoreLe64-279">endian::StoreLe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>void StoreLe64(std::uint8_t* data, std::uint64_t value) noexcept</code></span></td><td>64bit整数のlittle-endian 8byte列書き込み。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryLoadBe16-297">endian::TryLoadBe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryLoadBe16(const std::uint8_t* data, std::size_t size, std::uint16_t&amp; out) noexcept</code></span></td><td>big-endian 2byte列の16bit整数読み取り試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryLoadBe32-315">endian::TryLoadBe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryLoadBe32(const std::uint8_t* data, std::size_t size, std::uint32_t&amp; out) noexcept</code></span></td><td>big-endian 4byte列の32bit整数読み取り試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryLoadBe64-333">endian::TryLoadBe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryLoadBe64(const std::uint8_t* data, std::size_t size, std::uint64_t&amp; out) noexcept</code></span></td><td>big-endian 8byte列の64bit整数読み取り試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryLoadLe16-351">endian::TryLoadLe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryLoadLe16(const std::uint8_t* data, std::size_t size, std::uint16_t&amp; out) noexcept</code></span></td><td>little-endian 2byte列の16bit整数読み取り試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryLoadLe32-369">endian::TryLoadLe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryLoadLe32(const std::uint8_t* data, std::size_t size, std::uint32_t&amp; out) noexcept</code></span></td><td>little-endian 4byte列の32bit整数読み取り試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryLoadLe64-387">endian::TryLoadLe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryLoadLe64(const std::uint8_t* data, std::size_t size, std::uint64_t&amp; out) noexcept</code></span></td><td>little-endian 8byte列の64bit整数読み取り試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryStoreBe16-404">endian::TryStoreBe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryStoreBe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept</code></span></td><td>16bit整数のbig-endian 2byte列書き込み試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryStoreBe32-421">endian::TryStoreBe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryStoreBe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept</code></span></td><td>32bit整数のbig-endian 4byte列書き込み試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryStoreBe64-438">endian::TryStoreBe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryStoreBe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept</code></span></td><td>64bit整数のbig-endian 8byte列書き込み試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryStoreLe16-455">endian::TryStoreLe16</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryStoreLe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept</code></span></td><td>16bit整数のlittle-endian 2byte列書き込み試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryStoreLe32-472">endian::TryStoreLe32</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryStoreLe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept</code></span></td><td>32bit整数のlittle-endian 4byte列書き込み試行。</td></tr><tr><td><span class="api-name"><a href="../modules/endian.html#api-function-TryStoreLe64-489">endian::TryStoreLe64</a></span></td><td><span class="kind-mark">function</span></td><td><span class="signature-cell"><code>bool TryStoreLe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept</code></span></td><td>64bit整数のlittle-endian 8byte列書き込み試行。</td></tr></tbody></table></div>
+<h2>API Details</h2>
+<section class="api-entry" id="api-function-ByteSwap16-55">
+<h3>ByteSwap16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>constexpr std::uint16_t ByteSwap16(std::uint16_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>16bit整数のbyte順反転。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 反転対象の値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 上位byteと下位byteを入れ替えた値。</li></ul></td></tr><tr><th>Pre</th><td>なし。任意のstd::uint16_t値を受け付ける。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::endian::ByteSwap16(static_cast&lt;std::uint16_t&gt;(0x1234U));
+// value == 0x3412</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-ByteSwap32-68">
+<h3>ByteSwap32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>constexpr std::uint32_t ByteSwap32(std::uint32_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>32bit整数のbyte順反転。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 反転対象の値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 4byteの並びを逆順にした値。</li></ul></td></tr><tr><th>Pre</th><td>なし。任意のstd::uint32_t値を受け付ける。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::endian::ByteSwap32(std::uint32_t{0x12345678U});
+// value == 0x78563412</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-ByteSwap64-81">
+<h3>ByteSwap64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>constexpr std::uint64_t ByteSwap64(std::uint64_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>64bit整数のbyte順反転。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in value: 反転対象の値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: 8byteの並びを逆順にした値。</li></ul></td></tr><tr><th>Pre</th><td>なし。任意のstd::uint64_t値を受け付ける。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const auto value = ket::endian::ByteSwap64(std::uint64_t{0x0123456789ABCDEFULL});
+// value == 0xEFCDAB8967452301</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-LoadBe16-97">
+<h3>LoadBe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::uint16_t LoadBe16(const std::uint8_t* data) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 2byte列の16bit整数読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `data[0]`を上位byte、`data[1]`を下位byteとして組み立てた値。</li></ul></td></tr><tr><th>Pre</th><td>`data`は2byte以上読み取り可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+const auto value = ket::endian::LoadBe16(data);
+// value == 0x1234</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-LoadBe32-113">
+<h3>LoadBe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::uint32_t LoadBe32(const std::uint8_t* data) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 4byte列の32bit整数読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `data[0]`を最上位byteとして組み立てた値。</li></ul></td></tr><tr><th>Pre</th><td>`data`は4byte以上読み取り可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+const auto value = ket::endian::LoadBe32(data);
+// value == 0x12345678</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-LoadBe64-129">
+<h3>LoadBe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::uint64_t LoadBe64(const std::uint8_t* data) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 8byte列の64bit整数読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `data[0]`を最上位byteとして組み立てた値。</li></ul></td></tr><tr><th>Pre</th><td>`data`は8byte以上読み取り可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x01U, 0x23U, 0x45U, 0x67U, 0x89U, 0xABU, 0xCDU, 0xEFU};
+const auto value = ket::endian::LoadBe64(data);
+// value == 0x0123456789ABCDEF</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-LoadLe16-145">
+<h3>LoadLe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::uint16_t LoadLe16(const std::uint8_t* data) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 2byte列の16bit整数読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `data[0]`を下位byte、`data[1]`を上位byteとして組み立てた値。</li></ul></td></tr><tr><th>Pre</th><td>`data`は2byte以上読み取り可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x34U, 0x12U};
+const auto value = ket::endian::LoadLe16(data);
+// value == 0x1234</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-LoadLe32-161">
+<h3>LoadLe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::uint32_t LoadLe32(const std::uint8_t* data) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 4byte列の32bit整数読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `data[0]`を最下位byteとして組み立てた値。</li></ul></td></tr><tr><th>Pre</th><td>`data`は4byte以上読み取り可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x78U, 0x56U, 0x34U, 0x12U};
+const auto value = ket::endian::LoadLe32(data);
+// value == 0x12345678</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-LoadLe64-177">
+<h3>LoadLe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>std::uint64_t LoadLe64(const std::uint8_t* data) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 8byte列の64bit整数読み取り。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>value: `data[0]`を最下位byteとして組み立てた値。</li></ul></td></tr><tr><th>Pre</th><td>`data`は8byte以上読み取り可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>引数と外部状態の変更なし。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の読み取りとshift/orのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0xEFU, 0xCDU, 0xABU, 0x89U, 0x67U, 0x45U, 0x23U, 0x01U};
+const auto value = ket::endian::LoadLe64(data);
+// value == 0x0123456789ABCDEF</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-StoreBe16-194">
+<h3>StoreBe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>void StoreBe16(std::uint8_t* data, std::uint16_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>16bit整数のbig-endian 2byte列書き込み。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>void: 戻り値なし。</li></ul></td></tr><tr><th>Pre</th><td>`data`は2byte以上書き込み可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>`data[0]`と`data[1]`に`value`のbig-endian表現を書き込む。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[2] = {};
+ket::endian::StoreBe16(data, static_cast&lt;std::uint16_t&gt;(0x1234U));
+// data[0] == 0x12 &amp;&amp; data[1] == 0x34</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-StoreBe32-211">
+<h3>StoreBe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>void StoreBe32(std::uint8_t* data, std::uint32_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>32bit整数のbig-endian 4byte列書き込み。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>void: 戻り値なし。</li></ul></td></tr><tr><th>Pre</th><td>`data`は4byte以上書き込み可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>`data[0]`から`data[3]`に`value`のbig-endian表現を書き込む。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[4] = {};
+ket::endian::StoreBe32(data, std::uint32_t{0x12345678U});
+// data[0] == 0x12 &amp;&amp; data[3] == 0x78</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-StoreBe64-228">
+<h3>StoreBe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>void StoreBe64(std::uint8_t* data, std::uint64_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>64bit整数のbig-endian 8byte列書き込み。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>void: 戻り値なし。</li></ul></td></tr><tr><th>Pre</th><td>`data`は8byte以上書き込み可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>`data[0]`から`data[7]`に`value`のbig-endian表現を書き込む。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[8] = {};
+ket::endian::StoreBe64(data, std::uint64_t{0x0123456789ABCDEFULL});
+// data[0] == 0x01 &amp;&amp; data[7] == 0xEF</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-StoreLe16-245">
+<h3>StoreLe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>void StoreLe16(std::uint8_t* data, std::uint16_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>16bit整数のlittle-endian 2byte列書き込み。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>void: 戻り値なし。</li></ul></td></tr><tr><th>Pre</th><td>`data`は2byte以上書き込み可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>`data[0]`と`data[1]`に`value`のlittle-endian表現を書き込む。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[2] = {};
+ket::endian::StoreLe16(data, static_cast&lt;std::uint16_t&gt;(0x1234U));
+// data[0] == 0x34 &amp;&amp; data[1] == 0x12</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-StoreLe32-262">
+<h3>StoreLe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>void StoreLe32(std::uint8_t* data, std::uint32_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>32bit整数のlittle-endian 4byte列書き込み。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>void: 戻り値なし。</li></ul></td></tr><tr><th>Pre</th><td>`data`は4byte以上書き込み可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>`data[0]`から`data[3]`に`value`のlittle-endian表現を書き込む。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[4] = {};
+ket::endian::StoreLe32(data, std::uint32_t{0x12345678U});
+// data[0] == 0x78 &amp;&amp; data[3] == 0x12</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-StoreLe64-279">
+<h3>StoreLe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>void StoreLe64(std::uint8_t* data, std::uint64_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>64bit整数のlittle-endian 8byte列書き込み。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>void: 戻り値なし。</li></ul></td></tr><tr><th>Pre</th><td>`data`は8byte以上書き込み可能な領域を指す。nullptrはprecondition違反。</td></tr><tr><th>Post</th><td>`data[0]`から`data[7]`に`value`のlittle-endian表現を書き込む。</td></tr><tr><th>Notes</th><td><ul class="compact-list"><li>実装はbyte単位の書き込みとshift/maskのみを使い、reinterpret_castとunaligned accessに依存しない。</li></ul></td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[8] = {};
+ket::endian::StoreLe64(data, std::uint64_t{0x0123456789ABCDEFULL});
+// data[0] == 0xEF &amp;&amp; data[7] == 0x01</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryLoadBe16-297">
+<h3>TryLoadBe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryLoadBe16(const std::uint8_t* data, std::size_t size, std::uint16_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 2byte列の16bit整数読み取り試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`から読み取り可能なbyte数。</li><li>out out: 読み取り成功時の出力先。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 読み取り成功。</li><li>false: `data`がnullptr、または`size &lt; 2`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U};
+std::uint16_t value = 0U;
+const auto ok = ket::endian::TryLoadBe16(data, sizeof(data), value);
+// ok == true &amp;&amp; value == 0x1234</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryLoadBe32-315">
+<h3>TryLoadBe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryLoadBe32(const std::uint8_t* data, std::size_t size, std::uint32_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 4byte列の32bit整数読み取り試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`から読み取り可能なbyte数。</li><li>out out: 読み取り成功時の出力先。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 読み取り成功。</li><li>false: `data`がnullptr、または`size &lt; 4`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x12U, 0x34U, 0x56U, 0x78U};
+std::uint32_t value = 0U;
+const auto ok = ket::endian::TryLoadBe32(data, sizeof(data), value);
+// ok == true &amp;&amp; value == 0x12345678</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryLoadBe64-333">
+<h3>TryLoadBe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryLoadBe64(const std::uint8_t* data, std::size_t size, std::uint64_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>big-endian 8byte列の64bit整数読み取り試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`から読み取り可能なbyte数。</li><li>out out: 読み取り成功時の出力先。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 読み取り成功。</li><li>false: `data`がnullptr、または`size &lt; 8`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x01U, 0x23U, 0x45U, 0x67U, 0x89U, 0xABU, 0xCDU, 0xEFU};
+std::uint64_t value = 0U;
+const auto ok = ket::endian::TryLoadBe64(data, sizeof(data), value);
+// ok == true &amp;&amp; value == 0x0123456789ABCDEF</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryLoadLe16-351">
+<h3>TryLoadLe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryLoadLe16(const std::uint8_t* data, std::size_t size, std::uint16_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 2byte列の16bit整数読み取り試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`から読み取り可能なbyte数。</li><li>out out: 読み取り成功時の出力先。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 読み取り成功。</li><li>false: `data`がnullptr、または`size &lt; 2`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x34U, 0x12U};
+std::uint16_t value = 0U;
+const auto ok = ket::endian::TryLoadLe16(data, sizeof(data), value);
+// ok == true &amp;&amp; value == 0x1234</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryLoadLe32-369">
+<h3>TryLoadLe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryLoadLe32(const std::uint8_t* data, std::size_t size, std::uint32_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 4byte列の32bit整数読み取り試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`から読み取り可能なbyte数。</li><li>out out: 読み取り成功時の出力先。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 読み取り成功。</li><li>false: `data`がnullptr、または`size &lt; 4`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0x78U, 0x56U, 0x34U, 0x12U};
+std::uint32_t value = 0U;
+const auto ok = ket::endian::TryLoadLe32(data, sizeof(data), value);
+// ok == true &amp;&amp; value == 0x12345678</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryLoadLe64-387">
+<h3>TryLoadLe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryLoadLe64(const std::uint8_t* data, std::size_t size, std::uint64_t&amp; out) noexcept</code></pre></td></tr><tr><th>Brief</th><td>little-endian 8byte列の64bit整数読み取り試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in data: 読み取り対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`から読み取り可能なbyte数。</li><li>out out: 読み取り成功時の出力先。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 読み取り成功。</li><li>false: `data`がnullptr、または`size &lt; 8`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上読み取り可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけ`out`を変更。失敗時は`out`と外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>const std::uint8_t data[] = {0xEFU, 0xCDU, 0xABU, 0x89U, 0x67U, 0x45U, 0x23U, 0x01U};
+std::uint64_t value = 0U;
+const auto ok = ket::endian::TryLoadLe64(data, sizeof(data), value);
+// ok == true &amp;&amp; value == 0x0123456789ABCDEF</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryStoreBe16-404">
+<h3>TryStoreBe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryStoreBe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>16bit整数のbig-endian 2byte列書き込み試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`へ書き込み可能なbyte数。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 書き込み成功。</li><li>false: `data`がnullptr、または`size &lt; 2`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[2] = {};
+const auto ok = ket::endian::TryStoreBe16(data, sizeof(data), 0x1234U);
+// ok == true &amp;&amp; data[0] == 0x12 &amp;&amp; data[1] == 0x34</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryStoreBe32-421">
+<h3>TryStoreBe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryStoreBe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>32bit整数のbig-endian 4byte列書き込み試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`へ書き込み可能なbyte数。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 書き込み成功。</li><li>false: `data`がnullptr、または`size &lt; 4`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[4] = {};
+const auto ok = ket::endian::TryStoreBe32(data, sizeof(data), 0x12345678U);
+// ok == true &amp;&amp; data[0] == 0x12 &amp;&amp; data[3] == 0x78</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryStoreBe64-438">
+<h3>TryStoreBe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryStoreBe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>64bit整数のbig-endian 8byte列書き込み試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`へ書き込み可能なbyte数。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 書き込み成功。</li><li>false: `data`がnullptr、または`size &lt; 8`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[8] = {};
+const auto ok = ket::endian::TryStoreBe64(data, sizeof(data), 0x0123456789ABCDEFULL);
+// ok == true &amp;&amp; data[0] == 0x01 &amp;&amp; data[7] == 0xEF</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryStoreLe16-455">
+<h3>TryStoreLe16 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryStoreLe16(std::uint8_t* data, std::size_t size, std::uint16_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>16bit整数のlittle-endian 2byte列書き込み試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`へ書き込み可能なbyte数。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 書き込み成功。</li><li>false: `data`がnullptr、または`size &lt; 2`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[2] = {};
+const auto ok = ket::endian::TryStoreLe16(data, sizeof(data), 0x1234U);
+// ok == true &amp;&amp; data[0] == 0x34 &amp;&amp; data[1] == 0x12</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryStoreLe32-472">
+<h3>TryStoreLe32 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryStoreLe32(std::uint8_t* data, std::size_t size, std::uint32_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>32bit整数のlittle-endian 4byte列書き込み試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`へ書き込み可能なbyte数。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 書き込み成功。</li><li>false: `data`がnullptr、または`size &lt; 4`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[4] = {};
+const auto ok = ket::endian::TryStoreLe32(data, sizeof(data), 0x12345678U);
+// ok == true &amp;&amp; data[0] == 0x78 &amp;&amp; data[3] == 0x12</code></pre></td></tr></tbody></table></div>
+</section>
+<section class="api-entry" id="api-function-TryStoreLe64-489">
+<h3>TryStoreLe64 <span class="kind-mark">function</span></h3>
+<div class="table-scroll"><table class="record-table api-detail-table"><tbody><tr><th>Signature</th><td><pre class="signature"><code>bool TryStoreLe64(std::uint8_t* data, std::size_t size, std::uint64_t value) noexcept</code></pre></td></tr><tr><th>Brief</th><td>64bit整数のlittle-endian 8byte列書き込み試行。</td></tr><tr><th>Parameters</th><td><ul class="compact-list"><li>in,out data: 書き込み対象の先頭byte。nullptrは失敗値として扱う。</li><li>in size: `data`へ書き込み可能なbyte数。</li><li>in value: 書き込む値。</li></ul></td></tr><tr><th>Return / retval</th><td><ul class="compact-list"><li>true: 書き込み成功。</li><li>false: `data`がnullptr、または`size &lt; 8`。</li></ul></td></tr><tr><th>Pre</th><td>`data`がnullptrでない場合、`data`は`size`byte以上書き込み可能な領域を指す。</td></tr><tr><th>Post</th><td>成功時だけbufferを変更。失敗時はbufferと外部状態の変更なし。</td></tr><tr><th>Example</th><td><pre><code>std::uint8_t data[8] = {};
+const auto ok = ket::endian::TryStoreLe64(data, sizeof(data), 0x0123456789ABCDEFULL);
+// ok == true &amp;&amp; data[0] == 0xEF &amp;&amp; data[7] == 0x01</code></pre></td></tr></tbody></table></div>
+</section>
+</main>
+<footer>Generated from header Doxygen, progress.md, and docs/site_src. Do not edit site HTML by hand.</footer>
+
+</body>
+</html>

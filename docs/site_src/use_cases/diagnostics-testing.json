@@ -1,0 +1,40 @@
+{
+  "id": "diagnostics-testing",
+  "title": "失敗時に読みやすい診断を出す",
+  "summary": "byte差分、hex表現、契約違反、状態遷移の確認をテストと診断に寄せる。",
+  "flow": [
+    "byte列の人間向け表示は hex を使う。",
+    "GoogleTestでbyte列比較をするなら testing を使う。",
+    "契約違反を常時terminateで検出するなら contract を使う。",
+    "platform error messageの確認には platform を使う。",
+    "状態遷移tableの期待を固定するなら state を使う。"
+  ],
+  "modules": [
+    {
+      "module": "hex",
+      "role": "byte列、整数、hexdumpの文字列化。"
+    },
+    {
+      "module": "testing",
+      "role": "byte列比較用GoogleTest assertion helper。"
+    },
+    {
+      "module": "contract",
+      "role": "pre/postcondition/invariantを常時評価。"
+    },
+    {
+      "module": "platform",
+      "role": "errnoやWindows error codeを診断文字列へ変換。"
+    },
+    {
+      "module": "state",
+      "role": "小さい状態遷移表lookup。"
+    }
+  ],
+  "recipe": [
+    "期待値はhex文字列など読みやすい形にも残す。",
+    "失敗メッセージにoffsetや差分が出るhelperを使う。",
+    "状態遷移はtableで見える形に固定する。"
+  ],
+  "see_also": ["binary-io", "template-type"]
+}

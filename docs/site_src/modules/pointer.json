@@ -1,0 +1,17 @@
+{
+  "module": "pointer",
+  "title": "null不許可pointer補助",
+  "summary": "所有しないraw pointerのnull不許可、weak pointer lock、address取得を扱う。",
+  "categories": ["language", "flow"],
+  "use_cases": ["raii-cleanup", "template-type"],
+  "when_to_use": [
+    "raw pointerがnullでない前提を型名で明示したい時。",
+    "weak pointerのlock結果やoverloadされたoperator&回避を短く扱いたい時。"
+  ],
+  "when_not_to_use": [
+    "所有権を表すsmart pointer wrapperが必要な時。",
+    "lifetimeやborrow checkingをframeworkとして管理したい時。"
+  ],
+  "related_modules": ["object", "contract", "scope"],
+  "notes": ["所有権は持たず、参照先のlifetimeは呼び出し側責任。"]
+}

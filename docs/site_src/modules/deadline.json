@@ -1,0 +1,17 @@
+{
+  "module": "deadline",
+  "title": "期限と経過時間",
+  "summary": "steady_clockベースのStopwatchとDeadlineを扱う。",
+  "categories": ["flow", "boundary"],
+  "use_cases": ["raii-cleanup"],
+  "when_to_use": [
+    "timeoutや経過時間をsystem_clockと混ぜずに扱いたい時。",
+    "期限切れ判定を小さい値型に閉じたい時。"
+  ],
+  "when_not_to_use": [
+    "wall-clock時刻やcalendar日付を扱う時。",
+    "async schedulerやevent loopが必要な時。"
+  ],
+  "related_modules": ["date", "scope"],
+  "notes": ["時間源はsteady_clockに固定する。"]
+}

@@ -1,0 +1,17 @@
+{
+  "module": "enums",
+  "title": "enum変換とflags",
+  "summary": "enum classのtable-based変換とflags操作を扱う。",
+  "categories": ["data"],
+  "use_cases": ["cli-config"],
+  "when_to_use": [
+    "enumと文字列の対応表を明示してparse/formatしたい時。",
+    "enum class flagsのbit操作を読みやすくしたい時。"
+  ],
+  "when_not_to_use": [
+    "reflectionや自動列挙名取得が必要な時。",
+    "巨大なschema-driven enum変換を作りたい時。"
+  ],
+  "related_modules": ["cli", "parse", "bits", "state"],
+  "notes": ["対応表を呼び出し側に見える形で持つ。"]
+}

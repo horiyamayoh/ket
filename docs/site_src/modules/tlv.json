@@ -1,0 +1,17 @@
+{
+  "module": "tlv",
+  "title": "小さいTLV record",
+  "summary": "type:uint16、length:uint32、value bytesの1 recordをencode/decodeする。",
+  "categories": ["binary"],
+  "use_cases": ["protocol-payload", "binary-io"],
+  "when_to_use": [
+    "単純なTLV recordのwire format境界を固定したい時。",
+    "decode失敗時の出力不変性を呼び出し側で利用したい時。"
+  ],
+  "when_not_to_use": [
+    "schema languageや複数record iteratorが必要な時。",
+    "ASN.1やBER/DERのような汎用TLV仕様を扱う時。"
+  ],
+  "related_modules": ["bytes", "byte_reader", "byte_writer", "endian"],
+  "notes": ["1 recordだけを対象にし、typeとlengthはbig-endianで扱う。"]
+}

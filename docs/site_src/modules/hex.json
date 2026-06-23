@@ -1,0 +1,14 @@
+{
+  "module": "hex",
+  "title": "hex文字列化とhexdump",
+  "summary": "byte列、整数、診断用hexdumpをhex文字列へ変換する。",
+  "categories": ["binary", "diagnostic"],
+  "use_cases": ["binary-io", "protocol-payload", "diagnostics-testing"],
+  "when_to_use": [
+    "byte列の期待値や差分を人間が読みたい時。",
+    "diagnostic用hexdumpを小さく出したい時。"
+  ],
+  "when_not_to_use": ["binary codec全般やbase64等を扱う時。", "高性能dump viewerを作りたい時。"],
+  "related_modules": ["testing", "bytes", "byte_view"],
+  "notes": ["診断用表現に絞る。"]
+}

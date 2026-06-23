@@ -1,0 +1,17 @@
+{
+  "module": "math",
+  "title": "小さい数学・単位変換",
+  "summary": "補間、角度、byte単位変換などの小さい補助を扱う。",
+  "categories": ["value"],
+  "use_cases": ["value-validation"],
+  "when_to_use": [
+    "境界値のある小さい計算を名前で読みたい時。",
+    "byte単位変換のoverflowを固定したい時。"
+  ],
+  "when_not_to_use": [
+    "線形代数、統計、units frameworkが必要な時。",
+    "数値計算libraryの代替を探している時。"
+  ],
+  "related_modules": ["numeric", "bits", "memory"],
+  "notes": ["units frameworkには広げない。"]
+}

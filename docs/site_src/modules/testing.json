@@ -1,0 +1,14 @@
+{
+  "module": "testing",
+  "title": "byte列GoogleTest補助",
+  "summary": "byte列比較用GoogleTest assertion helperを提供する。",
+  "categories": ["binary", "diagnostic"],
+  "use_cases": ["diagnostics-testing", "protocol-payload"],
+  "when_to_use": [
+    "GoogleTestでbyte列やhex期待値を読みやすく比較したい時。",
+    "失敗時にoffset差分を見たい時。"
+  ],
+  "when_not_to_use": ["library本体コードから使う時。", "GoogleTest以外のtest frameworkを使う時。"],
+  "related_modules": ["hex", "bytes", "byte_view"],
+  "notes": ["GoogleTest依存のtest helperであり、ket本体moduleとは用途が異なる。"]
+}

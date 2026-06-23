@@ -1,0 +1,17 @@
+{
+  "module": "state",
+  "title": "小さい状態遷移表",
+  "summary": "状態遷移tableのlookup、許可判定、次状態取得を扱う。",
+  "categories": ["flow", "data", "diagnostic"],
+  "use_cases": ["diagnostics-testing"],
+  "when_to_use": [
+    "小さいFSMの遷移表をコード上で見える形にしたい時。",
+    "未定義遷移を失敗として扱いたい時。"
+  ],
+  "when_not_to_use": [
+    "階層状態機械やevent frameworkが必要な時。",
+    "大量の状態を生成コードで管理したい時。"
+  ],
+  "related_modules": ["enums", "testing", "contract"],
+  "notes": ["table先頭一致の小さいlookupに絞る。"]
+}

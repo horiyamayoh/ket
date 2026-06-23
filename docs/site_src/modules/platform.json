@@ -1,0 +1,17 @@
+{
+  "module": "platform",
+  "title": "platform差分の小補助",
+  "summary": "errno、Windows error、environment variableを標準文字列で扱う。",
+  "categories": ["boundary", "diagnostic"],
+  "use_cases": ["cli-config", "diagnostics-testing"],
+  "when_to_use": [
+    "platform error codeを人間向けmessageへ変換したい時。",
+    "process environment variableをOS差分込みで小さく読みたい時。"
+  ],
+  "when_not_to_use": [
+    "process管理、terminal制御、OS抽象化layerが必要な時。",
+    "環境変数の永続変更や設定frameworkを作りたい時。"
+  ],
+  "related_modules": ["file", "build_config", "contract"],
+  "notes": ["Windows専用APIは_WIN32で宣言ごと隠す。"]
+}

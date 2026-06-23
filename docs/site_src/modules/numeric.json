@@ -1,0 +1,17 @@
+{
+  "module": "numeric",
+  "title": "overflow、align、cast境界",
+  "summary": "整数overflow、alignment、safe castの境界確認を扱う。",
+  "categories": ["binary", "value"],
+  "use_cases": ["protocol-payload", "value-validation"],
+  "when_to_use": [
+    "signed/unsignedや幅変換の境界を毎回書きたくない時。",
+    "overflowやalignment 0を失敗として扱いたい時。"
+  ],
+  "when_not_to_use": [
+    "任意精度整数やdecimal演算が必要な時。",
+    "標準の単純なcastで意図が十分明確な時。"
+  ],
+  "related_modules": ["math", "bits", "memory"],
+  "notes": ["wraparoundを公開仕様にしない。"]
+}

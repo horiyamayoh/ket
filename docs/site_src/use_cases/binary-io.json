@@ -1,0 +1,55 @@
+{
+  "id": "binary-io",
+  "title": "固定bufferから安全に読む・書く",
+  "summary": "offset更新、size不足、endianness、non-owning viewを明示して、バイナリ処理の事故を減らす。",
+  "flow": [
+    "既存bufferを参照するだけなら byte_view を使う。",
+    "offsetを持って順に読むなら byte_reader を使う。",
+    "fixed bufferへ順に書くなら byte_writer を使う。",
+    "固定位置のendian変換だけなら endian を使う。",
+    "streamから読み書きするなら io_stream を使う。",
+    "単純なTLV recordなら tlv を使う。",
+    "診断出力には hex を添える。"
+  ],
+  "modules": [
+    {
+      "module": "byte_view",
+      "role": "non-owning byte範囲とslice境界を表す。"
+    },
+    {
+      "module": "byte_reader",
+      "role": "成功時だけoffsetを進める逐次読み取り。"
+    },
+    {
+      "module": "byte_writer",
+      "role": "成功時だけbufferとoffsetを更新する逐次書き込み。"
+    },
+    {
+      "module": "endian",
+      "role": "byte orderを名前に出した固定幅load/store。"
+    },
+    {
+      "module": "io_stream",
+      "role": "streamのshort read/writeを明示して扱う。"
+    },
+    {
+      "module": "file",
+      "role": "通常ファイルをtextまたはbytesとして丸ごと読み書きする。"
+    },
+    {
+      "module": "tlv",
+      "role": "1 recordのTLV wire formatをencode/decodeする。"
+    },
+    {
+      "module": "hex",
+      "role": "byte列を調査しやすい文字列へ変換。"
+    }
+  ],
+  "recipe": [
+    "入力bufferを byte_view::View で受ける。",
+    "構造を順番に読む箇所だけ byte_reader::Reader を作る。",
+    "不足時はbool失敗を上位へ返し、offset不変を利用する。",
+    "失敗調査用に hex::Dump で該当範囲を出す。"
+  ],
+  "see_also": ["protocol-payload", "diagnostics-testing"]
+}
