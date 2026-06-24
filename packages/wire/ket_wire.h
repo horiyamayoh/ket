@@ -1221,8 +1221,10 @@ namespace ket
 		 * @param[in] group bit group名。
 		 * @param[in] members logical bit descriptor列。
 		 * @retval value field descriptor。
-		 * @pre `members`は16要素以下。
-		 * @post decode/encodeはstorage unitを1回だけ消費。
+		 * @pre `members`は16要素以下で、1byte storageの全bitを重複なしに覆う。未使用bitは
+		 * `ReservedBits`で明示。
+		 * @post decode/encodeはstorage unitを1回だけ消費し、未被覆bitを持つdescriptorはschema
+		 * errorとして扱う。
 		 * @code
 		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
 		 * @endcode
@@ -1238,8 +1240,10 @@ namespace ket
 		 * @param[in] group bit group名。
 		 * @param[in] members logical bit descriptor列。
 		 * @retval value field descriptor。
-		 * @pre `members`は16要素以下。
-		 * @post decode/encodeはstorage unitを1回だけ消費。
+		 * @pre `members`は16要素以下で、2byte storageの全bitを重複なしに覆う。未使用bitは
+		 * `ReservedBits`で明示。
+		 * @post decode/encodeはstorage unitを1回だけ消費し、未被覆bitを持つdescriptorはschema
+		 * errorとして扱う。
 		 * @code
 		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
 		 * @endcode
@@ -1255,8 +1259,10 @@ namespace ket
 		 * @param[in] group bit group名。
 		 * @param[in] members logical bit descriptor列。
 		 * @retval value field descriptor。
-		 * @pre `members`は16要素以下。
-		 * @post decode/encodeはstorage unitを1回だけ消費。
+		 * @pre `members`は16要素以下で、2byte storageの全bitを重複なしに覆う。未使用bitは
+		 * `ReservedBits`で明示。
+		 * @post decode/encodeはstorage unitを1回だけ消費し、未被覆bitを持つdescriptorはschema
+		 * errorとして扱う。
 		 * @code
 		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
 		 * @endcode
@@ -1272,8 +1278,10 @@ namespace ket
 		 * @param[in] callback `bool(const T&, Status&) noexcept` callback。
 		 * @retval value field descriptor。
 		 * @pre `callback != nullptr`。失敗時はcallbackがStatusへ詳細を設定可能。
-		 * @post decode/encode/measure時にbyteを消費せずcallbackを実行。
-		 * @note callbackが設定する`Status::offset`はvalidation field位置からの相対offset。
+		 * @post decode/encode/EncodeTo/measure時にbyteを消費せずcallbackを実行。
+		 * @note callbackがfalseを返して`Status::offset`を設定した場合、その値はvalidation
+		 * field位置からの相対byte offsetとして扱い、result statusではschema先頭基準へ補正。
+		 * callbackがStatusをOKのままfalseを返した場合、validation field位置をfailure offsetにする。
 		 * @code
 		 * // See packages/wire/ket_wire_test.cpp for executable usage of this API.
 		 * @endcode
@@ -3781,7 +3789,7 @@ namespace ket
 			 * @param[in] group group名。
 			 * @param[in] members logical bit descriptor列。
 			 * @retval value field descriptor。
-			 * @pre `BitCount <= 16` and members valid.
+			 * @pre `BitCount <= 16` and members cover every storage bit without overlap.
 			 * @post allocationなし。
 			 */
 			template <typename T, typename Unsigned, ByteOrder Order, std::size_t BitCount>
@@ -3827,6 +3835,16 @@ namespace ket
 
 					used_mask |= member_coverage;
 					FieldAccess<T>::SetBitMember(field, index, member);
+				}
+
+				std::uint64_t storage_mask = 0U;
+				const auto storage_mask_ok =
+					TryBitMask(ket::bits::TypeBitWidth<Unsigned>(), storage_mask);
+				const auto storage_is_fully_covered = storage_mask_ok && used_mask == storage_mask;
+				if (!storage_is_fully_covered)
+				{
+					FieldAccess<T>::SetIsValid(field, false);
+					return field;
 				}
 
 				FieldAccess<T>::SetBitMemberCount(field, BitCount);

@@ -535,6 +535,8 @@ fixed-buffer encode、size 計算、built-in descriptor は allocation なしで
 ## 18. bit field policy
 
 - bit field は storage unit descriptor と logical bit member descriptor の group で扱う。
+- logical bit member descriptor は storage unit の全bitを重複なしに覆う。未使用bitは `ReservedBits` で明示し、
+  gap がある schema は `Error::kSchemaError`。
 - decode は storage unit を 1 回読み、logical fields へ mask/shift で展開する。
 - encode は logical fields の range をすべて preflight し、1 storage unit へ pack してから書く。
 - reserved bits は decode で期待値一致を検査し、encode で期待値を書く。
@@ -632,6 +634,7 @@ executable example は次を示す。
 - BCD value out of range。
 - bit field range overflow。
 - grouped bit field roundtrip。
+- grouped bit field coverage gap。
 - reserved byte mismatch。
 - reserved bit mismatch。
 - length mismatch。

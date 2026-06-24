@@ -103,6 +103,14 @@ namespace
 		std::uint8_t value = 0U;
 	};
 
+	struct OffsetValidationFrame
+	{
+		std::uint16_t prefix = 0U;
+		std::uint8_t mode = 0U;
+		std::uint8_t flags = 0U;
+		std::array<std::uint8_t, 2U> payload{};
+	};
+
 	struct StaticConstFrame
 	{
 		int marker = 0;
@@ -133,10 +141,11 @@ namespace
 			"BitsFrame",
 			std::array<ket::wire::Field<BitsFrame>, 1U>{ket::wire::BitsU8<BitsFrame>(
 				"flags",
-				std::array<ket::wire::BitMember<BitsFrame>, 3U>{
+				std::array<ket::wire::BitMember<BitsFrame>, 4U>{
 					ket::wire::Bit<BitsFrame, &BitsFrame::mode, 0U, 3U>("mode"),
 					ket::wire::ReservedBits<BitsFrame, 3U, 1U>("reserved", 0U),
-					ket::wire::Bit<BitsFrame, &BitsFrame::flags, 4U, 2U>("flags")})});
+					ket::wire::Bit<BitsFrame, &BitsFrame::flags, 4U, 2U>("flags"),
+					ket::wire::ReservedBits<BitsFrame, 6U, 2U>("unused", 0U)})});
 	}
 
 	auto MakeWideIntegerSchema()
@@ -185,16 +194,18 @@ namespace
 			std::array<ket::wire::Field<Bits16Frame>, 2U>{
 				ket::wire::BitsU16Be<Bits16Frame>(
 					"be_bits",
-					std::array<ket::wire::BitMember<Bits16Frame>, 3U>{
+					std::array<ket::wire::BitMember<Bits16Frame>, 4U>{
 						ket::wire::Bit<Bits16Frame, &Bits16Frame::low, 0U, 4U>("low"),
 						ket::wire::ReservedBits<Bits16Frame, 4U, 4U>("reserved", 3U),
-						ket::wire::Bit<Bits16Frame, &Bits16Frame::high, 8U, 4U>("high")}),
+						ket::wire::Bit<Bits16Frame, &Bits16Frame::high, 8U, 4U>("high"),
+						ket::wire::ReservedBits<Bits16Frame, 12U, 4U>("unused", 0U)}),
 				ket::wire::BitsU16Le<Bits16Frame>(
 					"le_bits",
-					std::array<ket::wire::BitMember<Bits16Frame>, 3U>{
+					std::array<ket::wire::BitMember<Bits16Frame>, 4U>{
 						ket::wire::Bit<Bits16Frame, &Bits16Frame::low, 0U, 4U>("low"),
 						ket::wire::ReservedBits<Bits16Frame, 4U, 4U>("reserved", 3U),
-						ket::wire::Bit<Bits16Frame, &Bits16Frame::high, 8U, 4U>("high")})});
+						ket::wire::Bit<Bits16Frame, &Bits16Frame::high, 8U, 4U>("high"),
+						ket::wire::ReservedBits<Bits16Frame, 12U, 4U>("unused", 0U)})});
 	}
 
 	bool LengthMatchesPayload(const ValidatedFrame& value, ket::wire::Status& status) noexcept
@@ -246,6 +257,37 @@ namespace
 		status.offset = 2U;
 		status.field = "relative";
 		return false;
+	}
+
+	bool FailsWithShiftedRelativeOffset(const OffsetValidationFrame& value,
+										ket::wire::Status& status) noexcept
+	{
+		(void)value;
+		status.error = ket::wire::Error::kCallbackFailed;
+		status.offset = 2U;
+		status.field = "relative";
+		return false;
+	}
+
+	auto MakeOffsetValidationSchema()
+	{
+		return ket::wire::MakeSchema<OffsetValidationFrame>(
+			"OffsetValidationFrame",
+			std::array<ket::wire::Field<OffsetValidationFrame>, 4U>{
+				ket::wire::U16Be<OffsetValidationFrame, &OffsetValidationFrame::prefix>("prefix"),
+				ket::wire::BitsU8<OffsetValidationFrame>(
+					"packed_flags",
+					std::array<ket::wire::BitMember<OffsetValidationFrame>, 4U>{
+						ket::wire::Bit<OffsetValidationFrame, &OffsetValidationFrame::mode, 0U, 3U>(
+							"mode"),
+						ket::wire::ReservedBits<OffsetValidationFrame, 3U, 1U>("reserved", 0U),
+						ket::wire::
+							Bit<OffsetValidationFrame, &OffsetValidationFrame::flags, 4U, 2U>(
+								"flags"),
+						ket::wire::ReservedBits<OffsetValidationFrame, 6U, 2U>("unused", 0U)}),
+				ket::wire::Bytes<OffsetValidationFrame, &OffsetValidationFrame::payload>("payload"),
+				ket::wire::CrossFieldValidation<OffsetValidationFrame>(
+					"relative_check", &FailsWithShiftedRelativeOffset)});
 	}
 
 	int g_validation_call_count = 0;
@@ -503,7 +545,7 @@ TEST(KetWireTest, ExposesReadOnlyDescriptorMetadata)
 	const auto field_valid = field->IsValid();
 	EXPECT_TRUE(field_fixed);
 	EXPECT_TRUE(field_valid);
-	EXPECT_EQ(field->BitMemberCount(), 3U);
+	EXPECT_EQ(field->BitMemberCount(), 4U);
 
 	const auto* low = field->BitMemberAt(0U);
 	ASSERT_NE(low, nullptr);
@@ -526,7 +568,18 @@ TEST(KetWireTest, ExposesReadOnlyDescriptorMetadata)
 	EXPECT_FALSE(reserved_has_member);
 	EXPECT_TRUE(reserved_valid);
 
-	const auto* out_of_range = field->BitMemberAt(3U);
+	const auto* unused = field->BitMemberAt(3U);
+	ASSERT_NE(unused, nullptr);
+	EXPECT_EQ(unused->Name(), "unused");
+	EXPECT_EQ(unused->Shift(), 12U);
+	EXPECT_EQ(unused->Width(), 4U);
+	EXPECT_EQ(unused->Expected(), 0U);
+	const auto unused_has_member = unused->HasMember();
+	const auto unused_valid = unused->IsValid();
+	EXPECT_FALSE(unused_has_member);
+	EXPECT_TRUE(unused_valid);
+
+	const auto* out_of_range = field->BitMemberAt(4U);
 	EXPECT_EQ(out_of_range, nullptr);
 }
 
@@ -804,9 +857,11 @@ TEST(KetWireTest, HandlesGroupedBitsAndReservedBits)
 			ket::wire::PadBytes<BitsFrame>("prefix", 1U, 0U),
 			ket::wire::BitsU8<BitsFrame>(
 				"flags",
-				std::array<ket::wire::BitMember<BitsFrame>, 2U>{
+				std::array<ket::wire::BitMember<BitsFrame>, 4U>{
 					ket::wire::Bit<BitsFrame, &BitsFrame::mode, 0U, 3U>("mode"),
-					ket::wire::Bit<BitsFrame, &BitsFrame::flags, 4U, 2U>("flags")})});
+					ket::wire::ReservedBits<BitsFrame, 3U, 1U>("reserved", 0U),
+					ket::wire::Bit<BitsFrame, &BitsFrame::flags, 4U, 2U>("flags"),
+					ket::wire::ReservedBits<BitsFrame, 6U, 2U>("unused", 0U)})});
 	const auto offset_result = ket::wire::Encode(overflow, offset_schema);
 	const auto offset_has_bytes = offset_result.bytes.has_value();
 	EXPECT_FALSE(offset_has_bytes);
@@ -837,6 +892,45 @@ TEST(KetWireTest, RejectsOverlappingGroupedBitMembers)
 	EXPECT_FALSE(schema_ok);
 	EXPECT_EQ(schema.SchemaStatus().error, ket::wire::Error::kSchemaError);
 	EXPECT_EQ(schema.SchemaStatus().field, "overlap");
+}
+
+/**
+ * @test
+ * @brief grouped bit descriptorの未被覆範囲拒否確認。
+ * @details storage bitの一部をlogical memberまたはreserved memberで覆わないschemaをschema
+ * errorとして扱い、未宣言bitが立ったinputをdecode/encodeで失わないことを確認。
+ * @pre C++17以降。
+ * @post invalid schemaはoperation実行前にkSchemaErrorを保持。
+ */
+TEST(KetWireTest, RejectsIncompleteGroupedBitCoverage)
+{
+	const auto schema = ket::wire::MakeSchema<BitsFrame>(
+		"IncompleteBits",
+		std::array<ket::wire::Field<BitsFrame>, 1U>{ket::wire::BitsU8<BitsFrame>(
+			"flags",
+			std::array<ket::wire::BitMember<BitsFrame>, 3U>{
+				ket::wire::Bit<BitsFrame, &BitsFrame::mode, 0U, 3U>("mode"),
+				ket::wire::ReservedBits<BitsFrame, 3U, 1U>("reserved", 0U),
+				ket::wire::Bit<BitsFrame, &BitsFrame::flags, 4U, 2U>("flags")})});
+	const auto schema_ok = schema.SchemaStatus().Ok();
+	EXPECT_FALSE(schema_ok);
+	EXPECT_EQ(schema.SchemaStatus().error, ket::wire::Error::kSchemaError);
+	EXPECT_EQ(schema.SchemaStatus().field, "flags");
+
+	const auto data = std::array<std::uint8_t, 1U>{{0xE5U}};
+	const auto decoded =
+		ket::wire::DecodeExact(ket::byte_view::View(data.data(), data.size()), schema);
+	const auto decoded_has_value = decoded.value.has_value();
+	EXPECT_FALSE(decoded_has_value);
+	EXPECT_EQ(decoded.status.error, ket::wire::Error::kSchemaError);
+	EXPECT_EQ(decoded.status.field, "flags");
+
+	const BitsFrame value{5U, 2U};
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_has_bytes = encoded.bytes.has_value();
+	EXPECT_FALSE(encoded_has_bytes);
+	EXPECT_EQ(encoded.status.error, ket::wire::Error::kSchemaError);
+	EXPECT_EQ(encoded.status.field, "flags");
 }
 
 /**
@@ -1076,6 +1170,89 @@ TEST(KetWireTest, HandlesConstantReservedAndPaddingFamilies)
 
 /**
  * @test
+ * @brief pointer overloadのConstBytes境界確認。
+ * @details pointer + sizeでconstant byte列を直接参照し、正常系、mismatch diagnostics、
+ * zero-size、nullptr境界を確認。
+ * @pre C++17以降。pointer overloadへ渡す非空byte列はschema利用中に有効なstorage。
+ * @post pointer overloadはexpected byte列を所有せず、nullptr+非0はschema error。
+ */
+TEST(KetWireTest, HandlesPointerConstBytesBoundaries)
+{
+	const auto tag = std::array<std::uint8_t, 3U>{{0xCAU, 0xFEU, 0x10U}};
+	const auto schema = ket::wire::MakeSchema<StaticConstFrame>(
+		"PointerConstFrame",
+		std::array<ket::wire::Field<StaticConstFrame>, 2U>{
+			ket::wire::ConstBytes<StaticConstFrame>("tag", tag.data(), tag.size()),
+			ket::wire::ConstBytes<StaticConstFrame>("empty", nullptr, 0U)});
+	const auto schema_ok = schema.SchemaStatus().Ok();
+	EXPECT_TRUE(schema_ok);
+
+	const auto* tag_field = schema.FieldAt(0U);
+	ASSERT_NE(tag_field, nullptr);
+	EXPECT_EQ(tag_field->ExpectedBytes(), tag.data());
+	EXPECT_EQ(tag_field->ExpectedBytesSize(), tag.size());
+
+	const auto* empty_field = schema.FieldAt(1U);
+	ASSERT_NE(empty_field, nullptr);
+	EXPECT_EQ(empty_field->ExpectedBytes(), nullptr);
+	EXPECT_EQ(empty_field->ExpectedBytesSize(), 0U);
+
+	const StaticConstFrame value{};
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_ok = encoded.status.Ok();
+	ASSERT_NE(encoded.bytes, std::nullopt);
+	EXPECT_TRUE(encoded_ok);
+	EXPECT_EQ(encoded.bytes.value(), (std::vector<std::uint8_t>{0xCAU, 0xFEU, 0x10U}));
+
+	const auto decoded =
+		ket::wire::DecodeExact(ket::byte_view::View(tag.data(), tag.size()), schema);
+	const auto decoded_ok = decoded.status.Ok();
+	ASSERT_NE(decoded.value, std::nullopt);
+	EXPECT_TRUE(decoded_ok);
+
+	const auto mismatch = std::array<std::uint8_t, 3U>{{0xCAU, 0xFFU, 0x10U}};
+	const auto mismatch_result =
+		ket::wire::DecodeExact(ket::byte_view::View(mismatch.data(), mismatch.size()), schema);
+	const auto mismatch_has_value = mismatch_result.value.has_value();
+	EXPECT_FALSE(mismatch_has_value);
+	EXPECT_EQ(mismatch_result.status.error, ket::wire::Error::kReservedMismatch);
+	EXPECT_EQ(mismatch_result.status.field, "tag");
+	EXPECT_EQ(mismatch_result.status.offset, 1U);
+	EXPECT_EQ(mismatch_result.status.expected, 0xFEU);
+	EXPECT_EQ(mismatch_result.status.actual, 0xFFU);
+
+	const auto zero_storage = std::array<std::uint8_t, 1U>{{0xA5U}};
+	const auto zero_schema = ket::wire::MakeSchema<StaticConstFrame>(
+		"PointerZeroConstFrame",
+		std::array<ket::wire::Field<StaticConstFrame>, 1U>{
+			ket::wire::ConstBytes<StaticConstFrame>("zero", zero_storage.data(), 0U)});
+	const auto zero_schema_ok = zero_schema.SchemaStatus().Ok();
+	EXPECT_TRUE(zero_schema_ok);
+
+	const auto zero_encoded = ket::wire::Encode(value, zero_schema);
+	const auto zero_encoded_ok = zero_encoded.status.Ok();
+	ASSERT_NE(zero_encoded.bytes, std::nullopt);
+	EXPECT_TRUE(zero_encoded_ok);
+	EXPECT_EQ(zero_encoded.bytes.value(), std::vector<std::uint8_t>{});
+
+	const auto zero_decoded =
+		ket::wire::DecodeExact(ket::byte_view::View(nullptr, 0U), zero_schema);
+	const auto zero_decoded_ok = zero_decoded.status.Ok();
+	ASSERT_NE(zero_decoded.value, std::nullopt);
+	EXPECT_TRUE(zero_decoded_ok);
+
+	const auto invalid_schema = ket::wire::MakeSchema<StaticConstFrame>(
+		"InvalidPointerConstFrame",
+		std::array<ket::wire::Field<StaticConstFrame>, 1U>{
+			ket::wire::ConstBytes<StaticConstFrame>("bad", nullptr, 1U)});
+	const auto invalid_schema_ok = invalid_schema.SchemaStatus().Ok();
+	EXPECT_FALSE(invalid_schema_ok);
+	EXPECT_EQ(invalid_schema.SchemaStatus().error, ket::wire::Error::kSchemaError);
+	EXPECT_EQ(invalid_schema.SchemaStatus().field, "bad");
+}
+
+/**
+ * @test
  * @brief reserved bytes diagnostics確認。
  * @details decodeはreserved byte mismatchをoffset、expected、actual付きで返し、encodeはreserved
  * bytesを書き込むことを確認。
@@ -1264,6 +1441,66 @@ TEST(KetWireTest, ReportsValidationFailureAtCurrentFieldOffset)
 	EXPECT_EQ(relative.status.error, ket::wire::Error::kCallbackFailed);
 	EXPECT_EQ(relative.status.field, "relative");
 	EXPECT_EQ(relative.status.offset, 3U);
+}
+
+/**
+ * @test
+ * @brief validation callback relative offsetのAPI横断確認。
+ * @details U16、grouped bits、fixed bytesの後にvalidationを置き、callbackが返すoffset
+ * 2がschema先頭基準の7としてDecodeExact/DecodePrefix/Measure/Encode/EncodeToで返ることを確認。
+ * @pre C++17以降。
+ * @post validation失敗ではdecode valueやencoded bytesを保持せず、fixed output bufferを変更しない。
+ */
+TEST(KetWireTest, ReportsValidationRelativeOffsetAcrossOperations)
+{
+	const auto schema = MakeOffsetValidationSchema();
+	const auto schema_ok = schema.SchemaStatus().Ok();
+	ASSERT_TRUE(schema_ok);
+	const OffsetValidationFrame value{0x1234U, 0x03U, 0x02U, {{0xAAU, 0xBBU}}};
+	const auto data = std::array<std::uint8_t, 5U>{{0x12U, 0x34U, 0x23U, 0xAAU, 0xBBU}};
+
+	const auto exact =
+		ket::wire::DecodeExact(ket::byte_view::View(data.data(), data.size()), schema);
+	const auto exact_has_value = exact.value.has_value();
+	EXPECT_FALSE(exact_has_value);
+	EXPECT_EQ(exact.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(exact.status.field, "relative");
+	EXPECT_EQ(exact.status.offset, 7U);
+	EXPECT_EQ(exact.consumed, 0U);
+
+	const auto prefix_data =
+		std::array<std::uint8_t, 7U>{{0x12U, 0x34U, 0x23U, 0xAAU, 0xBBU, 0xCCU, 0xDDU}};
+	const auto prefix = ket::wire::DecodePrefix(
+		ket::byte_view::View(prefix_data.data(), prefix_data.size()), schema);
+	const auto prefix_has_value = prefix.value.has_value();
+	EXPECT_FALSE(prefix_has_value);
+	EXPECT_EQ(prefix.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(prefix.status.field, "relative");
+	EXPECT_EQ(prefix.status.offset, 7U);
+	EXPECT_EQ(prefix.consumed, 0U);
+
+	const auto measured = ket::wire::MeasureEncodedSize(value, schema);
+	const auto measured_has_value = measured.value.has_value();
+	EXPECT_FALSE(measured_has_value);
+	EXPECT_EQ(measured.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(measured.status.field, "relative");
+	EXPECT_EQ(measured.status.offset, 7U);
+
+	const auto encoded = ket::wire::Encode(value, schema);
+	const auto encoded_has_bytes = encoded.bytes.has_value();
+	EXPECT_FALSE(encoded_has_bytes);
+	EXPECT_EQ(encoded.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(encoded.status.field, "relative");
+	EXPECT_EQ(encoded.status.offset, 7U);
+
+	auto output = std::array<std::uint8_t, 5U>{{0xCCU, 0xCCU, 0xCCU, 0xCCU, 0xCCU}};
+	const auto encoded_to = ket::wire::EncodeTo(
+		value, schema, ket::byte_view::MutableView(output.data(), output.size()));
+	EXPECT_EQ(encoded_to.status.error, ket::wire::Error::kCallbackFailed);
+	EXPECT_EQ(encoded_to.status.field, "relative");
+	EXPECT_EQ(encoded_to.status.offset, 7U);
+	EXPECT_EQ(encoded_to.encoded_size, 0U);
+	EXPECT_EQ(output, (std::array<std::uint8_t, 5U>{{0xCCU, 0xCCU, 0xCCU, 0xCCU, 0xCCU}}));
 }
 
 /**

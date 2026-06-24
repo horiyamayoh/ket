@@ -67,8 +67,6 @@ if(KET_ENABLE_FORMAT_TARGETS)
 endif()
 
 if(KET_BUILD_TESTS)
-	find_package(Threads REQUIRED)
-
 	set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 	set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -490,6 +488,9 @@ if(KET_BUILD_TESTS)
 			modules/platform/ket_platform_test.cpp
 	)
 
+	# std::thread based concurrency checks are the only tests that need platform thread linkage.
+	find_package(Threads REQUIRED)
+
 	ket_add_module_test(
 		ket_concurrency_test
 		SOURCES
@@ -720,6 +721,8 @@ if(KET_BUILD_TESTS)
 				--standard c++17
 				--source "${CMAKE_CURRENT_SOURCE_DIR}/${reject_source}"
 				--output "${CMAKE_CURRENT_BINARY_DIR}/${reject_target}.o"
+				--expect-diagnostic
+				"integer member must be the exact fixed-width signedness type"
 				${KET_WIRE_EXPECT_FAILURE_INCLUDES}
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 			COMMENT "Checking expected compile failure for ${reject_source}"
